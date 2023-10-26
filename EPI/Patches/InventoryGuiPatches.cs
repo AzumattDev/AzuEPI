@@ -110,6 +110,7 @@ public class InventoryGuiPatches
                     }
 
                     rectTransform.anchorMax = maxAnchor;
+                    InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<RectTransform>().anchorMax = maxAnchor;
 
                     break;
                 }
