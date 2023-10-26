@@ -125,6 +125,7 @@ public class InventoryGuiPatches
     {
         public string Name = null!;
         public Vector2 Position;
+        public EquipmentSlot? EquipmentSlot => this as EquipmentSlot;
     }
 
     internal class EquipmentSlot: Slot

@@ -144,12 +144,15 @@ public class API
 		{
 			SlotNames = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.Name).ToArray(),
 			SlotPositions = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.Position).ToArray(),
+			GetItemFuncs = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.EquipmentSlot?.Get).ToArray(),
+			IsValidFuncs = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.EquipmentSlot?.Valid).ToArray(),
 		};
 #else
-		return new SlotInfo();
+    return new SlotInfo();
 #endif
-
 	}
+
+
 
 	public static int GetAddedRows(int width)
 	{
@@ -168,4 +171,7 @@ public class SlotInfo
 {
 	public string[] SlotNames { get; set; } = { };
 	public Vector2[] SlotPositions { get; set; } = { };
+	public Func<Player, ItemDrop.ItemData?>?[] GetItemFuncs { get; set; } = { };
+	public Func<ItemDrop.ItemData, bool>?[] IsValidFuncs { get; set; } = { };
 }
+

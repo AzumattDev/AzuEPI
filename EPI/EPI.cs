@@ -35,6 +35,10 @@ namespace AzuExtendedPlayerInventory.EPI
             var textComp = transform1.GetComponent<TMP_Text>();
             textComp.enabled = true;
             textComp.overflowMode = TextOverflowModes.Overflow;
+            textComp.textWrappingMode = TextWrappingModes.PreserveWhitespaceNoWrap;
+            textComp.fontSizeMin = 10f;
+            textComp.fontSizeMax = 18f;
+            textComp.enableAutoSizing = true;
             textComp.text = value;
             if (!center)
                 return;
