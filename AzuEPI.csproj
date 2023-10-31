@@ -156,22 +156,6 @@
         </Content>
         <Content Include="README.md"/>
         <EmbeddedResource Include="translations\English.yml"/>
-        <Content Include="Thunderstore\AzuExtendedPlayerInventory_v1.0.0.zip"/>
-        <Content Include="Thunderstore\AzuExtendedPlayerInventory_v1.0.1.zip"/>
-        <Content Include="Thunderstore\AzuExtendedPlayerInventory_v1.0.2.zip"/>
-        <Content Include="Thunderstore\AzuExtendedPlayerInventory_v1.0.3.zip"/>
-        <Content Include="Thunderstore\AzuExtendedPlayerInventory_v1.0.4.zip"/>
-        <Content Include="Thunderstore\AzuExtendedPlayerInventory_v1.0.5.zip"/>
-        <Content Include="Thunderstore\AzuExtendedPlayerInventory_v1.0.6.zip"/>
-        <Content Include="Thunderstore\AzuExtendedPlayerInventory_v1.0.7.zip"/>
-        <Content Include="Thunderstore\AzuExtendedPlayerInventory_v1.0.8.zip"/>
-        <Content Include="Thunderstore\AzuExtendedPlayerInventory_v1.1.8.zip"/>
-        <Content Include="Thunderstore\AzuExtendedPlayerInventory_v1.1.9.zip"/>
-        <Content Include="Thunderstore\AzuExtendedPlayerInventory_v1.2.0.zip"/>
-        <Content Include="Thunderstore\AzuExtendedPlayerInventory_v1.2.1.zip"/>
-        <Content Include="Thunderstore\AzuExtendedPlayerInventory_v1.2.2.zip"/>
-        <Content Include="Thunderstore\AzuExtendedPlayerInventory_v1.2.3.zip"/>
-        <Content Include="Thunderstore\AzuExtendedPlayerInventory_v1.2.4.zip"/>
         <Content Include="Thunderstore\CHANGELOG.md"/>
         <Content Include="Thunderstore\icon.png"/>
         <Content Include="Thunderstore\manifest.json"/>

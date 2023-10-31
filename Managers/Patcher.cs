@@ -169,7 +169,7 @@ public static class Patcher
 			{
 				DispatchAttributes(parameter, referencingEntityName);
 
-				for (int i = 0; i < parameter.Constraints.Count; i++)
+				for (int i = 0; i < parameter.Constraints.Count; ++i)
 				{
 					parameter.Constraints[i] = VisitType(parameter.Constraints[i], referencingEntityName);
 				}
@@ -352,7 +352,7 @@ public static class Patcher
 
 		void DispatchGenericArguments(IGenericInstance genericInstance, string referencingEntityName)
 		{
-			for (int i = 0; i < genericInstance.GenericArguments.Count; i++)
+			for (int i = 0; i < genericInstance.GenericArguments.Count; ++i)
 			{
 				genericInstance.GenericArguments[i] = VisitType(genericInstance.GenericArguments[i], referencingEntityName);
 			}
@@ -411,19 +411,19 @@ public static class Patcher
 					VisitMethod(attribute.Constructor, referencingEntityName);
 				}
 
-				for (int i = 0; i < attribute.ConstructorArguments.Count; i++)
+				for (int i = 0; i < attribute.ConstructorArguments.Count; ++i)
 				{
 					CustomAttributeArgument argument = attribute.ConstructorArguments[i];
 					attribute.ConstructorArguments[i] = new CustomAttributeArgument(VisitType(argument.Type, referencingEntityName), argument.Value);
 				}
 
-				for (int i = 0; i < attribute.Properties.Count; i++)
+				for (int i = 0; i < attribute.Properties.Count; ++i)
 				{
 					CustomAttributeNamedArgument namedArgument = attribute.Properties[i];
 					attribute.Properties[i] = new CustomAttributeNamedArgument(namedArgument.Name, new CustomAttributeArgument(VisitType(namedArgument.Argument.Type, referencingEntityName), namedArgument.Argument.Value));
 				}
 
-				for (int i = 0; i < attribute.Fields.Count; i++)
+				for (int i = 0; i < attribute.Fields.Count; ++i)
 				{
 					CustomAttributeNamedArgument namedArgument = attribute.Fields[i];
 					attribute.Fields[i] = new CustomAttributeNamedArgument(namedArgument.Name, new CustomAttributeArgument(VisitType(namedArgument.Argument.Type, referencingEntityName), namedArgument.Argument.Value));

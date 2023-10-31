@@ -43,7 +43,7 @@ public class InventoryGuiPatches
 
                 int num = width * (height - requiredRows);
                 ItemDrop.ItemData?[] equippedItems = new ItemDrop.ItemData[UpdateInventory_Patch.slots.Count];
-                for (int i = 0; i < UpdateInventory_Patch.slots.Count; i++)
+                for (int i = 0; i < UpdateInventory_Patch.slots.Count; ++i)
                 {
                     Slot slot = UpdateInventory_Patch.slots[i];
                     if (slot is EquipmentSlot equipmentSlot)

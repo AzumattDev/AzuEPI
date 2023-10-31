@@ -38,7 +38,7 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                     int adjustedHeight = inventory.GetHeight() - API.GetAddedRows(width);
                     int firstHotkeyIndex = adjustedHeight * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length;
 
-                    for (int i = 0; i < AzuExtendedPlayerInventoryPlugin.Hotkeys.Length; i++)
+                    for (int i = 0; i < AzuExtendedPlayerInventoryPlugin.Hotkeys.Length; ++i)
                     {
                         int index = firstHotkeyIndex + i;
                         if (inventory.GetItemAt(index % width, index / width) is {} item)

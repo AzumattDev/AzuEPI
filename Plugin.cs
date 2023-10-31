@@ -19,7 +19,7 @@ namespace AzuExtendedPlayerInventory;
 public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 {
     internal const string ModName = "AzuExtendedPlayerInventory";
-    internal const string ModVersion = "1.3.1";
+    internal const string ModVersion = "1.3.2";
     internal const string Author = "Azumatt";
     private const string ModGUID = Author + "." + ModName;
     private static string ConfigFileName = ModGUID + ".cfg";
@@ -43,8 +43,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         APIManager.Patcher.Patch();
         
         context = this;
-        _serverConfigLocked = config("1 - General", "Lock Configuration", Toggle.On,
-            "If on, the configuration is locked and can be changed by server admins only.");
+        _serverConfigLocked = config("1 - General", "Lock Configuration", Toggle.On, "If on, the configuration is locked and can be changed by server admins only.");
         _ = ConfigSync.AddLockingConfigEntry(_serverConfigLocked);
 
         /* Extended Player Inventory Config options */
