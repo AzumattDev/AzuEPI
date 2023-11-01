@@ -112,7 +112,7 @@ public class InventoryPatches
             int adjustedHeight = __instance.GetHeight() - addedRows;
 
 
-            __instance.AddItem(item, item.m_stack, which, adjustedHeight);
+            __instance.AddItem(item, item.m_stack, which % __instance.GetWidth(), adjustedHeight + which / __instance.GetWidth());
             Player.m_localPlayer.EquipItem(item, false);
             __instance.Changed();
             __result = true;
@@ -133,10 +133,6 @@ public class InventoryPatches
             int y)
         {
             int addedRows = API.GetAddedRows(___m_width);
-            if (x >= ___m_width)
-            {
-                ___m_width = x + addedRows;
-            }
 
             if (y < ___m_height)
                 return;

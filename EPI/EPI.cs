@@ -68,7 +68,7 @@ namespace AzuExtendedPlayerInventory.EPI
                 return false;
             }
 
-            which = item.m_gridPos.x;
+            which = (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x;
             return true;
         }
 
