@@ -4,6 +4,7 @@ using System.Linq;
 using BepInEx;
 using HarmonyLib;
 using UnityEngine;
+using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 namespace AzuExtendedPlayerInventory.EPI.Patches;
@@ -111,6 +112,7 @@ public class InventoryGuiPatches
 
                     rectTransform.anchorMax = maxAnchor;
                     InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<RectTransform>().anchorMax = maxAnchor;
+                    InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<Image>().raycastTarget = false;
 
                     break;
                 }
