@@ -12,7 +12,6 @@ namespace AzuExtendedPlayerInventory.Moveable
         public static ConfigEntry<float> ChestInventoryX = null!;
         public static ConfigEntry<float> ChestInventoryY = null!;
         public static ConfigEntry<KeyboardShortcut> ChestDragKeys = null!;
-        public static ConfigEntry<KeyboardShortcut> ModKeyTwoChestMove = null!;
         private static Vector3 lastMousePos;
 
         [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Update))]
