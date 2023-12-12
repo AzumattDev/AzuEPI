@@ -15,7 +15,7 @@ namespace AzuExtendedPlayerInventory.EPI
         public static int SelectedHotkeyBarIndex { get; set; } = -1;
 
         private static GameObject _elementPrefab;
-        
+
         public static Vector2 LastSlotPosition { get; set; }
 
         internal static ItemDrop.ItemData?[] equipItems = new ItemDrop.ItemData[5];
@@ -96,6 +96,20 @@ namespace AzuExtendedPlayerInventory.EPI
             if (Player.m_localPlayer == null)
                 return;
             if (granted)
+            {
+                Utilities.Utilities.InventoryFix();
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Inventory), nameof(Inventory.MoveAll))]
+    static class MoveAllToPatch // This should fix issues with AzuContainerSizes
+    {
+        static void Postfix(Inventory __instance, Inventory fromInventory)
+        {
+            if (Player.m_localPlayer == null)
+                return;
+            if (__instance == Player.m_localPlayer.GetInventory())
             {
                 Utilities.Utilities.InventoryFix();
             }

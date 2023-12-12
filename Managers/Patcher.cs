@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using BepInEx;
-using BepInEx.Configuration;
 using BepInEx.Preloader;
 using BepInEx.Preloader.Patching;
 using HarmonyLib;
@@ -13,7 +12,9 @@ using Mono.Cecil.Cil;
 using UnityEngine;
 using CustomAttributeNamedArgument = Mono.Cecil.CustomAttributeNamedArgument;
 using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
+using MethodAttributes = Mono.Cecil.MethodAttributes;
 using MethodBody = Mono.Cecil.Cil.MethodBody;
+using TypeAttributes = Mono.Cecil.TypeAttributes;
 
 namespace APIManager;
 
@@ -26,8 +27,6 @@ public static class Patcher
 	private static readonly Assembly patchingAssembly = Assembly.GetExecutingAssembly();
 	private static string currentAssemblyPath = null!;
 
-	private static readonly ConfigEntry<bool> dumpAssemblies = (ConfigEntry<bool>)AccessTools.DeclaredField(typeof(AssemblyPatcher), "ConfigDumpAssemblies").GetValue(null);
-	private static readonly ConfigEntry<bool> loadDumpedAssemblies = (ConfigEntry<bool>)AccessTools.DeclaredField(typeof(AssemblyPatcher), "ConfigLoadDumpedAssemblies").GetValue(null);
 	private static readonly string dumpedAssembliesPath = (string)AccessTools.DeclaredField(typeof(AssemblyPatcher), "DumpedAssembliesPath").GetValue(null);
 
 	private static void GrabPluginInfo(PluginInfo __instance) => lastPluginInfo = __instance;
@@ -49,9 +48,74 @@ public static class Patcher
 	{
 		if (modifyNextLoad && __result is null)
 		{
+			string dumpedAssemblyPath = dumpedAssembliesPath + Path.DirectorySeparatorChar + Path.GetFileName(__0);
+			if (File.Exists(dumpedAssemblyPath))
+			{
+				using AssemblyDefinition assembly = AssemblyDefinition.ReadAssembly(dumpedAssemblyPath, new ReaderParameters { AssemblyResolver = new MonoAssemblyResolver() });
+
+				bool foundGuid = false;
+				foreach (CustomAttribute customAttribute in assembly.CustomAttributes)
+				{
+					TypeReference attributeType = customAttribute.Constructor.DeclaringType;
+					if (attributeType.Namespace == "APIManager" && attributeType.Name == "PatchedAttribute")
+					{
+						string guid = (string)customAttribute.ConstructorArguments[0].Value;
+						if (guid == modGUID)
+						{
+							foundGuid = (string)customAttribute.ConstructorArguments[1].Value == patchingAssembly.ManifestModule.ModuleVersionId.ToString();
+							break;
+						}
+					}
+				}
+
+				if (foundGuid)
+				{
+					return true;
+				}
+			}
+
 			__result = Assembly.Load(File.ReadAllBytes(__0));
 			return false;
 		}
+		return true;
+	}
+
+	[HarmonyPriority(Priority.HigherThanNormal - 1)]
+	private static bool ReplaceAssemblyLoadWithCache(ref string __0, ref Assembly? __result)
+	{
+		if (modifyNextLoad && __result is null && !__0.StartsWith(dumpedAssembliesPath))
+		{
+			string dumpedAssemblyPath = dumpedAssembliesPath + Path.DirectorySeparatorChar + Path.GetFileName(__0);
+
+			AssemblyDefinition assembly = AssemblyDefinition.ReadAssembly(dumpedAssemblyPath, new ReaderParameters { AssemblyResolver = new MonoAssemblyResolver() });
+			AssemblyDefinition originalAssembly = AssemblyDefinition.ReadAssembly(__0, new ReaderParameters { AssemblyResolver = new MonoAssemblyResolver() });
+
+			foreach (CustomAttribute customAttribute in assembly.CustomAttributes)
+			{
+				TypeReference attributeType = customAttribute.Constructor.DeclaringType;
+				if (attributeType.Namespace == "APIManager" && attributeType.Name == "PatchedAttribute")
+				{
+					string guid = (string)customAttribute.ConstructorArguments[0].Value;
+					if (guid == "" ? (string)customAttribute.ConstructorArguments[1].Value != originalAssembly.MainModule.Mvid.ToString() : !BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey(guid))
+					{
+						originalAssembly.Dispose();
+						assembly.Dispose();
+
+						__result = Assembly.Load(File.ReadAllBytes(__0));
+						return false;
+					}
+				}
+			}
+
+			((Dictionary<string, string>)typeof(EnvVars).Assembly.GetType("BepInEx.Preloader.RuntimeFixes.UnityPatches").GetProperty("AssemblyLocations")!.GetValue(null))[assembly.FullName] = __0;
+
+			originalAssembly.Dispose();
+			assembly.Dispose();
+
+			__0 = dumpedAssemblyPath;
+		}
+        
+        modifyNextLoad = false;
 		return true;
 	}
 
@@ -74,7 +138,7 @@ public static class Patcher
 	{
 		private static MethodInfo TargetMethod() => AccessTools.DeclaredMethod(typeof(Assembly), nameof(Assembly.Load), new[] { typeof(byte[]) });
 		private static string? assemblyPath = null;
-		
+
 		private static bool Prefix(ref byte[] __0, ref Assembly? __result)
 		{
 			assemblyPath = null;
@@ -90,23 +154,43 @@ public static class Patcher
 
 					FixupModuleReferences(assembly.MainModule);
 
+					if (assembly.MainModule.GetType("APIManager", "PatchedAttribute") is not { } type)
+					{
+						type = new TypeDefinition("APIManager", "PatchedAttribute", TypeAttributes.NestedPrivate)
+						{
+							BaseType = assembly.MainModule.ImportReference(typeof(Attribute)),
+						};
+						MethodDefinition ctor = new(".ctor", MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, assembly.MainModule.TypeSystem.Void);
+						ctor.Parameters.Add(new ParameterDefinition(assembly.MainModule.TypeSystem.String));
+						ctor.Parameters.Add(new ParameterDefinition(assembly.MainModule.TypeSystem.String));
+						ctor.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
+						type.Methods.Add(ctor);
+						assembly.MainModule.Types.Add(type);
+
+						CustomAttribute ownAttr = new(ctor);
+						ownAttr.ConstructorArguments.Add(new CustomAttributeArgument(assembly.MainModule.TypeSystem.String, ""));
+						ownAttr.ConstructorArguments.Add(new CustomAttributeArgument(assembly.MainModule.TypeSystem.String, assembly.MainModule.Mvid.ToString()));
+						assembly.CustomAttributes.Add(ownAttr);
+					}
+
+					MethodDefinition attrCtor = type.Methods.First(m => m.Name == ".ctor");
+					CustomAttribute attr = new(attrCtor);
+					attr.ConstructorArguments.Add(new CustomAttributeArgument(assembly.MainModule.TypeSystem.String, modGUID));
+					attr.ConstructorArguments.Add(new CustomAttributeArgument(assembly.MainModule.TypeSystem.String, patchingAssembly.ManifestModule.ModuleVersionId.ToString()));
+					assembly.CustomAttributes.Add(attr);
+
 					using MemoryStream stream = new();
 					assembly.Write(stream);
 					__0 = stream.ToArray();
 
 					string dumpedAssemblyPath = dumpedAssembliesPath + Path.DirectorySeparatorChar + assembly.Name.Name + ".dll";
-					if (loadDumpedAssemblies.Value || dumpAssemblies.Value)
-					{
-						File.WriteAllBytes(dumpedAssemblyPath, __0);
-					}
+					Directory.CreateDirectory(dumpedAssembliesPath);
+					File.WriteAllBytes(dumpedAssemblyPath, __0);
 
-					if (loadDumpedAssemblies.Value)
-					{
-						// skip main assembly load code
-						assemblyPath = dumpedAssemblyPath;
-						__result = null;
-						return false;
-					}
+					// skip main assembly load code
+					assemblyPath = dumpedAssemblyPath;
+					__result = null;
+					return false;
 				}
 				catch (BadImageFormatException)
 				{
@@ -170,7 +254,7 @@ public static class Patcher
 			{
 				DispatchAttributes(parameter, referencingEntityName);
 
-				for (int i = 0; i < parameter.Constraints.Count; ++i)
+				for (int i = 0; i < parameter.Constraints.Count; i++)
 				{
 					parameter.Constraints[i] = VisitType(parameter.Constraints[i], referencingEntityName);
 				}
@@ -353,7 +437,7 @@ public static class Patcher
 
 		void DispatchGenericArguments(IGenericInstance genericInstance, string referencingEntityName)
 		{
-			for (int i = 0; i < genericInstance.GenericArguments.Count; ++i)
+			for (int i = 0; i < genericInstance.GenericArguments.Count; i++)
 			{
 				genericInstance.GenericArguments[i] = VisitType(genericInstance.GenericArguments[i], referencingEntityName);
 			}
@@ -544,6 +628,7 @@ public static class Patcher
 		harmony.Patch(AccessTools.DeclaredMethod(typeof(PluginInfo), nameof(PluginInfo.ToString)), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(Patcher), nameof(GrabPluginInfo))));
 		harmony.Patch(AccessTools.DeclaredMethod(typeof(Assembly), nameof(Assembly.LoadFile), new[] { typeof(string) }), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(Patcher), nameof(InterceptAssemblyLoadFile))));
 		harmony.Patch(AccessTools.DeclaredMethod(typeof(Assembly), nameof(Assembly.LoadFile), new[] { typeof(string) }), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(Patcher), nameof(CheckAssemblyLoadFile))));
+		harmony.Patch(AccessTools.DeclaredMethod(typeof(Assembly), nameof(Assembly.LoadFile), new[] { typeof(string) }), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(Patcher), nameof(ReplaceAssemblyLoadWithCache))));
 		new PatchClassProcessor(harmony, typeof(AssemblyLoadInterceptor), true).Patch();
 		if (typeof(AssemblyPatcher).Assembly.GetType("BepInEx.Preloader.RuntimeFixes.HarmonyInteropFix") is { } interopFix)
 		{

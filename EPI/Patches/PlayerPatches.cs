@@ -22,15 +22,133 @@ public class PlayerPatches
     [HarmonyPatch(typeof(Player), nameof(Player.OnSpawned))]
     static class InventoryGuiAwakePatch
     {
+        public const string Sentinel = "<|>";
+        public static Inventory QuickSlotInventory = new Inventory(nameof(QuickSlotInventory), null, 3, 1);
+        public static Inventory EquipmentSlotInventory = new Inventory(nameof(EquipmentSlotInventory), null, 5, 1);
+
         static void Postfix(Player __instance)
         {
-            if (Player.m_localPlayer == null)
+            if (Player.m_localPlayer == null || Player.m_localPlayer != __instance)
                 return;
-            var playerItems = Player.m_localPlayer.GetInventory().GetAllItems();
-            // Print them to the console
-            foreach (var item in playerItems)
+
+            if (!BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("randyknapp.mods.equipmentandquickslots", out var RandyEAQ))
             {
-                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug($"Item: {item.m_shared.m_name} - {item.m_stack}");
+                Load(__instance);
+            }
+        }
+
+        public static void Load(Player fromPlayer)
+        {
+            if (fromPlayer == null)
+            {
+                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogError("Tried to load an ExtendedPlayerData with a null player!");
+                return;
+            }
+
+            LoadValue(fromPlayer, "ExtendedPlayerData", out string init);
+
+            if (LoadValue(fromPlayer, "QuickSlotInventory", out string quickSlotData))
+            {
+                ZPackage pkg = new ZPackage(quickSlotData);
+                QuickSlotInventory.Load(pkg);
+                //fromPlayer.m_inventory.MoveAll(QuickSlotInventory);
+                foreach (ItemDrop.ItemData? item in QuickSlotInventory.GetAllItems())
+                {
+                    if (item.m_dropPrefab != null)
+                    {
+                        SpawnAndPickupItems(fromPlayer, item, item.m_dropPrefab.name, item.m_stack, false);
+                    }
+                }
+
+
+                // Clear QuickSlotInventory after moving items
+                QuickSlotInventory.RemoveAll();
+
+                // Update saved state of QuickSlotInventory
+                pkg = new ZPackage();
+                QuickSlotInventory.Save(pkg);
+                SaveValue(fromPlayer, "QuickSlotInventory", pkg.GetBase64());
+            }
+
+            if (LoadValue(fromPlayer, "EquipmentSlotInventory", out string equipSlotData))
+            {
+                ZPackage pkg = new ZPackage(equipSlotData);
+                EquipmentSlotInventory.Load(pkg);
+                fromPlayer.m_inventory.MoveAll(EquipmentSlotInventory);
+                foreach (ItemDrop.ItemData? item in EquipmentSlotInventory.GetAllItems())
+                {
+                    if (item.m_dropPrefab != null)
+                        SpawnAndPickupItems(fromPlayer, item, item.m_dropPrefab.name, item.m_stack);
+                }
+
+                // Clear EquipmentSlotInventory after moving items
+                EquipmentSlotInventory.RemoveAll();
+
+                // Update saved state of EquipmentSlotInventory
+                pkg = new ZPackage();
+                EquipmentSlotInventory.Save(pkg);
+                SaveValue(fromPlayer, "EquipmentSlotInventory", pkg.GetBase64());
+            }
+        }
+
+        private static bool LoadValue(Player player, string key, out string value)
+        {
+            if (player.m_customData.TryGetValue(key, out value))
+                return true;
+
+            var foundInKnownTexts = player.m_knownTexts.TryGetValue(key, out value);
+            if (!foundInKnownTexts)
+                key = Sentinel + key;
+            foundInKnownTexts = player.m_knownTexts.TryGetValue(key, out value);
+            if (foundInKnownTexts)
+                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning("Loaded data from knownTexts. Will be converted to customData on save.");
+
+            return foundInKnownTexts;
+        }
+
+        private static void SaveValue(Player player, string key, string value)
+        {
+            if (player.m_knownTexts.ContainsKey(key))
+            {
+                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning("Found KnownText for save data, converting to customData");
+                player.m_knownTexts.Remove(key);
+            }
+
+            if (player.m_customData.ContainsKey(key))
+                player.m_customData[key] = value;
+            else
+                player.m_customData.Add(key, value);
+        }
+
+        public static void SpawnAndPickupItems(Player player, ItemDrop.ItemData itemData, string prefabName, int count, bool useItem = true)
+        {
+            GameObject prefab = ZNetScene.instance.GetPrefab(prefabName);
+            if (prefab == null)
+            {
+                player.Message(MessageHud.MessageType.TopLeft, $"Missing object {prefabName}", 0, null);
+                return;
+            }
+
+            var transform = player.transform;
+            Vector3 spawnPosition = transform.position + transform.forward * 2f + Vector3.up + UnityEngine.Random.insideUnitSphere * 0.5f;
+            GameObject itemObj = UnityEngine.Object.Instantiate(prefab, spawnPosition, Quaternion.identity);
+
+            // Additional setup for the item (like setting quality, level, etc.)
+
+            ItemDrop itemDrop = itemObj.GetComponent<ItemDrop>();
+            if (itemDrop != null)
+            {
+                if (itemData.m_equipped)
+                {
+                    itemData.m_equipped = false;
+                }
+
+                itemDrop.m_itemData = itemData.Clone();
+                bool pickedUp = player.Pickup(itemObj, false, false);
+                if (pickedUp && useItem)
+                {
+                    player.UseItem(player.GetInventory(), itemDrop.m_itemData, false);
+                }
             }
         }
     }

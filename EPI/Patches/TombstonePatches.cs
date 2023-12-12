@@ -41,6 +41,7 @@ public class TombstonePatches
     private static class TemporarilyIncreaseCarryWeight
     {
         private static void Prefix() => Player.m_localPlayer.m_maxCarryWeight += 150f;
+        private static void Postfix() => Utilities.Utilities.InventoryFix();
         private static void Finalizer() => Player.m_localPlayer.m_maxCarryWeight -= 150f;
     }
 }

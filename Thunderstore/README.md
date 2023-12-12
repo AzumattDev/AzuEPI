@@ -9,9 +9,13 @@
 `This mod uses a file watcher. If the configuration file is not changed with BepInEx Configuration manager, but changed in the file directly on the server, upon file save, it will sync the changes to all clients.`
 
 What is the difference in this version of ExtendedPlayerInventory compared to others posted?
-    * This version comes with more compatibility in mind, as well as a few more features.
-        * One core feature is making it very very hard to lose your items, even when your inventory bugs out.
-        * It also comes with an API for mods/mod authors to add custom slots to the inventory. This is used by Jewelcrafting to add dedicated slots for the utility items.
+
+* This version comes with more compatibility in mind, as well as a few more features.
+* One core feature is making it very very hard to lose your items, even when your inventory bugs out.
+* It also comes with an API for mods/mod authors to add custom slots to the inventory. This is used by Jewelcrafting to
+  add dedicated slots for the utility items.
+* Seamless compatibility with Equipment And Quickslots, through automatic disabling of conflicting features. Also,
+  seamless migration from it. Please see the **_Migration from Equipment And Quickslots_** section for more information.
 
 ---
 
@@ -23,6 +27,38 @@ sure [BepInEx for Valheim](https://valheim.thunderstore.io/package/denikson/BepI
 correctly. Then, just make sure the dll ends up in your BepInEx/plugins folder.
 
 ![](https://i.imgur.com/vkGrXTg.png "Example Image")
+
+## Other mods adding slots via the API (Extreme example)
+
+![](https://i.imgur.com/t0upUgs.png)
+_**Mods that added slots in the image above:**_
+
+[Jewelcrafting](https://valheim.thunderstore.io/package/Smoothbrain/Jewelcrafting/),  [BowsBeforeHoes](https://valheim.thunderstore.io/package/Azumatt/BowsBeforeHoes/), [Backpacks](https://valheim.thunderstore.io/package/Smoothbrain/Backpacks/), [MagicPlugin](https://valheim.thunderstore.io/package/blacks7ar/MagicPlugin/),
+and Fenrir's Curse
+
+**_Mods that can be seen in the image above:_**
+
+[Jewelcrafting](https://valheim.thunderstore.io/package/Smoothbrain/Jewelcrafting/), [BowsBeforeHoes](https://valheim.thunderstore.io/package/Azumatt/BowsBeforeHoes/), [Backpacks](https://valheim.thunderstore.io/package/Smoothbrain/Backpacks/), [MagicPlugin](https://valheim.thunderstore.io/package/blacks7ar/MagicPlugin/),
+[Minimal_UI](https://valheim.thunderstore.io/package/Azumatt/Minimal_UI/), [RapidLoadouts](https://valheim.thunderstore.io/package/Azumatt/RapidLoadouts/),
+Fenrir's
+Curse,
+and of course, AzuEPI.
+
+## API Information/Wiki
+
+https://github.com/AzumattDev/AzuEPI/wiki/API-Home
+
+# Migration from Equipment And Quickslots
+
+* More information on migrating from Equipment And Quickslots:
+    * If you remove Equipment And Quickslots, you only need to boot the game up with this mod installed. Upon player
+      spawn (Don't freak out about being naked at the main menu!) your items will be migrated to the new system. You
+      will either drop the items and thus be found on the ground in front of you, or find them in your inventory (
+      Gear slots should auto equip!).
+    * `Once your player saves` your Equipment And Quickslot gear will be erased. Migration back to his mod might not
+      be as smooth. `You have been warned!`
+
+---
 
 `Feel free to reach out to me on discord if you need manual download assistance.`
 

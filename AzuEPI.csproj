@@ -10,7 +10,7 @@
         <AppDesignerFolder>Properties</AppDesignerFolder>
         <RootNamespace>AzuEPI</RootNamespace>
         <AssemblyName>AzuExtendedPlayerInventory</AssemblyName>
-        <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+        <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
         <FileAlignment>512</FileAlignment>
         <LangVersion>10</LangVersion>
         <Nullable>enable</Nullable>

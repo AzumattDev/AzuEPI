@@ -19,7 +19,7 @@ namespace AzuExtendedPlayerInventory;
 public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 {
     internal const string ModName = "AzuExtendedPlayerInventory";
-    internal const string ModVersion = "1.3.5";
+    internal const string ModVersion = "1.3.6";
     internal const string Author = "Azumatt";
     private const string ModGUID = Author + "." + ModName;
     private static string ConfigFileName = ModGUID + ".cfg";
@@ -200,9 +200,9 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         DisplayEquipmentRowSeparate.Value = Toggle.Off;
         AddEquipmentRow.Value = Toggle.Off;
         context.Config.Save();
-        AzuExtendedPlayerInventoryLogger.LogWarning(
-            $"{Environment.NewLine}RandyKnapp's Equipment and Quickslots mod has been detected. " +
-            $"This mod is not fully compatible with his. As a result, the Display Equipment Row Separate and Add Equipment Row options for this mod have been disabled and the configuration saved.");
+        AzuExtendedPlayerInventoryLogger.LogWarning($"{Environment.NewLine}RandyKnapp's Equipment and Quickslots mod has been detected. " +
+                                                    $"This mod is not fully compatible with his. " +
+                                                    $"As a result, the Display Equipment Row Separate and Add Equipment Row options for this mod have been disabled and the configuration saved.");
     }
 
     private static void CheckWeightBase()

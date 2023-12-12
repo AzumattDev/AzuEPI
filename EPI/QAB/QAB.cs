@@ -41,7 +41,7 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                     for (int i = 0; i < AzuExtendedPlayerInventoryPlugin.Hotkeys.Length; ++i)
                     {
                         int index = firstHotkeyIndex + i;
-                        if (inventory.GetItemAt(index % width, index / width) is {} item)
+                        if (inventory.GetItemAt(index % width, index / width) is { } item)
                         {
                             __instance.m_items.Add(item);
                         }
@@ -149,7 +149,7 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
 
             return false;
         }
-        
+
         private static void ClearElements(HotkeyBar __instance, bool destroy = true)
         {
             foreach (HotkeyBar.ElementData element in __instance.m_elements)
@@ -251,7 +251,7 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                             int width = quickSlotInventory.GetWidth();
                             int adjustedHeight = quickSlotInventory.GetHeight() - API.GetAddedRows(width);
                             int index = adjustedHeight * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length + hotkeyBar.m_selected;
-                            
+
                             var item = quickSlotInventory.GetItemAt(index % width, index / width);
                             if (item != null)
                             {
