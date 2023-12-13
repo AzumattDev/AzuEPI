@@ -1,6 +1,10 @@
-﻿using AzuExtendedPlayerInventory.EPI.Utilities;
+﻿using System;
+using System.Collections.Generic;
+using System.Reflection;
+using AzuExtendedPlayerInventory.EPI.Utilities;
 using HarmonyLib;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace AzuExtendedPlayerInventory.EPI.Patches;
 
@@ -25,6 +29,8 @@ public class PlayerPatches
         public const string Sentinel = "<|>";
         public static Inventory QuickSlotInventory = new Inventory(nameof(QuickSlotInventory), null, 3, 1);
         public static Inventory EquipmentSlotInventory = new Inventory(nameof(EquipmentSlotInventory), null, 5, 1);
+        private static readonly MethodInfo MemberwiseCloneMethod = AccessTools.DeclaredMethod(typeof(object), "MemberwiseClone");
+        public static T Clone<T>(T input) where T : notnull => (T)MemberwiseCloneMethod.Invoke(input, Array.Empty<object>());
 
         static void Postfix(Player __instance)
         {
@@ -51,13 +57,11 @@ public class PlayerPatches
             {
                 ZPackage pkg = new ZPackage(quickSlotData);
                 QuickSlotInventory.Load(pkg);
-                //fromPlayer.m_inventory.MoveAll(QuickSlotInventory);
+                fromPlayer.m_inventory.MoveAll(QuickSlotInventory);
                 foreach (ItemDrop.ItemData? item in QuickSlotInventory.GetAllItems())
                 {
-                    if (item.m_dropPrefab != null)
-                    {
-                        SpawnAndPickupItems(fromPlayer, item, item.m_dropPrefab.name, item.m_stack, false);
-                    }
+                    if (item.m_dropPrefab == null) continue;
+                    TryAddItemToInventory(fromPlayer, item, fromPlayer.m_inventory, false);
                 }
 
 
@@ -74,11 +78,11 @@ public class PlayerPatches
             {
                 ZPackage pkg = new ZPackage(equipSlotData);
                 EquipmentSlotInventory.Load(pkg);
-                fromPlayer.m_inventory.MoveAll(EquipmentSlotInventory);
+                //fromPlayer.m_inventory.MoveAll(EquipmentSlotInventory);
                 foreach (ItemDrop.ItemData? item in EquipmentSlotInventory.GetAllItems())
                 {
-                    if (item.m_dropPrefab != null)
-                        SpawnAndPickupItems(fromPlayer, item, item.m_dropPrefab.name, item.m_stack);
+                    if (item.m_dropPrefab == null) continue;
+                    TryAddItemToInventory(fromPlayer, item, fromPlayer.m_inventory);
                 }
 
                 // Clear EquipmentSlotInventory after moving items
@@ -120,31 +124,31 @@ public class PlayerPatches
                 player.m_customData.Add(key, value);
         }
 
-        public static void SpawnAndPickupItems(Player player, ItemDrop.ItemData itemData, string prefabName, int count, bool useItem = true)
+        public static void TryAddItemToInventory(Player player, ItemDrop.ItemData itemData, Inventory fromInventory, bool useItem = true)
         {
-            GameObject prefab = ZNetScene.instance.GetPrefab(prefabName);
-            if (prefab == null)
+            if (player.m_inventory.CanAddItem(itemData))
             {
-                player.Message(MessageHud.MessageType.TopLeft, $"Missing object {prefabName}", 0, null);
-                return;
-            }
+                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo($"Adding {Localization.instance.Localize(itemData.m_shared.m_name)} to inventory");
+                fromInventory.RemoveItem(itemData);
+                player.m_inventory.AddItem(itemData);
 
-            var transform = player.transform;
-            Vector3 spawnPosition = transform.position + transform.forward * 2f + Vector3.up + UnityEngine.Random.insideUnitSphere * 0.5f;
-            GameObject itemObj = UnityEngine.Object.Instantiate(prefab, spawnPosition, Quaternion.identity);
-
-            // Additional setup for the item (like setting quality, level, etc.)
-
-            ItemDrop itemDrop = itemObj.GetComponent<ItemDrop>();
-            if (itemDrop != null)
-            {
-                if (itemData.m_equipped)
+                if (useItem)
                 {
-                    itemData.m_equipped = false;
+                    player.UseItem(player.GetInventory(), itemData, false);
+                }
+            }
+            else
+            {
+                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo($"Dropping {Localization.instance.Localize(itemData.m_shared.m_name)}");
+                Transform transform = player.transform;
+                ItemDrop itemDrop = ItemDrop.DropItem(itemData, itemData.m_stack, transform.position + transform.forward + transform.up, transform.rotation);
+                if (itemDrop == null) return;
+                if (itemDrop.m_itemData.m_equipped)
+                {
+                    itemDrop.m_itemData.m_equipped = false;
                 }
 
-                itemDrop.m_itemData = itemData.Clone();
-                bool pickedUp = player.Pickup(itemObj, false, false);
+                bool pickedUp = player.Pickup(itemDrop.gameObject, false, false);
                 if (pickedUp && useItem)
                 {
                     player.UseItem(player.GetInventory(), itemDrop.m_itemData, false);
