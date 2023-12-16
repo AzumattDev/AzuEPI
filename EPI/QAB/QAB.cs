@@ -180,7 +180,15 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                 var player = Player.m_localPlayer;
                 if (ExtendedPlayerInventory.HotkeyBars == null)
                 {
-                    ExtendedPlayerInventory.HotkeyBars = __instance.transform.parent.GetComponentsInChildren<HotkeyBar>().ToList();
+                    try
+                    {
+                        ExtendedPlayerInventory.HotkeyBars = __instance.transform.parent.GetComponentsInChildren<HotkeyBar>().ToList();
+                    }
+                    catch
+                    {
+                        AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogError($"Failed to get hotkey bars from Hud. The parent transform may have changed. {__instance.transform.parent.name}");
+                        return;
+                    }
                 }
 
                 if (player != null)
@@ -198,8 +206,11 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
 
                 foreach (var hotkeyBar in ExtendedPlayerInventory.HotkeyBars)
                 {
-                    ValidateHotkeyBarSelection(hotkeyBar);
-                    hotkeyBar.UpdateIcons(player);
+                    if (hotkeyBar != null && hotkeyBar.m_elements != null)
+                    {
+                        ValidateHotkeyBarSelection(hotkeyBar);
+                        hotkeyBar.UpdateIcons(player);
+                    }
                 }
             }
 
@@ -272,7 +283,7 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
 
             private static void ValidateHotkeyBarSelection(HotkeyBar hotkeyBar)
             {
-                if (hotkeyBar.m_selected > hotkeyBar.m_elements.Count - 1)
+                if (hotkeyBar.m_elements != null && hotkeyBar.m_selected > hotkeyBar.m_elements.Count - 1)
                 {
                     hotkeyBar.m_selected = Mathf.Max(0, hotkeyBar.m_elements.Count - 1);
                 }
