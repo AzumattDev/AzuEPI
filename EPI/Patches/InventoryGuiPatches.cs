@@ -54,6 +54,7 @@ public class InventoryGuiPatches
                             item.m_gridPos = new Vector2i(num % width, num / width);
                             equippedItems[i] = item;
                         }
+
                         ++num;
                     }
                 }
@@ -68,7 +69,11 @@ public class InventoryGuiPatches
                         Vector2i vector2I = inventory.FindEmptySlot(true);
                         if (vector2I.x < 0 || vector2I.y < 0 || vector2I.y >= height - requiredRows)
                         {
-                            player.DropItem(inventory, t, t.m_stack);
+                            // Technically, the code will handle when it cannot be added before this, but in the case of low durability items
+                            // it will drop them simply because it cannot be added to the inventory and it's "outside" the normal inventory when it breaks.
+                            // Check if it's a valid item to drop based on manually checking inventory and durability here as well.
+                            if (t.m_durability > 0 && !inventory.CanAddItem(t)) 
+                                player.DropItem(inventory, t, t.m_stack);
                         }
                         else
                         {
@@ -130,7 +135,7 @@ public class InventoryGuiPatches
         public EquipmentSlot? EquipmentSlot => this as EquipmentSlot;
     }
 
-    internal class EquipmentSlot: Slot
+    internal class EquipmentSlot : Slot
     {
         public Func<Player, ItemDrop.ItemData?> Get = null!;
         public Func<ItemDrop.ItemData, bool> Valid = null!;

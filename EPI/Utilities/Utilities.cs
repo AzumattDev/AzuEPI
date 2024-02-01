@@ -84,6 +84,7 @@ public class Utilities
         }
         else
         {
+            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo($"Dropping {Localization.instance.Localize(itemData.m_shared.m_name)} in TryAddItemToInventory");
             Player.m_localPlayer.DropItem(inventory, itemData, itemData.m_stack);
         }
     }

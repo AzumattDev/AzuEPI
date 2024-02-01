@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using AzuExtendedPlayerInventory.EPI;
 using AzuExtendedPlayerInventory.EPI.Patches;
 using AzuExtendedPlayerInventory.EPI.QAB;
@@ -16,10 +17,11 @@ using UnityEngine;
 namespace AzuExtendedPlayerInventory;
 
 [BepInPlugin(ModGUID, ModName, ModVersion)]
+[BepInDependency("vapok.mods.adventurebackpacks", BepInDependency.DependencyFlags.SoftDependency)] // To make sure we load after Adventure Backpacks
 public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 {
     internal const string ModName = "AzuExtendedPlayerInventory";
-    internal const string ModVersion = "1.3.8";
+    internal const string ModVersion = "1.3.9";
     internal const string Author = "Azumatt";
     private const string ModGUID = Author + "." + ModName;
     private static string ConfigFileName = ModGUID + ".cfg";
@@ -41,7 +43,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     private void Awake()
     {
         APIManager.Patcher.Patch();
-        
+
         context = this;
         _serverConfigLocked = config("1 - General", "Lock Configuration", Toggle.On, "If on, the configuration is locked and can be changed by server admins only.");
         _ = ConfigSync.AddLockingConfigEntry(_serverConfigLocked);
@@ -58,52 +60,31 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         DisplayEquipmentRowSeparate.SettingChanged += (sender, args) => { CheckRandy(); };
 
-        HelmetText = config("2 - Extended Inventory", "Helmet Text", "Head",
-            "Text to show for helmet slot.", false);
-        ChestText = config("2 - Extended Inventory", "Chest Text", "Chest",
-            "Text to show for chest slot.", false);
-        LegsText = config("2 - Extended Inventory", "Legs Text", "Legs",
-            "Text to show for legs slot.", false);
-        BackText = config("2 - Extended Inventory", "Back Text", "Back",
-            "Text to show for back slot.", false);
-        UtilityText = config("2 - Extended Inventory", "Utility Text", "Utility",
-            "Text to show for utility slot.", false);
+        HelmetText = config("2 - Extended Inventory", "Helmet Text", "Head", "Text to show for helmet slot.", false);
+        ChestText = config("2 - Extended Inventory", "Chest Text", "Chest", "Text to show for chest slot.", false);
+        LegsText = config("2 - Extended Inventory", "Legs Text", "Legs", "Text to show for legs slot.", false);
+        BackText = config("2 - Extended Inventory", "Back Text", "Back", "Text to show for back slot.", false);
+        UtilityText = config("2 - Extended Inventory", "Utility Text", "Utility", "Text to show for utility slot.", false);
 
-        QuickAccessScale = config("2 - Extended Inventory", "QuickAccess Scale", 1f,
-            "Scale of quick access bar. ", false);
+        QuickAccessScale = config("2 - Extended Inventory", "QuickAccess Scale", 1f, "Scale of quick access bar. ", false);
 
-        HotKey1 = config("2 - Extended Inventory", "HotKey (Quickslot 1)", new KeyboardShortcut(KeyCode.Z),
-            "Hotkey 1 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", false);
-        HotKey2 = config("2 - Extended Inventory", "HotKey (Quickslot 2)", new KeyboardShortcut(KeyCode.X),
-            "Hotkey 2 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", false);
-        HotKey3 = config("2 - Extended Inventory", "HotKey (Quickslot 3)", new KeyboardShortcut(KeyCode.C),
-            "Hotkey 3 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", false);
+        HotKey1 = config("2 - Extended Inventory", "HotKey (Quickslot 1)", new KeyboardShortcut(KeyCode.Z), "Hotkey 1 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", false);
+        HotKey2 = config("2 - Extended Inventory", "HotKey (Quickslot 2)", new KeyboardShortcut(KeyCode.X), "Hotkey 2 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", false);
+        HotKey3 = config("2 - Extended Inventory", "HotKey (Quickslot 3)", new KeyboardShortcut(KeyCode.C), "Hotkey 3 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", false);
 
-        HotKey1Text = config("2 - Extended Inventory", "HotKey (Quickslot 1) Text", "",
-            "Hotkey 1 Display Text. Leave blank to use the hotkey itself.", false);
-        HotKey2Text = config("2 - Extended Inventory", "HotKey (Quickslot 2) Text", "",
-            "Hotkey 2 Display Text. Leave blank to use the hotkey itself.", false);
-        HotKey3Text = config("2 - Extended Inventory", "HotKey (Quickslot 3) Text", "",
-            "Hotkey 3 Display Text. Leave blank to use the hotkey itself.", false);
+        HotKey1Text = config("2 - Extended Inventory", "HotKey (Quickslot 1) Text", "", "Hotkey 1 Display Text. Leave blank to use the hotkey itself.", false);
+        HotKey2Text = config("2 - Extended Inventory", "HotKey (Quickslot 2) Text", "", "Hotkey 2 Display Text. Leave blank to use the hotkey itself.", false);
+        HotKey3Text = config("2 - Extended Inventory", "HotKey (Quickslot 3) Text", "", "Hotkey 3 Display Text. Leave blank to use the hotkey itself.", false);
 
-        QuickslotDragKeys = config("2 - Extended Inventory", "Drag Keys (Quickslot Drag)", new KeyboardShortcut(KeyCode.Mouse0, KeyCode.LeftControl),
-            "Key or keys to move quick slots. It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.",
-            false);
+        QuickslotDragKeys = config("2 - Extended Inventory", "Drag Keys (Quickslot Drag)", new KeyboardShortcut(KeyCode.Mouse0, KeyCode.LeftControl), "Key or keys to move quick slots. It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
 
-        QuickAccessX = config("2 - Extended Inventory", "Quickslot X", 9999f,
-            "Current X of Quick Slots", false);
-        QuickAccessY = config("2 - Extended Inventory", "Quickslot Y", 9999f,
-            "Current Y of Quick Slots", false);
+        QuickAccessX = config("2 - Extended Inventory", "Quickslot X", 9999f, "Current X of Quick Slots", false);
+        QuickAccessY = config("2 - Extended Inventory", "Quickslot Y", 9999f, "Current Y of Quick Slots", false);
 
         /* Moveable Chest Inventory */
-        MoveableChestInventory.ChestInventoryX = config("3 - Chest Inventory", "Chest Inventory X", -1f,
-            "Current X of chest", false);
-        MoveableChestInventory.ChestInventoryY = config("3 - Chest Inventory", "Chest Inventory Y", -1f,
-            "Current Y of chest", false);
-        MoveableChestInventory.ChestDragKeys = config("3 - Chest Inventory", "Drag Keys (Chest Drag)",
-            new KeyboardShortcut(KeyCode.Mouse0, KeyCode.LeftControl),
-            "Key or keys (to move the container). It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.",
-            false);
+        MoveableChestInventory.ChestInventoryX = config("3 - Chest Inventory", "Chest Inventory X", -1f, "Current X of chest", false);
+        MoveableChestInventory.ChestInventoryY = config("3 - Chest Inventory", "Chest Inventory Y", -1f, "Current Y of chest", false);
+        MoveableChestInventory.ChestDragKeys = config("3 - Chest Inventory", "Drag Keys (Chest Drag)", new KeyboardShortcut(KeyCode.Mouse0, KeyCode.LeftControl), "Key or keys (to move the container). It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
 
         Hotkeys = new[]
         {
@@ -120,7 +101,31 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         _harmony.PatchAll();
         SetupWatcher();
+        //API.AddSlot($"Utility 2", GetSecondUtility, IsUtilityItem);
+
+        /*
+        if (AdventureBackpacks.API.ABAPI.IsLoaded())
+        {
+            API.AddSlot("AdvBackpack", player => AdventureBackpacks.API.ABAPI.GetEquippedBackpack(player)?.ItemData ?? null, IsAdvBackpack);
+        }*/
     }
+
+    private ItemDrop.ItemData? GetSecondUtility(Humanoid player)
+    {
+        // Get the slot containing a utility item that isn't the player's utility item
+        ItemDrop.ItemData? utilitySlot = player.GetInventory().GetEquippedItems().FirstOrDefault(i => i != null && i.m_dropPrefab && i.m_dropPrefab.name == "Demister");
+
+        return utilitySlot;
+    }
+
+    private bool IsUtilityItem(ItemDrop.ItemData? item)
+    {
+        return item != null && item.m_dropPrefab && item.m_dropPrefab.name == "Demister";
+    }
+    /*private bool IsAdvBackpack(ItemDrop.ItemData? item)
+    {
+        return item != null && item.m_dropPrefab && AdventureBackpacks.API.ABAPI.IsBackpack(item);
+    }*/
 
     private void Start()
     {
@@ -146,6 +151,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         {
             InventoryGuiPatches.UpdateInventory_Patch.leftOffset += 10;
         }
+
         InventoryGuiPatches.UpdateInventory_Patch.ResizeSlots();
     }
 
@@ -210,7 +216,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         if (!BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("MadBuffoon.WeightBase", out var WbInfo)) return;
         WbInstalled = true;
     }
-    
+
     #region ConfigOptions
 
     private static ConfigEntry<Toggle> _serverConfigLocked = null!;

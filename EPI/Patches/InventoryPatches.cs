@@ -14,7 +14,6 @@ public class InventoryPatches
             bool addEquipmentRow = AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On;
             if (!addEquipmentRow || !Player.m_localPlayer || __instance != Player.m_localPlayer.GetInventory())
                 return true;
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug("FindEmptySlot");
             bool equippedWeaponUpgrade = InventoryGui.instance.m_craftTimer >=
                                          InventoryGui.instance.m_craftDuration &&
                                          InventoryGui.instance.m_craftUpgradeItem is { } item
@@ -100,8 +99,7 @@ public class InventoryPatches
             ItemDrop.ItemData item)
         {
             if (Player.m_localPlayer == null) return true;
-            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || !Player.m_localPlayer ||
-                __instance != Player.m_localPlayer.GetInventory())
+            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || !Player.m_localPlayer || __instance != Player.m_localPlayer.GetInventory())
                 return true;
             AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug("AddItem");
             if (!ExtendedPlayerInventory.IsEquipmentSlotFree(__instance, item, out int which))
