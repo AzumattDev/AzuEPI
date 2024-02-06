@@ -22,6 +22,26 @@ public class InventoryGuiPatches
         }
     }
 
+
+    [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnSelectedItem))]
+    static class InventoryGuiOnSelectedItemPatch
+    {
+        static void Prefix(InventoryGui __instance, InventoryGrid grid, ItemDrop.ItemData item, Vector2i pos, InventoryGrid.Modifier mod)
+        {
+            Player localPlayer = Player.m_localPlayer;
+            if (localPlayer.IsTeleporting())
+                return;
+            if (__instance.m_dragGo && localPlayer.IsItemEquiped(__instance.m_dragItem))
+            {
+                // If the item is one of the equipped armor pieces, unequip it
+                if (ExtendedPlayerInventory.IsAtEquipmentSlot(grid.m_inventory, __instance.m_dragItem, out _))
+                {
+                    localPlayer.UnequipItem(__instance.m_dragItem, false);
+                }
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Update))]
     private static class InventoryGuiUpdatePatch
     {
@@ -72,7 +92,7 @@ public class InventoryGuiPatches
                             // Technically, the code will handle when it cannot be added before this, but in the case of low durability items
                             // it will drop them simply because it cannot be added to the inventory and it's "outside" the normal inventory when it breaks.
                             // Check if it's a valid item to drop based on manually checking inventory and durability here as well.
-                            if (t.m_durability > 0 && !inventory.CanAddItem(t)) 
+                            if (t.m_durability > 0 && !inventory.CanAddItem(t))
                                 player.DropItem(inventory, t, t.m_stack);
                         }
                         else
