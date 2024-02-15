@@ -45,10 +45,7 @@ public class InventoryGuiPatches
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Update))]
     private static class InventoryGuiUpdatePatch
     {
-        private static void Postfix(
-            InventoryGui __instance,
-            InventoryGrid ___m_playerGrid,
-            Animator ___m_animator)
+        private static void Postfix(InventoryGui __instance, InventoryGrid ___m_playerGrid, Animator ___m_animator)
         {
             if (!Player.m_localPlayer)
                 return;
@@ -82,24 +79,31 @@ public class InventoryGuiPatches
                 for (int index = 0; index < allItems.Count; ++index)
                 {
                     ItemDrop.ItemData t = allItems[index];
-                    if (ExtendedPlayerInventory.IsAtEquipmentSlot(inventory, t, out int which) &&
-                        (which <= -1 || t != equippedItems[which]) &&
-                        (which <= -1 || UpdateInventory_Patch.slots[which] is not EquipmentSlot slot || !slot.Valid(t) || ExtendedPlayerInventory.equipItems[which] == t || !player.EquipItem(t, false)))
+                    try
                     {
-                        Vector2i vector2I = inventory.FindEmptySlot(true);
-                        if (vector2I.x < 0 || vector2I.y < 0 || vector2I.y >= height - requiredRows)
+                        if (ExtendedPlayerInventory.IsAtEquipmentSlot(inventory, t, out int which) &&
+                            (which <= -1 || t != equippedItems[which]) &&
+                            (which <= -1 || UpdateInventory_Patch.slots[which] is not EquipmentSlot slot || !slot.Valid(t) || ExtendedPlayerInventory.equipItems[which] == t || !player.EquipItem(t, false)))
                         {
-                            // Technically, the code will handle when it cannot be added before this, but in the case of low durability items
-                            // it will drop them simply because it cannot be added to the inventory and it's "outside" the normal inventory when it breaks.
-                            // Check if it's a valid item to drop based on manually checking inventory and durability here as well.
-                            if (t.m_durability > 0 && !inventory.CanAddItem(t))
-                                player.DropItem(inventory, t, t.m_stack);
+                            Vector2i vector2I = inventory.FindEmptySlot(true);
+                            if (vector2I.x < 0 || vector2I.y < 0 || vector2I.y >= height - requiredRows)
+                            {
+                                // Technically, the code will handle when it cannot be added before this, but in the case of low durability items
+                                // it will drop them simply because it cannot be added to the inventory and it's "outside" the normal inventory when it breaks.
+                                // Check if it's a valid item to drop based on manually checking inventory and durability here as well.
+                                if (t.m_durability > 0 && !inventory.CanAddItem(t))
+                                    player.DropItem(inventory, t, t.m_stack);
+                            }
+                            else
+                            {
+                                t.m_gridPos = vector2I;
+                                ___m_playerGrid.UpdateInventory(inventory, player, null);
+                            }
                         }
-                        else
-                        {
-                            t.m_gridPos = vector2I;
-                            ___m_playerGrid.UpdateInventory(inventory, player, null);
-                        }
+                    }
+                    catch
+                    {
+                        // I'm not proud of this one, but it prevents the occasional NRE spam when spawning in for the first time. (and you have weapons in the hidden left/right slots)
                     }
                 }
 
@@ -119,6 +123,7 @@ public class InventoryGuiPatches
                 return;
 
             var equipmentBkgTransform = __instance.m_player.Find(ExtendedPlayerInventory.AzuBkgName);
+            var dropallButton = __instance.m_player.Find(ExtendedPlayerInventory.DropAllButtonName);
 
             switch (AzuExtendedPlayerInventoryPlugin.DisplayEquipmentRowSeparate.Value)
             {
@@ -144,6 +149,48 @@ public class InventoryGuiPatches
                 case AzuExtendedPlayerInventoryPlugin.Toggle.Off when equipmentBkgTransform:
                     Object.DestroyImmediate(equipmentBkgTransform.gameObject);
                     break;
+            }
+
+            if (AzuExtendedPlayerInventoryPlugin.MakeDropAllButton.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On)
+            {
+                RectTransform dropAllButtonTransform = null;
+
+                // If the drop all button doesn't exist, create it
+                if (dropallButton == null)
+                {
+                    Transform dropAllButtonPrefab = __instance.m_takeAllButton.transform; // Assuming cloning the take all button
+                    dropAllButtonTransform = Object.Instantiate(dropAllButtonPrefab, __instance.m_player).GetComponent<RectTransform>();
+                    dropAllButtonTransform.name = ExtendedPlayerInventory.DropAllButtonName;
+                    // Set the button text
+                    dropAllButtonTransform.GetComponentInChildren<TMPro.TMP_Text>().text = "Drop All";
+                    // Dropall button
+                    var buttonComp = dropAllButtonTransform.GetComponent<Button>();
+                    // Remove all listeners from the take all button
+                    buttonComp.onClick.RemoveAllListeners();
+                    // Add the new listener to the drop all button
+                    buttonComp.onClick.AddListener(() => Console.instance.TryRunCommand("azuepi.dropall"));
+                }
+                else
+                {
+                    // If it already exists, get the RectTransform
+                    dropAllButtonTransform = dropallButton.GetComponent<RectTransform>();
+                }
+
+                // Position the drop all button in the top left
+                dropAllButtonTransform.SetAsFirstSibling();
+                dropAllButtonTransform.anchorMin = new Vector2(0.0f, 1.0f);
+                dropAllButtonTransform.anchorMax = new Vector2(0.0f, 1.0f);
+                dropAllButtonTransform.pivot = new Vector2(0.0f, 1.0f);
+                dropAllButtonTransform.anchoredPosition = AzuExtendedPlayerInventoryPlugin.DropAllButtonPosition.Value;
+                dropAllButtonTransform.sizeDelta = new Vector2(100, 30);
+            }
+            else
+            {
+                // If the configuration is set to Off, check if the drop all button exists and destroy it
+                if (dropallButton != null)
+                {
+                    Object.DestroyImmediate(dropallButton.gameObject);
+                }
             }
         }
     }
@@ -171,9 +218,11 @@ public class InventoryGuiPatches
         {
             new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.HelmetText.Value, Get = player => player.m_helmetItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Helmet, },
             new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.LegsText.Value, Get = player => player.m_legItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Legs, },
-            new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.UtilityText.Value, Get = player => player.m_utilityItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility, },
-            new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.ChestText.Value, Get = player => player.m_chestItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Chest, },
+            new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.RightHandText.Value, Get = player => player.RightItem ?? player.m_hiddenRightItem, Valid = item => (item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Tool || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.OneHandedWeapon || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.TwoHandedWeapon || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Torch || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Attach_Atgeir), },
             new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.BackText.Value, Get = player => player.m_shoulderItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder, },
+            new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.ChestText.Value, Get = player => player.m_chestItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Chest, },
+            new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.LeftHandText.Value, Get = player => player.LeftItem ?? player.m_hiddenLeftItem, Valid = item => (item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.TwoHandedWeaponLeft || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shield || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Torch || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Bow), },
+            new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.UtilityText.Value, Get = player => player.m_utilityItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility, },
         };
 
         static UpdateInventory_Patch()

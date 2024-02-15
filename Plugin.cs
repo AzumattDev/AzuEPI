@@ -7,6 +7,7 @@ using AzuExtendedPlayerInventory.EPI.QAB;
 using AzuExtendedPlayerInventory.EPI.Utilities;
 using AzuExtendedPlayerInventory.Moveable;
 using BepInEx;
+using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
@@ -18,10 +19,11 @@ namespace AzuExtendedPlayerInventory;
 
 [BepInPlugin(ModGUID, ModName, ModVersion)]
 [BepInDependency("vapok.mods.adventurebackpacks", BepInDependency.DependencyFlags.SoftDependency)] // To make sure we load after Adventure Backpacks
+[BepInDependency("ishid4.mods.betterarchery", BepInDependency.DependencyFlags.SoftDependency)] // To make sure we load after Better Archery
 public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 {
     internal const string ModName = "AzuExtendedPlayerInventory";
-    internal const string ModVersion = "1.3.10";
+    internal const string ModVersion = "1.3.11";
     internal const string Author = "Azumatt";
     private const string ModGUID = Author + "." + ModName;
     private static string ConfigFileName = ModGUID + ".cfg";
@@ -65,6 +67,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         LegsText = config("2 - Extended Inventory", "Legs Text", "Legs", "Text to show for legs slot.", false);
         BackText = config("2 - Extended Inventory", "Back Text", "Back", "Text to show for back slot.", false);
         UtilityText = config("2 - Extended Inventory", "Utility Text", "Utility", "Text to show for utility slot.", false);
+        RightHandText = config("2 - Extended Inventory", "Right Hand Text", "R Hand", "Text to show for right hand slot.", false);
+        LeftHandText = config("2 - Extended Inventory", "Left Hand Text", "L Hand", "Text to show for left hand slot.", false);
 
         QuickAccessScale = config("2 - Extended Inventory", "QuickAccess Scale", 1f, "Scale of quick access bar. ", false);
 
@@ -85,6 +89,10 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         MoveableChestInventory.ChestInventoryX = config("3 - Chest Inventory", "Chest Inventory X", -1f, "Current X of chest", false);
         MoveableChestInventory.ChestInventoryY = config("3 - Chest Inventory", "Chest Inventory Y", -1f, "Current Y of chest", false);
         MoveableChestInventory.ChestDragKeys = config("3 - Chest Inventory", "Drag Keys (Chest Drag)", new KeyboardShortcut(KeyCode.Mouse0, KeyCode.LeftControl), "Key or keys (to move the container). It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
+        
+        
+        MakeDropAllButton = config("3 - Button", "Drop All Button", Toggle.Off, "Key or keys (to move the container). It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
+        DropAllButtonPosition = config("3 - Button", "Button Position", new Vector2(880.00f, 10.00f), "Button position relative to the inventory background's top left corner", false);
 
         Hotkeys = new[]
         {
@@ -99,37 +107,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             HotKey3Text,
         };
 
-        _harmony.PatchAll();
-        SetupWatcher();
-        //API.AddSlot($"Utility 2", GetSecondUtility, IsUtilityItem);
-
-        /*
-        if (AdventureBackpacks.API.ABAPI.IsLoaded())
-        {
-            API.AddSlot("AdvBackpack", player => AdventureBackpacks.API.ABAPI.GetEquippedBackpack(player)?.ItemData ?? null, IsAdvBackpack);
-        }*/
-    }
-
-    private ItemDrop.ItemData? GetSecondUtility(Humanoid player)
-    {
-        // Get the slot containing a utility item that isn't the player's utility item
-        ItemDrop.ItemData? utilitySlot = player.GetInventory().GetEquippedItems().FirstOrDefault(i => i != null && i.m_dropPrefab && i.m_dropPrefab.name == "Demister");
-
-        return utilitySlot;
-    }
-
-    private bool IsUtilityItem(ItemDrop.ItemData? item)
-    {
-        return item != null && item.m_dropPrefab && item.m_dropPrefab.name == "Demister";
-    }
-    /*private bool IsAdvBackpack(ItemDrop.ItemData? item)
-    {
-        return item != null && item.m_dropPrefab && AdventureBackpacks.API.ABAPI.IsBackpack(item);
-    }*/
-
-    private void Start()
-    {
-        if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("ishid4.mods.betterarchery", out var BetterArchery))
+        if (Chainloader.PluginInfos.TryGetValue("ishid4.mods.betterarchery", out var BetterArchery))
         {
             // Force disable the configuration for BetterArchery. Turn off the quiver
             var tryGetEntry = BetterArchery.Instance.Config.TryGetEntry<bool>("Quiver", "Enable Quiver", out var entry);
@@ -144,6 +122,49 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             }
         }
 
+        _harmony.PatchAll();
+        SetupWatcher();
+
+        /*if (Chainloader.PluginInfos.TryGetValue("vapok.mods.adventurebackpacks", out PluginInfo? advBackpacks) && AdvBackpackSlot.Value == Toggle.On)
+        {
+            if (advBackpacks != null)
+            {
+                API.AddSlot("AdvPack", GetBackpackItem, IsBackpackItem);
+            }
+        }*/
+    }
+
+    private ItemDrop.ItemData? GetBackpackItem(Humanoid player)
+    {
+        ItemDrop.ItemData? utilitySlot = player.GetInventory().GetEquippedItems().FirstOrDefault(i => i != null && i.m_dropPrefab
+                                                                                                                && i.m_dropPrefab.name
+                                                                                                                    is "BackpackMeadows"
+                                                                                                                    or "BackpackBlackForest"
+                                                                                                                    or "BackpackSwamp"
+                                                                                                                    or "BackpackMountains"
+                                                                                                                    or "BackpackPlains"
+                                                                                                                    or "BackpackMistlands"
+                                                                                                                    or "CapeSilverBackpack"
+                                                                                                                    or "CapeIronBackpack");
+
+        return utilitySlot;
+    }
+
+    private bool IsBackpackItem(ItemDrop.ItemData? item)
+    {
+        return item != null && item.m_dropPrefab && item.m_dropPrefab.name
+            is "BackpackMeadows"
+            or "BackpackBlackForest"
+            or "BackpackSwamp"
+            or "BackpackMountains"
+            or "BackpackPlains"
+            or "BackpackMistlands"
+            or "CapeSilverBackpack"
+            or "CapeIronBackpack";
+    }
+
+    private void Start()
+    {
         CheckRandy();
         CheckWeightBase();
 
@@ -224,12 +245,16 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<Toggle> AddEquipmentRow = null!;
     public static ConfigEntry<Toggle> DisplayEquipmentRowSeparate = null!;
     public static ConfigEntry<Toggle> ShowQuickSlots = null!;
+    public static ConfigEntry<Toggle> MakeDropAllButton = null!;
+    public static ConfigEntry<Vector2> DropAllButtonPosition = null!;
     public static ConfigEntry<int> ExtraRows = null!;
     public static ConfigEntry<string> HelmetText = null!;
     public static ConfigEntry<string> ChestText = null!;
     public static ConfigEntry<string> LegsText = null!;
     public static ConfigEntry<string> BackText = null!;
     public static ConfigEntry<string> UtilityText = null!;
+    public static ConfigEntry<string> RightHandText = null!;
+    public static ConfigEntry<string> LeftHandText = null!;
     public static ConfigEntry<float> QuickAccessScale = null!;
 
     public static ConfigEntry<KeyboardShortcut> HotKey1 = null!;

@@ -25,6 +25,7 @@ namespace AzuExtendedPlayerInventory.EPI
         internal static readonly int Visible = Animator.StringToHash("visible");
         public const string QABName = "QuickAccessBar";
         public const string AzuBkgName = "AzuEquipmentBkg";
+        public const string DropAllButtonName = "AzuDropAllButton";
         public const string MinimalUiguid = "Azumatt.MinimalUI";
 
         public static void SetSlotText(string value, Transform transform, bool center = true)
@@ -46,20 +47,14 @@ namespace AzuExtendedPlayerInventory.EPI
             transform1.GetComponent<RectTransform>().anchoredPosition = new Vector2(30f, -10f);
         }
 
-        internal static bool IsEquipmentSlotFree(
-            Inventory inventory,
-            ItemDrop.ItemData item,
-            out int which)
+        internal static bool IsEquipmentSlotFree(Inventory inventory, ItemDrop.ItemData item, out int which)
         {
             var addedRows = API.GetAddedRows(inventory.GetWidth());
             which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is InventoryGuiPatches.EquipmentSlot slot && slot.Valid(item));
             return which >= 0 && inventory.GetItemAt(which, inventory.GetHeight() - addedRows) == null;
         }
 
-        internal static bool IsAtEquipmentSlot(
-            Inventory inventory,
-            ItemDrop.ItemData item,
-            out int which)
+        internal static bool IsAtEquipmentSlot(Inventory inventory, ItemDrop.ItemData item, out int which)
         {
             var inventoryRows = inventory.GetHeight() - API.GetAddedRows(inventory.GetWidth());
             if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || item.m_gridPos.y < inventoryRows || (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x >= InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length)
@@ -78,11 +73,9 @@ namespace AzuExtendedPlayerInventory.EPI
             if (!(transform.Find(QABName)?.GetComponent<RectTransform>() != null))
                 return;
             if (AzuExtendedPlayerInventoryPlugin.QuickAccessX.Value == 9999.0)
-                AzuExtendedPlayerInventoryPlugin.QuickAccessX.Value =
-                    transform.Find("healthpanel").GetComponent<RectTransform>().anchoredPosition.x - 32f;
+                AzuExtendedPlayerInventoryPlugin.QuickAccessX.Value = transform.Find("healthpanel").GetComponent<RectTransform>().anchoredPosition.x - 32f;
             if (AzuExtendedPlayerInventoryPlugin.QuickAccessY.Value == 9999.0)
-                AzuExtendedPlayerInventoryPlugin.QuickAccessY.Value =
-                    transform.Find("healthpanel").GetComponent<RectTransform>().anchoredPosition.y - 870f;
+                AzuExtendedPlayerInventoryPlugin.QuickAccessY.Value = transform.Find("healthpanel").GetComponent<RectTransform>().anchoredPosition.y - 870f;
             transform.Find(QABName).GetComponent<RectTransform>().anchoredPosition = new Vector2(AzuExtendedPlayerInventoryPlugin.QuickAccessX.Value, AzuExtendedPlayerInventoryPlugin.QuickAccessY.Value);
             transform.Find(QABName).GetComponent<RectTransform>().localScale = new Vector3(AzuExtendedPlayerInventoryPlugin.QuickAccessScale.Value, AzuExtendedPlayerInventoryPlugin.QuickAccessScale.Value, 1f);
         }
