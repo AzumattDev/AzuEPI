@@ -214,7 +214,7 @@ public class InventoryGuiPatches
         internal static float leftOffset = 643f;
         internal const float tileSize = 70f;
 
-        internal static readonly List<Slot> slots = new()
+        /*internal static readonly List<Slot> slots = new()
         {
             new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.HelmetText.Value, Get = player => player.m_helmetItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Helmet, },
             new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.LegsText.Value, Get = player => player.m_legItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Legs, },
@@ -223,6 +223,14 @@ public class InventoryGuiPatches
             new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.ChestText.Value, Get = player => player.m_chestItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Chest, },
             new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.LeftHandText.Value, Get = player => player.LeftItem ?? player.m_hiddenLeftItem, Valid = item => (item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.TwoHandedWeaponLeft || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shield || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Torch || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Bow), },
             new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.UtilityText.Value, Get = player => player.m_utilityItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility, },
+        };*/
+        internal static readonly List<Slot> slots = new()
+        {
+            new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.HelmetText.Value, Get = player => player.m_helmetItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Helmet, },
+            new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.LegsText.Value, Get = player => player.m_legItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Legs, },
+            new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.UtilityText.Value, Get = player => player.m_utilityItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility, },
+            new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.ChestText.Value, Get = player => player.m_chestItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Chest, },
+            new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.BackText.Value, Get = player => player.m_shoulderItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder, },
         };
 
         static UpdateInventory_Patch()

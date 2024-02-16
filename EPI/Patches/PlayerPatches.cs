@@ -221,6 +221,7 @@ public class PlayerPatches
                     }
                 }
             }
+
             return true;
         }
     }
