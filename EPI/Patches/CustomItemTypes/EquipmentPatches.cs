@@ -72,10 +72,10 @@ static class HumanoidEquipItemPatch
     private static void EquipSecondUtility(Humanoid __instance, ItemDrop.ItemData? item, bool triggerEquipEffects)
     {
         // If the user already has a backpack equipped, unequip it
-        List<ItemDrop.ItemData> backpacks = __instance.m_inventory.GetEquippedItems().Where(ItemDropItemDataPatch.IsSecondUtility).ToList();
-        foreach (ItemDrop.ItemData backpack in backpacks)
+        List<ItemDrop.ItemData> secondUtils = __instance.m_inventory.GetEquippedItems().Where(ItemDropItemDataPatch.IsSecondUtility).ToList();
+        foreach (ItemDrop.ItemData secondUtil in secondUtils)
         {
-            __instance.UnequipItem(backpack, triggerEquipEffects);
+            __instance.UnequipItem(secondUtil, triggerEquipEffects);
         }
 
         if (item != null && ItemDropItemDataPatch.IsSecondUtility(item) && !item.m_equipped)
@@ -99,12 +99,12 @@ static class HumanoidUnequipItemPatch
         if (!__instance.IsPlayer()) return;
         if (__instance.m_inventory != null)
         {
-            List<ItemDrop.ItemData> backpacks = __instance.m_inventory.GetEquippedItems().Where(ItemDropItemDataPatch.IsSecondUtility).ToList();
-            foreach (ItemDrop.ItemData backpack in backpacks)
+            List<ItemDrop.ItemData> secondUtils = __instance.m_inventory.GetEquippedItems().Where(ItemDropItemDataPatch.IsSecondUtility).ToList();
+            foreach (ItemDrop.ItemData secondUtil in secondUtils)
             {
-                if (item != null && item == backpack)
+                if (item != null && item == secondUtil)
                 {
-                    backpack.m_equipped = false;
+                    secondUtil.m_equipped = false;
                 }
             }
         }
