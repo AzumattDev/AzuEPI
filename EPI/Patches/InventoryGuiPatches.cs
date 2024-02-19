@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using AzuEPI.EPI.Patches;
 using BepInEx;
 using HarmonyLib;
 using UnityEngine;
@@ -229,6 +230,15 @@ public class InventoryGuiPatches
             new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.HelmetText.Value, Get = player => player.m_helmetItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Helmet, },
             new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.LegsText.Value, Get = player => player.m_legItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Legs, },
             new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.UtilityText.Value, Get = player => player.m_utilityItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility, },
+            //new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.UtilityText.Value + " 2", Get = player => player.GetInventory().GetEquippedItems().FirstOrDefault(x => x != player.m_utilityItem), Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility && item != Player.m_localPlayer.m_utilityItem, },
+            new EquipmentSlot
+            {
+                Name = AzuExtendedPlayerInventoryPlugin.UtilityText.Value + " 2",
+                Get = player => player.GetInventory().GetEquippedItems().FirstOrDefault(AzuEPI.EPI.Patches.CustomItemTypes.ItemDropItemDataPatch.IsSecondUtility),
+                Valid = AzuEPI.EPI.Patches.CustomItemTypes.ItemDropItemDataPatch.IsSecondUtility,
+            },
+
+
             new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.ChestText.Value, Get = player => player.m_chestItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Chest, },
             new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.BackText.Value, Get = player => player.m_shoulderItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder, },
         };

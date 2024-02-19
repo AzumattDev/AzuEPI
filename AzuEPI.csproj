@@ -167,6 +167,10 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="API\API.cs"/>
+        <Compile Include="EPI\Patches\CustomItemTypes\CustomItemTypeManager.cs" />
+        <Compile Include="EPI\Patches\CustomItemTypes\EnumPatch.cs" />
+        <Compile Include="EPI\Patches\CustomItemTypes\EquipmentPatches.cs" />
+        <Compile Include="EPI\Patches\CustomItemTypes\ItemTypeData.cs" />
         <Compile Include="EPI\Utilities\TerminalCommands.cs" />
         <None Include="App.config"/>
     </ItemGroup>

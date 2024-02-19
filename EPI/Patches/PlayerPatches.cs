@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using AzuEPI.EPI.Patches;
+using AzuEPI.EPI.Patches.CustomItemTypes;
 using AzuExtendedPlayerInventory.EPI.Utilities;
 using HarmonyLib;
 using UnityEngine;
