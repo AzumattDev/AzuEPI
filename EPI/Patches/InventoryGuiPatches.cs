@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using AzuEPI.EPI.Patches;
+using AzuEPI.EPI.Patches.CustomItemTypes;
 using BepInEx;
 using HarmonyLib;
 using UnityEngine;
@@ -234,8 +235,8 @@ public class InventoryGuiPatches
             new EquipmentSlot
             {
                 Name = AzuExtendedPlayerInventoryPlugin.UtilityText.Value + " 2",
-                Get = player => player.GetInventory().GetEquippedItems().FirstOrDefault(AzuEPI.EPI.Patches.CustomItemTypes.ItemDropItemDataPatch.IsSecondUtility),
-                Valid = AzuEPI.EPI.Patches.CustomItemTypes.ItemDropItemDataPatch.IsSecondUtility,
+                Get = player => player.GetInventory().GetEquippedItems().FirstOrDefault(CustomItemTypeManager.IsSecondUtility),
+                Valid = CustomItemTypeManager.IsSecondUtility,
             },
 
 

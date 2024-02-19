@@ -61,4 +61,19 @@ public static class CustomItemTypeManager
 
         return false;
     }
+    
+    internal static bool IsSecondUtility(ItemDrop.ItemData? item)
+    {
+        // Ensure item is not null and m_dropPrefab is not null.
+        if (item == null || item.m_dropPrefab == null) return false;
+
+        // Get the ItemDrop component and check for the custom item type "Utility2".
+        ItemDrop? itemDropComponent = item.m_dropPrefab.GetComponent<ItemDrop>();
+        if (itemDropComponent == null) return false; // Ensure the component exists.
+
+        bool isCustomTypeUtility2 = CustomItemTypeManager.CheckCustomItemType(itemDropComponent, "Utility2");
+
+        // Check if the prefab's name matches and if it's of the custom type "Utility2".
+        return isCustomTypeUtility2 && item.m_dropPrefab.name is "BeltStrength" or "Wishbone";
+    }
 }

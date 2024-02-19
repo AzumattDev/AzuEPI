@@ -10,23 +10,21 @@ static class ZNetSceneAwakePatch
     [HarmonyPriority(Priority.Last)]
     static void Postfix(ZNetScene __instance)
     {
-        var itemDrop = __instance.GetPrefab("BeltStrength").GetComponent<ItemDrop>();
-        if (itemDrop != null)
+        if (__instance.GetPrefab("BeltStrength").TryGetComponent<ItemDrop>(out ItemDrop? beltDrop))
         {
-            DoTheThing(itemDrop);
+            DoTheThing(beltDrop);
         }
 
-        var wishbone = __instance.GetPrefab("Wishbone").GetComponent<ItemDrop>();
-        if (wishbone != null)
+        if (__instance.GetPrefab("Wishbone").TryGetComponent<ItemDrop>(out ItemDrop? wishboneDrop))
         {
-            DoTheThing(wishbone);
+            DoTheThing(wishboneDrop);
         }
     }
 
     private static void DoTheThing(ItemDrop itemDrop)
     {
         // Directly setting the custom item type based on the utility name.
-        if (CustomItemTypeManager.TryGetItemType("Utility2", out var itemType))
+        if (CustomItemTypeManager.TryGetItemType("Utility2", out ItemDrop.ItemData.ItemType itemType))
         {
             itemDrop.m_itemData.m_shared.m_itemType = itemType;
         }
@@ -38,22 +36,7 @@ internal static class ItemDropItemDataPatch
 {
     static void Postfix(ref ItemDrop.ItemData? __instance, ref bool __result)
     {
-        __result = __result || IsSecondUtility(__instance);
-    }
-
-    internal static bool IsSecondUtility(ItemDrop.ItemData? item)
-    {
-        // Ensure item is not null and m_dropPrefab is not null.
-        if (item == null || item.m_dropPrefab == null) return false;
-
-        // Get the ItemDrop component and check for the custom item type "Utility2".
-        var itemDropComponent = item.m_dropPrefab.GetComponent<ItemDrop>();
-        if (itemDropComponent == null) return false; // Ensure the component exists.
-
-        bool isCustomTypeUtility2 = CustomItemTypeManager.CheckCustomItemType(itemDropComponent, "Utility2");
-
-        // Check if the prefab's name matches and if it's of the custom type "Utility2".
-        return isCustomTypeUtility2 && item.m_dropPrefab.name is "BeltStrength" or "Wishbone";
+        __result = __result || CustomItemTypeManager.IsSecondUtility(__instance);
     }
 }
 
@@ -63,7 +46,7 @@ static class HumanoidEquipItemPatch
     static void Postfix(ref Humanoid __instance, ref bool __result, ItemDrop.ItemData? item, bool triggerEquipEffects = true)
     {
         if (!__instance.IsPlayer()) return;
-        if (ItemDropItemDataPatch.IsSecondUtility(item))
+        if (CustomItemTypeManager.IsSecondUtility(item))
         {
             EquipSecondUtility(__instance, item, triggerEquipEffects);
         }
@@ -71,14 +54,14 @@ static class HumanoidEquipItemPatch
 
     private static void EquipSecondUtility(Humanoid __instance, ItemDrop.ItemData? item, bool triggerEquipEffects)
     {
-        // If the user already has a backpack equipped, unequip it
-        List<ItemDrop.ItemData> secondUtils = __instance.m_inventory.GetEquippedItems().Where(ItemDropItemDataPatch.IsSecondUtility).ToList();
+        // If the user already has a second utility equipped, unequip it
+        List<ItemDrop.ItemData> secondUtils = __instance.m_inventory.GetEquippedItems().Where(CustomItemTypeManager.IsSecondUtility).ToList();
         foreach (ItemDrop.ItemData secondUtil in secondUtils)
         {
             __instance.UnequipItem(secondUtil, triggerEquipEffects);
         }
 
-        if (item != null && ItemDropItemDataPatch.IsSecondUtility(item) && !item.m_equipped)
+        if (item != null && CustomItemTypeManager.IsSecondUtility(item) && !item.m_equipped)
         {
             item.m_equipped = true;
             __instance.m_visEquipment.AttachArmor(item.m_dropPrefab.name.GetStableHashCode()); // Adds the armor to the player, but hard to remove after. Even when prefixing unequip with a check for backpacks, it still doesn't remove armor the way I want.
@@ -99,7 +82,7 @@ static class HumanoidUnequipItemPatch
         if (!__instance.IsPlayer()) return;
         if (__instance.m_inventory != null)
         {
-            List<ItemDrop.ItemData> secondUtils = __instance.m_inventory.GetEquippedItems().Where(ItemDropItemDataPatch.IsSecondUtility).ToList();
+            List<ItemDrop.ItemData> secondUtils = __instance.m_inventory.GetEquippedItems().Where(CustomItemTypeManager.IsSecondUtility).ToList();
             foreach (ItemDrop.ItemData secondUtil in secondUtils)
             {
                 if (item != null && item == secondUtil)
@@ -120,7 +103,7 @@ static class HumaPatch
     static void Postfix(ref Humanoid __instance, ref bool __result, ItemDrop.ItemData? item)
     {
         if (!__instance.IsPlayer()) return;
-        if (!ItemDropItemDataPatch.IsSecondUtility(item))
+        if (!CustomItemTypeManager.IsSecondUtility(item))
             return;
         __result = __instance.m_inventory.GetEquippedItems().Contains(item);
     }
@@ -134,7 +117,7 @@ static class HumanoidUnequipAllItemsPatch
         if (!__instance.IsPlayer()) return;
         foreach (ItemDrop.ItemData equippedItem in __instance.m_inventory.GetEquippedItems())
         {
-            if (ItemDropItemDataPatch.IsSecondUtility(equippedItem))
+            if (CustomItemTypeManager.IsSecondUtility(equippedItem))
             {
                 __instance.UnequipItem(equippedItem, false);
             }
@@ -151,10 +134,10 @@ static class UpdateEquipmentStatusEffects_Patch
         {
             if (!__instance.IsPlayer())
                 return;
-            var list = __instance.GetInventory().GetAllItems().FindAll(i => !i.m_equipped && i.m_dropPrefab && ItemDropItemDataPatch.IsSecondUtility(i) && i.m_shared.m_equipStatusEffect);
-            var list2 = __instance.GetInventory().GetEquippedItems().FindAll(i => i.m_dropPrefab && ItemDropItemDataPatch.IsSecondUtility(i) && i.m_shared.m_equipStatusEffect);
+            List<ItemDrop.ItemData> list = __instance.GetInventory().GetAllItems().FindAll(i => !i.m_equipped && i.m_dropPrefab && CustomItemTypeManager.IsSecondUtility(i) && i.m_shared.m_equipStatusEffect);
+            List<ItemDrop.ItemData> list2 = __instance.GetInventory().GetEquippedItems().FindAll(i => i.m_dropPrefab && CustomItemTypeManager.IsSecondUtility(i) && i.m_shared.m_equipStatusEffect);
 
-            foreach (var item in list)
+            foreach (ItemDrop.ItemData? item in list)
             {
                 foreach (StatusEffect statusEffect in ___m_seman.m_statusEffects)
                 {
@@ -177,9 +160,9 @@ static class UpdateEquipmentStatusEffects_Patch
         {
             if (!__instance.IsPlayer())
                 return;
-            var list = __instance.GetInventory().GetEquippedItems().FindAll(i => i.m_dropPrefab && ItemDropItemDataPatch.IsSecondUtility(i) && i.m_shared.m_equipStatusEffect);
+            List<ItemDrop.ItemData> list = __instance.GetInventory().GetEquippedItems().FindAll(i => i.m_dropPrefab && CustomItemTypeManager.IsSecondUtility(i) && i.m_shared.m_equipStatusEffect);
 
-            foreach (var item in list)
+            foreach (ItemDrop.ItemData? item in list)
             {
                 ___m_seman.AddStatusEffect(item.m_shared.m_equipStatusEffect, false);
             }
