@@ -38,10 +38,19 @@ public class TombstonePatches
     }
 
     [HarmonyPatch(typeof(TombStone), nameof(TombStone.EasyFitInInventory))]
-    private static class TemporarilyIncreaseCarryWeight
+    private static class TemporarilyIncreaseCarryCapacity
     {
-        private static void Prefix() => Player.m_localPlayer.m_maxCarryWeight += 150f;
+        private static void Prefix(out int __state)
+        {
+            __state = (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On ? API.GetAddedRows(Player.m_localPlayer.m_inventory.m_width) : 0);
+            Player.m_localPlayer.m_maxCarryWeight += 150f;
+            Player.m_localPlayer.m_inventory.m_height += __state;
+        }
         private static void Postfix() => Utilities.Utilities.InventoryFix();
-        private static void Finalizer() => Player.m_localPlayer.m_maxCarryWeight -= 150f;
+        private static void Finalizer(int __state)
+        {
+            Player.m_localPlayer.m_maxCarryWeight -= 150f;
+            Player.m_localPlayer.m_inventory.m_height -= __state;
+        }
     }
 }
