@@ -83,7 +83,7 @@ public class InventoryGuiPatches
                     {
                         if (ExtendedPlayerInventory.IsAtEquipmentSlot(inventory, t, out int which) &&
                             (which <= -1 || t != equippedItems[which]) &&
-                            (which <= -1 || UpdateInventory_Patch.slots[which] is not EquipmentSlot slot || !slot.Valid(t) || ExtendedPlayerInventory.equipItems[which] == t || !player.EquipItem(t, false)))
+                            (which <= -1 || UpdateInventory_Patch.slots[which] is not EquipmentSlot slot || !slot.Valid(t) || ExtendedPlayerInventory.equipItems[which] == t ||(AzuExtendedPlayerInventoryPlugin.AutoEquip.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On && !player.EquipItem(t, false))))
                         {
                             Vector2i vector2I = inventory.FindEmptySlot(true);
                             if (vector2I.x < 0 || vector2I.y < 0 || vector2I.y >= height - requiredRows)
