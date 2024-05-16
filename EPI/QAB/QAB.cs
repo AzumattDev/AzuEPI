@@ -229,7 +229,7 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                 var player = Player.m_localPlayer;
                 var canUseItem = hotkeyBar.m_selected >= 0 && player != null && !InventoryGui.IsVisible()
                                  && !Menu.IsVisible() && !GameCamera.InFreeFly();
-                if (canUseItem)
+                if (canUseItem && player != null)
                 {
                     if (ZInput.GetButtonDown("JoyDPadLeft"))
                     {
@@ -337,7 +337,7 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
         {
             public static void Postfix(Hud __instance)
             {
-                ExtendedPlayerInventory.HotkeyBars = null;
+                ExtendedPlayerInventory.HotkeyBars = null!;
                 ExtendedPlayerInventory.SelectedHotkeyBarIndex = -1;
             }
         }

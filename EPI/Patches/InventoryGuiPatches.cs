@@ -153,7 +153,7 @@ public class InventoryGuiPatches
 
             if (AzuExtendedPlayerInventoryPlugin.MakeDropAllButton.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On)
             {
-                RectTransform dropAllButtonTransform = null;
+                RectTransform dropAllButtonTransform = null!;
 
                 // If the drop all button doesn't exist, create it
                 if (dropallButton == null)

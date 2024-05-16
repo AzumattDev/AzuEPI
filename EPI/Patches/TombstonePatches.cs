@@ -1,4 +1,6 @@
-﻿using HarmonyLib;
+﻿using System;
+using HarmonyLib;
+using UnityEngine;
 
 namespace AzuExtendedPlayerInventory.EPI.Patches;
 
@@ -25,7 +27,7 @@ public class TombstonePatches
             AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug("TombStone_Interact");
             int num = 4 + AzuExtendedPlayerInventoryPlugin.ExtraRows.Value + (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On ? API.GetAddedRows(__instance.GetComponent<Container>().m_width) : 0);
             __instance.GetComponent<Container>().m_height = num;
-            string base64String = ___m_container.m_nview.GetZDO().GetString("items");
+            string base64String = ___m_container.m_nview.GetZDO().GetString(ZDOVars.s_items);
             if (string.IsNullOrEmpty(base64String))
                 return;
             ZPackage pkg = new(base64String);
@@ -43,5 +45,26 @@ public class TombstonePatches
         private static void Prefix() => Player.m_localPlayer.m_maxCarryWeight += 150f;
         private static void Postfix() => Utilities.Utilities.InventoryFix();
         private static void Finalizer() => Player.m_localPlayer.m_maxCarryWeight -= 150f;
+    }
+    
+    [HarmonyPatch(typeof(Player), nameof(Player.FixedUpdate))]
+    public static class PlayerFixedUpdatePatch
+    {
+        private static bool Prefix(Player __instance)
+        {
+            if (__instance == null || !__instance.m_nview.IsOwner())
+                return true;
+            if (__instance != Player.m_localPlayer) return true;
+            try
+            {
+                __instance.AutoPickup(Time.fixedDeltaTime); // This should fix the issue that Ashlands creates with the FloatingTerrainDummy
+                                                            // and tombstone destruction. Patch above exposes an issue
+            }
+            catch (Exception ex)
+            {
+                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning($"Exception in AutoPickup: {ex.Message}\n{ex.StackTrace}");
+            }
+            return true;
+        }
     }
 }

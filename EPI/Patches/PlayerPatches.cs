@@ -148,6 +148,7 @@ public class PlayerPatches
                     itemDrop.m_itemData.m_equipped = false;
                 }
 
+
                 bool pickedUp = player.Pickup(itemDrop.gameObject, false, false);
                 if (pickedUp && useItem)
                 {

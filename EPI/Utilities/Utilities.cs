@@ -41,10 +41,12 @@ public class Utilities
 
     public static void InventoryFix()
     {
+        if (Player.m_localPlayer == null)
+            return;
         Inventory? playerInventory = Player.m_localPlayer.GetInventory();
         List<Vector2i> curPositions = new();
         List<ItemDrop.ItemData> itemsToFix = new();
-
+        if (playerInventory == null) return;
         if (playerInventory?.m_inventory != null)
             for (int index = 0; index < playerInventory.m_inventory.Count; index++)
             {
@@ -70,7 +72,7 @@ public class Utilities
 
         foreach (ItemDrop.ItemData brokenItem in itemsToFix)
         {
-            TryAddItemToInventory(playerInventory, brokenItem);
+            TryAddItemToInventory(playerInventory!, brokenItem);
         }
     }
 

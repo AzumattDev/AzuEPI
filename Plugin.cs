@@ -23,7 +23,7 @@ namespace AzuExtendedPlayerInventory;
 public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 {
     internal const string ModName = "AzuExtendedPlayerInventory";
-    internal const string ModVersion = "1.4.0";
+    internal const string ModVersion = "1.4.1";
     internal const string Author = "Azumatt";
     private const string ModGUID = Author + "." + ModName;
     private static string ConfigFileName = ModGUID + ".cfg";
@@ -270,7 +270,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<KeyboardShortcut> ModKeyTwo = null!;
 
     public static ConfigEntry<KeyboardShortcut>[] Hotkeys = null!;
-    public static ConfigEntry<string>[] HotkeyTexts;
+    public static ConfigEntry<string>[] HotkeyTexts = null!;
 
     public static ConfigEntry<float> QuickAccessX = null!;
     public static ConfigEntry<float> QuickAccessY = null!;

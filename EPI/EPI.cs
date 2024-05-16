@@ -10,18 +10,18 @@ namespace AzuExtendedPlayerInventory.EPI
 {
     internal class ExtendedPlayerInventory
     {
-        public static List<HotkeyBar> HotkeyBars { get; set; }
+        public static List<HotkeyBar> HotkeyBars { get; set; } = null!;
 
         public static int SelectedHotkeyBarIndex { get; set; } = -1;
 
-        private static GameObject _elementPrefab;
+        private static GameObject _elementPrefab = null!;
 
         public static Vector2 LastSlotPosition { get; set; }
 
         internal static ItemDrop.ItemData?[] equipItems = new ItemDrop.ItemData[5];
 
         public static Vector3 lastMousePos;
-        public static string currentlyDragging;
+        public static string currentlyDragging = null!;
         internal static readonly int Visible = Animator.StringToHash("visible");
         public const string QABName = "QuickAccessBar";
         public const string AzuBkgName = "AzuEquipmentBkg";
