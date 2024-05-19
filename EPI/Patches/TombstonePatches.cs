@@ -42,8 +42,11 @@ public class TombstonePatches
     [HarmonyPatch(typeof(TombStone), nameof(TombStone.EasyFitInInventory))]
     private static class TemporarilyIncreaseCarryWeight
     {
+        static bool playerCurrentPickupState = false;
         private static void Prefix(out int __state)
         {
+            playerCurrentPickupState = Player.m_enableAutoPickup;
+            Player.m_enableAutoPickup = false; // Temporarily disable auto pickup to prevent NRE
             __state = (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On ? API.GetAddedRows(Player.m_localPlayer.m_inventory.m_width) : 0);
             Player.m_localPlayer.m_maxCarryWeight += 150f;
             Player.m_localPlayer.m_inventory.m_height += __state;
@@ -51,29 +54,9 @@ public class TombstonePatches
         private static void Postfix() => Utilities.Utilities.InventoryFix();
         private static void Finalizer(int __state)
         {
+            Player.m_enableAutoPickup = playerCurrentPickupState;
             Player.m_localPlayer.m_maxCarryWeight -= 150f;
             Player.m_localPlayer.m_inventory.m_height -= __state;
-        }
-    }
-    
-    [HarmonyPatch(typeof(Player), nameof(Player.FixedUpdate))]
-    public static class PlayerFixedUpdatePatch
-    {
-        private static bool Prefix(Player __instance)
-        {
-            if (__instance == null || !__instance.m_nview.IsOwner())
-                return true;
-            if (__instance != Player.m_localPlayer) return true;
-            try
-            {
-                __instance.AutoPickup(Time.fixedDeltaTime); // This should fix the issue that Ashlands creates with the FloatingTerrainDummy
-                                                            // and tombstone destruction. Patch above exposes an issue
-            }
-            catch (Exception ex)
-            {
-                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning($"Exception in AutoPickup: {ex.Message}\n{ex.StackTrace}");
-            }
-            return true;
         }
     }
 }
