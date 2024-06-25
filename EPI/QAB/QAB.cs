@@ -1,24 +1,32 @@
-﻿using System.Linq;
-using AzuExtendedPlayerInventory.EPI.Patches;
-using BepInEx;
-using HarmonyLib;
+﻿using AzuExtendedPlayerInventory.EPI.Patches;
 using TMPro;
-using UnityEngine;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
 namespace AzuExtendedPlayerInventory.EPI.QAB
 {
+    [HarmonyPatch]
+    internal static class SettingsMenuClosedRecentlyPatchs
+    {
+        [HarmonyPatch(typeof(Settings), nameof(Settings.OnDestroy))]
+        [HarmonyPatch(typeof(Settings), nameof(Settings.OnOk))]
+        [HarmonyPatch(typeof(Settings), nameof(Settings.OnBack))]
+        private static void Postfix(Settings __instance)
+        {
+            QuickAccessBar.SettingsMenuClosedRecently = true;
+        }
+    }
+
+
     [HarmonyPatch(typeof(HotkeyBar), nameof(HotkeyBar.UpdateIcons))]
     internal static class QuickAccessBar
     {
+        internal static bool SettingsMenuClosedRecently;
+
         [HarmonyPriority(Priority.Last)]
         internal static bool Prefix(HotkeyBar __instance, Player player)
         {
-            if (__instance.name != ExtendedPlayerInventory.QABName)
-            {
-                return true;
-            }
+            if (__instance.name != ExtendedPlayerInventory.QABName) return true;
 
             if (AzuExtendedPlayerInventoryPlugin.ShowQuickSlots.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off)
             {
@@ -32,6 +40,12 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                 }
                 else
                 {
+                    if (SettingsMenuClosedRecently)
+                    {
+                        ClearElements(__instance);
+                        SettingsMenuClosedRecently = false;
+                    }
+
                     __instance.m_items.Clear();
                     Inventory inventory = player.GetInventory();
                     int width = inventory.GetWidth();
@@ -41,10 +55,7 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                     for (int i = 0; i < AzuExtendedPlayerInventoryPlugin.Hotkeys.Length; ++i)
                     {
                         int index = firstHotkeyIndex + i;
-                        if (inventory.GetItemAt(index % width, index / width) is { } item)
-                        {
-                            __instance.m_items.Add(item);
-                        }
+                        if (inventory.GetItemAt(index % width, index / width) is { } item) __instance.m_items.Add(item);
                     }
 
 
@@ -60,15 +71,13 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                         {
                             HotkeyBar.ElementData elementData = new()
                             {
-                                m_go = Object.Instantiate(__instance.m_elementPrefab, __instance.transform),
+                                m_go = Object.Instantiate(__instance.m_elementPrefab, __instance.transform)
                             };
                             elementData.m_go.transform.localPosition = new Vector3(index * __instance.m_elementSpace, 0.0f, 0.0f);
                             if (index < AzuExtendedPlayerInventoryPlugin.HotkeyTexts.Length && index < AzuExtendedPlayerInventoryPlugin.Hotkeys.Length)
-                            {
                                 ExtendedPlayerInventory.SetSlotText(AzuExtendedPlayerInventoryPlugin.HotkeyTexts[index].Value.IsNullOrWhiteSpace()
                                     ? AzuExtendedPlayerInventoryPlugin.Hotkeys[index].Value.ToString()
                                     : AzuExtendedPlayerInventoryPlugin.HotkeyTexts[index].Value, elementData.m_go.transform, false);
-                            }
 
                             elementData.m_icon = elementData.m_go.transform.transform.Find("icon").GetComponent<Image>();
                             elementData.m_durability = elementData.m_go.transform.Find("durability").GetComponent<GuiBar>();
@@ -92,15 +101,14 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                             element.m_used = true;
                             element.m_icon.gameObject.SetActive(true);
                             element.m_icon.sprite = itemData.GetIcon();
-                            element.m_durability.gameObject.SetActive(itemData.m_shared.m_useDurability);
-                            if (itemData.m_shared.m_useDurability)
+                            bool hideDurabilityFlag = itemData.m_shared.m_useDurability && itemData.m_durability < (double)itemData.GetMaxDurability();
+                            element.m_durability.gameObject.SetActive(hideDurabilityFlag);
+                            if (itemData.m_shared.m_useDurability && hideDurabilityFlag)
                             {
                                 if (itemData.m_durability <= 0.0)
                                 {
                                     element.m_durability.SetValue(1f);
-                                    element.m_durability.SetColor(Mathf.Sin(Time.time * 10f) > 0.0
-                                        ? Color.red
-                                        : new Color(0.0f, 0.0f, 0.0f, 0.0f));
+                                    element.m_durability.SetColor(Mathf.Sin(Time.time * 10f) > 0.0 ? Color.red : new Color(0.0f, 0.0f, 0.0f, 0.0f));
                                 }
                                 else
                                 {
@@ -116,9 +124,7 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                                 element.m_amount.gameObject.SetActive(true);
                                 if (element.m_stackText != itemData.m_stack)
                                 {
-                                    element.m_amount.text = AzuExtendedPlayerInventoryPlugin.WbInstalled
-                                        ? Utilities.Utilities.FormatNumberSimpleNoDecimal((float)itemData.m_stack)
-                                        : $"{itemData.m_stack} / {itemData.m_shared.m_maxStackSize}";
+                                    element.m_amount.text = AzuExtendedPlayerInventoryPlugin.WbInstalled ? Utilities.Utilities.FormatNumberSimpleNoDecimal(itemData.m_stack) : $"{itemData.m_stack} / {itemData.m_shared.m_maxStackSize}";
 
                                     element.m_stackText = itemData.m_stack;
                                 }
@@ -153,9 +159,10 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
         private static void ClearElements(HotkeyBar __instance, bool destroy = true)
         {
             foreach (HotkeyBar.ElementData element in __instance.m_elements)
-            {
                 if (destroy)
+                {
                     Object.Destroy(element.m_go);
+                }
                 else
                 {
                     element.m_icon.gameObject.SetActive(false);
@@ -164,7 +171,6 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                     element.m_queued.SetActive(false);
                     element.m_amount.gameObject.SetActive(false);
                 }
-            }
 
             __instance.m_elements.Clear();
         }
@@ -179,7 +185,6 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
             {
                 var player = Player.m_localPlayer;
                 if (ExtendedPlayerInventory.HotkeyBars == null)
-                {
                     try
                     {
                         ExtendedPlayerInventory.HotkeyBars = __instance.transform.parent.GetComponentsInChildren<HotkeyBar>().ToList();
@@ -189,7 +194,6 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                         AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogError($"Failed to get hotkey bars from Hud. The parent transform may have changed. {__instance.transform.parent.name}");
                         return;
                     }
-                }
 
                 if (player != null)
                 {
@@ -205,53 +209,42 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                 }
 
                 foreach (var hotkeyBar in ExtendedPlayerInventory.HotkeyBars)
-                {
                     if (hotkeyBar != null && hotkeyBar.m_elements != null)
                     {
                         ValidateHotkeyBarSelection(hotkeyBar);
                         hotkeyBar.UpdateIcons(player);
                     }
-                }
             }
 
-            private static bool IsValidHotkeyBarIndex() => ExtendedPlayerInventory.SelectedHotkeyBarIndex >= 0 && ExtendedPlayerInventory.SelectedHotkeyBarIndex < ExtendedPlayerInventory.HotkeyBars.Count;
+            private static bool IsValidHotkeyBarIndex()
+            {
+                return ExtendedPlayerInventory.SelectedHotkeyBarIndex >= 0 && ExtendedPlayerInventory.SelectedHotkeyBarIndex < ExtendedPlayerInventory.HotkeyBars.Count;
+            }
 
             private static void UpdateInitialHotkeyBarInput()
             {
-                if (ZInput.GetButtonDown("JoyDPadLeft") || ZInput.GetButtonDown("JoyDPadRight"))
-                {
-                    SelectHotkeyBar(0, false);
-                }
+                if (ZInput.GetButtonDown("JoyDPadLeft") || ZInput.GetButtonDown("JoyDPadRight")) SelectHotkeyBar(0, false);
             }
 
             public static void UpdateHotkeyBarInput(HotkeyBar hotkeyBar)
             {
                 var player = Player.m_localPlayer;
-                var canUseItem = hotkeyBar.m_selected >= 0 && player != null && !InventoryGui.IsVisible()
-                                 && !Menu.IsVisible() && !GameCamera.InFreeFly();
+                var canUseItem = hotkeyBar.m_selected >= 0 && player != null && !InventoryGui.IsVisible() && !Menu.IsVisible() && !GameCamera.InFreeFly() && !Minimap.IsOpen() && !Hud.IsPieceSelectionVisible() && !StoreGui.IsVisible() && !Console.IsVisible() && !Chat.instance.HasFocus() && !PlayerCustomizaton.IsBarberGuiVisible() && !Hud.InRadial();
                 if (canUseItem && player != null)
                 {
                     if (ZInput.GetButtonDown("JoyDPadLeft"))
                     {
                         if (hotkeyBar.m_selected == 0 && AzuExtendedPlayerInventoryPlugin.ShowQuickSlots.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On)
-                        {
                             GotoHotkeyBar(ExtendedPlayerInventory.SelectedHotkeyBarIndex - 1);
-                        }
                         else
-                        {
                             hotkeyBar.m_selected = Mathf.Max(0, hotkeyBar.m_selected - 1);
-                        }
                     }
                     else if (ZInput.GetButtonDown("JoyDPadRight"))
                     {
                         if (hotkeyBar.m_selected == hotkeyBar.m_elements.Count - 1 && AzuExtendedPlayerInventoryPlugin.ShowQuickSlots.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On)
-                        {
                             GotoHotkeyBar(ExtendedPlayerInventory.SelectedHotkeyBarIndex + 1);
-                        }
                         else
-                        {
                             hotkeyBar.m_selected = Mathf.Min(hotkeyBar.m_elements.Count - 1, hotkeyBar.m_selected + 1);
-                        }
                     }
 
                     if (ZInput.GetButtonDown("JoyDPadUp"))
@@ -283,18 +276,12 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
 
             private static void ValidateHotkeyBarSelection(HotkeyBar hotkeyBar)
             {
-                if (hotkeyBar.m_elements != null && hotkeyBar.m_selected > hotkeyBar.m_elements.Count - 1)
-                {
-                    hotkeyBar.m_selected = Mathf.Max(0, hotkeyBar.m_elements.Count - 1);
-                }
+                if (hotkeyBar.m_elements != null && hotkeyBar.m_selected > hotkeyBar.m_elements.Count - 1) hotkeyBar.m_selected = Mathf.Max(0, hotkeyBar.m_elements.Count - 1);
             }
 
             public static void GotoHotkeyBar(int newIndex)
             {
-                if (newIndex < 0 || newIndex >= ExtendedPlayerInventory.HotkeyBars.Count)
-                {
-                    return;
-                }
+                if (newIndex < 0 || newIndex >= ExtendedPlayerInventory.HotkeyBars.Count) return;
 
                 var fromRight = newIndex < ExtendedPlayerInventory.SelectedHotkeyBarIndex;
                 SelectHotkeyBar(newIndex, fromRight);
@@ -302,33 +289,23 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
 
             public static void SelectHotkeyBar(int index, bool fromRight)
             {
-                if (index < 0 || index >= ExtendedPlayerInventory.HotkeyBars.Count)
-                {
-                    return;
-                }
+                if (index < 0 || index >= ExtendedPlayerInventory.HotkeyBars.Count) return;
 
                 ExtendedPlayerInventory.SelectedHotkeyBarIndex = index;
                 for (var i = 0; i < ExtendedPlayerInventory.HotkeyBars.Count; ++i)
                 {
                     var hotkeyBar = ExtendedPlayerInventory.HotkeyBars[i];
                     if (i == index)
-                    {
                         hotkeyBar.m_selected = fromRight ? hotkeyBar.m_elements.Count - 1 : 0;
-                    }
                     else
-                    {
                         hotkeyBar.m_selected = -1;
-                    }
                 }
             }
 
             public static void DeselectHotkeyBar()
             {
                 ExtendedPlayerInventory.SelectedHotkeyBarIndex = -1;
-                foreach (var hotkeyBar in ExtendedPlayerInventory.HotkeyBars)
-                {
-                    hotkeyBar.m_selected = -1;
-                }
+                foreach (var hotkeyBar in ExtendedPlayerInventory.HotkeyBars) hotkeyBar.m_selected = -1;
             }
         }
 

@@ -1,8 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using BepInEx.Configuration;
-using HarmonyLib;
-using UnityEngine;
 using UnityEngine.EventSystems;
 
 namespace AzuExtendedPlayerInventory.Moveable
@@ -42,7 +39,7 @@ namespace AzuExtendedPlayerInventory.Moveable
 
                 PointerEventData eventData = new(EventSystem.current)
                 {
-                    position = lastMousePos,
+                    position = lastMousePos
                 };
 
                 if (!RectTransformUtility.RectangleContainsScreenPoint(__instance.m_containerGrid.m_gridRoot, Input.mousePosition) && ChestDragKeys.Value.IsPressed())

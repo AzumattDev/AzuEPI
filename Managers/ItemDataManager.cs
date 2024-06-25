@@ -477,7 +477,11 @@ public class ItemInfo : IEnumerable<ItemData>
 			string fullKey = dataKey(compoundKey);
 			if (itemData.m_customData.ContainsKey(fullKey))
 			{
-				itemData.Data().constructDataObj(fullKey, compoundKey);
+				ItemInfo info = itemData.Data();
+				if (!info.data.ContainsKey(compoundKey))
+				{
+					info.constructDataObj(fullKey, compoundKey);
+				}
 			}
 		}
 	}
@@ -529,7 +533,15 @@ public class ItemInfo : IEnumerable<ItemData>
 
 	private static ItemDrop.ItemData? checkingForStackableItemData;
 
-	private static void SaveCheckingForStackableItemData(ItemDrop.ItemData item) => checkingForStackableItemData = item;
+	private static void SaveCheckingForStackableItemData(ItemDrop.ItemData item)
+	{
+		if (item == awakeningItem)
+		{
+			awakeningItem = null;
+		}
+		checkingForStackableItemData = item;
+	}
+
 	private static void ResetCheckingForStackableItemData() => checkingForStackableItemData = null;
 
 	private static Dictionary<string, string>? newValuesOnStackable;
@@ -789,6 +801,7 @@ public class ItemInfo : IEnumerable<ItemData>
 
 		harmony.Patch(AccessTools.DeclaredMethod(typeof(Inventory), nameof(Inventory.CanAddItem), new[] { typeof(ItemDrop.ItemData), typeof(int) }), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(SaveCheckingForStackableItemData))), finalizer: new HarmonyMethod(typeof(ItemInfo), nameof(ResetCheckingForStackableItemData)));
 		harmony.Patch(AccessTools.DeclaredMethod(typeof(Inventory), nameof(Inventory.AddItem), new[] { typeof(ItemDrop.ItemData) }), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(SaveCheckingForStackableItemData))), finalizer: new HarmonyMethod(typeof(ItemInfo), nameof(ResetCheckingForStackableItemData)));
+		harmony.Patch(AccessTools.DeclaredMethod(typeof(Inventory), nameof(Inventory.AddItem), new[] { typeof(ItemDrop.ItemData), typeof(Vector2i) }), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(SaveCheckingForStackableItemData))), finalizer: new HarmonyMethod(typeof(ItemInfo), nameof(ResetCheckingForStackableItemData)));
 
 		harmony.Patch(AccessTools.DeclaredMethod(typeof(Inventory), nameof(Inventory.FindFreeStackSpace)), transpiler: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(CheckStackableInFindFreeStackMethods))));
 		harmony.Patch(AccessTools.DeclaredMethod(typeof(Inventory), nameof(Inventory.FindFreeStackItem)), transpiler: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(CheckStackableInFindFreeStackMethods))), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(ResetNewValuesOnStackable))), postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(ApplyNewValuesOnStackable))));

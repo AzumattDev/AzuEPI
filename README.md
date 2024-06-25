@@ -12,7 +12,7 @@ What is the difference in this version of ExtendedPlayerInventory compared to ot
 
 * This version comes with more compatibility in mind, as well as a few more features.
 * One core feature is making it very very hard to lose your items, even when your inventory bugs out.
-* It also comes with an API for mods/mod authors to add custom slots to the inventory. This is used by Jewelcrafting to
+* It also comes with an API for mods/mod authors to add custom slots to the inventory. This is used by Jewelcrafting, BowsBeforeHoes, Backpacks, MagicPlugin, FenrirsCurse and Wizardry to
   add dedicated slots for the utility items.
 * Seamless compatibility with Equipment And Quickslots, through automatic disabling of conflicting features. Also,
   seamless migration from it. Please see the **_Migration from Equipment And Quickslots_** section for more information.

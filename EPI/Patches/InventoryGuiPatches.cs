@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using BepInEx;
-using HarmonyLib;
-using UnityEngine;
+﻿using System.Collections.Generic;
+using BepInEx.Bootstrap;
+using TMPro;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
@@ -12,9 +9,9 @@ namespace AzuExtendedPlayerInventory.EPI.Patches;
 public class InventoryGuiPatches
 {
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Show))]
-    static class InventoryGuiShowPatch
+    private static class InventoryGuiShowPatch
     {
-        static void Postfix(InventoryGui __instance)
+        private static void Postfix(InventoryGui __instance)
         {
             if (Player.m_localPlayer == null)
                 return;
@@ -24,9 +21,9 @@ public class InventoryGuiPatches
 
 
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnSelectedItem))]
-    static class InventoryGuiOnSelectedItemPatch
+    private static class InventoryGuiOnSelectedItemPatch
     {
-        static void Prefix(InventoryGui __instance, InventoryGrid grid, ItemDrop.ItemData item, Vector2i pos, InventoryGrid.Modifier mod)
+        private static void Prefix(InventoryGui __instance, InventoryGrid grid, ItemDrop.ItemData item, Vector2i pos, InventoryGrid.Modifier mod)
         {
             Player localPlayer = Player.m_localPlayer;
             if (localPlayer.IsTeleporting())
@@ -63,7 +60,7 @@ public class InventoryGuiPatches
                 ItemDrop.ItemData?[] equippedItems = new ItemDrop.ItemData[UpdateInventory_Patch.slots.Count];
                 for (int i = 0; i < UpdateInventory_Patch.slots.Count; ++i)
                 {
-                    Slot slot = UpdateInventory_Patch.slots[i];
+                    Slot? slot = UpdateInventory_Patch.slots[i];
                     if (slot is EquipmentSlot equipmentSlot)
                     {
                         if (equipmentSlot.Get(player) is { } item)
@@ -83,7 +80,7 @@ public class InventoryGuiPatches
                     {
                         if (ExtendedPlayerInventory.IsAtEquipmentSlot(inventory, t, out int which) &&
                             (which <= -1 || t != equippedItems[which]) &&
-                            (which <= -1 || UpdateInventory_Patch.slots[which] is not EquipmentSlot slot || !slot.Valid(t) || ExtendedPlayerInventory.equipItems[which] == t ||(AzuExtendedPlayerInventoryPlugin.AutoEquip.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On && !player.EquipItem(t, false))))
+                            (which <= -1 || UpdateInventory_Patch.slots[which] is not EquipmentSlot slot || !slot.Valid(t) || ExtendedPlayerInventory.equipItems[which] == t || (AzuExtendedPlayerInventoryPlugin.AutoEquip.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On && !player.EquipItem(t, false))))
                         {
                             Vector2i vector2I = inventory.FindEmptySlot(true);
                             if (vector2I.x < 0 || vector2I.y < 0 || vector2I.y >= height - requiredRows)
@@ -114,10 +111,7 @@ public class InventoryGuiPatches
                 return;
 
             RectTransform bkgRect = __instance.m_player.Find("Bkg").GetComponent<RectTransform>();
-            bkgRect.anchorMin = new Vector2(0.0f,
-                (AzuExtendedPlayerInventoryPlugin.ExtraRows.Value +
-                 (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || AzuExtendedPlayerInventoryPlugin.DisplayEquipmentRowSeparate.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On ? 0 : API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()))) *
-                -0.25f);
+            bkgRect.anchorMin = new Vector2(0.0f, (AzuExtendedPlayerInventoryPlugin.ExtraRows.Value + (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || AzuExtendedPlayerInventoryPlugin.DisplayEquipmentRowSeparate.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On ? 0 : API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()))) * -0.25f);
 
             if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off)
                 return;
@@ -135,10 +129,7 @@ public class InventoryGuiPatches
                     RectTransform rectTransform = transform.GetComponent<RectTransform>();
                     rectTransform.anchorMin = new Vector2(1f, 0.0f);
                     Vector2 maxAnchor = new(1.13f + Math.Max(AzuExtendedPlayerInventoryPlugin.Hotkeys.Length, (UpdateInventory_Patch.slots.Count - 1) / 3) * UpdateInventory_Patch.tileSize / 570, 1f);
-                    if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue(ExtendedPlayerInventory.MinimalUiguid, out var pluginInfo) && pluginInfo is not null)
-                    {
-                        maxAnchor.x += 0.03f;
-                    }
+                    if (Chainloader.PluginInfos.TryGetValue(ExtendedPlayerInventory.MinimalUiguid, out var pluginInfo) && pluginInfo is not null) maxAnchor.x += 0.03f;
 
                     rectTransform.anchorMax = maxAnchor;
                     InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<RectTransform>().anchorMax = maxAnchor;
@@ -162,7 +153,7 @@ public class InventoryGuiPatches
                     dropAllButtonTransform = Object.Instantiate(dropAllButtonPrefab, __instance.m_player).GetComponent<RectTransform>();
                     dropAllButtonTransform.name = ExtendedPlayerInventory.DropAllButtonName;
                     // Set the button text
-                    dropAllButtonTransform.GetComponentInChildren<TMPro.TMP_Text>().text = "Drop All";
+                    dropAllButtonTransform.GetComponentInChildren<TMP_Text>().text = "Drop All";
                     // Dropall button
                     var buttonComp = dropAllButtonTransform.GetComponent<Button>();
                     // Remove all listeners from the take all button
@@ -187,10 +178,7 @@ public class InventoryGuiPatches
             else
             {
                 // If the configuration is set to Off, check if the drop all button exists and destroy it
-                if (dropallButton != null)
-                {
-                    Object.DestroyImmediate(dropallButton.gameObject);
-                }
+                if (dropallButton != null) Object.DestroyImmediate(dropallButton.gameObject);
             }
         }
     }
@@ -211,8 +199,8 @@ public class InventoryGuiPatches
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.UpdateInventory))]
     internal static class UpdateInventory_Patch
     {
-        internal static float leftOffset = 643f;
         internal const float tileSize = 70f;
+        internal static float leftOffset = 643f;
 
         /*internal static readonly List<Slot> slots = new()
         {
@@ -224,22 +212,19 @@ public class InventoryGuiPatches
             new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.LeftHandText.Value, Get = player => player.LeftItem ?? player.m_hiddenLeftItem, Valid = item => (item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.TwoHandedWeaponLeft || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shield || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Torch || item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Bow), },
             new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.UtilityText.Value, Get = player => player.m_utilityItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility, },
         };*/
-        internal static readonly List<Slot> slots = new()
+        internal static readonly List<Slot?> slots = new()
         {
-            new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.HelmetText.Value, Get = player => player.m_helmetItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Helmet, },
-            new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.LegsText.Value, Get = player => player.m_legItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Legs, },
-            new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.UtilityText.Value, Get = player => player.m_utilityItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility, },
-            new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.ChestText.Value, Get = player => player.m_chestItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Chest, },
-            new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.BackText.Value, Get = player => player.m_shoulderItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder, },
+            new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.HelmetText.Value, Get = player => player.m_helmetItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Helmet },
+            new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.LegsText.Value, Get = player => player.m_legItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Legs },
+            new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.UtilityText.Value, Get = player => player.m_utilityItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility },
+            new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.ChestText.Value, Get = player => player.m_chestItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Chest },
+            new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.BackText.Value, Get = player => player.m_shoulderItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder }
         };
 
         static UpdateInventory_Patch()
         {
             // ensure the fixed slots are at end
-            for (int i = 0; i < AzuExtendedPlayerInventoryPlugin.Hotkeys.Length; ++i)
-            {
-                slots.Add(new Slot { Name = AzuExtendedPlayerInventoryPlugin.HotkeyTexts[i].Value.IsNullOrWhiteSpace() ? AzuExtendedPlayerInventoryPlugin.Hotkeys[i].Value.ToString() : AzuExtendedPlayerInventoryPlugin.HotkeyTexts[i].Value });
-            }
+            for (int i = 0; i < AzuExtendedPlayerInventoryPlugin.Hotkeys.Length; ++i) slots.Add(new Slot { Name = AzuExtendedPlayerInventoryPlugin.HotkeyTexts[i].Value.IsNullOrWhiteSpace() ? AzuExtendedPlayerInventoryPlugin.Hotkeys[i].Value.ToString() : AzuExtendedPlayerInventoryPlugin.HotkeyTexts[i].Value });
         }
 
         internal static void ResizeSlots()
@@ -247,16 +232,13 @@ public class InventoryGuiPatches
             float left = leftOffset;
             for (int i = 0; i < slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length; ++i)
             {
-                float y = (i % 3) * -tileSize;
+                float y = i % 3 * -tileSize;
                 // ReSharper disable once PossibleLossOfFraction
-                float x = left + (i / 3) * tileSize + ((i % 3 > (slots.Count - 1) % 3 ? 1 : 0) + Math.Max(9 + AzuExtendedPlayerInventoryPlugin.Hotkeys.Length - slots.Count - 1, 0) / 3) * tileSize / 2;
+                float x = left + i / 3 * tileSize + ((i % 3 > (slots.Count - 1) % 3 ? 1 : 0) + Math.Max(9 + AzuExtendedPlayerInventoryPlugin.Hotkeys.Length - slots.Count - 1, 0) / 3) * tileSize / 2;
                 slots[i].Position = new Vector2(x, y);
             }
 
-            for (int i = 0; i < AzuExtendedPlayerInventoryPlugin.Hotkeys.Length; ++i)
-            {
-                slots[slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length + i].Position = new Vector2(leftOffset + i * tileSize, 3 * -tileSize);
-            }
+            for (int i = 0; i < AzuExtendedPlayerInventoryPlugin.Hotkeys.Length; ++i) slots[slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length + i].Position = new Vector2(leftOffset + i * tileSize, 3 * -tileSize);
         }
 
         // Dynamic way to add more slots. Just add names and positions here.
@@ -282,21 +264,14 @@ public class InventoryGuiPatches
                 {
                     GameObject currentChild = ___m_playerGrid.m_elements[baseIndex + i].m_go;
                     currentChild.SetActive(true);
-                    ExtendedPlayerInventory.SetSlotText(slots[i].Name, currentChild.transform);
+                    ExtendedPlayerInventory.SetSlotText(slots[i]?.Name, currentChild.transform);
                     if (AzuExtendedPlayerInventoryPlugin.DisplayEquipmentRowSeparate.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On)
-                    {
                         currentChild.GetComponent<RectTransform>().anchoredPosition = slots[i].Position;
-                    }
                     else
-                    {
                         currentChild.GetComponent<RectTransform>().anchoredPosition = baseGridPos + new Vector2((baseIndex + i) % inventory.GetWidth() * ___m_playerGrid.m_elementSpace, (baseIndex + i) / inventory.GetWidth() * -___m_playerGrid.m_elementSpace);
-                    }
                 }
 
-                for (int i = baseIndex + slots.Count; i < ___m_playerGrid.m_elements.Count; ++i)
-                {
-                    ___m_playerGrid.m_elements[i].m_go.SetActive(false);
-                }
+                for (int i = baseIndex + slots.Count; i < ___m_playerGrid.m_elements.Count; ++i) ___m_playerGrid.m_elements[i].m_go.SetActive(false);
             }
             catch (Exception ex)
             {

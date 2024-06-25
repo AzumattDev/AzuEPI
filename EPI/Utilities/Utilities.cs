@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using AzuExtendedPlayerInventory.EPI.Patches;
+﻿using System.Collections.Generic;
 using BepInEx.Configuration;
-using UnityEngine;
 
 namespace AzuExtendedPlayerInventory.EPI.Utilities;
 
 public class Utilities
 {
-    private static string[] WbSuffixes = { "", "k", "m", "b" };
+    private static readonly string[] wbSuffixes = { "", "k", "m", "b" };
 
     internal static string FormatNumberSimpleNoDecimal(float number)
     {
@@ -20,23 +16,19 @@ public class Utilities
     private static void CalculateShortNumberAndSuffix(float number, out double shortNumber, out string suffix)
     {
         int mag = (int)(Math.Log10(number) / 3);
-        mag = Math.Min(WbSuffixes.Length - 1, mag);
+        mag = Math.Min(wbSuffixes.Length - 1, mag);
         double divisor = Math.Pow(10, mag * 3);
 
         shortNumber = number / divisor;
-        suffix = WbSuffixes[mag];
+        suffix = wbSuffixes[mag];
     }
 
     public static bool IgnoreKeyPresses(bool extra = false)
     {
         if (!extra)
-            return ZNetScene.instance == null || Player.m_localPlayer == null || Minimap.IsOpen() ||
-                   Console.IsVisible() || TextInput.IsVisible() || ZNet.instance.InPasswordDialog() ||
-                   Chat.instance?.HasFocus() == true;
-        return ZNetScene.instance == null || Player.m_localPlayer == null || Minimap.IsOpen() ||
-               Console.IsVisible() || TextInput.IsVisible() || ZNet.instance.InPasswordDialog() ||
-               Chat.instance?.HasFocus() == true || StoreGui.IsVisible() || InventoryGui.IsVisible() ||
-               Menu.IsVisible() || TextViewer.instance?.IsVisible() == true;
+            return ZNetScene.instance == null || Player.m_localPlayer == null || Minimap.IsOpen() || Console.IsVisible() || TextInput.IsVisible() || ZNet.instance.InPasswordDialog() || Chat.instance?.HasFocus() == true;
+        return ZNetScene.instance == null || Player.m_localPlayer == null || Minimap.IsOpen() || Console.IsVisible() || TextInput.IsVisible() || ZNet.instance.InPasswordDialog() || Chat.instance?.HasFocus() == true
+               || StoreGui.IsVisible() || InventoryGui.IsVisible() || Menu.IsVisible() || TextViewer.instance?.IsVisible() == true;
     }
 
     public static void InventoryFix()
@@ -52,13 +44,9 @@ public class Utilities
             {
                 ItemDrop.ItemData? itemData = playerInventory.m_inventory[index];
                 bool overlappingItem = curPositions.Exists(pos => pos == itemData.m_gridPos);
-                if (overlappingItem || (itemData.m_gridPos.x < 0 || itemData.m_gridPos.x >= playerInventory.m_width ||
-                                        itemData.m_gridPos.y < 0 || itemData.m_gridPos.y >= playerInventory.m_height) || itemData.m_stack < 1)
+                if (overlappingItem || itemData.m_gridPos.x < 0 || itemData.m_gridPos.x >= playerInventory.m_width || itemData.m_gridPos.y < 0 || itemData.m_gridPos.y >= playerInventory.m_height || itemData.m_stack < 1)
                 {
-                    if (itemData.m_stack < 1)
-                    {
-                        playerInventory.RemoveItem(itemData);
-                    } // Fix anything that has a stack of 0 or less
+                    if (itemData.m_stack < 1) playerInventory.RemoveItem(itemData); // Fix anything that has a stack of 0 or less
 
                     AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning(
                         overlappingItem
@@ -70,10 +58,7 @@ public class Utilities
                 curPositions.Add(itemData.m_gridPos);
             }
 
-        foreach (ItemDrop.ItemData brokenItem in itemsToFix)
-        {
-            TryAddItemToInventory(playerInventory!, brokenItem);
-        }
+        foreach (ItemDrop.ItemData brokenItem in itemsToFix) TryAddItemToInventory(playerInventory!, brokenItem);
     }
 
 
@@ -95,7 +80,7 @@ public class Utilities
 public static class KeyboardExtensions
 {
     // thank you to 'Margmas' for giving me this snippet from VNEI https://github.com/MSchmoecker/VNEI/blob/master/VNEI/Logic/BepInExExtensions.cs#L21
-    // since KeyboardShortcut.IsPressed and KeyboardShortcut.IsDown behave unintuitively
+    // since KeyboardShortcut.IsPressed and KeyboardShortcut.IsDown behave un-intuitively
     public static bool IsKeyDown(this KeyboardShortcut shortcut)
     {
         return shortcut.MainKey != KeyCode.None && Input.GetKeyDown(shortcut.MainKey) && shortcut.Modifiers.All(Input.GetKey);
