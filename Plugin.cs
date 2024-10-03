@@ -76,6 +76,12 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         RightHandText = config("2 - Extended Inventory", "Right Hand Text", "R Hand", "Text to show for right hand slot.", false);
         LeftHandText = config("2 - Extended Inventory", "Left Hand Text", "L Hand", "Text to show for left hand slot.", false);
 
+        HelmetText.SettingChanged += (s, e) => UpdateVanillaSlotNames();
+        ChestText.SettingChanged += (s, e) => UpdateVanillaSlotNames();
+        LegsText.SettingChanged += (s, e) => UpdateVanillaSlotNames();
+        BackText.SettingChanged += (s, e) => UpdateVanillaSlotNames();
+        UtilityText.SettingChanged += (s, e) => UpdateVanillaSlotNames();
+
         QuickAccessScale = config("2 - Extended Inventory", "QuickAccess Scale", 0.85f, "Scale of quick access bar. ", false);
 
         HotKey1 = config("2 - Extended Inventory", "HotKey (Quickslot 1)", new KeyboardShortcut(KeyCode.Z), "Hotkey 1 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", false);
@@ -97,6 +103,11 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         QuickAccessX = config("2 - Extended Inventory", "Quickslot X", 9999f, "Current X of Quick Slots", false);
         QuickAccessY = config("2 - Extended Inventory", "Quickslot Y", 9999f, "Current Y of Quick Slots", false);
+
+        string order = $"{helmetSlotID},{legsSlotID},{utilitySlotID},{chestSlotID},{backSlotID}";
+        VanillaSlotsOrder = config("2 - Extended Inventory", "Vanilla slots order", order, "Comma separated list defining order of vanilla slots", false);
+
+        VanillaSlotsOrder.SettingChanged += (s, e) => ReorderVanillaSlots();
 
         /* Moveable Chest Inventory */
         MoveableChestInventory.ChestInventoryX = config("3 - Chest Inventory", "Chest Inventory X", -1f, "Current X of chest", false);
@@ -200,12 +211,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         CheckRandy();
         CheckWeightBase();
 
-        if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue(ExtendedPlayerInventory.MinimalUiguid, out var MinimalUI) && MinimalUI is not null)
-        {
-            InventoryGuiPatches.UpdateInventory_Patch.leftOffset += 10;
-        }
-
-        InventoryGuiPatches.UpdateInventory_Patch.ResizeSlots();
+        InitializeVanillaSlotsOrder();
+        ReorderVanillaSlots();
     }
 
     private void OnDestroy()

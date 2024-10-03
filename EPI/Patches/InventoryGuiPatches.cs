@@ -168,9 +168,6 @@ public static class InventoryGuiPatches
             if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off)
                 return;
 
-            var equipmentBkgTransform = __instance.m_player.Find(ExtendedPlayerInventory.AzuBkgName);
-            var dropallButton = __instance.m_player.Find(ExtendedPlayerInventory.DropAllButtonName);
-
             switch (AzuExtendedPlayerInventoryPlugin.DisplayEquipmentRowSeparate.Value)
             {
                 case AzuExtendedPlayerInventoryPlugin.Toggle.On when equipmentBackground == null:
@@ -291,6 +288,59 @@ public static class InventoryGuiPatches
             new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.ChestText.Value, Get = player => player.m_chestItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Chest, },
             new EquipmentSlot { Name = AzuExtendedPlayerInventoryPlugin.BackText.Value, Get = player => player.m_shoulderItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder, },
         };
+
+        internal const string helmetSlotID = "Helmet";
+        internal const string legsSlotID = "Legs";
+        internal const string utilitySlotID = "Utility";
+        internal const string chestSlotID = "Chest";
+        internal const string backSlotID = "Back";
+
+        internal static Dictionary<string, Slot> vanillaSlots = new Dictionary<string, Slot>();
+
+        internal static void InitializeVanillaSlotsOrder()
+        {
+            vanillaSlots.Add(helmetSlotID,  slots[0]);
+            vanillaSlots.Add(legsSlotID,    slots[1]);
+            vanillaSlots.Add(utilitySlotID, slots[2]);
+            vanillaSlots.Add(chestSlotID,   slots[3]);
+            vanillaSlots.Add(backSlotID,    slots[4]);
+        }
+
+        internal static void ReorderVanillaSlots()
+        {
+            string[] newSlotsOrder = AzuExtendedPlayerInventoryPlugin.VanillaSlotsOrder.Value.Split(',').Select(str => str.Trim()).Distinct().ToArray();
+
+            for (int i = 0; i < Mathf.Min(newSlotsOrder.Length, vanillaSlots.Count); i++)
+            {
+                if (!vanillaSlots.TryGetValue(newSlotsOrder[i], out Slot slot))
+                    continue;
+
+                int newSlotIndex = slots.IndexOf(slot);
+                int currentSlotIndex = slots.IndexOf(slots.Where(slot => vanillaSlots.ContainsValue(slot)).ToArray()[i]);
+
+                (slots[newSlotIndex], slots[currentSlotIndex]) = (slots[currentSlotIndex], slots[newSlotIndex]);
+            }
+
+            ResizeSlots();
+        }
+
+        internal static void UpdateVanillaSlotNames()
+        {
+            vanillaSlots.Do(slot => slot.Value.Name = GetSlotName(slot.Key));
+        }
+
+        static string GetSlotName(string slotName)
+        {
+            return slotName switch
+            {
+                helmetSlotID => AzuExtendedPlayerInventoryPlugin.HelmetText.Value,
+                legsSlotID => AzuExtendedPlayerInventoryPlugin.LegsText.Value,
+                utilitySlotID => AzuExtendedPlayerInventoryPlugin.UtilityText.Value,
+                chestSlotID => AzuExtendedPlayerInventoryPlugin.ChestText.Value,
+                backSlotID => AzuExtendedPlayerInventoryPlugin.BackText.Value,
+                _ => ""
+            };
+        }
 
         static UpdateInventory_Patch()
         {
