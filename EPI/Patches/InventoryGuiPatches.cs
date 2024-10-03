@@ -9,8 +9,45 @@ using Object = UnityEngine.Object;
 
 namespace AzuExtendedPlayerInventory.EPI.Patches;
 
-public class InventoryGuiPatches
+public static class InventoryGuiPatches
 {
+    public static float sideButtonSize = 1.13f;
+    public static float offsetMinimalUI = 0.03f;
+    public static float offsetSeparatePanel = 0.03f;
+    public static float offsetSeparatePanelMax = 0.01f;
+
+    public static RectTransform inventoryDarken = null!;
+    public static RectTransform equipmentDarken = null!;
+    public static RectTransform equipmentBackground = null!;
+
+    public static bool IsMinimalUI() => BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue(ExtendedPlayerInventory.MinimalUiguid, out var pluginInfo) && pluginInfo is not null;
+
+    public static bool IsSeparatePanel() => AzuExtendedPlayerInventoryPlugin.DisplayEquipmentRowSeparatePanel.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On;
+
+    public static void UpdateInventoryBackground()
+    {
+        if (!equipmentBackground)
+            return;
+
+        float offset = sideButtonSize;
+        if (IsMinimalUI())
+            offset += offsetMinimalUI;
+
+        if (IsSeparatePanel())
+            offset += offsetSeparatePanel;
+
+        float size = Math.Max(AzuExtendedPlayerInventoryPlugin.Hotkeys.Length, (UpdateInventory_Patch.slots.Count - 1) / 3) * UpdateInventory_Patch.tileSize / 570;
+
+        Vector2 maxAnchor = new(offset + size + (IsSeparatePanel() ? offsetSeparatePanelMax : 0), 1f);
+
+        inventoryDarken.anchorMax = maxAnchor;
+        equipmentBackground.anchorMax = maxAnchor;
+        InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<RectTransform>().anchorMax = maxAnchor;
+
+        equipmentBackground.anchorMin = IsSeparatePanel() ? new Vector2(offset, 0.0f) : new Vector2(1f, 0.0f);
+        equipmentDarken.gameObject.SetActive(IsSeparatePanel());
+    }
+
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Show))]
     static class InventoryGuiShowPatch
     {
@@ -22,6 +59,15 @@ public class InventoryGuiPatches
         }
     }
 
+    [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnDestroy))]
+    static class InventoryGui_OnDestroy_ClearObjects
+    {
+        static void Postfix(InventoryGui __instance)
+        {
+            equipmentDarken = null!;
+            equipmentBackground = null!;
+        }
+    }
 
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnSelectedItem))]
     static class InventoryGuiOnSelectedItemPatch
@@ -127,30 +173,35 @@ public class InventoryGuiPatches
 
             switch (AzuExtendedPlayerInventoryPlugin.DisplayEquipmentRowSeparate.Value)
             {
-                case AzuExtendedPlayerInventoryPlugin.Toggle.On when equipmentBkgTransform == null:
-                {
-                    Transform transform = Object.Instantiate(bkgRect.transform, __instance.m_player);
-                    transform.SetAsFirstSibling();
-                    transform.name = ExtendedPlayerInventory.AzuBkgName;
-                    RectTransform rectTransform = transform.GetComponent<RectTransform>();
-                    rectTransform.anchorMin = new Vector2(1f, 0.0f);
-                    Vector2 maxAnchor = new(1.13f + Math.Max(AzuExtendedPlayerInventoryPlugin.Hotkeys.Length, (UpdateInventory_Patch.slots.Count - 1) / 3) * UpdateInventory_Patch.tileSize / 570, 1f);
-                    if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue(ExtendedPlayerInventory.MinimalUiguid, out var pluginInfo) && pluginInfo is not null)
-                    {
-                        maxAnchor.x += 0.03f;
-                    }
+                case AzuExtendedPlayerInventoryPlugin.Toggle.On when equipmentBackground == null:
 
-                    rectTransform.anchorMax = maxAnchor;
-                    InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<RectTransform>().anchorMax = maxAnchor;
+                    inventoryDarken = __instance.m_player.Find("Darken").GetComponent<RectTransform>();
+
+                    equipmentBackground = new GameObject(ExtendedPlayerInventory.AzuBkgName, typeof(RectTransform)).GetComponent<RectTransform>();
+                    equipmentBackground.gameObject.layer = bkgRect.gameObject.layer;
+                    equipmentBackground.SetParent(__instance.m_player, worldPositionStays: false);
+                    equipmentBackground.SetSiblingIndex(inventoryDarken.GetSiblingIndex() + 1); // Vanilla Darken first
+                    equipmentBackground.offsetMin = Vector2.zero;
+                    equipmentBackground.offsetMax = Vector2.zero;
+
+                    equipmentDarken = Object.Instantiate(inventoryDarken, equipmentBackground);
+                    equipmentDarken.name = "Darken";
+                    inventoryDarken.sizeDelta = Vector2.one * 66f;
+
+                    Transform equipmentBkg = Object.Instantiate(bkgRect.transform, equipmentBackground);
+                    equipmentBkg.name = "Bkg";
+
                     InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<Image>().raycastTarget = false;
 
+                    UpdateInventoryBackground();
                     break;
-                }
-                case AzuExtendedPlayerInventoryPlugin.Toggle.Off when equipmentBkgTransform:
-                    Object.DestroyImmediate(equipmentBkgTransform.gameObject);
+                case AzuExtendedPlayerInventoryPlugin.Toggle.Off when equipmentBackground:
+                    Object.DestroyImmediate(equipmentBackground.gameObject);
+                    equipmentBackground = null!;
                     break;
             }
 
+            var dropallButton = __instance.m_player.Find(ExtendedPlayerInventory.DropAllButtonName);
             if (AzuExtendedPlayerInventoryPlugin.MakeDropAllButton.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On)
             {
                 RectTransform dropAllButtonTransform = null!;
@@ -211,8 +262,16 @@ public class InventoryGuiPatches
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.UpdateInventory))]
     internal static class UpdateInventory_Patch
     {
-        internal static float leftOffset = 643f;
-        internal const float tileSize = 70f;
+        internal static float leftOffsetBase = 643f;
+        internal static float tileSize = 70f;
+        internal static float leftOffsetSeparatePanel = 20f;
+        internal static float leftOffsetMinimalUI = 10f;
+        internal static float leftOffset
+        {
+            get => leftOffsetBase
+                + (IsSeparatePanel() ? leftOffsetSeparatePanel : 0)
+                + (IsMinimalUI() ? leftOffsetMinimalUI : 0);
+        }
 
         /*internal static readonly List<Slot> slots = new()
         {
@@ -271,7 +330,7 @@ public class InventoryGuiPatches
                 Inventory inventory = player.GetInventory();
 
                 int requiredRows = API.GetAddedRows(inventory.GetWidth());
-
+                SlotInfo quickSlots = API.GetQuickSlots();
 
                 // Update baseIndex based on the dynamic rows
                 int baseIndex = inventory.GetWidth() * (inventory.GetHeight() - requiredRows);
@@ -282,7 +341,7 @@ public class InventoryGuiPatches
                 {
                     GameObject currentChild = ___m_playerGrid.m_elements[baseIndex + i].m_go;
                     currentChild.SetActive(true);
-                    ExtendedPlayerInventory.SetSlotText(slots[i].Name, currentChild.transform);
+                    ExtendedPlayerInventory.SetSlotText(slots[i].Name, currentChild.transform, isQuickSlot: quickSlots.SlotPositions.Contains(slots[i].Position));
                     if (AzuExtendedPlayerInventoryPlugin.DisplayEquipmentRowSeparate.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On)
                     {
                         currentChild.GetComponent<RectTransform>().anchoredPosition = slots[i].Position;

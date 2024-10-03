@@ -14,6 +14,7 @@ using HarmonyLib;
 using JetBrains.Annotations;
 using ServerSync;
 using UnityEngine;
+using static AzuExtendedPlayerInventory.EPI.Patches.InventoryGuiPatches.UpdateInventory_Patch;
 
 namespace AzuExtendedPlayerInventory;
 
@@ -61,8 +62,11 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         AddEquipmentRow = config("2 - Extended Inventory", "Add Equipment Row", Toggle.On, "Add special row for equipped items and quick slots. (IF YOU ARE USING RANDY KNAPPS EAQs KEEP THIS VALUE OFF)");
         AddEquipmentRow.SettingChanged += (sender, args) => { CheckRandy(); };
         DisplayEquipmentRowSeparate = config("2 - Extended Inventory", "Display Equipment Row Separate", Toggle.On, "Display equipment and quickslots in their own area. (IF YOU ARE USING RANDY KNAPPS EAQs KEEP THIS VALUE OFF)");
+        DisplayEquipmentRowSeparatePanel = config("2 - Extended Inventory", "Display Equipment Row Separate Panel", Toggle.Off, "Display equipment and quickslots in their own panel. (depends on \"Display Equipment Row Separate\" config value)");
 
         DisplayEquipmentRowSeparate.SettingChanged += (sender, args) => { CheckRandy(); };
+        DisplayEquipmentRowSeparatePanel.SettingChanged += (sender, args) => { InventoryGuiPatches.UpdateInventoryBackground(); ResizeSlots(); };
+
 
         HelmetText = config("2 - Extended Inventory", "Helmet Text", "Head", "Text to show for helmet slot.", false);
         ChestText = config("2 - Extended Inventory", "Chest Text", "Chest", "Text to show for chest slot.", false);
@@ -82,6 +86,13 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         HotKey2Text = config("2 - Extended Inventory", "HotKey (Quickslot 2) Text", "", "Hotkey 2 Display Text. Leave blank to use the hotkey itself.", false);
         HotKey3Text = config("2 - Extended Inventory", "HotKey (Quickslot 3) Text", "", "Hotkey 3 Display Text. Leave blank to use the hotkey itself.", false);
 
+        HotKey1.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
+        HotKey2.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
+        HotKey3.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
+        HotKey1Text.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
+        HotKey2Text.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
+        HotKey3Text.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
+
         QuickslotDragKeys = config("2 - Extended Inventory", "Drag Keys (Quickslot Drag)", new KeyboardShortcut(KeyCode.Mouse0, KeyCode.LeftControl), "Key or keys to move quick slots. It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
 
         QuickAccessX = config("2 - Extended Inventory", "Quickslot X", 9999f, "Current X of Quick Slots", false);
@@ -95,6 +106,25 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         
         MakeDropAllButton = config("3 - Button", "Drop All Button", Toggle.Off, "Key or keys (to move the container). It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
         DropAllButtonPosition = config("3 - Button", "Button Position", new Vector2(880.00f, 10.00f), "Button position relative to the inventory background's top left corner", false);
+
+        equipmentSlotLabelAlignment = config("4 - Equipment slots - Label style", "Horizontal alignment", TMPro.HorizontalAlignmentOptions.Center, "Horizontal alignment of text component in equipment slot label", false);
+        equipmentSlotLabelWrappingMode = config("4 - Equipment slots - Label style", "Text wrapping mode", TMPro.TextWrappingModes.PreserveWhitespaceNoWrap, "Size of text component in slot label", false);
+        equipmentSlotLabelMargin = config("4 - Equipment slots - Label style", "Margin", new Vector4(5f, 0f, 5f, 0f), "Margin: left top right bottom", false);
+        equipmentSlotLabelFontSize = config("4 - Equipment slots - Label style", "Font size", 18f, "Max text size in slot label", false);
+        equipmentSlotLabelFontColor = config("4 - Equipment slots - Label style", "Font color", new Color(0.596f, 0.816f, 1f), "Text color in slot label", false);
+
+        quickSlotLabelAlignment = config("4 - Quick slots - Label style", "Horizontal alignment", TMPro.HorizontalAlignmentOptions.Left, "Horizontal alignment of text component in slot label", false);
+        quickSlotLabelWrappingMode = config("4 - Quick slots - Label style", "Text wrapping mode", TMPro.TextWrappingModes.PreserveWhitespaceNoWrap, "Size of text component in slot label", false);
+        quickSlotLabelMargin = config("4 - Quick slots - Label style", "Margin", new Vector4(5f, 0f, 5f, 0f), "Margin: left top right bottom", false);
+        quickSlotLabelFontSize = config("4 - Quick slots - Label style", "Font size", 18f, "Max text size in slot label", false);
+        quickSlotLabelFontColor = config("4 - Quick slots - Label style", "Font color", new Color(0.596f, 0.816f, 1f), "Text color in slot label", false);
+
+        quickSlotLabelAlignment.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
+        quickSlotLabelWrappingMode.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
+        quickSlotLabelMargin.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
+        quickSlotLabelFontSize.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
+        quickSlotLabelFontColor.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
+
 
         Hotkeys = new[]
         {
@@ -247,6 +277,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     public static ConfigEntry<Toggle> AddEquipmentRow = null!;
     public static ConfigEntry<Toggle> DisplayEquipmentRowSeparate = null!;
+    public static ConfigEntry<Toggle> DisplayEquipmentRowSeparatePanel = null!;
     public static ConfigEntry<Toggle> ShowQuickSlots = null!;
     public static ConfigEntry<Toggle> MakeDropAllButton = null!;
     public static ConfigEntry<Vector2> DropAllButtonPosition = null!;
@@ -259,6 +290,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<string> RightHandText = null!;
     public static ConfigEntry<string> LeftHandText = null!;
     public static ConfigEntry<float> QuickAccessScale = null!;
+    public static ConfigEntry<string> VanillaSlotsOrder = null!;
 
     public static ConfigEntry<KeyboardShortcut> HotKey1 = null!;
     public static ConfigEntry<KeyboardShortcut> HotKey2 = null!;
@@ -277,6 +309,18 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     public static ConfigEntry<Vector2> UIAnchor = null!;
     public static ConfigEntry<Vector3> LocalScale = null!;
+
+    public static ConfigEntry<TMPro.HorizontalAlignmentOptions> equipmentSlotLabelAlignment = null!;
+    public static ConfigEntry<TMPro.TextWrappingModes> equipmentSlotLabelWrappingMode = null!;
+    public static ConfigEntry<Vector4> equipmentSlotLabelMargin = null!;
+    public static ConfigEntry<float> equipmentSlotLabelFontSize = null!;
+    public static ConfigEntry<Color> equipmentSlotLabelFontColor = null!;
+
+    public static ConfigEntry<TMPro.HorizontalAlignmentOptions> quickSlotLabelAlignment = null!;
+    public static ConfigEntry<TMPro.TextWrappingModes> quickSlotLabelWrappingMode = null!;
+    public static ConfigEntry<Vector4> quickSlotLabelMargin = null!;
+    public static ConfigEntry<float> quickSlotLabelFontSize = null!;
+    public static ConfigEntry<Color> quickSlotLabelFontColor = null!;
 
     private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description,
         bool synchronizedSetting = true)

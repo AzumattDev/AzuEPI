@@ -12,6 +12,8 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
     [HarmonyPatch(typeof(HotkeyBar), nameof(HotkeyBar.UpdateIcons))]
     internal static class QuickAccessBar
     {
+        private static bool forceSlotUpdate = false;
+
         [HarmonyPriority(Priority.Last)]
         internal static bool Prefix(HotkeyBar __instance, Player player)
         {
@@ -51,10 +53,11 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                     __instance.m_items.Sort((x, y) => (x.m_gridPos.x + x.m_gridPos.y * width).CompareTo(y.m_gridPos.x + y.m_gridPos.y * width));
                     int num = __instance.m_items.Select(itemData => itemData.m_gridPos.x + itemData.m_gridPos.y * width - firstHotkeyIndex + 1).Concat(new[] { 0 }).Max(); // GPT
 
-                    if (__instance.m_elements.Count != num)
+                    if (__instance.m_elements.Count != num || forceSlotUpdate)
                     {
                         foreach (HotkeyBar.ElementData element in __instance.m_elements)
                             Object.Destroy(element.m_go);
+
                         __instance.m_elements.Clear();
                         for (int index = 0; index < num; ++index)
                         {
@@ -67,7 +70,7 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                             {
                                 ExtendedPlayerInventory.SetSlotText(AzuExtendedPlayerInventoryPlugin.HotkeyTexts[index].Value.IsNullOrWhiteSpace()
                                     ? AzuExtendedPlayerInventoryPlugin.Hotkeys[index].Value.ToString()
-                                    : AzuExtendedPlayerInventoryPlugin.HotkeyTexts[index].Value, elementData.m_go.transform, false);
+                                    : AzuExtendedPlayerInventoryPlugin.HotkeyTexts[index].Value, elementData.m_go.transform, isQuickSlot: true);
                             }
 
                             elementData.m_icon = elementData.m_go.transform.transform.Find("icon").GetComponent<Image>();
@@ -78,6 +81,8 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                             elementData.m_selection = elementData.m_go.transform.Find("selected").gameObject;
                             __instance.m_elements.Add(elementData);
                         }
+
+                        forceSlotUpdate = false;
                     }
 
                     foreach (HotkeyBar.ElementData element in __instance.m_elements)
@@ -167,6 +172,11 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
             }
 
             __instance.m_elements.Clear();
+        }
+
+        internal static void UpdateSlots()
+        {
+            forceSlotUpdate = true;
         }
     }
 

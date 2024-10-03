@@ -5,6 +5,7 @@ using HarmonyLib;
 using TMPro;
 using UnityEngine;
 using Object = UnityEngine.Object;
+using static AzuExtendedPlayerInventory.AzuExtendedPlayerInventoryPlugin;
 
 namespace AzuExtendedPlayerInventory.EPI
 {
@@ -28,23 +29,37 @@ namespace AzuExtendedPlayerInventory.EPI
         public const string DropAllButtonName = "AzuDropAllButton";
         public const string MinimalUiguid = "Azumatt.MinimalUI";
 
-        public static void SetSlotText(string value, Transform transform, bool center = true)
+        public static void SetSlotText(string value, Transform transform, bool isQuickSlot = true)
         {
-            Transform transform1 = transform.Find("binding");
-            if (!transform1)
-                transform1 = Object.Instantiate(_elementPrefab.transform.Find("binding"), transform);
-            var textComp = transform1.GetComponent<TMP_Text>();
-            textComp.enabled = true;
-            textComp.overflowMode = TextOverflowModes.Overflow;
-            textComp.textWrappingMode = TextWrappingModes.PreserveWhitespaceNoWrap;
-            textComp.fontSizeMin = 10f;
-            textComp.fontSizeMax = 18f;
+            Transform binding = transform.Find("binding");
+            
+            if (!binding)
+            {
+                binding = Object.Instantiate(_elementPrefab.transform.Find("binding"), transform);
+                binding.name = "binding";
+            }
+            
+            // Make component size of parent to let TMP_Text do its job on text positioning
+            RectTransform rt = binding.GetComponent<RectTransform>();
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            rt.sizeDelta = Vector2.zero;
+            rt.anchoredPosition = Vector2.zero;
+
+            TMP_Text textComp = binding.GetComponent<TMP_Text>();
             textComp.enableAutoSizing = true;
             textComp.text = value;
-            if (!center)
-                return;
-            transform1.GetComponent<RectTransform>().sizeDelta = new Vector2(80f, 17f);
-            transform1.GetComponent<RectTransform>().anchoredPosition = new Vector2(30f, -10f);
+            textComp.enabled = true;
+            textComp.overflowMode = TextOverflowModes.Overflow;
+            textComp.fontSizeMin = 10f;
+            textComp.fontSizeMax = isQuickSlot ? quickSlotLabelFontSize.Value : equipmentSlotLabelFontSize.Value;
+            textComp.color = isQuickSlot ? quickSlotLabelFontColor.Value : equipmentSlotLabelFontColor.Value;
+            textComp.margin = isQuickSlot ? quickSlotLabelMargin.Value : equipmentSlotLabelMargin.Value;
+            textComp.textWrappingMode = isQuickSlot ? quickSlotLabelWrappingMode.Value : equipmentSlotLabelWrappingMode.Value;
+            textComp.horizontalAlignment = isQuickSlot ? quickSlotLabelAlignment.Value : equipmentSlotLabelAlignment.Value;
+            textComp.verticalAlignment = VerticalAlignmentOptions.Top;
         }
 
         internal static bool IsEquipmentSlotFree(Inventory inventory, ItemDrop.ItemData item, out int which)
@@ -57,7 +72,7 @@ namespace AzuExtendedPlayerInventory.EPI
         internal static bool IsAtEquipmentSlot(Inventory inventory, ItemDrop.ItemData item, out int which)
         {
             var inventoryRows = inventory.GetHeight() - API.GetAddedRows(inventory.GetWidth());
-            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || item.m_gridPos.y < inventoryRows || (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x >= InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length)
+            if (AddEquipmentRow.Value == Toggle.Off || item.m_gridPos.y < inventoryRows || (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x >= InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length)
             {
                 which = -1;
                 return false;
@@ -72,12 +87,12 @@ namespace AzuExtendedPlayerInventory.EPI
             Transform transform = Hud.instance.transform.Find("hudroot");
             if (!(transform.Find(QABName)?.GetComponent<RectTransform>() != null))
                 return;
-            if (AzuExtendedPlayerInventoryPlugin.QuickAccessX.Value == 9999.0)
-                AzuExtendedPlayerInventoryPlugin.QuickAccessX.Value = transform.Find("healthpanel").GetComponent<RectTransform>().anchoredPosition.x - 32f;
-            if (AzuExtendedPlayerInventoryPlugin.QuickAccessY.Value == 9999.0)
-                AzuExtendedPlayerInventoryPlugin.QuickAccessY.Value = transform.Find("healthpanel").GetComponent<RectTransform>().anchoredPosition.y - 870f;
-            transform.Find(QABName).GetComponent<RectTransform>().anchoredPosition = new Vector2(AzuExtendedPlayerInventoryPlugin.QuickAccessX.Value, AzuExtendedPlayerInventoryPlugin.QuickAccessY.Value);
-            transform.Find(QABName).GetComponent<RectTransform>().localScale = new Vector3(AzuExtendedPlayerInventoryPlugin.QuickAccessScale.Value, AzuExtendedPlayerInventoryPlugin.QuickAccessScale.Value, 1f);
+            if (QuickAccessX.Value == 9999.0)
+                QuickAccessX.Value = transform.Find("healthpanel").GetComponent<RectTransform>().anchoredPosition.x - 32f;
+            if (QuickAccessY.Value == 9999.0)
+                QuickAccessY.Value = transform.Find("healthpanel").GetComponent<RectTransform>().anchoredPosition.y - 870f;
+            transform.Find(QABName).GetComponent<RectTransform>().anchoredPosition = new Vector2(QuickAccessX.Value, QuickAccessY.Value);
+            transform.Find(QABName).GetComponent<RectTransform>().localScale = new Vector3(QuickAccessScale.Value, QuickAccessScale.Value, 1f);
         }
     }
 
@@ -106,16 +121,6 @@ namespace AzuExtendedPlayerInventory.EPI
             {
                 Utilities.Utilities.InventoryFix();
             }
-        }
-    }
-
-    [HarmonyPatch(typeof(ItemDrop.ItemData), nameof(ItemDrop.ItemData.Clone))]
-    public static class ItemData_Clone_Patch
-    {
-        public static void Postfix(ItemDrop.ItemData __instance, ref ItemDrop.ItemData __result)
-        {
-            // Fixes bug in vanilla valheim with cloning items with custom data
-            __result.m_customData = new Dictionary<string, string>(__instance.m_customData);
         }
     }
 }
