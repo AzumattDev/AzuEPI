@@ -36,8 +36,8 @@ public static class InventoryGuiPatches
             if (localPlayer.IsTeleporting())
                 return;
 
+            // If the item is one of the equipped armor pieces, unequip it
             if (__instance.m_dragGo && localPlayer.IsItemEquiped(__instance.m_dragItem))
-                // If the item is one of the equipped armor pieces, unequip it
                 if (ExtendedPlayerInventory.EquipmentSlots.IsSlot(grid.m_inventory, __instance.m_dragItem))
                     localPlayer.UnequipItem(__instance.m_dragItem, false);
         }

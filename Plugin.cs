@@ -40,6 +40,13 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         Off = 0,
     }
 
+    public enum SlotAlignment
+    {
+        None,
+        Horizontal,
+        Vertical
+    }
+
     private void Awake()
     {
         APIManager.Patcher.Patch();
@@ -62,8 +69,10 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         DisplayEquipmentRowSeparatePanel = config("2 - Extended Inventory", "Display Equipment Row Separate Panel", Toggle.Off, "Display equipment and quickslots in their own panel. (depends on \"Display Equipment Row Separate\" config value)");
 
         DisplayEquipmentRowSeparate.SettingChanged += (sender, args) => { CheckRandy(); };
-        DisplayEquipmentRowSeparatePanel.SettingChanged += (sender, args) => { ExtendedPlayerInventory.EquipmentPanel.UpdateInventoryBackground(); ExtendedPlayerInventory.EquipmentPanel.ResizeSlots(); };
-        
+        DisplayEquipmentRowSeparatePanel.SettingChanged += (sender, args) => { ExtendedPlayerInventory.EquipmentPanel.UpdateInventoryBackground(); ExtendedPlayerInventory.EquipmentPanel.SetSlotsPositions(); };
+
+        SeparatePanelOffset = config("2 - Extended Inventory", "Separate Panel Extra Offset", 0f, "Display equipment and quickslots in their own panel. (depends on \"Display Equipment Row Separate\" config value)");
+        SeparatePanelOffset.SettingChanged += (sender, args) => { ExtendedPlayerInventory.EquipmentPanel.UpdateInventoryBackground(); ExtendedPlayerInventory.EquipmentPanel.SetSlotsPositions(); };
 
         HelmetText = config("2 - Extended Inventory", "Helmet Text", "Head", "Text to show for helmet slot.", false);
         ChestText = config("2 - Extended Inventory", "Chest Text", "Chest", "Text to show for chest slot.", false);
@@ -102,9 +111,16 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         QuickAccessY = config("2 - Extended Inventory", "Quickslot Y", 9999f, "Current Y of Quick Slots", false);
 
         string order = $"{EquipmentSlot.helmetSlotID},{EquipmentSlot.legsSlotID},{EquipmentSlot.utilitySlotID},{EquipmentSlot.chestSlotID},{EquipmentSlot.backSlotID}";
-        VanillaSlotsOrder = config("2 - Extended Inventory", "Vanilla slots order", order, "Comma separated list defining order of vanilla slots", false);
+        VanillaSlotsOrder = config("2 - Extended Inventory", "Vanilla equipment slots order", order, "Comma separated list defining order of vanilla equipment slots", false);
 
         VanillaSlotsOrder.SettingChanged += (s, e) => ExtendedPlayerInventory.EquipmentPanel.ReorderVanillaSlots();
+
+        EquipmentSlotsAlignment = config("2 - Extended Inventory", "Equipment slots alignment", SlotAlignment.Horizontal, "Equipment slots alignment. Slots will be ordered:" +
+                                                                                                                        "\nNone - Vertically Top, Horizontally Left" +
+                                                                                                                        "\nHorizontal - Vertical Top Horizontal Middle" +
+                                                                                                                        "\nVertical - Vertical Middle Horizontal Left", false);
+
+        EquipmentSlotsAlignment.SettingChanged += (s, e) => ExtendedPlayerInventory.EquipmentPanel.SetSlotsPositions();
 
         /* Moveable Chest Inventory */
         MoveableChestInventory.ChestInventoryX = config("3 - Chest Inventory", "Chest Inventory X", -1f, "Current X of chest", false);
@@ -116,16 +132,17 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         DropAllButtonPosition = config("3 - Button", "Button Position", new Vector2(880.00f, 10.00f), "Button position relative to the inventory background's top left corner", false);
         DropAllButtonText = config("3 - Button", "Button Text", "Drop all", "Button text", false);
 
-        equipmentSlotLabelAlignment = config("4 - Equipment slots - Label style", "Horizontal alignment", TMPro.HorizontalAlignmentOptions.Center, "Horizontal alignment of text component in equipment slot label", false);
+        equipmentSlotLabelAlignment = config("4 - Equipment slots - Label style", "Horizontal alignment", TMPro.HorizontalAlignmentOptions.Left, "Horizontal alignment of text component in equipment slot label", false);
         equipmentSlotLabelWrappingMode = config("4 - Equipment slots - Label style", "Text wrapping mode", TMPro.TextWrappingModes.PreserveWhitespaceNoWrap, "Size of text component in slot label", false);
         equipmentSlotLabelMargin = config("4 - Equipment slots - Label style", "Margin", new Vector4(5f, 0f, 5f, 0f), "Margin: left top right bottom", false);
-        equipmentSlotLabelFontSize = config("4 - Equipment slots - Label style", "Font size", 18f, "Max text size in slot label", false);
+        equipmentSlotLabelFontSize = config("4 - Equipment slots - Label style", "Font size", new Vector2(12f, 16f), "Min and Max text size in slot label", false);
         equipmentSlotLabelFontColor = config("4 - Equipment slots - Label style", "Font color", new Color(0.596f, 0.816f, 1f), "Text color in slot label", false);
+        equipmentSlotLabelHideQuality = config("4 - Equipment slots - Label style", "Hide quality", false, "Hide quality label", false);
 
         quickSlotLabelAlignment = config("4 - Quick slots - Label style", "Horizontal alignment", TMPro.HorizontalAlignmentOptions.Left, "Horizontal alignment of text component in slot label", false);
         quickSlotLabelWrappingMode = config("4 - Quick slots - Label style", "Text wrapping mode", TMPro.TextWrappingModes.PreserveWhitespaceNoWrap, "Size of text component in slot label", false);
         quickSlotLabelMargin = config("4 - Quick slots - Label style", "Margin", new Vector4(5f, 0f, 5f, 0f), "Margin: left top right bottom", false);
-        quickSlotLabelFontSize = config("4 - Quick slots - Label style", "Font size", 18f, "Max text size in slot label", false);
+        quickSlotLabelFontSize = config("4 - Quick slots - Label style", "Font size", new Vector2(12f, 16f), "Min and Max text size in slot label", false);
         quickSlotLabelFontColor = config("4 - Quick slots - Label style", "Font color", new Color(0.596f, 0.816f, 1f), "Text color in slot label", false);
 
         quickSlotLabelAlignment.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
@@ -277,6 +294,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<string> LeftHandText = null!;
     public static ConfigEntry<float> QuickAccessScale = null!;
     public static ConfigEntry<string> VanillaSlotsOrder = null!;
+    public static ConfigEntry<SlotAlignment> EquipmentSlotsAlignment = null!;
+    public static ConfigEntry<float> SeparatePanelOffset = null!;
 
     public static ConfigEntry<KeyboardShortcut> HotKey1 = null!;
     public static ConfigEntry<KeyboardShortcut> HotKey2 = null!;
@@ -299,13 +318,14 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<TMPro.HorizontalAlignmentOptions> equipmentSlotLabelAlignment = null!;
     public static ConfigEntry<TMPro.TextWrappingModes> equipmentSlotLabelWrappingMode = null!;
     public static ConfigEntry<Vector4> equipmentSlotLabelMargin = null!;
-    public static ConfigEntry<float> equipmentSlotLabelFontSize = null!;
+    public static ConfigEntry<Vector2> equipmentSlotLabelFontSize = null!;
     public static ConfigEntry<Color> equipmentSlotLabelFontColor = null!;
+    public static ConfigEntry<bool> equipmentSlotLabelHideQuality = null!;
 
     public static ConfigEntry<TMPro.HorizontalAlignmentOptions> quickSlotLabelAlignment = null!;
     public static ConfigEntry<TMPro.TextWrappingModes> quickSlotLabelWrappingMode = null!;
     public static ConfigEntry<Vector4> quickSlotLabelMargin = null!;
-    public static ConfigEntry<float> quickSlotLabelFontSize = null!;
+    public static ConfigEntry<Vector2> quickSlotLabelFontSize = null!;
     public static ConfigEntry<Color> quickSlotLabelFontColor = null!;
 
     private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description,

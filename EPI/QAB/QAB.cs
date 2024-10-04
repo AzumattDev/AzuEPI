@@ -65,9 +65,7 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                             };
                             elementData.m_go.transform.localPosition = new Vector3(index * __instance.m_elementSpace, 0.0f, 0.0f);
                             if (index < AzuExtendedPlayerInventoryPlugin.HotkeyTexts.Length && index < AzuExtendedPlayerInventoryPlugin.QuickSlotsCount)
-                            {
                                 ExtendedPlayerInventory.SetSlotText(AzuExtendedPlayerInventoryPlugin.GetHotkeyText(index), elementData.m_go.transform, isQuickSlot: true);
-                            }
 
                             elementData.m_icon = elementData.m_go.transform.transform.Find("icon").GetComponent<Image>();
                             elementData.m_durability = elementData.m_go.transform.Find("durability").GetComponent<GuiBar>();

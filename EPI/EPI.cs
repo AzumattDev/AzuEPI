@@ -9,15 +9,16 @@ using AzuExtendedPlayerInventory.EPI.Utilities;
 using System.Linq;
 using System;
 
-#nullable enable
 
 namespace AzuExtendedPlayerInventory.EPI
 {
     public class Slot
     {
+#nullable enable
         public string Name = null!;
         public Vector2 Position;
         public EquipmentSlot? EquipmentSlot => this as EquipmentSlot;
+#nullable disable
     }
 
     public class EquipmentSlot : Slot
@@ -28,15 +29,16 @@ namespace AzuExtendedPlayerInventory.EPI
         public const string chestSlotID = "Chest";
         public const string backSlotID = "Back";
 
+#nullable enable
         public Func<Player, ItemDrop.ItemData?> Get = null!;
         public Func<ItemDrop.ItemData, bool> Valid = null!;
+#nullable disable
     }
 
     internal static class ExtendedPlayerInventory
     {
         public const string QABName = "QuickAccessBar";
         public const string AzuBkgName = "AzuEquipmentBkg";
-        public const string MinimalUiguid = "Azumatt.MinimalUI";
 
         public static List<HotkeyBar> HotkeyBars { get; set; } = null!;
 
@@ -52,12 +54,9 @@ namespace AzuExtendedPlayerInventory.EPI
         internal static void SetSlotText(string value, Transform transform, bool isQuickSlot)
         {
             Transform binding = transform.Find("binding");
-            
+
             if (!binding)
-            {
-                binding = Object.Instantiate(InventoryGui.instance.m_playerGrid.m_elementPrefab.transform.Find("binding"), transform);
-                binding.name = "binding";
-            }
+                return;
             
             // Make component size of parent to let TMP_Text do its job on text positioning
             RectTransform rt = binding.GetComponent<RectTransform>();
@@ -73,8 +72,8 @@ namespace AzuExtendedPlayerInventory.EPI
             textComp.text = value;
             textComp.enabled = true;
             textComp.overflowMode = TextOverflowModes.Overflow;
-            textComp.fontSizeMin = 10f;
-            textComp.fontSizeMax = isQuickSlot ? quickSlotLabelFontSize.Value : equipmentSlotLabelFontSize.Value;
+            textComp.fontSizeMin = isQuickSlot ? quickSlotLabelFontSize.Value.x : equipmentSlotLabelFontSize.Value.x;
+            textComp.fontSizeMax = isQuickSlot ? quickSlotLabelFontSize.Value.y : equipmentSlotLabelFontSize.Value.y;
             textComp.color = isQuickSlot ? quickSlotLabelFontColor.Value : equipmentSlotLabelFontColor.Value;
             textComp.margin = isQuickSlot ? quickSlotLabelMargin.Value : equipmentSlotLabelMargin.Value;
             textComp.textWrappingMode = isQuickSlot ? quickSlotLabelWrappingMode.Value : equipmentSlotLabelWrappingMode.Value;
@@ -119,7 +118,8 @@ namespace AzuExtendedPlayerInventory.EPI
             {
                 get => leftOffsetBase
                     + (IsSeparatePanel() ? leftOffsetSeparatePanel : 0)
-                    + (IsMinimalUI() ? leftOffsetMinimalUI : 0);
+                    + (IsMinimalUI() ? leftOffsetMinimalUI : 0)
+                    + SeparatePanelOffset.Value;
             }
 
             internal static Dictionary<string, Slot> vanillaSlots = new();
@@ -148,7 +148,7 @@ namespace AzuExtendedPlayerInventory.EPI
                     (slots[newSlotIndex], slots[currentSlotIndex]) = (slots[currentSlotIndex], slots[newSlotIndex]);
                 }
 
-                ResizeSlots();
+                SetSlotsPositions();
             }
 
             internal static void UpdateVanillaSlotNames()
@@ -169,76 +169,47 @@ namespace AzuExtendedPlayerInventory.EPI
                 };
             }
 
-            internal static void ResizeSlots()
-            {
-                int lastSlotRow = Row(slots.Count - 1);
-
-                // Equipment positions
-                for (int i = 0; i < EquipmentSlotsCount; ++i)
-                {
-                    // Vertical top Horizontal middle
-                    // ReSharper disable once PossibleLossOfFraction
-
-                    /*float x = leftOffset + column * tileSize + ((i % 3 > (slots.Count - 1) % 3 ? 1 : 0) + Math.Max(9 + Hotkeys.Length - slots.Count - 1, 0) / 3) * tileSize / 2;
-                    float y = row * -tileSize;*/
-
-                    float x = Column(i) * tileSize + ((Row(i) > lastSlotRow ? 1 : 0) + Column(Math.Max(9 - EquipmentSlotsCount - 1, 0))) * tileSize / 2;
-
-                    float y = Row(i) * -tileSize;
-
-                    slots[i].Position = new Vector2(LeftOffset + x, y);
-                }
-
-                // Quickslot positions
-                for (int i = 0; i < QuickSlotsCount; ++i)
-                    slots[EquipmentSlotsCount + i].Position = new Vector2(LeftOffset + i * tileSize, 3 * -tileSize);
-
-                static int Column(int i) => i / 3;
-                static int Row(int i) => i % 3;
-            }
-
+            // Runs every frame InventoryGui.UpdateInventory if visible
             internal static void UpdateInventorySlots()
             {
                 if (AddEquipmentRow.Value.IsOff())
                     return;
 
-                try
+                Inventory inventory = Player.m_localPlayer?.GetInventory();
+                if (inventory == null)
+                    return;
+
+                int requiredRows = API.GetAddedRows(inventory.GetWidth());
+
+                // Update baseIndex based on the dynamic rows
+                int baseIndex = inventory.GetWidth() * (inventory.GetHeight() - requiredRows);
+
+                for (int i = 0; i < slots.Count; ++i)
                 {
-                    Player? player = Player.m_localPlayer;
-                    Inventory inventory = player.GetInventory();
+                    if (baseIndex + i >= InventoryGui.instance.m_playerGrid.m_elements.Count)
+                        break;
 
-                    int requiredRows = API.GetAddedRows(inventory.GetWidth());
-                    SlotInfo quickSlots = API.GetQuickSlots();
+                    GameObject currentChild = InventoryGui.instance.m_playerGrid.m_elements[baseIndex + i]?.m_go;
+                    if (!currentChild)
+                        break;
 
-                    // Update baseIndex based on the dynamic rows
-                    int baseIndex = inventory.GetWidth() * (inventory.GetHeight() - requiredRows);
-
-                    Vector2 baseGridPos = new((InventoryGui.instance.m_playerGrid.GetComponent<RectTransform>().rect.width - InventoryGui.instance.m_playerGrid.GetWidgetSize().x) / 2f, 0.0f);
-
-                    for (int i = 0; i < slots.Count; ++i)
+                    currentChild.SetActive(true);
+                        
+                    SetSlotText(slots[i].Name, currentChild.transform, isQuickSlot: i > EquipmentSlotsCount - 1);
+                        
+                    if (DisplayEquipmentRowSeparate.Value.IsOn())
                     {
-                        GameObject currentChild = InventoryGui.instance.m_playerGrid.m_elements[baseIndex + i].m_go;
-                        currentChild.SetActive(true);
-                        SetSlotText(slots[i].Name, currentChild.transform, isQuickSlot: quickSlots.SlotPositions.Contains(slots[i].Position));
-                        if (DisplayEquipmentRowSeparate.Value.IsOn())
-                        {
-                            currentChild.GetComponent<RectTransform>().anchoredPosition = slots[i].Position;
-                        }
-                        else
-                        {
-                            currentChild.GetComponent<RectTransform>().anchoredPosition = baseGridPos + new Vector2((baseIndex + i) % inventory.GetWidth() * InventoryGui.instance.m_playerGrid.m_elementSpace, (baseIndex + i) / inventory.GetWidth() * -InventoryGui.instance.m_playerGrid.m_elementSpace);
-                        }
+                        currentChild.GetComponent<RectTransform>().anchoredPosition = slots[i].Position;
                     }
-
-                    for (int i = baseIndex + slots.Count; i < InventoryGui.instance.m_playerGrid.m_elements.Count; ++i)
+                    else
                     {
-                        InventoryGui.instance.m_playerGrid.m_elements[i].m_go.SetActive(false);
+                        Vector2 baseGridPos = new((InventoryGui.instance.m_playerGrid.GetComponent<RectTransform>().rect.width - InventoryGui.instance.m_playerGrid.GetWidgetSize().x) / 2f, 0.0f);
+                        currentChild.GetComponent<RectTransform>().anchoredPosition = baseGridPos + new Vector2((baseIndex + i) % inventory.GetWidth() * InventoryGui.instance.m_playerGrid.m_elementSpace, (baseIndex + i) / inventory.GetWidth() * -InventoryGui.instance.m_playerGrid.m_elementSpace);
                     }
                 }
-                catch (Exception ex)
-                {
-                    AzuExtendedPlayerInventoryLogger.LogDebug($"Exception in EPI Update Inventory: {ex}");
-                }
+
+                for (int i = baseIndex + slots.Count; i < InventoryGui.instance.m_playerGrid.m_elements.Count; ++i)
+                    InventoryGui.instance.m_playerGrid.m_elements[i].m_go.SetActive(false);
             }
 
             public static float sideButtonSize = 1.13f;
@@ -251,7 +222,7 @@ namespace AzuExtendedPlayerInventory.EPI
             public static RectTransform equipmentDarken = null!;
             public static RectTransform equipmentBackground = null!;
 
-            public static bool IsMinimalUI() => BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue(ExtendedPlayerInventory.MinimalUiguid, out var pluginInfo) && pluginInfo is not null;
+            public static bool IsMinimalUI() => BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("Azumatt.MinimalUI", out var pluginInfo) && pluginInfo is not null;
 
             public static bool IsSeparatePanel() => DisplayEquipmentRowSeparatePanel.Value.IsOn();
 
@@ -271,7 +242,7 @@ namespace AzuExtendedPlayerInventory.EPI
 
                 Vector2 maxAnchor = new(offset + size + (IsSeparatePanel() ? offsetSeparatePanelMax : 0), 1f);
 
-                inventoryDarken.anchorMax = maxAnchor;
+                inventoryDarken.anchorMax = IsSeparatePanel() ? Vector2.one : maxAnchor;
                 equipmentBackground.anchorMax = maxAnchor;
                 InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<RectTransform>().anchorMax = maxAnchor;
 
@@ -279,7 +250,37 @@ namespace AzuExtendedPlayerInventory.EPI
                 equipmentDarken.gameObject.SetActive(IsSeparatePanel());
             }
 
-            // Runs every frame InventoryGui.Update
+            internal static void SetSlotsPositions()
+            {
+                for (int i = 0; i < slots.Count; ++i)
+                    slots[i].Position = GetSlotOffset(i);
+
+                static int Column(int i) => i / 3;
+                static int Row(int i) => i % 3;
+                static int LastEquipmentRow() => Row(EquipmentSlotsCount - 1);
+                static int LastEquipmentColumn() => Column(EquipmentSlotsCount - 1);
+                static void GetTileOffset(int i, out int x, out int y)
+                {
+                    // Result in grid size of half tiles
+                    if (i < EquipmentSlotsCount)
+                    {
+                        x = Column(i) * 2 + (EquipmentSlotsAlignment.Value == SlotAlignment.Horizontal && Row(i) > LastEquipmentRow() ? 1 : 0) + (LastEquipmentColumn() < 3 ? 1 : 0);
+                        y = Row(i) * 2 + Math.Max(EquipmentSlotsAlignment.Value == SlotAlignment.Vertical && Column(i) == LastEquipmentColumn() ? 2 - LastEquipmentRow() : 0, 0);
+                    }
+                    else
+                    {
+                        x = (i - EquipmentSlotsCount) * 2;
+                        y = QuickSlotsCount * 2;
+                    }
+                }
+                static Vector2 GetSlotOffset(int i)
+                {
+                    GetTileOffset(i, out int x, out int y);
+                    return new Vector2(LeftOffset + x * tileSize / 2, -y * tileSize / 2);
+                }
+            }
+
+            // Runs every frame InventoryGui.Update if visible
             internal static void UpdateEquipmentBackground()
             {
                 if (!InventoryGui.instance)
@@ -301,7 +302,7 @@ namespace AzuExtendedPlayerInventory.EPI
                 {
                     inventoryDarken = InventoryGui.instance.m_player.Find("Darken").GetComponent<RectTransform>();
 
-                    equipmentBackground = new GameObject(ExtendedPlayerInventory.AzuBkgName, typeof(RectTransform)).GetComponent<RectTransform>();
+                    equipmentBackground = new GameObject(AzuBkgName, typeof(RectTransform)).GetComponent<RectTransform>();
                     equipmentBackground.gameObject.layer = bkgRect.gameObject.layer;
                     equipmentBackground.SetParent(InventoryGui.instance.m_player, worldPositionStays: false);
                     equipmentBackground.SetSiblingIndex(inventoryDarken.GetSiblingIndex() + 1); // In front of Darken element
@@ -310,7 +311,7 @@ namespace AzuExtendedPlayerInventory.EPI
 
                     equipmentDarken = Object.Instantiate(inventoryDarken, equipmentBackground);
                     equipmentDarken.name = "Darken";
-                    inventoryDarken.sizeDelta = Vector2.one * 66f; // Original 100 is too much
+                    equipmentDarken.sizeDelta = Vector2.one * 70f; // Original 100 is too much
 
                     Transform equipmentBkg = Object.Instantiate(bkgRect.transform, equipmentBackground);
                     equipmentBkg.name = "Bkg";
@@ -336,7 +337,7 @@ namespace AzuExtendedPlayerInventory.EPI
 
         internal static class EquipmentSlots
         {
-            private static ItemDrop.ItemData?[] equippedItems = new ItemDrop.ItemData[5];
+            private static ItemDrop.ItemData[] equippedItems = new ItemDrop.ItemData[5];
             
             internal static bool TryGetSlot(Inventory inventory, ItemDrop.ItemData item, out int position)
             {
@@ -375,7 +376,7 @@ namespace AzuExtendedPlayerInventory.EPI
                 int requiredRows = API.GetAddedRows(width);
 
                 int num = width * (height - requiredRows);
-                ItemDrop.ItemData?[] equippedItemsNew = new ItemDrop.ItemData[slots.Count];
+                ItemDrop.ItemData[] equippedItemsNew = new ItemDrop.ItemData[slots.Count];
                 for (int i = 0; i < equippedItemsNew.Length; ++i)
                 {
                     Slot slot = slots[i];
@@ -702,7 +703,7 @@ namespace AzuExtendedPlayerInventory.EPI
             private static RectTransform _dropallButton = null!;
             private static TMP_Text _buttonText = null!;
 
-            // Runs every frame InventoryGui.Update
+            // Runs every frame InventoryGui.Update if visible
             internal static void UpdateButton()
             {
                 if (AddEquipmentRow.Value.IsOff())

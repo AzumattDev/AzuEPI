@@ -75,7 +75,7 @@ public class API
 
             ExtendedPlayerInventory.slots.Insert(index, slot);
 
-            ExtendedPlayerInventory.EquipmentPanel.ResizeSlots();
+            ExtendedPlayerInventory.EquipmentPanel.SetSlotsPositions();
 
 			AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug($"Added slot {slotName}");
 
@@ -93,14 +93,14 @@ public class API
 		if (ExtendedPlayerInventory.slots.FindIndex(s => s.Name == slotName) is { } slotIndex and >= 0 && ExtendedPlayerInventory.slots[slotIndex] is EquipmentSlot slot)
 		{
 			if (Player.m_localPlayer && slot.Get(Player.m_localPlayer) is { } item)
-			{
 				Player.m_localPlayer.UnequipItem(item);
-			}
+
 			UpdateSlots(slotIndex, -1);
 
 			ExtendedPlayerInventory.slots.RemoveAt(slotIndex);
 			
-			ExtendedPlayerInventory.EquipmentPanel.ResizeSlots();
+			ExtendedPlayerInventory.EquipmentPanel.SetSlotsPositions();
+
 			SlotRemoved?.Invoke(slotName);
 
 			return true;

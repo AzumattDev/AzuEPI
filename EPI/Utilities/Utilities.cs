@@ -41,7 +41,10 @@ public static class Utilities
 
     public static void InventoryFix()
     {
-        Inventory playerInventory = Player.m_localPlayer?.GetInventory();
+        if (Player.m_localPlayer == null)
+            return;
+
+        Inventory playerInventory = Player.m_localPlayer.GetInventory();
 
         if (playerInventory == null || playerInventory.m_inventory == null)
             return;

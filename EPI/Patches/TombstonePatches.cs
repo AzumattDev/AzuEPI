@@ -44,7 +44,7 @@ public class TombstonePatches
         private static void Prefix(out int __state)
         {
             playerCurrentPickupState = Player.m_enableAutoPickup;
-            Player.m_enableAutoPickup = false; // Temporarily disable auto pickup to prevent NRE
+            Player.m_enableAutoPickup = false; // Temporarily disable auto pickup to prevent NRE.   shudnal: Game version 0.218.21 is it still needed?
             __state = (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.IsOn() ? API.GetAddedRows(Player.m_localPlayer.m_inventory.m_width) : 0);
             Player.m_localPlayer.m_maxCarryWeight += 150f;
             Player.m_localPlayer.m_inventory.m_height += __state;

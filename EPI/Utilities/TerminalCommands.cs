@@ -47,7 +47,7 @@ static class TerminalInitTerminalPatch
                     return;
                 }
 
-                List<ItemDrop.ItemData> inventory = Player.m_localPlayer?.GetInventory()?.m_inventory;
+                List<ItemDrop.ItemData> inventory = Player.m_localPlayer.GetInventory()?.m_inventory;
                 if (inventory != null)
                     foreach (ItemDrop.ItemData itemData in inventory.Where(itemData => itemData.m_equipped && itemData.m_shared.m_useDurability))
                         itemData.m_durability = 0;
