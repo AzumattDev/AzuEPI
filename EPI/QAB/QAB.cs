@@ -1,6 +1,4 @@
 ﻿using System.Linq;
-using AzuExtendedPlayerInventory.EPI.Patches;
-using BepInEx;
 using HarmonyLib;
 using TMPro;
 using UnityEngine;
@@ -12,7 +10,7 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
     [HarmonyPatch(typeof(HotkeyBar), nameof(HotkeyBar.UpdateIcons))]
     internal static class QuickAccessBar
     {
-        private static bool forceSlotUpdate = false;
+        private static bool slotsIsDirty = false;
 
         [HarmonyPriority(Priority.Last)]
         internal static bool Prefix(HotkeyBar __instance, Player player)
@@ -22,7 +20,7 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                 return true;
             }
 
-            if (AzuExtendedPlayerInventoryPlugin.ShowQuickSlots.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off)
+            if (AzuExtendedPlayerInventoryPlugin.ShowQuickSlots.Value.IsOff())
             {
                 ClearElements(__instance);
             }
@@ -38,9 +36,9 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                     Inventory inventory = player.GetInventory();
                     int width = inventory.GetWidth();
                     int adjustedHeight = inventory.GetHeight() - API.GetAddedRows(width);
-                    int firstHotkeyIndex = adjustedHeight * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length;
+                    int firstHotkeyIndex = adjustedHeight * width + AzuExtendedPlayerInventoryPlugin.EquipmentSlotsCount;
 
-                    for (int i = 0; i < AzuExtendedPlayerInventoryPlugin.Hotkeys.Length; ++i)
+                    for (int i = 0; i < AzuExtendedPlayerInventoryPlugin.QuickSlotsCount; ++i)
                     {
                         int index = firstHotkeyIndex + i;
                         if (inventory.GetItemAt(index % width, index / width) is { } item)
@@ -53,7 +51,7 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                     __instance.m_items.Sort((x, y) => (x.m_gridPos.x + x.m_gridPos.y * width).CompareTo(y.m_gridPos.x + y.m_gridPos.y * width));
                     int num = __instance.m_items.Select(itemData => itemData.m_gridPos.x + itemData.m_gridPos.y * width - firstHotkeyIndex + 1).Concat(new[] { 0 }).Max(); // GPT
 
-                    if (__instance.m_elements.Count != num || forceSlotUpdate)
+                    if (__instance.m_elements.Count != num || slotsIsDirty)
                     {
                         foreach (HotkeyBar.ElementData element in __instance.m_elements)
                             Object.Destroy(element.m_go);
@@ -66,11 +64,9 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                                 m_go = Object.Instantiate(__instance.m_elementPrefab, __instance.transform),
                             };
                             elementData.m_go.transform.localPosition = new Vector3(index * __instance.m_elementSpace, 0.0f, 0.0f);
-                            if (index < AzuExtendedPlayerInventoryPlugin.HotkeyTexts.Length && index < AzuExtendedPlayerInventoryPlugin.Hotkeys.Length)
+                            if (index < AzuExtendedPlayerInventoryPlugin.HotkeyTexts.Length && index < AzuExtendedPlayerInventoryPlugin.QuickSlotsCount)
                             {
-                                ExtendedPlayerInventory.SetSlotText(AzuExtendedPlayerInventoryPlugin.HotkeyTexts[index].Value.IsNullOrWhiteSpace()
-                                    ? AzuExtendedPlayerInventoryPlugin.Hotkeys[index].Value.ToString()
-                                    : AzuExtendedPlayerInventoryPlugin.HotkeyTexts[index].Value, elementData.m_go.transform, isQuickSlot: true);
+                                ExtendedPlayerInventory.SetSlotText(AzuExtendedPlayerInventoryPlugin.GetHotkeyText(index), elementData.m_go.transform, isQuickSlot: true);
                             }
 
                             elementData.m_icon = elementData.m_go.transform.transform.Find("icon").GetComponent<Image>();
@@ -82,7 +78,7 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                             __instance.m_elements.Add(elementData);
                         }
 
-                        forceSlotUpdate = false;
+                        slotsIsDirty = false;
                     }
 
                     foreach (HotkeyBar.ElementData element in __instance.m_elements)
@@ -176,187 +172,14 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
 
         internal static void UpdateSlots()
         {
-            forceSlotUpdate = true;
-        }
-    }
-
-    public static class HotkeyBarController
-    {
-        [HarmonyPatch(typeof(Hud), nameof(Hud.Update))]
-        public static class Hud_Update_Patch
-        {
-            public static void Postfix(Hud __instance)
-            {
-                var player = Player.m_localPlayer;
-                if (ExtendedPlayerInventory.HotkeyBars == null)
-                {
-                    try
-                    {
-                        ExtendedPlayerInventory.HotkeyBars = __instance.transform.parent.GetComponentsInChildren<HotkeyBar>().ToList();
-                    }
-                    catch
-                    {
-                        AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogError($"Failed to get hotkey bars from Hud. The parent transform may have changed. {__instance.transform.parent.name}");
-                        return;
-                    }
-                }
-
-                if (player != null)
-                {
-                    if (IsValidHotkeyBarIndex())
-                    {
-                        var currentHotKeyBar = ExtendedPlayerInventory.HotkeyBars[ExtendedPlayerInventory.SelectedHotkeyBarIndex];
-                        UpdateHotkeyBarInput(currentHotKeyBar);
-                    }
-                    else
-                    {
-                        UpdateInitialHotkeyBarInput();
-                    }
-                }
-
-                foreach (var hotkeyBar in ExtendedPlayerInventory.HotkeyBars)
-                {
-                    if (hotkeyBar != null && hotkeyBar.m_elements != null)
-                    {
-                        ValidateHotkeyBarSelection(hotkeyBar);
-                        hotkeyBar.UpdateIcons(player);
-                    }
-                }
-            }
-
-            private static bool IsValidHotkeyBarIndex() => ExtendedPlayerInventory.SelectedHotkeyBarIndex >= 0 && ExtendedPlayerInventory.SelectedHotkeyBarIndex < ExtendedPlayerInventory.HotkeyBars.Count;
-
-            private static void UpdateInitialHotkeyBarInput()
-            {
-                if (ZInput.GetButtonDown("JoyDPadLeft") || ZInput.GetButtonDown("JoyDPadRight"))
-                {
-                    SelectHotkeyBar(0, false);
-                }
-            }
-
-            public static void UpdateHotkeyBarInput(HotkeyBar hotkeyBar)
-            {
-                var player = Player.m_localPlayer;
-                var canUseItem = hotkeyBar.m_selected >= 0 && player != null && !InventoryGui.IsVisible()
-                                 && !Menu.IsVisible() && !GameCamera.InFreeFly();
-                if (canUseItem && player != null)
-                {
-                    if (ZInput.GetButtonDown("JoyDPadLeft"))
-                    {
-                        if (hotkeyBar.m_selected == 0 && AzuExtendedPlayerInventoryPlugin.ShowQuickSlots.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On)
-                        {
-                            GotoHotkeyBar(ExtendedPlayerInventory.SelectedHotkeyBarIndex - 1);
-                        }
-                        else
-                        {
-                            hotkeyBar.m_selected = Mathf.Max(0, hotkeyBar.m_selected - 1);
-                        }
-                    }
-                    else if (ZInput.GetButtonDown("JoyDPadRight"))
-                    {
-                        if (hotkeyBar.m_selected == hotkeyBar.m_elements.Count - 1 && AzuExtendedPlayerInventoryPlugin.ShowQuickSlots.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On)
-                        {
-                            GotoHotkeyBar(ExtendedPlayerInventory.SelectedHotkeyBarIndex + 1);
-                        }
-                        else
-                        {
-                            hotkeyBar.m_selected = Mathf.Min(hotkeyBar.m_elements.Count - 1, hotkeyBar.m_selected + 1);
-                        }
-                    }
-
-                    if (ZInput.GetButtonDown("JoyDPadUp"))
-                    {
-                        if (hotkeyBar.name == "QuickAccessBar" && AzuExtendedPlayerInventoryPlugin.ShowQuickSlots.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On)
-                        {
-                            var quickSlotInventory = player.m_inventory;
-                            int width = quickSlotInventory.GetWidth();
-                            int adjustedHeight = quickSlotInventory.GetHeight() - API.GetAddedRows(width);
-                            int index = adjustedHeight * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length + hotkeyBar.m_selected;
-
-                            var item = quickSlotInventory.GetItemAt(index % width, index / width);
-                            if (item != null)
-                            {
-                                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo($"QuickAccessBar item {item.m_shared.m_name}");
-                                player.UseItem(null, item, false);
-                            }
-                        }
-                        else
-                        {
-                            if (ZInput.GetButtonDown("JoyHotbarUse") && !ZInput.GetButton("JoyAltKeys"))
-                                player.UseHotbarItem(hotkeyBar.m_selected + 1);
-                        }
-                    }
-                }
-
-                ValidateHotkeyBarSelection(hotkeyBar);
-            }
-
-            private static void ValidateHotkeyBarSelection(HotkeyBar hotkeyBar)
-            {
-                if (hotkeyBar.m_elements != null && hotkeyBar.m_selected > hotkeyBar.m_elements.Count - 1)
-                {
-                    hotkeyBar.m_selected = Mathf.Max(0, hotkeyBar.m_elements.Count - 1);
-                }
-            }
-
-            public static void GotoHotkeyBar(int newIndex)
-            {
-                if (newIndex < 0 || newIndex >= ExtendedPlayerInventory.HotkeyBars.Count)
-                {
-                    return;
-                }
-
-                var fromRight = newIndex < ExtendedPlayerInventory.SelectedHotkeyBarIndex;
-                SelectHotkeyBar(newIndex, fromRight);
-            }
-
-            public static void SelectHotkeyBar(int index, bool fromRight)
-            {
-                if (index < 0 || index >= ExtendedPlayerInventory.HotkeyBars.Count)
-                {
-                    return;
-                }
-
-                ExtendedPlayerInventory.SelectedHotkeyBarIndex = index;
-                for (var i = 0; i < ExtendedPlayerInventory.HotkeyBars.Count; ++i)
-                {
-                    var hotkeyBar = ExtendedPlayerInventory.HotkeyBars[i];
-                    if (i == index)
-                    {
-                        hotkeyBar.m_selected = fromRight ? hotkeyBar.m_elements.Count - 1 : 0;
-                    }
-                    else
-                    {
-                        hotkeyBar.m_selected = -1;
-                    }
-                }
-            }
-
-            public static void DeselectHotkeyBar()
-            {
-                ExtendedPlayerInventory.SelectedHotkeyBarIndex = -1;
-                foreach (var hotkeyBar in ExtendedPlayerInventory.HotkeyBars)
-                {
-                    hotkeyBar.m_selected = -1;
-                }
-            }
-        }
-
-        [HarmonyPatch(typeof(Hud), nameof(Hud.OnDestroy))]
-        public static class Hud_OnDestroy_Patch
-        {
-            public static void Postfix(Hud __instance)
-            {
-                ExtendedPlayerInventory.HotkeyBars = null!;
-                ExtendedPlayerInventory.SelectedHotkeyBarIndex = -1;
-            }
+            slotsIsDirty = true;
         }
     }
 
     [HarmonyPatch(typeof(HotkeyBar), nameof(HotkeyBar.Update))]
     public static class HotkeyBar_Update_Patch
     {
-        public static bool Prefix(HotkeyBar __instance)
+        public static bool Prefix()
         {
             // Everything controlled in above update
             return false;

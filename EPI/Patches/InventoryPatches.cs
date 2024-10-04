@@ -11,13 +11,13 @@ public class InventoryPatches
     {
         private static bool Prefix(Inventory __instance, ref int ___m_height, ref Vector2i __result)
         {
-            bool addEquipmentRow = AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On;
+            bool addEquipmentRow = AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.IsOn();
             if (!addEquipmentRow || !Player.m_localPlayer || __instance != Player.m_localPlayer.GetInventory())
                 return true;
             bool equippedWeaponUpgrade = InventoryGui.instance.m_craftTimer >=
                                          InventoryGui.instance.m_craftDuration &&
                                          InventoryGui.instance.m_craftUpgradeItem is { } item
-                                         && ExtendedPlayerInventory.IsEquipmentSlotFree(__instance, item, out _);
+                                         && ExtendedPlayerInventory.EquipmentSlots.IsFreeSlot(__instance, item, out _);
             if (equippedWeaponUpgrade)
             {
                 // When upgrading equipment: AddItem only checks for space. Return an arbitrary slot here. The AddItem(ItemData) patch will move it to the right slot.
@@ -31,7 +31,7 @@ public class InventoryPatches
 
         private static void Postfix(Inventory __instance, ref int ___m_height)
         {
-            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || !Player.m_localPlayer ||
+            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.IsOff() || !Player.m_localPlayer ||
                 __instance != Player.m_localPlayer.GetInventory())
                 return;
             
@@ -52,7 +52,7 @@ public class InventoryPatches
             int ___m_height)
         {
             if (Player.m_localPlayer == null) return true;
-            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || __instance != Player.m_localPlayer.GetInventory())
+            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.IsOff() || __instance != Player.m_localPlayer.GetInventory())
                 return true;
             AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug("GetEmptySlots");
 
@@ -76,7 +76,7 @@ public class InventoryPatches
             int ___m_height)
         {
             if (Player.m_localPlayer == null) return true;
-            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || __instance != Player.m_localPlayer.GetInventory())
+            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.IsOff() || __instance != Player.m_localPlayer.GetInventory())
                 return true;
 
             int addedRows = API.GetAddedRows(___m_width);
@@ -95,14 +95,13 @@ public class InventoryPatches
         private static bool Prefix(
             Inventory __instance,
             ref bool __result,
-            List<ItemDrop.ItemData> ___m_inventory,
             ItemDrop.ItemData item)
         {
             if (Player.m_localPlayer == null) return true;
-            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || !Player.m_localPlayer || __instance != Player.m_localPlayer.GetInventory())
+            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.IsOff() || !Player.m_localPlayer || __instance != Player.m_localPlayer.GetInventory())
                 return true;
             AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug("AddItem");
-            if (!ExtendedPlayerInventory.IsEquipmentSlotFree(__instance, item, out int which))
+            if (!ExtendedPlayerInventory.EquipmentSlots.IsFreeSlot(__instance, item, out int position))
                 return true;
 
             int addedRows = API.GetAddedRows(__instance.GetWidth());
@@ -110,7 +109,7 @@ public class InventoryPatches
             int adjustedHeight = __instance.GetHeight() - addedRows;
 
 
-            __instance.AddItem(item, item.m_stack, which % __instance.GetWidth(), adjustedHeight + which / __instance.GetWidth());
+            __instance.AddItem(item, item.m_stack, position % __instance.GetWidth(), adjustedHeight + position / __instance.GetWidth());
             Player.m_localPlayer.EquipItem(item, false);
             __instance.Changed();
             __result = true;
@@ -123,17 +122,13 @@ public class InventoryPatches
         typeof(int))]
     private static class InventoryAddItemPatch2
     {
-        private static void Prefix(
-            Inventory __instance,
-            ref int ___m_width,
-            ref int ___m_height,
-            int x,
-            int y)
+        private static void Prefix(int ___m_width, ref int ___m_height, int y)
         {
             int addedRows = API.GetAddedRows(___m_width);
 
             if (y < ___m_height)
                 return;
+
             ___m_height = y + addedRows;
         }
     }

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using AzuExtendedPlayerInventory.EPI;
-using AzuExtendedPlayerInventory.EPI.Patches;
 using AzuExtendedPlayerInventory.EPI.QAB;
 using AzuExtendedPlayerInventory.EPI.Utilities;
 using AzuExtendedPlayerInventory.Moveable;
@@ -14,7 +12,6 @@ using HarmonyLib;
 using JetBrains.Annotations;
 using ServerSync;
 using UnityEngine;
-using static AzuExtendedPlayerInventory.EPI.Patches.InventoryGuiPatches.UpdateInventory_Patch;
 
 namespace AzuExtendedPlayerInventory;
 
@@ -27,8 +24,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     internal const string ModVersion = "1.4.3";
     internal const string Author = "Azumatt";
     private const string ModGUID = Author + "." + ModName;
-    private static string ConfigFileName = ModGUID + ".cfg";
-    private static string ConfigFileFullPath = Paths.ConfigPath + Path.DirectorySeparatorChar + ConfigFileName;
+    private static readonly string ConfigFileName = ModGUID + ".cfg";
+    private static readonly string ConfigFileFullPath = Paths.ConfigPath + Path.DirectorySeparatorChar + ConfigFileName;
     internal static string ConnectionError = "";
     private readonly Harmony _harmony = new(ModGUID);
     public static readonly ManualLogSource AzuExtendedPlayerInventoryLogger = BepInEx.Logging.Logger.CreateLogSource(ModName);
@@ -55,7 +52,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         /* Extended Player Inventory Config options */
         AutoEquip = config("2 - Extended Inventory", "Auto Equip", Toggle.On, "Automatically equip items that go into the gear slots. Applies when picking up items, transferring between containers, or picking up your tombstone.");
         ShowQuickSlots = config("2 - Extended Inventory", "Show Quickslots", Toggle.On, "Should the quickslots be shown?");
-        ShowQuickSlots.SettingChanged += (sender, args) => { HotkeyBarController.Hud_Update_Patch.DeselectHotkeyBar(); };
+        ShowQuickSlots.SettingChanged += (sender, args) => { ExtendedPlayerInventory.QuickSlots.DeselectHotkeyBars(); };
         ExtraRows = config("2 - Extended Inventory", "Extra Inventory Rows", 0, "Number of extra ordinary rows. (This can cause overlap with chest GUI, make sure you hold CTRL (the default key) and drag to desired position)");
         // Fire an event handler on setting change for ExtraRows that will update the inventory size
         ExtraRows.SettingChanged += (sender, args) => { UpdateInventorySize(); };
@@ -65,8 +62,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         DisplayEquipmentRowSeparatePanel = config("2 - Extended Inventory", "Display Equipment Row Separate Panel", Toggle.Off, "Display equipment and quickslots in their own panel. (depends on \"Display Equipment Row Separate\" config value)");
 
         DisplayEquipmentRowSeparate.SettingChanged += (sender, args) => { CheckRandy(); };
-        DisplayEquipmentRowSeparatePanel.SettingChanged += (sender, args) => { InventoryGuiPatches.UpdateInventoryBackground(); ResizeSlots(); };
-
+        DisplayEquipmentRowSeparatePanel.SettingChanged += (sender, args) => { ExtendedPlayerInventory.EquipmentPanel.UpdateInventoryBackground(); ExtendedPlayerInventory.EquipmentPanel.ResizeSlots(); };
+        
 
         HelmetText = config("2 - Extended Inventory", "Helmet Text", "Head", "Text to show for helmet slot.", false);
         ChestText = config("2 - Extended Inventory", "Chest Text", "Chest", "Text to show for chest slot.", false);
@@ -76,11 +73,11 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         RightHandText = config("2 - Extended Inventory", "Right Hand Text", "R Hand", "Text to show for right hand slot.", false);
         LeftHandText = config("2 - Extended Inventory", "Left Hand Text", "L Hand", "Text to show for left hand slot.", false);
 
-        HelmetText.SettingChanged += (s, e) => UpdateVanillaSlotNames();
-        ChestText.SettingChanged += (s, e) => UpdateVanillaSlotNames();
-        LegsText.SettingChanged += (s, e) => UpdateVanillaSlotNames();
-        BackText.SettingChanged += (s, e) => UpdateVanillaSlotNames();
-        UtilityText.SettingChanged += (s, e) => UpdateVanillaSlotNames();
+        HelmetText.SettingChanged += (s, e) => ExtendedPlayerInventory.EquipmentPanel.UpdateVanillaSlotNames();
+        ChestText.SettingChanged += (s, e) => ExtendedPlayerInventory.EquipmentPanel.UpdateVanillaSlotNames();
+        LegsText.SettingChanged += (s, e) => ExtendedPlayerInventory.EquipmentPanel.UpdateVanillaSlotNames();
+        BackText.SettingChanged += (s, e) => ExtendedPlayerInventory.EquipmentPanel.UpdateVanillaSlotNames();
+        UtilityText.SettingChanged += (s, e) => ExtendedPlayerInventory.EquipmentPanel.UpdateVanillaSlotNames();
 
         QuickAccessScale = config("2 - Extended Inventory", "QuickAccess Scale", 0.85f, "Scale of quick access bar. ", false);
 
@@ -104,10 +101,10 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         QuickAccessX = config("2 - Extended Inventory", "Quickslot X", 9999f, "Current X of Quick Slots", false);
         QuickAccessY = config("2 - Extended Inventory", "Quickslot Y", 9999f, "Current Y of Quick Slots", false);
 
-        string order = $"{helmetSlotID},{legsSlotID},{utilitySlotID},{chestSlotID},{backSlotID}";
+        string order = $"{EquipmentSlot.helmetSlotID},{EquipmentSlot.legsSlotID},{EquipmentSlot.utilitySlotID},{EquipmentSlot.chestSlotID},{EquipmentSlot.backSlotID}";
         VanillaSlotsOrder = config("2 - Extended Inventory", "Vanilla slots order", order, "Comma separated list defining order of vanilla slots", false);
 
-        VanillaSlotsOrder.SettingChanged += (s, e) => ReorderVanillaSlots();
+        VanillaSlotsOrder.SettingChanged += (s, e) => ExtendedPlayerInventory.EquipmentPanel.ReorderVanillaSlots();
 
         /* Moveable Chest Inventory */
         MoveableChestInventory.ChestInventoryX = config("3 - Chest Inventory", "Chest Inventory X", -1f, "Current X of chest", false);
@@ -117,6 +114,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         
         MakeDropAllButton = config("3 - Button", "Drop All Button", Toggle.Off, "Key or keys (to move the container). It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
         DropAllButtonPosition = config("3 - Button", "Button Position", new Vector2(880.00f, 10.00f), "Button position relative to the inventory background's top left corner", false);
+        DropAllButtonText = config("3 - Button", "Button Text", "Drop all", "Button text", false);
 
         equipmentSlotLabelAlignment = config("4 - Equipment slots - Label style", "Horizontal alignment", TMPro.HorizontalAlignmentOptions.Center, "Horizontal alignment of text component in equipment slot label", false);
         equipmentSlotLabelWrappingMode = config("4 - Equipment slots - Label style", "Text wrapping mode", TMPro.TextWrappingModes.PreserveWhitespaceNoWrap, "Size of text component in slot label", false);
@@ -136,13 +134,13 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         quickSlotLabelFontSize.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
         quickSlotLabelFontColor.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
 
-
         Hotkeys = new[]
         {
             HotKey1,
             HotKey2,
             HotKey3,
         };
+
         HotkeyTexts = new[]
         {
             HotKey1Text,
@@ -168,51 +166,26 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         _harmony.PatchAll();
         SetupWatcher();
 
-        /*if (Chainloader.PluginInfos.TryGetValue("vapok.mods.adventurebackpacks", out PluginInfo? advBackpacks) && AdvBackpackSlot.Value == Toggle.On)
-        {
-            if (advBackpacks != null)
-            {
-                API.AddSlot("AdvPack", GetBackpackItem, IsBackpackItem);
-            }
-        }*/
+        // Version 1.7.6 GetEquippedBackpack will be always null despite wearing a backpack, damn
+        /*if (AdventureBackpacks.API.ABAPI.IsLoaded())
+            API.AddSlot("AdvPack", player => AdventureBackpacks.API.ABAPI.GetEquippedBackpack(Player.m_localPlayer)?.ItemData, AdventureBackpacks.API.ABAPI.IsBackpack);*/
     }
 
-    private ItemDrop.ItemData? GetBackpackItem(Humanoid player)
-    {
-        ItemDrop.ItemData? utilitySlot = player.GetInventory().GetEquippedItems().FirstOrDefault(i => i != null && i.m_dropPrefab
-                                                                                                                && i.m_dropPrefab.name
-                                                                                                                    is "BackpackMeadows"
-                                                                                                                    or "BackpackBlackForest"
-                                                                                                                    or "BackpackSwamp"
-                                                                                                                    or "BackpackMountains"
-                                                                                                                    or "BackpackPlains"
-                                                                                                                    or "BackpackMistlands"
-                                                                                                                    or "CapeSilverBackpack"
-                                                                                                                    or "CapeIronBackpack");
+    public static int QuickSlotsCount => Hotkeys.Length;
 
-        return utilitySlot;
-    }
+    public static int EquipmentSlotsCount => ExtendedPlayerInventory.slots.Count - QuickSlotsCount;
 
-    private bool IsBackpackItem(ItemDrop.ItemData? item)
-    {
-        return item != null && item.m_dropPrefab && item.m_dropPrefab.name
-            is "BackpackMeadows"
-            or "BackpackBlackForest"
-            or "BackpackSwamp"
-            or "BackpackMountains"
-            or "BackpackPlains"
-            or "BackpackMistlands"
-            or "CapeSilverBackpack"
-            or "CapeIronBackpack";
-    }
+    public static string GetHotkeyText(int index) => HotkeyTexts[index].Value.IsNullOrWhiteSpace() ? GetHotkey(index).ToString() : HotkeyTexts[index].Value;
+
+    public static KeyboardShortcut GetHotkey(int index) => Hotkeys[index].Value;
 
     private void Start()
     {
         CheckRandy();
         CheckWeightBase();
 
-        InitializeVanillaSlotsOrder();
-        ReorderVanillaSlots();
+        ExtendedPlayerInventory.EquipmentPanel.InitializeVanillaSlotsOrder();
+        ExtendedPlayerInventory.EquipmentPanel.ReorderVanillaSlots();
     }
 
     private void OnDestroy()
@@ -249,20 +222,25 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     // Create the UpdateInventorySize method
     public static void UpdateInventorySize()
     {
-        if (InventoryGui.instance == null) return;
-        if (Player.m_localPlayer == null) return;
-        int height = 4 + ExtraRows.Value + (AddEquipmentRow.Value == Toggle.On ? API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()) : 0);
+        if (InventoryGui.instance == null)
+            return;
+
+        if (Player.m_localPlayer == null)
+            return;
+
+        int height = 4 + ExtraRows.Value + (AddEquipmentRow.Value.IsOn() ? API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()) : 0);
+        
         Player.m_localPlayer.m_inventory.m_height = height;
         Player.m_localPlayer.m_tombstone.GetComponent<Container>().m_height = height;
-
         Player.m_localPlayer.m_inventory.Changed();
+        
         Utilities.InventoryFix();
     }
 
     private static void CheckRandy()
     {
-        if (DisplayEquipmentRowSeparate.Value == Toggle.Off && AddEquipmentRow.Value == Toggle.Off) return;
-        if (!BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("randyknapp.mods.equipmentandquickslots", out var RandyEAQ)) return;
+        if (DisplayEquipmentRowSeparate.Value.IsOff() && AddEquipmentRow.Value.IsOff()) return;
+        if (!BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("randyknapp.mods.equipmentandquickslots", out _)) return;
         DisplayEquipmentRowSeparate.Value = Toggle.Off;
         AddEquipmentRow.Value = Toggle.Off;
         context.Config.Save();
@@ -273,7 +251,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     private static void CheckWeightBase()
     {
-        if (!BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("MadBuffoon.WeightBase", out var WbInfo)) return;
+        if (!BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("MadBuffoon.WeightBase", out _)) return;
         WbInstalled = true;
     }
 
@@ -288,6 +266,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<Toggle> ShowQuickSlots = null!;
     public static ConfigEntry<Toggle> MakeDropAllButton = null!;
     public static ConfigEntry<Vector2> DropAllButtonPosition = null!;
+    public static ConfigEntry<string> DropAllButtonText = null!;
     public static ConfigEntry<int> ExtraRows = null!;
     public static ConfigEntry<string> HelmetText = null!;
     public static ConfigEntry<string> ChestText = null!;
@@ -337,8 +316,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
                 description.Description +
                 (synchronizedSetting ? " [Synced with Server]" : " [Not Synced with Server]"),
                 description.AcceptableValues, description.Tags);
+        
         ConfigEntry<T> configEntry = Config.Bind(group, name, value, extendedDescription);
-        //var configEntry = Config.Bind(group, name, value, description);
 
         SyncedConfigEntry<T> syncedConfigEntry = ConfigSync.AddConfigEntry(configEntry);
         syncedConfigEntry.SynchronizedConfig = synchronizedSetting;
@@ -352,6 +331,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         return config(group, name, value, new ConfigDescription(description), synchronizedSetting);
     }
 
+#nullable enable
     private class ConfigurationManagerAttributes
     {
         [UsedImplicitly] public int? Order = null!;
@@ -359,6 +339,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         [UsedImplicitly] public string? Category = null!;
         [UsedImplicitly] public Action<ConfigEntryBase>? CustomDrawer = null!;
     }
+#nullable disable
 
     class AcceptableShortcuts : AcceptableValueBase
     {
@@ -374,4 +355,17 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     }
 
     #endregion
+}
+
+public static class ToggleExtentions
+{
+    public static bool IsOn(this AzuExtendedPlayerInventoryPlugin.Toggle value)
+    {
+        return value == AzuExtendedPlayerInventoryPlugin.Toggle.On;
+    }
+
+    public static bool IsOff(this AzuExtendedPlayerInventoryPlugin.Toggle value)
+    {
+        return value == AzuExtendedPlayerInventoryPlugin.Toggle.Off;
+    }
 }

@@ -4,10 +4,11 @@ using JetBrains.Annotations;
 using UnityEngine;
 #if ! API
 using System.Linq;
-using AzuExtendedPlayerInventory.EPI.Patches;
+using AzuExtendedPlayerInventory.EPI;
 #endif
 
 namespace AzuExtendedPlayerInventory;
+#nullable enable
 
 [PublicAPI]
 public class API
@@ -62,18 +63,19 @@ public class API
 	public static bool AddSlot(string slotName, Func<Player, ItemDrop.ItemData?> getItem, Func<ItemDrop.ItemData, bool> isValid, int index = -1)
 	{
 #if ! API
-		if (InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s.Name == slotName) < 0)
+		if (ExtendedPlayerInventory.slots.FindIndex(s => s.Name == slotName) < 0)
 		{
-			InventoryGuiPatches.EquipmentSlot slot = new() { Name = slotName, Get = getItem, Valid = isValid };
-			if (index < 0 || index > InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length)
+			EquipmentSlot slot = new() { Name = slotName, Get = getItem, Valid = isValid };
+			if (index < 0 || index > AzuExtendedPlayerInventoryPlugin.EquipmentSlotsCount)
 			{
-				index = InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length;
+				index = AzuExtendedPlayerInventoryPlugin.EquipmentSlotsCount;
 			}
 
 			UpdateSlots(index, 1);
-			InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(index, slot);
 
-			InventoryGuiPatches.UpdateInventory_Patch.ResizeSlots();
+            ExtendedPlayerInventory.slots.Insert(index, slot);
+
+            ExtendedPlayerInventory.EquipmentPanel.ResizeSlots();
 
 			AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug($"Added slot {slotName}");
 
@@ -88,7 +90,7 @@ public class API
 	public static bool RemoveSlot(string slotName)
 	{
 #if ! API
-		if (InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s.Name == slotName) is { } slotIndex and >= 0 && InventoryGuiPatches.UpdateInventory_Patch.slots[slotIndex] is InventoryGuiPatches.EquipmentSlot slot)
+		if (ExtendedPlayerInventory.slots.FindIndex(s => s.Name == slotName) is { } slotIndex and >= 0 && ExtendedPlayerInventory.slots[slotIndex] is EquipmentSlot slot)
 		{
 			if (Player.m_localPlayer && slot.Get(Player.m_localPlayer) is { } item)
 			{
@@ -96,9 +98,9 @@ public class API
 			}
 			UpdateSlots(slotIndex, -1);
 
-			InventoryGuiPatches.UpdateInventory_Patch.slots.RemoveAt(slotIndex);
+			ExtendedPlayerInventory.slots.RemoveAt(slotIndex);
 			
-			InventoryGuiPatches.UpdateInventory_Patch.ResizeSlots();
+			ExtendedPlayerInventory.EquipmentPanel.ResizeSlots();
 			SlotRemoved?.Invoke(slotName);
 
 			return true;
@@ -133,7 +135,7 @@ public class API
 				}
 			}
 
-			inv.m_height = baseRows + Mathf.CeilToInt((float)(InventoryGuiPatches.UpdateInventory_Patch.slots.Count + shift) / width);
+			inv.m_height = baseRows + Mathf.CeilToInt((float)(ExtendedPlayerInventory.slots.Count + shift) / width);
 		}
 	}
 #endif
@@ -143,10 +145,10 @@ public class API
 #if ! API
 		return new SlotInfo
 		{
-			SlotNames = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.Name).ToArray(),
-			SlotPositions = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.Position).ToArray(),
-			GetItemFuncs = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.EquipmentSlot?.Get).ToArray(),
-			IsValidFuncs = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.EquipmentSlot?.Valid).ToArray(),
+			SlotNames = ExtendedPlayerInventory.slots.Select(s => s.Name).ToArray(),
+			SlotPositions = ExtendedPlayerInventory.slots.Select(s => s.Position).ToArray(),
+			GetItemFuncs = ExtendedPlayerInventory.slots.Select(s => s.EquipmentSlot?.Get).ToArray(),
+			IsValidFuncs = ExtendedPlayerInventory.slots.Select(s => s.EquipmentSlot?.Valid).ToArray(),
 		};
 #else
     return new SlotInfo();
@@ -155,10 +157,8 @@ public class API
 
 	public static SlotInfo GetQuickSlots()
 	{
-#if ! API
-		string[] fixedSlotNames = AzuExtendedPlayerInventoryPlugin.Hotkeys.Select(hk => hk.Value.ToString()).ToArray();
-
-		InventoryGuiPatches.Slot[] quickSlots = InventoryGuiPatches.UpdateInventory_Patch.slots.Where(slot => fixedSlotNames.Contains(slot.Name)).ToArray();
+#if !API
+        Slot[] quickSlots = ExtendedPlayerInventory.GetQuickSlots();
 
 		return new SlotInfo
 		{
@@ -179,10 +179,10 @@ public class API
 		if (Player.m_localPlayer == null) return quickSlotItems;
 		Inventory inventory = Player.m_localPlayer.GetInventory();
 		int width = inventory.GetWidth();
-		int adjustedHeight = inventory.GetHeight() - API.GetAddedRows(width);
-		int firstHotkeyIndex = adjustedHeight * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length;
+		int adjustedHeight = inventory.GetHeight() - GetAddedRows(width);
+		int firstHotkeyIndex = adjustedHeight * width + AzuExtendedPlayerInventoryPlugin.EquipmentSlotsCount;
 
-		for (int i = 0; i < AzuExtendedPlayerInventoryPlugin.Hotkeys.Length; ++i)
+		for (int i = 0; i < AzuExtendedPlayerInventoryPlugin.QuickSlotsCount; ++i)
 		{
 			int index = firstHotkeyIndex + i;
 			if (inventory.GetItemAt(index % width, index / width) is { } item)
@@ -197,11 +197,10 @@ public class API
 #endif
 	}
 
-
 	public static int GetAddedRows(int width)
 	{
 #if ! API
-		int slotsCount = InventoryGuiPatches.UpdateInventory_Patch.slots.Count;
+		int slotsCount = ExtendedPlayerInventory.slots.Count;
 		int requiredRows = Mathf.CeilToInt((float)slotsCount / width);
 		return requiredRows;
 #else

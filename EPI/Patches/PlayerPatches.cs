@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
-using AzuExtendedPlayerInventory.EPI.Utilities;
 using HarmonyLib;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace AzuExtendedPlayerInventory.EPI.Patches;
 
@@ -13,22 +11,22 @@ public class PlayerPatches
     [HarmonyPatch(typeof(Player), nameof(Player.Awake))]
     private static class PlayerAwakePatch
     {
-        private static void Prefix(Player __instance, Inventory ___m_inventory)
+        private static void Prefix(Player __instance)
         {
             AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug("Player_Awake");
 
-            int height = 4 + AzuExtendedPlayerInventoryPlugin.ExtraRows.Value + (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On ? API.GetAddedRows(__instance.m_inventory.GetWidth()) : 0);
+            int height = 4 + AzuExtendedPlayerInventoryPlugin.ExtraRows.Value + (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.IsOn() ? API.GetAddedRows(__instance.m_inventory.GetWidth()) : 0);
             __instance.m_inventory.m_height = height;
             __instance.m_tombstone.GetComponent<Container>().m_height = height;
         }
     }
 
     [HarmonyPatch(typeof(Player), nameof(Player.OnSpawned))]
-    static class InventoryGuiAwakePatch
+    private static class InventoryGuiAwakePatch
     {
         public const string Sentinel = "<|>";
-        public static Inventory QuickSlotInventory = new Inventory(nameof(QuickSlotInventory), null, 3, 1);
-        public static Inventory EquipmentSlotInventory = new Inventory(nameof(EquipmentSlotInventory), null, 5, 1);
+        public static Inventory QuickSlotInventory = new(nameof(QuickSlotInventory), null, 3, 1);
+        public static Inventory EquipmentSlotInventory = new(nameof(EquipmentSlotInventory), null, 5, 1);
         private static readonly MethodInfo MemberwiseCloneMethod = AccessTools.DeclaredMethod(typeof(object), "MemberwiseClone");
         public static T Clone<T>(T input) where T : notnull => (T)MemberwiseCloneMethod.Invoke(input, Array.Empty<object>());
 
@@ -37,7 +35,7 @@ public class PlayerPatches
             if (Player.m_localPlayer == null || Player.m_localPlayer != __instance)
                 return;
 
-            if (!BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("randyknapp.mods.equipmentandquickslots", out var RandyEAQ))
+            if (!BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("randyknapp.mods.equipmentandquickslots", out _))
             {
                 Load(__instance);
             }
@@ -51,19 +49,18 @@ public class PlayerPatches
                 return;
             }
 
-            LoadValue(fromPlayer, "ExtendedPlayerData", out string init);
+            LoadValue(fromPlayer, "ExtendedPlayerData", out _);
 
             if (LoadValue(fromPlayer, "QuickSlotInventory", out string quickSlotData))
             {
-                ZPackage pkg = new ZPackage(quickSlotData);
+                ZPackage pkg = new(quickSlotData);
                 QuickSlotInventory.Load(pkg);
                 fromPlayer.m_inventory.MoveAll(QuickSlotInventory);
-                foreach (ItemDrop.ItemData? item in QuickSlotInventory.GetAllItems())
+                foreach (ItemDrop.ItemData item in QuickSlotInventory.GetAllItems().Where(item => item != null))
                 {
                     if (item.m_dropPrefab == null) continue;
                     TryAddItemToInventory(fromPlayer, item, fromPlayer.m_inventory, false);
                 }
-
 
                 // Clear QuickSlotInventory after moving items
                 QuickSlotInventory.RemoveAll();
@@ -76,10 +73,10 @@ public class PlayerPatches
 
             if (LoadValue(fromPlayer, "EquipmentSlotInventory", out string equipSlotData))
             {
-                ZPackage pkg = new ZPackage(equipSlotData);
+                ZPackage pkg = new(equipSlotData);
                 EquipmentSlotInventory.Load(pkg);
                 //fromPlayer.m_inventory.MoveAll(EquipmentSlotInventory);
-                foreach (ItemDrop.ItemData? item in EquipmentSlotInventory.GetAllItems())
+                foreach (ItemDrop.ItemData item in EquipmentSlotInventory.GetAllItems().Where(item => item != null))
                 {
                     if (item.m_dropPrefab == null) continue;
                     TryAddItemToInventory(fromPlayer, item, fromPlayer.m_inventory);
@@ -100,9 +97,10 @@ public class PlayerPatches
             if (player.m_customData.TryGetValue(key, out value))
                 return true;
 
-            var foundInKnownTexts = player.m_knownTexts.TryGetValue(key, out value);
+            var foundInKnownTexts = player.m_knownTexts.TryGetValue(key, out _);
             if (!foundInKnownTexts)
                 key = Sentinel + key;
+
             foundInKnownTexts = player.m_knownTexts.TryGetValue(key, out value);
             if (foundInKnownTexts)
                 AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning("Loaded data from knownTexts. Will be converted to customData on save.");
@@ -161,58 +159,41 @@ public class PlayerPatches
     [HarmonyPatch(typeof(Player), nameof(Player.Update))]
     private static class PlayerUpdatePatch
     {
-        private static void Postfix(Player __instance, ref Inventory ___m_inventory)
+        private static Container tombstoneContainer = null!;
+
+        private static void Postfix(Player __instance, Inventory ___m_inventory)
         {
-            int width = ___m_inventory.GetWidth();
-            int height = 4 + AzuExtendedPlayerInventoryPlugin.ExtraRows.Value + (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On ? API.GetAddedRows(width) : 0);
+            CheckInventoryHeight(__instance, ___m_inventory);
+
+            ExtendedPlayerInventory.QuickSlots.UpdateItemUse();
+        }
+
+        private static void CheckInventoryHeight(Player __instance, Inventory ___m_inventory)
+        {
+            int height = 4 + AzuExtendedPlayerInventoryPlugin.ExtraRows.Value + (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.IsOn() ? API.GetAddedRows(___m_inventory.GetWidth()) : 0);
+
             ___m_inventory.m_height = height;
-            __instance.m_tombstone.GetComponent<Container>().m_height = height;
-            if (Utilities.Utilities.IgnoreKeyPresses(true) || AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off)
-                return;
 
-            int hotkey = 0;
-            while (!AzuExtendedPlayerInventoryPlugin.Hotkeys[hotkey].Value.IsKeyDown())
-            {
-                if (++hotkey == AzuExtendedPlayerInventoryPlugin.Hotkeys.Length)
-                {
-                    return;
-                }
-            }
+            if (tombstoneContainer == null)
+                tombstoneContainer = __instance.m_tombstone.GetComponent<Container>();
 
-            int index = (4 + AzuExtendedPlayerInventoryPlugin.ExtraRows.Value) * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length + hotkey;
-            ItemDrop.ItemData itemAt = ___m_inventory.GetItemAt(index % width, index / width);
-            if (itemAt == null)
-                return;
-            __instance.UseItem(null, itemAt, true);
+            tombstoneContainer.m_height = height;
         }
 
-        private static void CreateTombStone()
-        {
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug($"Height {Player.m_localPlayer.m_tombstone.GetComponent<Container>().m_height}");
-            GameObject gameObject = Object.Instantiate(Player.m_localPlayer.m_tombstone, Player.m_localPlayer.GetCenterPoint(), Player.m_localPlayer.transform.rotation);
-            TombStone component = gameObject.GetComponent<TombStone>();
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug($"Height {gameObject.GetComponent<Container>().m_height}");
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug($"Inv height {gameObject.GetComponent<Container>().GetInventory().GetHeight()}");
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug($"Inv slots {gameObject.GetComponent<Container>().GetInventory().GetEmptySlots()}");
-            for (int index = 0; index < gameObject.GetComponent<Container>().GetInventory().GetEmptySlots(); ++index)
-                gameObject.GetComponent<Container>().GetInventory().AddItem("SwordBronze", 1, 1, 0, 0L, "");
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug($"No items: {gameObject.GetComponent<Container>().GetInventory().NrOfItems()}");
-            PlayerProfile playerProfile = Game.instance.GetPlayerProfile();
-            component.Setup(playerProfile.GetName(), playerProfile.GetPlayerID());
-        }
     }
 
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnRightClickItem))]
     static class InventoryGuiOnRightClickItemPatch
     {
-        static bool Prefix(InventoryGui __instance, InventoryGrid grid, ItemDrop.ItemData item, Vector2i pos)
+        static bool Prefix(InventoryGrid grid, ItemDrop.ItemData item)
         {
             if (item == null || !Player.m_localPlayer || grid.GetInventory() == null)
                 return true;
+
             Player p = Player.m_localPlayer;
             if (grid.m_inventory == Player.m_localPlayer.GetInventory())
             {
-                if (ExtendedPlayerInventory.IsAtEquipmentSlot(p.m_inventory, item, out int which) && (item == p.m_helmetItem || item == p.m_chestItem || item == p.m_legItem || item == p.m_shoulderItem || item == p.m_utilityItem))
+                if (ExtendedPlayerInventory.EquipmentSlots.IsSlot(p.m_inventory, item) && (item == p.m_helmetItem || item == p.m_chestItem || item == p.m_legItem || item == p.m_shoulderItem || item == p.m_utilityItem))
                 {
                     if (!p.m_inventory.CanAddItem(item))
                     {

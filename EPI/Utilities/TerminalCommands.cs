@@ -1,10 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using AzuExtendedPlayerInventory;
-using BepInEx.Bootstrap;
 using HarmonyLib;
-using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace AzuEPI.EPI.Utilities;
 
@@ -12,7 +9,7 @@ namespace AzuEPI.EPI.Utilities;
 [HarmonyPatch(typeof(Terminal), nameof(Terminal.InitTerminal))]
 static class TerminalInitTerminalPatch
 {
-    static void Postfix(Terminal __instance)
+    static void Postfix()
     {
         Terminal.ConsoleCommand RemoveAll = new("azuepi.removeall",
             "Removes all items from your inventory",
@@ -50,14 +47,13 @@ static class TerminalInitTerminalPatch
                     return;
                 }
 
-                List<ItemDrop.ItemData>? inventory = Player.m_localPlayer.GetInventory().m_inventory;
-                foreach (ItemDrop.ItemData itemData in inventory.Where(itemData => itemData.m_equipped && itemData.m_shared.m_useDurability))
-                {
-                    itemData.m_durability = 0;
-                }
+                List<ItemDrop.ItemData> inventory = Player.m_localPlayer?.GetInventory()?.m_inventory;
+                if (inventory != null)
+                    foreach (ItemDrop.ItemData itemData in inventory.Where(itemData => itemData.m_equipped && itemData.m_shared.m_useDurability))
+                        itemData.m_durability = 0;
             });
 
-        Terminal.ConsoleCommand DropAll = new Terminal.ConsoleCommand("azuepi.dropall",
+        Terminal.ConsoleCommand DropAll = new("azuepi.dropall",
             "Drop every item in your inventory to the ground",
             args =>
             {
@@ -76,7 +72,7 @@ static class TerminalInitTerminalPatch
                 }
             });
 
-        Terminal.ConsoleCommand InvCheck = new Terminal.ConsoleCommand("azuepi.invlistall",
+        Terminal.ConsoleCommand InvCheck = new("azuepi.invlistall",
             "List every item in your inventory (will be printed to the console)",
             args =>
             {
@@ -87,9 +83,12 @@ static class TerminalInitTerminalPatch
                 }
 
                 Inventory inventory = Player.m_localPlayer.GetInventory();
+                if (inventory == null)
+                    return;
+
                 AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning($"inv: {inventory.m_name}, ({inventory.m_width}, {inventory.m_height})");
                 args.Context.AddString($"inv: {inventory.m_name}, ({inventory.m_width}, {inventory.m_height})");
-                foreach (ItemDrop.ItemData? itemData in inventory.m_inventory)
+                foreach (ItemDrop.ItemData itemData in inventory.m_inventory)
                 {
                     string prefabName = itemData.m_dropPrefab != null ? itemData.m_dropPrefab.name : "";
                     args.Context.AddString($"{prefabName} [{itemData.m_shared.m_name}] ({itemData.m_gridPos.x}, {itemData.m_gridPos.y})");
@@ -99,7 +98,7 @@ static class TerminalInitTerminalPatch
                 }
             });
 
-        Terminal.ConsoleCommand RepairAll = new Terminal.ConsoleCommand("azuepi.repairall",
+        Terminal.ConsoleCommand RepairAll = new("azuepi.repairall",
             "Repair all items in your inventory",
             args =>
             {

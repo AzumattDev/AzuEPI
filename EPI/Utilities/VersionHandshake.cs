@@ -1,9 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
 using AzuExtendedPlayerInventory;
 using HarmonyLib;
 
@@ -12,7 +8,7 @@ namespace AzuEPI.EPI.Utilities
     [HarmonyPatch(typeof(ZNet), nameof(ZNet.OnNewConnection))]
     public static class RegisterAndCheckVersion
     {
-        private static void Prefix(ZNetPeer peer, ref ZNet __instance)
+        private static void Prefix(ZNetPeer peer)
         {
             // Register version check call
             AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug("Registering version RPC handler");
@@ -29,7 +25,7 @@ namespace AzuEPI.EPI.Utilities
     [HarmonyPatch(typeof(ZNet), nameof(ZNet.RPC_PeerInfo))]
     public static class VerifyClient
     {
-        private static bool Prefix(ZRpc rpc, ZPackage pkg, ref ZNet __instance)
+        private static bool Prefix(ZRpc rpc, ZNet __instance)
         {
             if (!__instance.IsServer() || RpcHandlers.ValidatedPeers.Contains(rpc)) return true;
             // Disconnect peer if they didn't send mod version at all
@@ -38,7 +34,7 @@ namespace AzuEPI.EPI.Utilities
             return false; // Prevent calling underlying method
         }
 
-        private static void Postfix(ZNet __instance)
+        private static void Postfix()
         {
             ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.instance.GetServerPeerID(), $"{AzuExtendedPlayerInventoryPlugin.ModName}RequestAdminSync",
                 new ZPackage());
@@ -62,7 +58,7 @@ namespace AzuEPI.EPI.Utilities
     [HarmonyPatch(typeof(ZNet), nameof(ZNet.Disconnect))]
     public static class RemoveDisconnectedPeerFromVerified
     {
-        private static void Prefix(ZNetPeer peer, ref ZNet __instance)
+        private static void Prefix(ZNetPeer peer, ZNet __instance)
         {
             if (!__instance.IsServer()) return;
             // Remove peer from validated list
@@ -77,7 +73,7 @@ namespace AzuEPI.EPI.Utilities
 
         public static void RPC_AzuEPI_Version(ZRpc rpc, ZPackage pkg)
         {
-            string? version = pkg.ReadString();
+            string version = pkg.ReadString();
             AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo("Version check, local: " +
                                                                                       AzuExtendedPlayerInventoryPlugin.ModVersion +
                                                                                       ",  remote: " + version);
