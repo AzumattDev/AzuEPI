@@ -281,12 +281,12 @@ namespace AzuExtendedPlayerInventory.EPI
                 // Result in grid size of half tiles
                 if (i < EquipmentSlotsCount)
                 {
-                    x = Column(i) * 2 + (EquipmentSlotsAlignment.Value == SlotAlignment.Horizontal && Row(i) > LastEquipmentRow() ? 1 : 0) + (LastEquipmentColumn() < 3 ? 1 : 0);
-                    y = Row(i) * 2 + Math.Max(EquipmentSlotsAlignment.Value == SlotAlignment.Vertical && Column(i) == LastEquipmentColumn() ? 2 - LastEquipmentRow() : 0, 0);
+                    x = Column(i) * 2 + (EquipmentSlotsAlignment.Value == SlotAlignment.VerticalTopHorizontalMiddle && Row(i) > LastEquipmentRow() ? 1 : 0) + (LastEquipmentColumn() < 3 ? 1 : 0);
+                    y = Row(i) * 2 + Math.Max(EquipmentSlotsAlignment.Value == SlotAlignment.VerticalMiddleHorizontalLeft && Column(i) == LastEquipmentColumn() ? 2 - LastEquipmentRow() : 0, 0);
                 }
                 else
                 {
-                    x = (i - EquipmentSlotsCount) * 2;
+                    x = (i - EquipmentSlotsCount) * 2 + Math.Max(QuickSlotsAlignmentCenter.Value.IsOn() ? LastEquipmentColumn() + 1 - QuickSlotsCount : 0, 0);
                     y = QuickSlotsCount * 2;
                 }
             }

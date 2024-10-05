@@ -42,9 +42,9 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     public enum SlotAlignment
     {
-        None,
-        Horizontal,
-        Vertical
+        VerticalTopHorizontalLeft,
+        VerticalTopHorizontalMiddle,
+        VerticalMiddleHorizontalLeft
     }
 
     private void Awake()
@@ -66,16 +66,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         AddEquipmentRow = config("2 - Extended Inventory", "Add Equipment Row", Toggle.On, "Add special row for equipped items and quick slots. (IF YOU ARE USING RANDY KNAPPS EAQs KEEP THIS VALUE OFF)");
         AddEquipmentRow.SettingChanged += (sender, args) => { CheckRandy(); };
         DisplayEquipmentRowSeparate = config("2 - Extended Inventory", "Display Equipment Row Separate", Toggle.On, "Display equipment and quickslots in their own area. (IF YOU ARE USING RANDY KNAPPS EAQs KEEP THIS VALUE OFF)");
-        DisplayEquipmentRowSeparatePanel = config("2 - Extended Inventory", "Display Equipment Row Separate Panel", Toggle.Off, "Display equipment and quickslots in their own panel. (depends on \"Display Equipment Row Separate\" config value)");
 
-        DisplayEquipmentRowSeparate.SettingChanged += (sender, args) => { CheckRandy(); };
-        DisplayEquipmentRowSeparatePanel.SettingChanged += (sender, args) => ExtendedPlayerInventory.EquipmentPanel.UpdatePanel();
-
-        SeparatePanelOffset = config("2 - Extended Inventory", "Equipment Panel Separate Position", new Vector2(0f, 0f), "Relative position of separate panel with equipment and quick slots");
-        SeparatePanelOffset.SettingChanged += (sender, args) => ExtendedPlayerInventory.EquipmentPanel.UpdatePanel();
-
-        EquipmentPanelLeftOffset = config("2 - Extended Inventory", "Equipment Panel Left Offset", 80f, "Horizontal offset from main inventory panel");
-        EquipmentPanelLeftOffset.SettingChanged += (sender, args) => ExtendedPlayerInventory.EquipmentPanel.UpdatePanel();
+        DisplayEquipmentRowSeparate.SettingChanged += (sender, args) => CheckRandy();
 
         HelmetText = config("2 - Extended Inventory", "Helmet Text", "Head", "Text to show for helmet slot.", false);
         ChestText = config("2 - Extended Inventory", "Chest Text", "Chest", "Text to show for chest slot.", false);
@@ -113,27 +105,40 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         QuickAccessX = config("2 - Extended Inventory", "Quickslot X", 9999f, "Current X of Quick Slots", false);
         QuickAccessY = config("2 - Extended Inventory", "Quickslot Y", 9999f, "Current Y of Quick Slots", false);
 
-        string order = $"{EquipmentSlot.helmetSlotID},{EquipmentSlot.legsSlotID},{EquipmentSlot.utilitySlotID},{EquipmentSlot.chestSlotID},{EquipmentSlot.backSlotID}";
-        VanillaSlotsOrder = config("2 - Extended Inventory", "Vanilla equipment slots order", order, "Comma separated list defining order of vanilla equipment slots", false);
-
-        VanillaSlotsOrder.SettingChanged += (s, e) => ExtendedPlayerInventory.EquipmentPanel.ReorderVanillaSlots();
-
-        EquipmentSlotsAlignment = config("2 - Extended Inventory", "Equipment slots alignment", SlotAlignment.Horizontal, "Equipment slots alignment. Slots will be ordered:" +
-                                                                                                                        "\nNone - Vertically Top, Horizontally Left" +
-                                                                                                                        "\nHorizontal - Vertical Top Horizontal Middle" +
-                                                                                                                        "\nVertical - Vertical Middle Horizontal Left", false);
-
-        EquipmentSlotsAlignment.SettingChanged += (s, e) => ExtendedPlayerInventory.EquipmentPanel.SetSlotsPositions();
-
         /* Moveable Chest Inventory */
         MoveableChestInventory.ChestInventoryX = config("3 - Chest Inventory", "Chest Inventory X", -1f, "Current X of chest", false);
         MoveableChestInventory.ChestInventoryY = config("3 - Chest Inventory", "Chest Inventory Y", -1f, "Current Y of chest", false);
         MoveableChestInventory.ChestDragKeys = config("3 - Chest Inventory", "Drag Keys (Chest Drag)", new KeyboardShortcut(KeyCode.Mouse0, KeyCode.LeftControl), "Key or keys (to move the container). It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
         
-        
         MakeDropAllButton = config("3 - Button", "Drop All Button", Toggle.Off, "Key or keys (to move the container). It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
         DropAllButtonPosition = config("3 - Button", "Button Position", new Vector2(880.00f, 10.00f), "Button position relative to the inventory background's top left corner", false);
         DropAllButtonText = config("3 - Button", "Button Text", "Drop all", "Button text", false);
+
+        #region Equipment panel configs
+
+        static bool RemoveConfig(string group, string name)
+        {
+            return context.Config.Remove(new ConfigDefinition(group, name));
+        }
+
+        QuickSlotsAlignmentCenter = config("2 - Extended Inventory", "QuickSlots at Equipment Panel alignment middle", Toggle.Off, "Off - QuickSlots will be placed with Left alignment, On - Center alignment");
+        QuickSlotsAlignmentCenter.SettingChanged += (sender, args) => ExtendedPlayerInventory.EquipmentPanel.SetSlotsPositions();
+
+        string order = $"{EquipmentSlot.helmetSlotID},{EquipmentSlot.legsSlotID},{EquipmentSlot.utilitySlotID},{EquipmentSlot.chestSlotID},{EquipmentSlot.backSlotID}";
+        VanillaSlotsOrder = config("2 - Extended Inventory", "Vanilla equipment slots order", order, "Comma separated list defining order of vanilla equipment slots", false);
+        VanillaSlotsOrder.SettingChanged += (s, e) => ExtendedPlayerInventory.EquipmentPanel.ReorderVanillaSlots();
+
+        EquipmentSlotsAlignment = config("2 - Extended Inventory", "Equipment slots alignment", SlotAlignment.VerticalTopHorizontalMiddle, "Equipment slots alignment. Set \"Vertical Middle Horizontal Left\" to make it look like EaQS layout", false);
+        EquipmentSlotsAlignment.SettingChanged += (s, e) => ExtendedPlayerInventory.EquipmentPanel.SetSlotsPositions();
+
+        DisplayEquipmentRowSeparatePanel = config("2 - Extended Inventory", "Display Equipment Row Separate Panel", Toggle.Off, "Display equipment and quickslots in their own panel. (depends on \"Display Equipment Row Separate\" config value)");
+        DisplayEquipmentRowSeparatePanel.SettingChanged += (sender, args) => ExtendedPlayerInventory.EquipmentPanel.UpdatePanel();
+
+        SeparatePanelOffset = config("2 - Extended Inventory", "Equipment Panel Separate Position", new Vector2(0f, 0f), "Relative position of separate panel with equipment and quick slots");
+        SeparatePanelOffset.SettingChanged += (sender, args) => ExtendedPlayerInventory.EquipmentPanel.UpdatePanel();
+
+        EquipmentPanelLeftOffset = config("2 - Extended Inventory", "Equipment Panel Left Offset", 80f, "Horizontal offset from main inventory panel");
+        EquipmentPanelLeftOffset.SettingChanged += (sender, args) => ExtendedPlayerInventory.EquipmentPanel.UpdatePanel();
 
         equipmentSlotLabelAlignment = config("4 - Equipment slots - Label style", "Horizontal alignment", TMPro.HorizontalAlignmentOptions.Center, "Horizontal alignment of text component in equipment slot label", false);
         equipmentSlotLabelWrappingMode = config("4 - Equipment slots - Label style", "Text wrapping mode", TMPro.TextWrappingModes.PreserveWhitespaceNoWrap, "Size of text component in slot label", false);
@@ -153,6 +158,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         quickSlotLabelMargin.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
         quickSlotLabelFontSize.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
         quickSlotLabelFontColor.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
+
+        #endregion
 
         Hotkeys = new[]
         {
@@ -300,6 +307,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<SlotAlignment> EquipmentSlotsAlignment = null!;
     public static ConfigEntry<Vector2> SeparatePanelOffset = null!;
     public static ConfigEntry<float> EquipmentPanelLeftOffset = null!;
+    public static ConfigEntry<Toggle> QuickSlotsAlignmentCenter = null!;
 
     public static ConfigEntry<KeyboardShortcut> HotKey1 = null!;
     public static ConfigEntry<KeyboardShortcut> HotKey2 = null!;
