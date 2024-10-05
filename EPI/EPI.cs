@@ -38,7 +38,7 @@ namespace AzuExtendedPlayerInventory.EPI
     internal static class ExtendedPlayerInventory
     {
         public const string QABName = "QuickAccessBar";
-        public const string AzuBkgName = "AzuEquipmentBkg";
+        public const string AzuBkgName = "AzuEPIEquipmentPanel";
 
         public static List<HotkeyBar> HotkeyBars { get; set; } = null!;
 
@@ -218,7 +218,7 @@ namespace AzuExtendedPlayerInventory.EPI
             private const float tileSpace = 6f;
             private static float TileSize => 64f + tileSpace;
             private static float InventoryWidth => InventoryGui.instance ? InventoryGui.instance.m_player.rect.width : 0;
-            private static float PanelWidth => Math.Max(QuickSlotsCount, LastEquipmentColumn()) * TileSize + tileSpace;
+            private static float PanelWidth => Math.Max(QuickSlotsCount, LastEquipmentColumn() + 1) * TileSize + tileSpace;
             private static float PanelHeight => 4 * TileSize + tileSpace;
             private static float PanelLeftOffset => EquipmentPanelLeftOffset.Value;
 
@@ -242,8 +242,10 @@ namespace AzuExtendedPlayerInventory.EPI
 
             public static RectTransform inventoryDarken = null!;
             public static RectTransform inventoryBackground = null!;
+            public static Image inventoryBackgroundImage = null!;
             public static RectTransform equipmentDarken = null!;
             public static RectTransform equipmentBackground = null!;
+            public static Image equipmentBackgroundImage = null!;
 
             public static bool IsMinimalUI() => BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("Azumatt.MinimalUI", out var pluginInfo) && pluginInfo is not null;
 
@@ -337,7 +339,10 @@ namespace AzuExtendedPlayerInventory.EPI
                     Transform equipmentBkg = Object.Instantiate(inventoryBackground.transform, equipmentBackground);
                     equipmentBkg.name = "Bkg";
 
-                    InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<Image>().raycastTarget = false;
+                    equipmentBackgroundImage = equipmentBkg.GetComponent<Image>();
+                    inventoryBackgroundImage = inventoryBackground.transform.GetComponent<Image>();
+
+                    InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<Image>().raycastTarget = false; // shudnal: Is it really needed?
 
                     UpdateBackground();
                 }
@@ -345,6 +350,13 @@ namespace AzuExtendedPlayerInventory.EPI
                 {
                     Object.DestroyImmediate(equipmentBackground.gameObject);
                     equipmentBackground = null!;
+                }
+
+                if (inventoryBackgroundImage && equipmentBackgroundImage)
+                {
+                    equipmentBackgroundImage.sprite = inventoryBackgroundImage.sprite;
+                    equipmentBackgroundImage.overrideSprite = inventoryBackgroundImage.overrideSprite;
+                    equipmentBackgroundImage.color = inventoryBackgroundImage.color;
                 }
             }
 
@@ -354,6 +366,8 @@ namespace AzuExtendedPlayerInventory.EPI
                 inventoryBackground = null!;
                 equipmentDarken = null!;
                 equipmentBackground = null!;
+                equipmentBackgroundImage = null!;
+                inventoryBackgroundImage = null!;
             }
         }
 
