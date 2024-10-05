@@ -16,9 +16,7 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
         internal static bool Prefix(HotkeyBar __instance, Player player)
         {
             if (__instance.name != ExtendedPlayerInventory.QABName)
-            {
                 return true;
-            }
 
             if (AzuExtendedPlayerInventoryPlugin.ShowQuickSlots.Value.IsOff())
             {

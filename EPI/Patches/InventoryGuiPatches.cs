@@ -12,6 +12,8 @@ public static class InventoryGuiPatches
             if (Player.m_localPlayer == null)
                 return;
 
+            ExtendedPlayerInventory.EquipmentPanel.UpdatePanel();
+
             Utilities.Utilities.InventoryFix();
         }
     }

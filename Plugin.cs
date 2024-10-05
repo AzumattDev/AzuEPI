@@ -69,10 +69,13 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         DisplayEquipmentRowSeparatePanel = config("2 - Extended Inventory", "Display Equipment Row Separate Panel", Toggle.Off, "Display equipment and quickslots in their own panel. (depends on \"Display Equipment Row Separate\" config value)");
 
         DisplayEquipmentRowSeparate.SettingChanged += (sender, args) => { CheckRandy(); };
-        DisplayEquipmentRowSeparatePanel.SettingChanged += (sender, args) => { ExtendedPlayerInventory.EquipmentPanel.UpdateInventoryBackground(); ExtendedPlayerInventory.EquipmentPanel.SetSlotsPositions(); };
+        DisplayEquipmentRowSeparatePanel.SettingChanged += (sender, args) => ExtendedPlayerInventory.EquipmentPanel.UpdatePanel();
 
-        SeparatePanelOffset = config("2 - Extended Inventory", "Separate Panel Extra Offset", 0f, "Display equipment and quickslots in their own panel. (depends on \"Display Equipment Row Separate\" config value)");
-        SeparatePanelOffset.SettingChanged += (sender, args) => { ExtendedPlayerInventory.EquipmentPanel.UpdateInventoryBackground(); ExtendedPlayerInventory.EquipmentPanel.SetSlotsPositions(); };
+        SeparatePanelOffset = config("2 - Extended Inventory", "Equipment Panel Separate Position", new Vector2(0f, 0f), "Relative position of separate panel with equipment and quick slots");
+        SeparatePanelOffset.SettingChanged += (sender, args) => ExtendedPlayerInventory.EquipmentPanel.UpdatePanel();
+
+        EquipmentPanelLeftOffset = config("2 - Extended Inventory", "Equipment Panel Left Offset", 80f, "Horizontal offset from main inventory panel");
+        EquipmentPanelLeftOffset.SettingChanged += (sender, args) => ExtendedPlayerInventory.EquipmentPanel.UpdatePanel();
 
         HelmetText = config("2 - Extended Inventory", "Helmet Text", "Head", "Text to show for helmet slot.", false);
         ChestText = config("2 - Extended Inventory", "Chest Text", "Chest", "Text to show for chest slot.", false);
@@ -132,12 +135,12 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         DropAllButtonPosition = config("3 - Button", "Button Position", new Vector2(880.00f, 10.00f), "Button position relative to the inventory background's top left corner", false);
         DropAllButtonText = config("3 - Button", "Button Text", "Drop all", "Button text", false);
 
-        equipmentSlotLabelAlignment = config("4 - Equipment slots - Label style", "Horizontal alignment", TMPro.HorizontalAlignmentOptions.Left, "Horizontal alignment of text component in equipment slot label", false);
+        equipmentSlotLabelAlignment = config("4 - Equipment slots - Label style", "Horizontal alignment", TMPro.HorizontalAlignmentOptions.Center, "Horizontal alignment of text component in equipment slot label", false);
         equipmentSlotLabelWrappingMode = config("4 - Equipment slots - Label style", "Text wrapping mode", TMPro.TextWrappingModes.PreserveWhitespaceNoWrap, "Size of text component in slot label", false);
         equipmentSlotLabelMargin = config("4 - Equipment slots - Label style", "Margin", new Vector4(5f, 0f, 5f, 0f), "Margin: left top right bottom", false);
         equipmentSlotLabelFontSize = config("4 - Equipment slots - Label style", "Font size", new Vector2(12f, 16f), "Min and Max text size in slot label", false);
         equipmentSlotLabelFontColor = config("4 - Equipment slots - Label style", "Font color", new Color(0.596f, 0.816f, 1f), "Text color in slot label", false);
-        equipmentSlotLabelHideQuality = config("4 - Equipment slots - Label style", "Hide quality", false, "Hide quality label", false);
+        equipmentSlotLabelHideQuality = config("4 - Equipment slots - Label style", "Hide quality", Toggle.Off, "Hide quality label", false);
 
         quickSlotLabelAlignment = config("4 - Quick slots - Label style", "Horizontal alignment", TMPro.HorizontalAlignmentOptions.Left, "Horizontal alignment of text component in slot label", false);
         quickSlotLabelWrappingMode = config("4 - Quick slots - Label style", "Text wrapping mode", TMPro.TextWrappingModes.PreserveWhitespaceNoWrap, "Size of text component in slot label", false);
@@ -295,7 +298,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<float> QuickAccessScale = null!;
     public static ConfigEntry<string> VanillaSlotsOrder = null!;
     public static ConfigEntry<SlotAlignment> EquipmentSlotsAlignment = null!;
-    public static ConfigEntry<float> SeparatePanelOffset = null!;
+    public static ConfigEntry<Vector2> SeparatePanelOffset = null!;
+    public static ConfigEntry<float> EquipmentPanelLeftOffset = null!;
 
     public static ConfigEntry<KeyboardShortcut> HotKey1 = null!;
     public static ConfigEntry<KeyboardShortcut> HotKey2 = null!;
@@ -320,7 +324,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<Vector4> equipmentSlotLabelMargin = null!;
     public static ConfigEntry<Vector2> equipmentSlotLabelFontSize = null!;
     public static ConfigEntry<Color> equipmentSlotLabelFontColor = null!;
-    public static ConfigEntry<bool> equipmentSlotLabelHideQuality = null!;
+    public static ConfigEntry<Toggle> equipmentSlotLabelHideQuality = null!;
 
     public static ConfigEntry<TMPro.HorizontalAlignmentOptions> quickSlotLabelAlignment = null!;
     public static ConfigEntry<TMPro.TextWrappingModes> quickSlotLabelWrappingMode = null!;
