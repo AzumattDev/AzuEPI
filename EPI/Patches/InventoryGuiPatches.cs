@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using static AzuExtendedPlayerInventory.EPI.ExtendedPlayerInventory;
 
 namespace AzuExtendedPlayerInventory.EPI.Patches;
 
@@ -12,9 +13,9 @@ public static class InventoryGuiPatches
             if (Player.m_localPlayer == null)
                 return;
 
-            ExtendedPlayerInventory.EquipmentPanel.UpdatePanel();
+            EquipmentPanel.UpdatePanel();
 
-            Utilities.Utilities.InventoryFix();
+            CheckPlayerInventoryItemsOverlappingOrOutOfGrid();
         }
     }
 
@@ -23,9 +24,9 @@ public static class InventoryGuiPatches
     {
         static void Postfix()
         {
-            ExtendedPlayerInventory.EquipmentPanel.ClearPanel();
+            EquipmentPanel.ClearPanel();
 
-            ExtendedPlayerInventory.DropButton.ClearButton();
+            DropButton.ClearButton();
         }
     }
 
@@ -40,7 +41,7 @@ public static class InventoryGuiPatches
 
             // If the item is one of the equipped armor pieces, unequip it
             if (__instance.m_dragGo && localPlayer.IsItemEquiped(__instance.m_dragItem))
-                if (ExtendedPlayerInventory.EquipmentSlots.IsSlot(grid.m_inventory, __instance.m_dragItem))
+                if (EquipmentSlots.IsInSlot(grid.m_inventory, __instance.m_dragItem))
                     localPlayer.UnequipItem(__instance.m_dragItem, false);
         }
     }
@@ -53,14 +54,14 @@ public static class InventoryGuiPatches
             if (!Player.m_localPlayer)
                 return;
 
-            ExtendedPlayerInventory.EquipmentSlots.UpdatePlayerInventoryEquipmentSlots();
+            EquipmentSlots.UpdatePlayerInventoryEquipmentSlots();
 
-            if (!ExtendedPlayerInventory.IsVisible())
+            if (!IsVisible())
                 return;
 
-            ExtendedPlayerInventory.EquipmentPanel.UpdateEquipmentBackground();
+            EquipmentPanel.UpdateEquipmentBackground();
 
-            ExtendedPlayerInventory.DropButton.UpdateButton();
+            DropButton.UpdateButton();
         }
     }
 
@@ -69,7 +70,7 @@ public static class InventoryGuiPatches
     {
         private static void Postfix()
         {
-            ExtendedPlayerInventory.EquipmentPanel.UpdateInventorySlots();
+            EquipmentPanel.UpdateInventorySlots();
         }
     }
 }

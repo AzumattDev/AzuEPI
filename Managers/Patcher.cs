@@ -17,7 +17,7 @@ using MethodBody = Mono.Cecil.Cil.MethodBody;
 using TypeAttributes = Mono.Cecil.TypeAttributes;
 
 namespace APIManager;
-
+#nullable enable
 public static class Patcher
 {
 	private static PluginInfo? lastPluginInfo;

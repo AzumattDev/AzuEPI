@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using BepInEx.Configuration;
 using UnityEngine;
@@ -37,63 +36,6 @@ public static class Utilities
                Console.IsVisible() || TextInput.IsVisible() || ZNet.instance.InPasswordDialog() ||
                Chat.instance?.HasFocus() == true || StoreGui.IsVisible() || InventoryGui.IsVisible() ||
                Menu.IsVisible() || TextViewer.instance?.IsVisible() == true;
-    }
-
-    public static void InventoryFix()
-    {
-        if (Player.m_localPlayer == null)
-            return;
-
-        Inventory playerInventory = Player.m_localPlayer.GetInventory();
-
-        if (playerInventory == null || playerInventory.m_inventory == null)
-            return;
-
-        List<Vector2i> curPositions = new();
-        List<ItemDrop.ItemData> itemsToFix = new();
-        for (int index = 0; index < playerInventory.m_inventory.Count; index++)
-        {
-            ItemDrop.ItemData itemData = playerInventory.m_inventory[index];
-            if (itemData == null) 
-                continue;
-
-            bool overlappingItem = curPositions.Exists(pos => pos == itemData.m_gridPos);
-            if (overlappingItem || (itemData.m_gridPos.x < 0 || itemData.m_gridPos.x >= playerInventory.m_width ||
-                                    itemData.m_gridPos.y < 0 || itemData.m_gridPos.y >= playerInventory.m_height) || itemData.m_stack < 1)
-            {
-                if (itemData.m_stack < 1)
-                {
-                    playerInventory.RemoveItem(itemData);
-                } // Fix anything that has a stack of 0 or less
-
-                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning(
-                    overlappingItem
-                        ? $"Item {Localization.instance.Localize(itemData.m_shared.m_name)} was overlapping another item in the player inventory grid, moving to first available slot or dropping if no slots are available."
-                        : $"Item {Localization.instance.Localize(itemData.m_shared.m_name)} was outside player inventory grid, moving to first available slot or dropping if no slots are available.");
-                itemsToFix.Add(itemData);
-            }
-
-            curPositions.Add(itemData.m_gridPos);
-        }
-
-        foreach (ItemDrop.ItemData brokenItem in itemsToFix)
-        {
-            TryAddItemToInventory(playerInventory!, brokenItem);
-        }
-    }
-
-    private static void TryAddItemToInventory(Inventory inventory, ItemDrop.ItemData itemData)
-    {
-        if (inventory.CanAddItem(itemData))
-        {
-            Player.m_localPlayer.GetInventory().RemoveItem(itemData);
-            inventory.AddItem(itemData);
-        }
-        else
-        {
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo($"Dropping {Localization.instance.Localize(itemData.m_shared.m_name)} in TryAddItemToInventory");
-            Player.m_localPlayer.DropItem(inventory, itemData, itemData.m_stack);
-        }
     }
 }
 

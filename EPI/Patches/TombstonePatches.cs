@@ -4,30 +4,43 @@ namespace AzuExtendedPlayerInventory.EPI.Patches;
 
 public class TombstonePatches
 {
-    [HarmonyPatch(typeof(TombStone), nameof(TombStone.Awake))]
-    private static class TombStoneAwakePatch
+    [HarmonyPatch(typeof(Container), nameof(Container.Awake))]
+    private static class ContainerAwakePatch
     {
-        private static void Prefix(TombStone __instance)
+        private static void Prefix(Container __instance)
         {
+            // Patch tombstone container to always fit player inventory even with custom tombstone container size
+            if (!__instance.GetComponent<TombStone>())
+                return;
+
             AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug("TombStone_Awake");
 
-            int height = 4 + AzuExtendedPlayerInventoryPlugin.ExtraRows.Value + (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.IsOn() ? API.GetAddedRows(__instance.GetComponent<Container>().m_width) : 0);
-
-            __instance.GetComponent<Container>().m_height = height;
+            int targetHeight = ExtendedPlayerInventory.GetTargetInventoryHeight(ExtendedPlayerInventory.InventorySizeFull, __instance.m_width);
+            // Let it be if height is sufficient
+            if (targetHeight > __instance.m_height)
+                __instance.m_height = targetHeight;
         }
     }
 
     [HarmonyPatch(typeof(TombStone), nameof(TombStone.Interact))]
     private static class TombStoneInteractPatch
     {
-        private static void Prefix(TombStone __instance, Container ___m_container)
+        private static void Prefix(Container ___m_container)
         {
             AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug("TombStone_Interact");
-            int num = 4 + AzuExtendedPlayerInventoryPlugin.ExtraRows.Value + (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.IsOn() ? API.GetAddedRows(__instance.GetComponent<Container>().m_width) : 0);
-            __instance.GetComponent<Container>().m_height = num;
+
+            int targetHeight = ExtendedPlayerInventory.GetTargetInventoryHeight(ExtendedPlayerInventory.InventorySizeFull, ___m_container.m_width);
+            
+            if (targetHeight > ___m_container.m_height)
+            {
+                ___m_container.m_height = targetHeight;
+                ___m_container.m_inventory.m_height = targetHeight;
+            }
+
             string base64String = ___m_container.m_nview.GetZDO().GetString(ZDOVars.s_items);
             if (string.IsNullOrEmpty(base64String))
                 return;
+
             ZPackage pkg = new(base64String);
             ___m_container.m_loading = true;
             ___m_container.m_inventory.Load(pkg);
@@ -41,20 +54,20 @@ public class TombstonePatches
     private static class TemporarilyIncreaseCarryWeight
     {
         static bool playerCurrentPickupState = false;
-        private static void Prefix(out int __state)
+        private static void Prefix(ref float __state)
         {
             playerCurrentPickupState = Player.m_enableAutoPickup;
             Player.m_enableAutoPickup = false; // Temporarily disable auto pickup to prevent NRE.   shudnal: Game version 0.218.21 is it still needed?
-            __state = (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.IsOn() ? API.GetAddedRows(Player.m_localPlayer.m_inventory.m_width) : 0);
+
+            //__state = ObjectDB.instance.GetStatusEffect()
             Player.m_localPlayer.m_maxCarryWeight += 150f;
-            Player.m_localPlayer.m_inventory.m_height += __state;
+            
         }
-        private static void Postfix() => Utilities.Utilities.InventoryFix();
-        private static void Finalizer(int __state)
+        private static void Postfix() => ExtendedPlayerInventory.CheckPlayerInventoryItemsOverlappingOrOutOfGrid();
+        private static void Finalizer()
         {
             Player.m_enableAutoPickup = playerCurrentPickupState;
             Player.m_localPlayer.m_maxCarryWeight -= 150f;
-            Player.m_localPlayer.m_inventory.m_height -= __state;
         }
     }
 }

@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using AzuExtendedPlayerInventory.EPI;
 using AzuExtendedPlayerInventory.EPI.QAB;
-using AzuExtendedPlayerInventory.EPI.Utilities;
 using AzuExtendedPlayerInventory.Moveable;
 using BepInEx;
 using BepInEx.Bootstrap;
@@ -62,9 +63,9 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         ShowQuickSlots.SettingChanged += (sender, args) => { ExtendedPlayerInventory.QuickSlots.DeselectHotkeyBars(); };
         ExtraRows = config("2 - Extended Inventory", "Extra Inventory Rows", 0, "Number of extra ordinary rows. (This can cause overlap with chest GUI, make sure you hold CTRL (the default key) and drag to desired position)");
         // Fire an event handler on setting change for ExtraRows that will update the inventory size
-        ExtraRows.SettingChanged += (sender, args) => { UpdateInventorySize(); };
+        ExtraRows.SettingChanged += (sender, args) => ExtendedPlayerInventory.UpdatePlayerInventorySize();
         AddEquipmentRow = config("2 - Extended Inventory", "Add Equipment Row", Toggle.On, "Add special row for equipped items and quick slots. (IF YOU ARE USING RANDY KNAPPS EAQs KEEP THIS VALUE OFF)");
-        AddEquipmentRow.SettingChanged += (sender, args) => { CheckRandy(); };
+        AddEquipmentRow.SettingChanged += (sender, args) => { CheckRandy(); ExtendedPlayerInventory.UpdatePlayerInventorySize(); };
         DisplayEquipmentRowSeparate = config("2 - Extended Inventory", "Display Equipment Row Separate", Toggle.On, "Display equipment and quickslots in their own area. (IF YOU ARE USING RANDY KNAPPS EAQs KEEP THIS VALUE OFF)");
 
         DisplayEquipmentRowSeparate.SettingChanged += (sender, args) => CheckRandy();
@@ -88,17 +89,30 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         HotKey1 = config("2 - Extended Inventory", "HotKey (Quickslot 1)", new KeyboardShortcut(KeyCode.Z), "Hotkey 1 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", false);
         HotKey2 = config("2 - Extended Inventory", "HotKey (Quickslot 2)", new KeyboardShortcut(KeyCode.X), "Hotkey 2 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", false);
         HotKey3 = config("2 - Extended Inventory", "HotKey (Quickslot 3)", new KeyboardShortcut(KeyCode.C), "Hotkey 3 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", false);
+        HotKey4 = config("2 - Extended Inventory", "HotKey (Quickslot 4)", new KeyboardShortcut(KeyCode.V), "Hotkey 4 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", false);
+        HotKey5 = config("2 - Extended Inventory", "HotKey (Quickslot 5)", new KeyboardShortcut(KeyCode.B), "Hotkey 5 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", false);
+        HotKey6 = config("2 - Extended Inventory", "HotKey (Quickslot 6)", new KeyboardShortcut(KeyCode.N), "Hotkey 6 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", false);
+
+        HotKey1.SettingChanged += (s, e) => UpdateHotkeysConfig();
+        HotKey2.SettingChanged += (s, e) => UpdateHotkeysConfig();
+        HotKey3.SettingChanged += (s, e) => UpdateHotkeysConfig();
+        HotKey4.SettingChanged += (s, e) => UpdateHotkeysConfig();
+        HotKey5.SettingChanged += (s, e) => UpdateHotkeysConfig();
+        HotKey6.SettingChanged += (s, e) => UpdateHotkeysConfig();
 
         HotKey1Text = config("2 - Extended Inventory", "HotKey (Quickslot 1) Text", "", "Hotkey 1 Display Text. Leave blank to use the hotkey itself.", false);
         HotKey2Text = config("2 - Extended Inventory", "HotKey (Quickslot 2) Text", "", "Hotkey 2 Display Text. Leave blank to use the hotkey itself.", false);
         HotKey3Text = config("2 - Extended Inventory", "HotKey (Quickslot 3) Text", "", "Hotkey 3 Display Text. Leave blank to use the hotkey itself.", false);
+        HotKey4Text = config("2 - Extended Inventory", "HotKey (Quickslot 4) Text", "", "Hotkey 4 Display Text. Leave blank to use the hotkey itself.", false);
+        HotKey5Text = config("2 - Extended Inventory", "HotKey (Quickslot 5) Text", "", "Hotkey 5 Display Text. Leave blank to use the hotkey itself.", false);
+        HotKey6Text = config("2 - Extended Inventory", "HotKey (Quickslot 6) Text", "", "Hotkey 6 Display Text. Leave blank to use the hotkey itself.", false);
 
-        HotKey1.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
-        HotKey2.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
-        HotKey3.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
-        HotKey1Text.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
-        HotKey2Text.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
-        HotKey3Text.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
+        HotKey1Text.SettingChanged += (s, e) => UpdateHotkeysConfig();
+        HotKey2Text.SettingChanged += (s, e) => UpdateHotkeysConfig();
+        HotKey3Text.SettingChanged += (s, e) => UpdateHotkeysConfig();
+        HotKey4Text.SettingChanged += (s, e) => UpdateHotkeysConfig();
+        HotKey5Text.SettingChanged += (s, e) => UpdateHotkeysConfig();
+        HotKey6Text.SettingChanged += (s, e) => UpdateHotkeysConfig();
 
         QuickslotDragKeys = config("2 - Extended Inventory", "Drag Keys (Quickslot Drag)", new KeyboardShortcut(KeyCode.Mouse0, KeyCode.LeftControl), "Key or keys to move quick slots. It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
 
@@ -116,12 +130,10 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         #region Equipment panel configs
 
-        static bool RemoveConfig(string group, string name)
-        {
-            return context.Config.Remove(new ConfigDefinition(group, name));
-        }
+        QuickSlotsAmount = config("2 - Extended Inventory", "Quickslots amount", 3, new ConfigDescription("How much quickslots should be added", new AcceptableValueRange<int>(0, 6)));
+        QuickSlotsAmount.SettingChanged += (sender, args) => UpdateHotkeysConfig();
 
-        QuickSlotsAlignmentCenter = config("2 - Extended Inventory", "QuickSlots at Equipment Panel alignment middle", Toggle.Off, "Off - QuickSlots will be placed with Left alignment, On - Center alignment");
+        QuickSlotsAlignmentCenter = config("2 - Extended Inventory", "Quickslots alignment middle", Toggle.Off, "Quickslots at Equipment Panel. Off - QuickSlots will be placed with Left alignment, On - Center alignment");
         QuickSlotsAlignmentCenter.SettingChanged += (sender, args) => ExtendedPlayerInventory.EquipmentPanel.SetSlotsPositions();
 
         string order = $"{EquipmentSlot.helmetSlotID},{EquipmentSlot.legsSlotID},{EquipmentSlot.utilitySlotID},{EquipmentSlot.chestSlotID},{EquipmentSlot.backSlotID}";
@@ -148,7 +160,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         equipmentSlotLabelHideQuality = config("4 - Equipment slots - Label style", "Hide quality", Toggle.Off, "Hide quality label", false);
 
         quickSlotLabelAlignment = config("4 - Quick slots - Label style", "Horizontal alignment", TMPro.HorizontalAlignmentOptions.Left, "Horizontal alignment of text component in slot label", false);
-        quickSlotLabelWrappingMode = config("4 - Quick slots - Label style", "Text wrapping mode", TMPro.TextWrappingModes.PreserveWhitespaceNoWrap, "Size of text component in slot label", false);
+        quickSlotLabelWrappingMode = config("4 - Quick slots - Label style", "Text wrapping mode", TMPro.TextWrappingModes.Normal, "Size of text component in slot label", false);
         quickSlotLabelMargin = config("4 - Quick slots - Label style", "Margin", new Vector4(5f, 0f, 5f, 0f), "Margin: left top right bottom", false);
         quickSlotLabelFontSize = config("4 - Quick slots - Label style", "Font size", new Vector2(12f, 16f), "Min and Max text size in slot label", false);
         quickSlotLabelFontColor = config("4 - Quick slots - Label style", "Font color", new Color(0.596f, 0.816f, 1f), "Text color in slot label", false);
@@ -159,21 +171,9 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         quickSlotLabelFontSize.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
         quickSlotLabelFontColor.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
 
+        UpdateHotkeysConfig();
+
         #endregion
-
-        Hotkeys = new[]
-        {
-            HotKey1,
-            HotKey2,
-            HotKey3,
-        };
-
-        HotkeyTexts = new[]
-        {
-            HotKey1Text,
-            HotKey2Text,
-            HotKey3Text,
-        };
 
         if (Chainloader.PluginInfos.TryGetValue("ishid4.mods.betterarchery", out var BetterArchery))
         {
@@ -193,18 +193,44 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         _harmony.PatchAll();
         SetupWatcher();
 
-        // Version 1.7.6 GetEquippedBackpack will be always null despite wearing a backpack, damn
+        // Version 1.7.6 GetEquippedBackpack will be always null despite wearing a backpack, https://github.com/Vapok/AdventureBackpacks/issues/130
         /*if (AdventureBackpacks.API.ABAPI.IsLoaded())
             API.AddSlot("AdvPack", player => AdventureBackpacks.API.ABAPI.GetEquippedBackpack(Player.m_localPlayer)?.ItemData, AdventureBackpacks.API.ABAPI.IsBackpack);*/
     }
 
-    public static int QuickSlotsCount => Hotkeys.Length;
+    private static void UpdateHotkeysConfig()
+    {
+        Hotkeys.Clear();
+
+        TryAddHotKey(HotKey1, HotKey1Text);
+        TryAddHotKey(HotKey2, HotKey2Text);
+        TryAddHotKey(HotKey3, HotKey3Text);
+        TryAddHotKey(HotKey4, HotKey4Text);
+        TryAddHotKey(HotKey5, HotKey5Text);
+        TryAddHotKey(HotKey6, HotKey6Text);
+
+        QuickSlotsAmount.Value = Mathf.Clamp(QuickSlotsAmount.Value, 0, Hotkeys.Count);
+
+        ExtendedPlayerInventory.UpdateQuickSlots();
+
+        static void TryAddHotKey(ConfigEntry<KeyboardShortcut> hotkey, ConfigEntry<string> text)
+        {
+            if (Hotkeys.Count >= QuickSlotsAmount.Value)
+                return;
+
+            if (HotKey1.Value.Equals(KeyboardShortcut.Empty))
+                return;
+
+            if (Hotkeys.Any(tuple => tuple.Item1.Value.Equals(hotkey.Value)))
+                return;
+
+            Hotkeys.Add(Tuple.Create(hotkey, text));
+        }
+    }
+
+    public static int QuickSlotsCount => Hotkeys.Count;
 
     public static int EquipmentSlotsCount => ExtendedPlayerInventory.slots.Count - QuickSlotsCount;
-
-    public static string GetHotkeyText(int index) => HotkeyTexts[index].Value.IsNullOrWhiteSpace() ? GetHotkey(index).ToString() : HotkeyTexts[index].Value;
-
-    public static KeyboardShortcut GetHotkey(int index) => Hotkeys[index].Value;
 
     private void Start()
     {
@@ -218,6 +244,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     private void OnDestroy()
     {
         Config.Save();
+        _harmony.UnpatchSelf();
     }
 
     private void SetupWatcher()
@@ -244,24 +271,6 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             AzuExtendedPlayerInventoryLogger.LogError($"There was an issue loading your {ConfigFileName}");
             AzuExtendedPlayerInventoryLogger.LogError("Please check your config entries for spelling and format!");
         }
-    }
-
-    // Create the UpdateInventorySize method
-    public static void UpdateInventorySize()
-    {
-        if (InventoryGui.instance == null)
-            return;
-
-        if (Player.m_localPlayer == null)
-            return;
-
-        int height = 4 + ExtraRows.Value + (AddEquipmentRow.Value.IsOn() ? API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()) : 0);
-        
-        Player.m_localPlayer.m_inventory.m_height = height;
-        Player.m_localPlayer.m_tombstone.GetComponent<Container>().m_height = height;
-        Player.m_localPlayer.m_inventory.Changed();
-        
-        Utilities.InventoryFix();
     }
 
     private static void CheckRandy()
@@ -308,18 +317,24 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<Vector2> SeparatePanelOffset = null!;
     public static ConfigEntry<float> EquipmentPanelLeftOffset = null!;
     public static ConfigEntry<Toggle> QuickSlotsAlignmentCenter = null!;
+    public static ConfigEntry<int> QuickSlotsAmount = null!;
 
     public static ConfigEntry<KeyboardShortcut> HotKey1 = null!;
     public static ConfigEntry<KeyboardShortcut> HotKey2 = null!;
     public static ConfigEntry<KeyboardShortcut> HotKey3 = null!;
+    public static ConfigEntry<KeyboardShortcut> HotKey4 = null!;
+    public static ConfigEntry<KeyboardShortcut> HotKey5 = null!;
+    public static ConfigEntry<KeyboardShortcut> HotKey6 = null!;
     public static ConfigEntry<string> HotKey1Text = null!;
     public static ConfigEntry<string> HotKey2Text = null!;
     public static ConfigEntry<string> HotKey3Text = null!;
+    public static ConfigEntry<string> HotKey4Text = null!;
+    public static ConfigEntry<string> HotKey5Text = null!;
+    public static ConfigEntry<string> HotKey6Text = null!;
     public static ConfigEntry<KeyboardShortcut> QuickslotDragKeys = null!;
     public static ConfigEntry<KeyboardShortcut> ModKeyTwo = null!;
 
-    public static ConfigEntry<KeyboardShortcut>[] Hotkeys = null!;
-    public static ConfigEntry<string>[] HotkeyTexts = null!;
+    public static List<Tuple<ConfigEntry<KeyboardShortcut>, ConfigEntry<string>>> Hotkeys = new();
 
     public static ConfigEntry<float> QuickAccessX = null!;
     public static ConfigEntry<float> QuickAccessY = null!;

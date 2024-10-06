@@ -15,9 +15,8 @@ public class PlayerPatches
         {
             AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug("Player_Awake");
 
-            int height = 4 + AzuExtendedPlayerInventoryPlugin.ExtraRows.Value + (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.IsOn() ? API.GetAddedRows(__instance.m_inventory.GetWidth()) : 0);
-            __instance.m_inventory.m_height = height;
-            __instance.m_tombstone.GetComponent<Container>().m_height = height;
+            __instance.m_inventory.m_height = ExtendedPlayerInventory.InventoryHeightFull;
+            __instance.m_tombstone.GetComponent<Container>().m_height = ExtendedPlayerInventory.InventoryHeightFull;
         }
     }
 
@@ -141,11 +140,7 @@ public class PlayerPatches
                 Transform transform = player.transform;
                 ItemDrop itemDrop = ItemDrop.DropItem(itemData, itemData.m_stack, transform.position + transform.forward + transform.up, transform.rotation);
                 if (itemDrop == null) return;
-                if (itemDrop.m_itemData.m_equipped)
-                {
-                    itemDrop.m_itemData.m_equipped = false;
-                }
-
+                itemDrop.m_itemData.m_equipped = false;
 
                 bool pickedUp = player.Pickup(itemDrop.gameObject, false, false);
                 if (pickedUp && useItem)
@@ -163,23 +158,13 @@ public class PlayerPatches
 
         private static void Postfix(Player __instance, Inventory ___m_inventory)
         {
-            CheckInventoryHeight(__instance, ___m_inventory);
+            ___m_inventory.m_height = ExtendedPlayerInventory.InventoryHeightFull;
+
+            tombstoneContainer ??= __instance.m_tombstone.GetComponent<Container>();
+            tombstoneContainer.m_height = ___m_inventory.m_height;
 
             ExtendedPlayerInventory.QuickSlots.UpdateItemUse();
         }
-
-        private static void CheckInventoryHeight(Player __instance, Inventory ___m_inventory)
-        {
-            int height = 4 + AzuExtendedPlayerInventoryPlugin.ExtraRows.Value + (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.IsOn() ? API.GetAddedRows(___m_inventory.GetWidth()) : 0);
-
-            ___m_inventory.m_height = height;
-
-            if (tombstoneContainer == null)
-                tombstoneContainer = __instance.m_tombstone.GetComponent<Container>();
-
-            tombstoneContainer.m_height = height;
-        }
-
     }
 
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnRightClickItem))]
@@ -193,14 +178,11 @@ public class PlayerPatches
             Player p = Player.m_localPlayer;
             if (grid.m_inventory == Player.m_localPlayer.GetInventory())
             {
-                if (ExtendedPlayerInventory.EquipmentSlots.IsSlot(p.m_inventory, item) && (item == p.m_helmetItem || item == p.m_chestItem || item == p.m_legItem || item == p.m_shoulderItem || item == p.m_utilityItem))
+                if (ExtendedPlayerInventory.EquipmentSlots.IsInSlot(p.m_inventory, item) && !p.m_inventory.CanAddItem(item))
                 {
-                    if (!p.m_inventory.CanAddItem(item))
-                    {
-                        AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo("Inventory full, blocking item unequip");
-                        Player.m_localPlayer.Message(MessageHud.MessageType.Center, "$inventory_full");
-                        return false;
-                    }
+                    AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo("Inventory full, blocking item unequip");
+                    Player.m_localPlayer.Message(MessageHud.MessageType.Center, "$inventory_full");
+                    return false;
                 }
             }
 

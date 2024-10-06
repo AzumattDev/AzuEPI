@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using AzuExtendedPlayerInventory;
+using AzuExtendedPlayerInventory.EPI;
 using HarmonyLib;
 
 namespace AzuEPI.EPI.Utilities;
@@ -34,7 +34,7 @@ static class TerminalInitTerminalPatch
                     return;
                 }
 
-                AzuExtendedPlayerInventory.EPI.Utilities.Utilities.InventoryFix();
+                ExtendedPlayerInventory.CheckPlayerInventoryItemsOverlappingOrOutOfGrid();
             });
 
         Terminal.ConsoleCommand BreakEquipment = new("azuepi.breakall",
@@ -47,9 +47,9 @@ static class TerminalInitTerminalPatch
                     return;
                 }
 
-                List<ItemDrop.ItemData> inventory = Player.m_localPlayer.GetInventory()?.m_inventory;
+                Inventory inventory = Player.m_localPlayer.GetInventory();
                 if (inventory != null)
-                    foreach (ItemDrop.ItemData itemData in inventory.Where(itemData => itemData.m_equipped && itemData.m_shared.m_useDurability))
+                    foreach (ItemDrop.ItemData itemData in inventory.GetAllItems().Where(itemData => itemData.m_equipped && itemData.m_shared.m_useDurability))
                         itemData.m_durability = 0;
             });
 

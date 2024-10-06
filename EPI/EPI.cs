@@ -9,7 +9,6 @@ using AzuExtendedPlayerInventory.EPI.Utilities;
 using System.Linq;
 using System;
 
-
 namespace AzuExtendedPlayerInventory.EPI
 {
     public class Slot
@@ -18,7 +17,12 @@ namespace AzuExtendedPlayerInventory.EPI
         public string Name = null!;
         public Vector2 Position;
         public EquipmentSlot? EquipmentSlot => this as EquipmentSlot;
+        public QuickSlot? QuickSlot => this as QuickSlot;
 #nullable disable
+
+        public virtual string GetName() => Name;
+
+        public override string ToString() => GetName();
     }
 
     public class EquipmentSlot : Slot
@@ -35,10 +39,35 @@ namespace AzuExtendedPlayerInventory.EPI
 #nullable disable
     }
 
+    public class QuickSlot : Slot
+    {
+        public BepInEx.Configuration.KeyboardShortcut Hotkey;
+        public string HotkeyText;
+
+        public override string GetName() => GetHotkeyText();
+
+        public string GetHotkeyText() => HotkeyText == "" ? Hotkey.ToString() : HotkeyText;
+
+        public bool IsDown() => Hotkey.IsKeyDown();
+    }
+
     internal static class ExtendedPlayerInventory
     {
         public const string QABName = "QuickAccessBar";
         public const string AzuBkgName = "AzuEPIEquipmentPanel";
+
+        public const int vanillaInventoryHeight = 4;
+
+        public static int InventoryWidth => Player.m_localPlayer?.GetInventory() != null ? Player.m_localPlayer.GetInventory().GetWidth() : 8;
+        public static int InventoryHeightPlayer => vanillaInventoryHeight + ExtraRows.Value;
+        public static int InventoryHeightFull => InventoryHeightPlayer + (AddEquipmentRow.Value.IsOn() ? API.GetAddedRows(InventoryWidth) : 0);
+
+        public static int InventorySizePlayer => InventoryHeightPlayer * InventoryWidth;
+        public static int InventorySizeFull => InventoryHeightFull * InventoryWidth;
+
+        public static int GetTargetInventoryHeight(int inventorySize, int inventoryWidth) => GetExtraRowsForItemsToFit(inventorySize, inventoryWidth);
+
+        public static int GetExtraRowsForItemsToFit(int itemsAmount, int rowWidth) => ((itemsAmount - 1) / rowWidth) + 1;
 
         public static List<HotkeyBar> HotkeyBars { get; set; } = null!;
 
@@ -46,9 +75,9 @@ namespace AzuExtendedPlayerInventory.EPI
 
         private static Vector3 _lastMousePos;
         private static string _currentlyDragging = null!;
-        
+
         private static readonly int _visible = Animator.StringToHash("visible");
-        
+
         internal static bool IsVisible() => InventoryGui.instance && InventoryGui.instance.m_animator.GetBool(_visible);
 
         internal static void SetSlotText(string value, Transform transform, bool isQuickSlot)
@@ -66,7 +95,7 @@ namespace AzuExtendedPlayerInventory.EPI
             Transform binding = transform.Find("binding");
             if (!binding)
                 return;
-            
+
             // Make component size of parent to let TMP_Text do its job on text positioning
             RectTransform rt = binding.GetComponent<RectTransform>();
             rt.anchorMin = Vector2.zero;
@@ -89,7 +118,7 @@ namespace AzuExtendedPlayerInventory.EPI
             textComp.horizontalAlignment = isQuickSlot ? quickSlotLabelAlignment.Value : equipmentSlotLabelAlignment.Value;
             textComp.verticalAlignment = VerticalAlignmentOptions.Top;
         }
-        
+
         internal static readonly List<Slot> slots = new()
             {
                 new EquipmentSlot { Name = HelmetText.Value,   Get = player => player.m_helmetItem,    Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Helmet, },
@@ -99,21 +128,128 @@ namespace AzuExtendedPlayerInventory.EPI
                 new EquipmentSlot { Name = BackText.Value,     Get = player => player.m_shoulderItem,  Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder, },
             };
 
-        internal static Slot[] GetQuickSlots()
+        internal static void ShiftExtraInventorySlots(int startingIndex, int shift)
         {
-            string[] fixedSlotNames = Hotkeys.Select(hk => hk.Value.ToString()).ToArray();
+            if (!Player.m_localPlayer)
+                return;
 
-            Slot[] quickSlots = slots.Where(slot => fixedSlotNames.Contains(slot.Name)).ToArray();
-            return quickSlots;
+            bool itemsChanged = false;
+
+            // slots list should be changed appropriately before this call
+            while (shift != 0)
+            {
+                foreach (ItemDrop.ItemData item in Player.m_localPlayer.GetInventory()?.GetAllItems())
+                {
+                    // Check to ignore regular inventory
+                    if (item.m_gridPos.y < InventoryHeightPlayer)
+                        continue;
+
+                    if ((item.m_gridPos.y - InventoryHeightPlayer) * InventoryWidth + item.m_gridPos.x >= startingIndex)
+                    {
+                        itemsChanged = true;
+                        item.m_gridPos.x += shift;
+                        if (item.m_gridPos.x < 0)
+                        {
+                            item.m_gridPos.x = InventoryWidth - 1;
+                            --item.m_gridPos.y;
+                        }
+                        if (item.m_gridPos.x >= InventoryWidth)
+                        {
+                            item.m_gridPos.x = 0;
+                            ++item.m_gridPos.y;
+                        }
+                    }
+                }
+
+                if (shift > 0)
+                    --shift;
+                else
+                    ++shift;
+            }
+
+            if (itemsChanged)
+                UpdatePlayerInventorySize();
+
+            EquipmentPanel.UpdatePanel();
+            QAB.QuickAccessBar.UpdateSlots();
+        }
+
+        public static void UpdatePlayerInventorySize()
+        {
+            if (Player.m_localPlayer == null)
+                return;
+
+            Player.m_localPlayer.m_inventory.m_height = InventoryHeightFull;
+            Player.m_localPlayer.m_tombstone.GetComponent<Container>().m_height = InventoryHeightFull;
+            Player.m_localPlayer.m_inventory.Changed();
+
+            CheckPlayerInventoryItemsOverlappingOrOutOfGrid();
+        }
+
+        public static void CheckPlayerInventoryItemsOverlappingOrOutOfGrid()
+        {
+            if (Player.m_localPlayer == null)
+                return;
+
+            Inventory playerInventory = Player.m_localPlayer.GetInventory();
+            if (playerInventory == null || playerInventory.m_inventory == null)
+                return;
+
+            playerInventory.m_inventory.RemoveAll(item => item == null || item.m_stack <= 0);
+
+            HashSet<Vector2i> occupiedPositions = new();
+            List<ItemDrop.ItemData> itemsToFix = new();
+            for (int index = 0; index < playerInventory.m_inventory.Count; index++)
+            {
+                ItemDrop.ItemData itemData = playerInventory.m_inventory[index];
+
+                bool overlappingItem = occupiedPositions.Contains(itemData.m_gridPos);
+                if (overlappingItem || IsOutOfGrid(itemData) || IsIncorrectEquipmentSlotItem(itemData))
+                {
+                    AzuExtendedPlayerInventoryLogger.LogWarning(
+                        overlappingItem
+                            ? $"Item {Localization.instance.Localize(itemData.m_shared.m_name)} was overlapping another item in the player inventory grid, moving to first available slot or dropping if no slots are available."
+                            : $"Item {Localization.instance.Localize(itemData.m_shared.m_name)} was outside player inventory grid, moving to first available slot or dropping if no slots are available.");
+                    itemsToFix.Add(itemData);
+                }
+
+                occupiedPositions.Add(itemData.m_gridPos);
+            }
+
+            itemsToFix.Do(TryAddItemToInventory);
+
+            playerInventory.Changed();
+
+            void TryAddItemToInventory(ItemDrop.ItemData itemData)
+            {
+                if (!(playerInventory.CanAddItem(itemData) && Player.m_localPlayer.GetInventory().RemoveItem(itemData) && playerInventory.AddItem(itemData)))
+                {
+                    AzuExtendedPlayerInventoryLogger.LogInfo($"Dropping {Localization.instance.Localize(itemData.m_shared.m_name)} in TryAddItemToInventory");
+                    Player.m_localPlayer.DropItem(playerInventory, itemData, itemData.m_stack);
+                }
+            }
+
+            bool IsOutOfGrid(ItemDrop.ItemData itemData) => itemData.m_gridPos.x < 0 || itemData.m_gridPos.x >= playerInventory.m_width || itemData.m_gridPos.y < 0 || itemData.m_gridPos.y >= playerInventory.m_height;
+
+            bool IsIncorrectEquipmentSlotItem(ItemDrop.ItemData itemData) => !EquipmentSlots.ItemFitInCurrentSlot(playerInventory, itemData);
         }
 
         static ExtendedPlayerInventory()
         {
             // ensure the fixed slots are at end
-            for (int i = 0; i < QuickSlotsCount; ++i)
-            {
-                slots.Add(new Slot { Name = GetHotkeyText(i) });
-            }
+            UpdateQuickSlots();
+        }
+
+        internal static void UpdateQuickSlots()
+        {
+            int slotsCount = slots.Count;
+
+            slots.RemoveAll(slot => slot.Name.StartsWith("QuickSlot"));
+            
+            for (int i = 0; i < QuickSlotsCount; i++)
+                slots.Add(new QuickSlot { Name = $"QuickSlot{i + 1}", Hotkey = Hotkeys[i].Item1.Value, HotkeyText = Hotkeys[i].Item2.Value });
+
+            ShiftExtraInventorySlots(slots.Count, slots.Count - slotsCount);
         }
 
         internal static class EquipmentPanel
@@ -122,11 +258,11 @@ namespace AzuExtendedPlayerInventory.EPI
 
             internal static void InitializeVanillaSlotsOrder()
             {
-                vanillaSlots.Add(EquipmentSlot.helmetSlotID, slots[0]);
-                vanillaSlots.Add(EquipmentSlot.legsSlotID, slots[1]);
-                vanillaSlots.Add(EquipmentSlot.utilitySlotID, slots[2]);
-                vanillaSlots.Add(EquipmentSlot.chestSlotID, slots[3]);
-                vanillaSlots.Add(EquipmentSlot.backSlotID, slots[4]);
+                vanillaSlots.Add(EquipmentSlot.helmetSlotID,    slots[0]);
+                vanillaSlots.Add(EquipmentSlot.legsSlotID,      slots[1]);
+                vanillaSlots.Add(EquipmentSlot.utilitySlotID,   slots[2]);
+                vanillaSlots.Add(EquipmentSlot.chestSlotID,     slots[3]);
+                vanillaSlots.Add(EquipmentSlot.backSlotID,      slots[4]);
             }
 
             internal static void ReorderVanillaSlots()
@@ -197,7 +333,7 @@ namespace AzuExtendedPlayerInventory.EPI
 
                     currentChild.SetActive(true);
 
-                    SetSlotText(slots[i].Name, currentChild.transform, isQuickSlot: i > EquipmentSlotsCount - 1);
+                    SetSlotText(slots[i].GetName(), currentChild.transform, isQuickSlot: i > EquipmentSlotsCount - 1);
 
                     if (DisplayEquipmentRowSeparate.Value.IsOn())
                     {
@@ -219,7 +355,7 @@ namespace AzuExtendedPlayerInventory.EPI
             private static float TileSize => 64f + tileSpace;
             private static float InventoryWidth => InventoryGui.instance ? InventoryGui.instance.m_player.rect.width : 0;
             private static float PanelWidth => Math.Max(QuickSlotsCount, LastEquipmentColumn() + 1) * TileSize + tileSpace;
-            private static float PanelHeight => 4 * TileSize + tileSpace;
+            private static float PanelHeight => (QuickSlotsCount > 0 ? 4 : 3) * TileSize;
             private static float PanelLeftOffset => EquipmentPanelLeftOffset.Value;
 
             internal static Vector2 PanelOffset
@@ -272,6 +408,7 @@ namespace AzuExtendedPlayerInventory.EPI
                 for (int i = 0; i < slots.Count; ++i)
                     slots[i].Position = GetSlotOffset(i);
             }
+
             private static int Column(int i) => i / 3;
             private static int Row(int i) => i % 3;
             private static int LastEquipmentRow() => Row(EquipmentSlotsCount - 1);
@@ -281,13 +418,22 @@ namespace AzuExtendedPlayerInventory.EPI
                 // Result in grid size of half tiles
                 if (i < EquipmentSlotsCount)
                 {
-                    x = Column(i) * 2 + (EquipmentSlotsAlignment.Value == SlotAlignment.VerticalTopHorizontalMiddle && Row(i) > LastEquipmentRow() ? 1 : 0) + (LastEquipmentColumn() < 3 ? 1 : 0);
-                    y = Row(i) * 2 + Math.Max(EquipmentSlotsAlignment.Value == SlotAlignment.VerticalMiddleHorizontalLeft && Column(i) == LastEquipmentColumn() ? 2 - LastEquipmentRow() : 0, 0);
+                    x = Column(i) * 2
+                        // Horizontal offset for rows with insuccifient columns
+                        + (EquipmentSlotsAlignment.Value == SlotAlignment.VerticalTopHorizontalMiddle && Row(i) > LastEquipmentRow() ? 1 : 0)
+                        // Offset for equipment positioning in the middle if quickslots amount is more than equipment columns
+                        + Math.Max(QuickSlotsCount - 1 - LastEquipmentColumn(), 0);
+                    
+                    y = Row(i) * 2 
+                        // Offset for last column and vertical alignment in the middle
+                        + Math.Max(EquipmentSlotsAlignment.Value == SlotAlignment.VerticalMiddleHorizontalLeft && Column(i) == LastEquipmentColumn() ? 2 - LastEquipmentRow() : 0, 0);
                 }
                 else
                 {
-                    x = (i - EquipmentSlotsCount) * 2 + Math.Max(QuickSlotsAlignmentCenter.Value.IsOn() ? LastEquipmentColumn() + 1 - QuickSlotsCount : 0, 0);
-                    y = QuickSlotsCount * 2;
+                    x = (i - EquipmentSlotsCount) * 2
+                        // Offset for quickslots positioning in the middle if equipment columns is more than quickslots
+                        + Math.Max(QuickSlotsAlignmentCenter.Value.IsOn() ? LastEquipmentColumn() + 1 - QuickSlotsCount : 0, 0);
+                    y = 3 * 2;
                 }
             }
             private static Vector2 GetSlotOffset(int i)
@@ -371,30 +517,45 @@ namespace AzuExtendedPlayerInventory.EPI
             }
         }
 
-        internal static class EquipmentSlots
+        public static class EquipmentSlots
         {
             private static ItemDrop.ItemData[] equippedItems = new ItemDrop.ItemData[5];
-            
-            internal static bool TryGetSlot(Inventory inventory, ItemDrop.ItemData item, out int position)
+
+            public static bool TryGetItemSlot(Inventory inventory, ItemDrop.ItemData item, out int position)
             {
-                var inventoryRows = inventory.GetHeight() - API.GetAddedRows(inventory.GetWidth());
-                if (AddEquipmentRow.Value.IsOff() || item.m_gridPos.y < inventoryRows || (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x >= EquipmentSlotsCount)
+                position = (item.m_gridPos.y - InventoryHeightPlayer) * inventory.GetWidth() + item.m_gridPos.x;
+                if (AddEquipmentRow.Value.IsOff() || item.m_gridPos.y < InventoryHeightPlayer || position >= EquipmentSlotsCount)
                 {
                     position = -1;
                     return false;
                 }
 
-                position = (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x;
                 return true;
             }
 
-            internal static bool IsSlot(Inventory inventory, ItemDrop.ItemData item) => TryGetSlot(inventory, item, out _);
+            public static bool IsInSlot(Inventory inventory, ItemDrop.ItemData item) => TryGetItemSlot(inventory, item, out _);
 
-            internal static bool IsFreeSlot(Inventory inventory, ItemDrop.ItemData item, out int position)
+            public static bool IsFreeSlot(Inventory inventory, ItemDrop.ItemData item, out int position)
             {
                 var addedRows = API.GetAddedRows(inventory.GetWidth());
                 position = slots.FindIndex(s => s is EquipmentSlot slot && slot.Valid(item));
                 return position >= 0 && inventory.GetItemAt(position, inventory.GetHeight() - addedRows) == null;
+            }
+
+            public static bool IsValidItemInSlot(ItemDrop.ItemData item, int position)
+            {
+                if (position < 0 || position >= EquipmentSlotsCount)
+                    return false;
+
+                return slots[position] is EquipmentSlot slot && slot.Valid(item);
+            }
+
+            public static bool ItemFitInCurrentSlot(Inventory inventory, ItemDrop.ItemData item)
+            {
+                if (!TryGetItemSlot(inventory, item, out int position))
+                    return true;
+    
+                return IsValidItemInSlot(item, position);
             }
 
             // Runs every frame InventoryGui.Update
@@ -433,9 +594,9 @@ namespace AzuExtendedPlayerInventory.EPI
                     ItemDrop.ItemData item = allItems[index];
                     try
                     {
-                        if (TryGetSlot(inventory, item, out int position) &&
-                            (position <= -1 || item != equippedItemsNew[position]) &&
-                            (position <= -1 || slots[position] is not EquipmentSlot slot || !slot.Valid(item) || equippedItems[position] == item || (AutoEquip.Value.IsOn() && !player.EquipItem(item, false))))
+                        if (TryGetItemSlot(inventory, item, out int position) &&
+                            (position < 0 || item != equippedItemsNew[position]) &&
+                            (position < 0 || slots[position] is not EquipmentSlot slot || !slot.Valid(item) || equippedItems[position] == item || (AutoEquip.Value.IsOn() && !player.EquipItem(item, false))))
                         {
                             Vector2i vector2I = inventory.FindEmptySlot(true);
                             if (vector2I.x < 0 || vector2I.y < 0 || vector2I.y >= height - requiredRows)
@@ -468,6 +629,8 @@ namespace AzuExtendedPlayerInventory.EPI
             private static RectTransform _quickAccessBar = null!;
             private static float _scaleFactor = 1f;
 
+            internal static QuickSlot[] GetSlots() => slots.Where(slot => slot.QuickSlot is not null).Select(slot => slot.QuickSlot).ToArray();
+
             internal static void CreateBar()
             {
                 _quickAccessBar = Object.Instantiate(Hud.instance.m_rootObject.transform.Find("HotKeyBar"), Hud.instance.m_rootObject.transform, true).GetComponent<RectTransform>();
@@ -497,15 +660,19 @@ namespace AzuExtendedPlayerInventory.EPI
                 if (Utilities.Utilities.IgnoreKeyPresses(includeExtra: true) || AddEquipmentRow.Value.IsOff())
                     return;
 
+                QuickSlot[] quickSlots = GetSlots();
+                if (quickSlots.Length == 0)
+                    return;
+
                 int hotkey = 0;
-                while (!GetHotkey(hotkey).IsKeyDown())
+                while (!quickSlots[hotkey].IsDown())
                     if (++hotkey == QuickSlotsCount)
                         return;
 
                 Inventory inventory = Player.m_localPlayer.GetInventory();
                 int width = inventory.GetWidth();
 
-                int index = (4 + ExtraRows.Value) * width + EquipmentSlotsCount + hotkey;
+                int index = InventorySizePlayer + EquipmentSlotsCount + hotkey;
                 ItemDrop.ItemData itemAt = inventory.GetItemAt(index % width, index / width);
 
                 if (itemAt == null)
@@ -811,9 +978,7 @@ namespace AzuExtendedPlayerInventory.EPI
                 return;
 
             if (granted)
-            {
-                Utilities.Utilities.InventoryFix();
-            }
+                ExtendedPlayerInventory.CheckPlayerInventoryItemsOverlappingOrOutOfGrid();
         }
     }
 
@@ -823,7 +988,7 @@ namespace AzuExtendedPlayerInventory.EPI
         static void Postfix(Inventory __instance)
         {
             if (__instance == Player.m_localPlayer?.GetInventory())
-                Utilities.Utilities.InventoryFix();
+                ExtendedPlayerInventory.CheckPlayerInventoryItemsOverlappingOrOutOfGrid();
         }
     }
 }

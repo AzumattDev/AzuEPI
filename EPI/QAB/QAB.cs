@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using HarmonyLib;
 using TMPro;
 using UnityEngine;
@@ -55,22 +56,24 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                             Object.Destroy(element.m_go);
 
                         __instance.m_elements.Clear();
-                        for (int index = 0; index < num; ++index)
+                        QuickSlot[] quickSlots = ExtendedPlayerInventory.QuickSlots.GetSlots();
+                        for (int index = 0; index < Math.Min(num, quickSlots.Length); ++index)
                         {
                             HotkeyBar.ElementData elementData = new()
                             {
                                 m_go = Object.Instantiate(__instance.m_elementPrefab, __instance.transform),
                             };
-                            elementData.m_go.transform.localPosition = new Vector3(index * __instance.m_elementSpace, 0.0f, 0.0f);
-                            if (index < AzuExtendedPlayerInventoryPlugin.HotkeyTexts.Length && index < AzuExtendedPlayerInventoryPlugin.QuickSlotsCount)
-                                ExtendedPlayerInventory.SetSlotText(AzuExtendedPlayerInventoryPlugin.GetHotkeyText(index), elementData.m_go.transform, isQuickSlot: true);
 
+                            elementData.m_go.transform.localPosition = new Vector3(index * __instance.m_elementSpace, 0.0f, 0.0f);
                             elementData.m_icon = elementData.m_go.transform.transform.Find("icon").GetComponent<Image>();
                             elementData.m_durability = elementData.m_go.transform.Find("durability").GetComponent<GuiBar>();
                             elementData.m_amount = elementData.m_go.transform.Find("amount").GetComponent<TMP_Text>();
                             elementData.m_equiped = elementData.m_go.transform.Find("equiped").gameObject;
                             elementData.m_queued = elementData.m_go.transform.Find("queued").gameObject;
                             elementData.m_selection = elementData.m_go.transform.Find("selected").gameObject;
+                            
+                            ExtendedPlayerInventory.SetSlotText(quickSlots[index].GetName(), elementData.m_go.transform, isQuickSlot: true);
+
                             __instance.m_elements.Add(elementData);
                         }
 
