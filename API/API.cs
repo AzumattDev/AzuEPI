@@ -138,21 +138,7 @@ public class API
 	public static List<ItemDrop.ItemData> GetQuickSlotsItems()
 	{
 #if ! API
-		List<ItemDrop.ItemData> quickSlotItems = new();
-		if (Player.m_localPlayer == null) return quickSlotItems;
-		Inventory inventory = Player.m_localPlayer.GetInventory();
-		int width = inventory.GetWidth();
-		int adjustedHeight = inventory.GetHeight() - GetAddedRows(width);
-		int firstHotkeyIndex = adjustedHeight * width + AzuExtendedPlayerInventoryPlugin.EquipmentSlotsCount;
-
-		for (int i = 0; i < AzuExtendedPlayerInventoryPlugin.QuickSlotsCount; ++i)
-		{
-			int index = firstHotkeyIndex + i;
-			if (inventory.GetItemAt(index % width, index / width) is { } item)
-				quickSlotItems.Add(item);
-		}
-
-		return quickSlotItems;
+		return ExtendedPlayerInventory.QuickSlots.GetItems();
 #else
     return new List<ItemDrop.ItemData>();
 #endif

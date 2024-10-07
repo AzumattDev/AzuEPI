@@ -53,21 +53,24 @@ public class TombstonePatches
     [HarmonyPatch(typeof(TombStone), nameof(TombStone.EasyFitInInventory))]
     private static class TemporarilyIncreaseCarryWeight
     {
+        static float megingjordCarryWeight = 0f;
         static bool playerCurrentPickupState = false;
-        private static void Prefix(ref float __state)
+
+        private static void Prefix()
         {
             playerCurrentPickupState = Player.m_enableAutoPickup;
             Player.m_enableAutoPickup = false; // Temporarily disable auto pickup to prevent NRE.   shudnal: Game version 0.218.21 is it still needed?
 
-            //__state = ObjectDB.instance.GetStatusEffect()
-            Player.m_localPlayer.m_maxCarryWeight += 150f;
-            
+            if (megingjordCarryWeight == 0f)
+                megingjordCarryWeight = (ObjectDB.instance.GetStatusEffect("BeltStrength".GetStableHashCode()) as SE_Stats)?.m_addMaxCarryWeight ?? 0f;
+
+            Player.m_localPlayer.m_maxCarryWeight += megingjordCarryWeight;
         }
         private static void Postfix() => ExtendedPlayerInventory.CheckPlayerInventoryItemsOverlappingOrOutOfGrid();
         private static void Finalizer()
         {
             Player.m_enableAutoPickup = playerCurrentPickupState;
-            Player.m_localPlayer.m_maxCarryWeight -= 150f;
+            Player.m_localPlayer.m_maxCarryWeight -= megingjordCarryWeight;
         }
     }
 }

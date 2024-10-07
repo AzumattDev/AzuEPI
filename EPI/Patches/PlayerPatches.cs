@@ -3,25 +3,29 @@ using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
+using static AzuExtendedPlayerInventory.AzuExtendedPlayerInventoryPlugin;
+using static AzuExtendedPlayerInventory.EPI.ExtendedPlayerInventory;
 
 namespace AzuExtendedPlayerInventory.EPI.Patches;
 
 public class PlayerPatches
 {
+    private static bool IsValidPlayer(Player player) => player != null && Player.m_localPlayer == player && player.m_nview.IsValid() && player.m_nview.IsOwner();
+
     [HarmonyPatch(typeof(Player), nameof(Player.Awake))]
-    private static class PlayerAwakePatch
+    private static class Player_Awake_ResizeInventory
     {
         private static void Prefix(Player __instance)
         {
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug("Player_Awake");
+            AzuExtendedPlayerInventoryLogger.LogDebug("Player_Awake");
 
-            __instance.m_inventory.m_height = ExtendedPlayerInventory.InventoryHeightFull;
-            __instance.m_tombstone.GetComponent<Container>().m_height = ExtendedPlayerInventory.InventoryHeightFull;
+            __instance.m_inventory.m_height = InventoryHeightFull;
+            __instance.m_tombstone.GetComponent<Container>().m_height = InventoryHeightFull;
         }
     }
 
     [HarmonyPatch(typeof(Player), nameof(Player.OnSpawned))]
-    private static class InventoryGuiAwakePatch
+    private static class Player_OnSpawned_LoadEAQSData
     {
         public const string Sentinel = "<|>";
         public static Inventory QuickSlotInventory = new(nameof(QuickSlotInventory), null, 3, 1);
@@ -31,20 +35,18 @@ public class PlayerPatches
 
         static void Postfix(Player __instance)
         {
-            if (Player.m_localPlayer == null || Player.m_localPlayer != __instance)
+            if (!IsValidPlayer(__instance))
                 return;
 
             if (!BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("randyknapp.mods.equipmentandquickslots", out _))
-            {
                 Load(__instance);
-            }
         }
 
         public static void Load(Player fromPlayer)
         {
             if (fromPlayer == null)
             {
-                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogError("Tried to load an ExtendedPlayerData with a null player!");
+                AzuExtendedPlayerInventoryLogger.LogError("Tried to load an ExtendedPlayerData with a null player!");
                 return;
             }
 
@@ -102,7 +104,7 @@ public class PlayerPatches
 
             foundInKnownTexts = player.m_knownTexts.TryGetValue(key, out value);
             if (foundInKnownTexts)
-                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning("Loaded data from knownTexts. Will be converted to customData on save.");
+                AzuExtendedPlayerInventoryLogger.LogWarning("Loaded data from knownTexts. Will be converted to customData on save.");
 
             return foundInKnownTexts;
         }
@@ -111,7 +113,7 @@ public class PlayerPatches
         {
             if (player.m_knownTexts.ContainsKey(key))
             {
-                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning("Found KnownText for save data, converting to customData");
+                AzuExtendedPlayerInventoryLogger.LogWarning("Found KnownText for save data, converting to customData");
                 player.m_knownTexts.Remove(key);
             }
 
@@ -125,7 +127,7 @@ public class PlayerPatches
         {
             if (player.m_inventory.CanAddItem(itemData))
             {
-                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo($"Adding {Localization.instance.Localize(itemData.m_shared.m_name)} to inventory");
+                AzuExtendedPlayerInventoryLogger.LogInfo($"Adding {Localization.instance.Localize(itemData.m_shared.m_name)} to inventory");
                 fromInventory.RemoveItem(itemData);
                 player.m_inventory.AddItem(itemData);
 
@@ -136,7 +138,7 @@ public class PlayerPatches
             }
             else
             {
-                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo($"Dropping {Localization.instance.Localize(itemData.m_shared.m_name)}");
+                AzuExtendedPlayerInventoryLogger.LogInfo($"Dropping {Localization.instance.Localize(itemData.m_shared.m_name)}");
                 Transform transform = player.transform;
                 ItemDrop itemDrop = ItemDrop.DropItem(itemData, itemData.m_stack, transform.position + transform.forward + transform.up, transform.rotation);
                 if (itemDrop == null) return;
@@ -152,7 +154,7 @@ public class PlayerPatches
     }
 
     [HarmonyPatch(typeof(Player), nameof(Player.Update))]
-    private static class PlayerUpdatePatch
+    private static class Player_Update_UpdateInventoryHeightAndQuickSlots
     {
         private static Container tombstoneContainer = null!;
 
@@ -163,30 +165,40 @@ public class PlayerPatches
             tombstoneContainer ??= __instance.m_tombstone.GetComponent<Container>();
             tombstoneContainer.m_height = ___m_inventory.m_height;
 
+            if (!IsValidPlayer(__instance))
+                return;
+
             ExtendedPlayerInventory.QuickSlots.UpdateItemUse();
         }
     }
 
-    [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnRightClickItem))]
-    static class InventoryGuiOnRightClickItemPatch
+    [HarmonyPatch(typeof(Player), nameof(Player.OnInventoryChanged))]
+    private static class Player_OnInventoryChanged_ValidateInventory
     {
-        static bool Prefix(InventoryGrid grid, ItemDrop.ItemData item)
+        private static void Postfix(Player __instance)
         {
-            if (item == null || !Player.m_localPlayer || grid.GetInventory() == null)
-                return true;
+            if (IsValidPlayer(__instance) && !__instance.m_isLoading)
+                EquipmentSlots.MarkDirty();
+        }
+    }
 
-            Player p = Player.m_localPlayer;
-            if (grid.m_inventory == Player.m_localPlayer.GetInventory())
-            {
-                if (ExtendedPlayerInventory.EquipmentSlots.IsInSlot(p.m_inventory, item) && !p.m_inventory.CanAddItem(item))
-                {
-                    AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo("Inventory full, blocking item unequip");
-                    Player.m_localPlayer.Message(MessageHud.MessageType.Center, "$inventory_full");
-                    return false;
-                }
-            }
+    [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.UnequipItem))]
+    private static class Humanoid_UnequipItem_ValidateInventory
+    {
+        private static void Postfix(Humanoid __instance)
+        {
+            if (__instance is Player player && IsValidPlayer(player) && !player.m_isLoading)
+                EquipmentSlots.MarkDirty();
+        }
+    }
 
-            return true;
+    [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.EquipItem))]
+    private static class Humanoid_EquipItem_ValidateInventory
+    {
+        private static void Postfix(Humanoid __instance)
+        {
+            if (__instance is Player player && IsValidPlayer(player) && !player.m_isLoading)
+                EquipmentSlots.MarkDirty();
         }
     }
 }

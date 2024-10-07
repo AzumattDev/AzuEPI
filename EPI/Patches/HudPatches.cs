@@ -30,7 +30,7 @@ public class HudPatches
             
             API.HudUpdate(__instance);
 
-            ExtendedPlayerInventory.QuickSlots.UpdateHotkeyBars();
+            QAB.HotkeyBarController.UpdateHotkeyBars();
 
             ExtendedPlayerInventory.QuickSlots.UpdatePosition();
 
@@ -43,6 +43,10 @@ public class HudPatches
     [HarmonyPatch(typeof(Hud), nameof(Hud.OnDestroy))]
     private static class HudOnDestroyPatch
     {
-        private static void Postfix() => ExtendedPlayerInventory.QuickSlots.ClearBars();
+        private static void Postfix()
+        {
+            ExtendedPlayerInventory.QuickSlots.ClearBar();
+            QAB.HotkeyBarController.ClearBars();
+        }
     }
 }

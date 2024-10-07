@@ -11,6 +11,7 @@ using JetBrains.Annotations;
 using YamlDotNet.Serialization;
 
 namespace LocalizationManager;
+#nullable enable
 
 [PublicAPI]
 public class Localizer

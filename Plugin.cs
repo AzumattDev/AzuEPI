@@ -60,7 +60,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         /* Extended Player Inventory Config options */
         AutoEquip = config("2 - Extended Inventory", "Auto Equip", Toggle.On, "Automatically equip items that go into the gear slots. Applies when picking up items, transferring between containers, or picking up your tombstone.");
         ShowQuickSlots = config("2 - Extended Inventory", "Show Quickslots", Toggle.On, "Should the quickslots be shown?");
-        ShowQuickSlots.SettingChanged += (sender, args) => { ExtendedPlayerInventory.QuickSlots.DeselectHotkeyBars(); };
+        ShowQuickSlots.SettingChanged += (sender, args) => { HotkeyBarController.DeselectBars();};
         ExtraRows = config("2 - Extended Inventory", "Extra Inventory Rows", 0, "Number of extra ordinary rows. (This can cause overlap with chest GUI, make sure you hold CTRL (the default key) and drag to desired position)");
         // Fire an event handler on setting change for ExtraRows that will update the inventory size
         ExtraRows.SettingChanged += (sender, args) => ExtendedPlayerInventory.UpdatePlayerInventorySize();
@@ -129,6 +129,11 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         DropAllButtonText = config("3 - Button", "Button Text", "Drop all", "Button text", false);
 
         #region Equipment panel configs
+        // New configs
+        
+        KeepUnequippedInSlot = config("2 - Extended Inventory", "Keep unequipped item in slot", Toggle.On, "Items will be placed in a suitable free slot when they are received (from all sources)." +
+                                                                                                           "\nItems will remain in slots if they are broken or removed." +
+                                                                                                           "\nIf disabled - items will be placed in the inventory or if inventory is full will stay until there will be free slot.");
 
         QuickSlotsAmount = config("2 - Extended Inventory", "Quickslots amount", 3, new ConfigDescription("How much quickslots should be added", new AcceptableValueRange<int>(0, 6)));
         QuickSlotsAmount.SettingChanged += (sender, args) => UpdateHotkeysConfig();
@@ -165,11 +170,11 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         quickSlotLabelFontSize = config("4 - Quick slots - Label style", "Font size", new Vector2(12f, 16f), "Min and Max text size in slot label", false);
         quickSlotLabelFontColor = config("4 - Quick slots - Label style", "Font color", new Color(0.596f, 0.816f, 1f), "Text color in slot label", false);
 
-        quickSlotLabelAlignment.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
-        quickSlotLabelWrappingMode.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
-        quickSlotLabelMargin.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
-        quickSlotLabelFontSize.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
-        quickSlotLabelFontColor.SettingChanged += (s, e) => QuickAccessBar.UpdateSlots();
+        quickSlotLabelAlignment.SettingChanged += (s, e) => ExtendedPlayerInventory.QuickSlots.MarkDirty();
+        quickSlotLabelWrappingMode.SettingChanged += (s, e) => ExtendedPlayerInventory.QuickSlots.MarkDirty();
+        quickSlotLabelMargin.SettingChanged += (s, e) => ExtendedPlayerInventory.QuickSlots.MarkDirty();
+        quickSlotLabelFontSize.SettingChanged += (s, e) => ExtendedPlayerInventory.QuickSlots.MarkDirty();
+        quickSlotLabelFontColor.SettingChanged += (s, e) => ExtendedPlayerInventory.QuickSlots.MarkDirty();
 
         UpdateHotkeysConfig();
 
@@ -241,6 +246,11 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         ExtendedPlayerInventory.EquipmentPanel.ReorderVanillaSlots();
     }
 
+    private void LateUpdate()
+    {
+        ExtendedPlayerInventory.EquipmentSlots.ValidateSlotsAndAutoEquip();
+    }
+
     private void OnDestroy()
     {
         Config.Save();
@@ -295,6 +305,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     private static ConfigEntry<Toggle> _serverConfigLocked = null!;
     public static ConfigEntry<Toggle> AutoEquip = null!;
+    public static ConfigEntry<Toggle> KeepUnequippedInSlot = null!;
 
     public static ConfigEntry<Toggle> AddEquipmentRow = null!;
     public static ConfigEntry<Toggle> DisplayEquipmentRowSeparate = null!;
