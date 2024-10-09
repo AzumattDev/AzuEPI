@@ -8,11 +8,20 @@ using static AzuExtendedPlayerInventory.AzuExtendedPlayerInventoryPlugin;
 using AzuExtendedPlayerInventory.EPI.Utilities;
 using System.Linq;
 using System;
+using System.Runtime.CompilerServices;
 
 namespace AzuExtendedPlayerInventory.EPI
 {
     public class Slot
     {
+        public const string helmetSlotID = "Helmet";
+        public const string legsSlotID = "Legs";
+        public const string utilitySlotID = "Utility";
+        public const string chestSlotID = "Chest";
+        public const string backSlotID = "Back";
+        public const string ExtraUtilitySlotID = "ExtraUtility";
+        public const string QuickSlotID = "QuickSlot";
+
 #nullable enable
         public string Name = null!;
         public Vector2 Position;
@@ -27,12 +36,6 @@ namespace AzuExtendedPlayerInventory.EPI
 
     public class EquipmentSlot : Slot
     {
-        public const string helmetSlotID = "Helmet";
-        public const string legsSlotID = "Legs";
-        public const string utilitySlotID = "Utility";
-        public const string chestSlotID = "Chest";
-        public const string backSlotID = "Back";
-
 #nullable enable
         public Func<Player, ItemDrop.ItemData?> Get = null!;
         public Func<ItemDrop.ItemData, bool> Valid = null!;
@@ -51,6 +54,11 @@ namespace AzuExtendedPlayerInventory.EPI
         public bool IsDown() => Hotkey.IsKeyDown();
     }
 
+    public class ExtraUtilitySlot : EquipmentSlot
+    {
+        public override string GetName() => UtilityText.Value;
+    }
+
     public static class ExtendedPlayerInventory
     {
         public const string QABName = "QuickAccessBar";
@@ -58,9 +66,10 @@ namespace AzuExtendedPlayerInventory.EPI
 
         public const int vanillaInventoryHeight = 4;
 
-        public static int QuickSlotsCount => Hotkeys.Count;
-
         public static int EquipmentSlotsCount => slots.Count - QuickSlotsCount;
+        public static int QuickSlotsCount => Hotkeys.Count;
+        public static int ExtraUtilitySlotsCount => ExtraUtilitySlotsAmount.Value;
+        public static int ExtraUtilitySlotsIndex => Math.Min(ExtraUtilitySlotsPosition.Value, EquipmentSlotsCount);
 
         public static Inventory PlayerInventory => Player.m_localPlayer?.GetInventory();
         public static int InventoryWidth => PlayerInventory != null ? PlayerInventory.GetWidth() : 8;
@@ -126,7 +135,7 @@ namespace AzuExtendedPlayerInventory.EPI
                 new EquipmentSlot { Name = BackText.Value,     Get = player => player.m_shoulderItem,  Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder, },
             };
 
-        internal static void ShiftExtraInventorySlots(int startingIndex, int shift)
+        internal static void ShiftExtraInventorySlots(int startingIndex, int shift, bool forceUpdateInventory = false)
         {
             if (!Player.m_localPlayer)
                 return;
@@ -165,7 +174,7 @@ namespace AzuExtendedPlayerInventory.EPI
                     ++shift;
             }
 
-            if (itemsChanged)
+            if (itemsChanged || forceUpdateInventory)
                 UpdatePlayerInventorySize();
 
             EquipmentPanel.UpdatePanel();
@@ -218,7 +227,9 @@ namespace AzuExtendedPlayerInventory.EPI
             if (itemsToFix.Count > 0)
                 PlayerInventory.Changed();
 
-            bool IsOutOfGrid(ItemDrop.ItemData itemData) => itemData.m_gridPos.x < 0 || itemData.m_gridPos.x >= InventoryWidth || itemData.m_gridPos.y < 0 || itemData.m_gridPos.y >= InventoryHeightFull;
+            static bool IsOutOfGrid(ItemDrop.ItemData itemData) => itemData.m_gridPos.x < 0 || itemData.m_gridPos.x >= InventoryWidth 
+                                                                || itemData.m_gridPos.y < 0 || itemData.m_gridPos.y >= InventoryHeightFull
+                                                                || itemData.m_gridPos.y == InventoryHeightFull - 1 && itemData.m_gridPos.x >= InventorySizeFull % InventoryWidth;
         }
 
         private static void TryRemoveAndAddItemToInventory(ItemDrop.ItemData itemData)
@@ -259,22 +270,31 @@ namespace AzuExtendedPlayerInventory.EPI
             }
         }
 
-        static ExtendedPlayerInventory()
-        {
-            // Add quick slots to the end
-            UpdateQuickSlots();
-        }
-
         internal static void UpdateQuickSlots()
         {
             int slotsCount = slots.Count;
 
-            slots.RemoveAll(slot => slot.Name.StartsWith("QuickSlot"));
+            slots.RemoveAll(slot => slot.Name.StartsWith(Slot.QuickSlotID));
             
             for (int i = 0; i < QuickSlotsCount; i++)
-                slots.Add(new QuickSlot { Name = $"QuickSlot{i + 1}", Hotkey = Hotkeys[i].Item1.Value, HotkeyText = Hotkeys[i].Item2.Value });
+                slots.Add(new QuickSlot { Name = $"{Slot.QuickSlotID}{i + 1}", Hotkey = Hotkeys[i].Item1.Value, HotkeyText = Hotkeys[i].Item2.Value });
 
             ShiftExtraInventorySlots(slots.Count, slots.Count - slotsCount);
+        }
+
+        internal static void UpdateExtraUtilitySlots()
+        {
+            int slotsCount = slots.Count;
+            
+            slots.RemoveAll(slot => slot.Name.StartsWith(Slot.ExtraUtilitySlotID));
+
+            if (ExtraUtilitySlotsCount > 1)
+                slots.Insert(ExtraUtilitySlotsIndex, new ExtraUtilitySlot { Name = $"{Slot.ExtraUtilitySlotID}2", Get = EquipmentSlots.ExtraUtilitySlots.GetExtraSlot2, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility });
+            
+            if (ExtraUtilitySlotsCount > 0)
+                slots.Insert(ExtraUtilitySlotsIndex, new ExtraUtilitySlot { Name = $"{Slot.ExtraUtilitySlotID}1", Get = EquipmentSlots.ExtraUtilitySlots.GetExtraSlot1, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility });
+
+            ShiftExtraInventorySlots(ExtraUtilitySlotsIndex, slots.Count - slotsCount, forceUpdateInventory: true);
         }
 
         internal static class EquipmentPanel
@@ -323,11 +343,11 @@ namespace AzuExtendedPlayerInventory.EPI
             {
                 return slotName switch
                 {
-                    EquipmentSlot.helmetSlotID => HelmetText.Value,
-                    EquipmentSlot.legsSlotID => LegsText.Value,
-                    EquipmentSlot.utilitySlotID => UtilityText.Value,
-                    EquipmentSlot.chestSlotID => ChestText.Value,
-                    EquipmentSlot.backSlotID => BackText.Value,
+                    Slot.helmetSlotID => HelmetText.Value,
+                    Slot.legsSlotID => LegsText.Value,
+                    Slot.utilitySlotID => UtilityText.Value,
+                    Slot.chestSlotID => ChestText.Value,
+                    Slot.backSlotID => BackText.Value,
                     _ => ""
                 };
             }
@@ -379,7 +399,7 @@ namespace AzuExtendedPlayerInventory.EPI
             private static float TileSize => 64f + tileSpace;
             private static float InventoryWidth => InventoryGui.instance ? InventoryGui.instance.m_player.rect.width : 0;
             private static float PanelWidth => Math.Max(QuickSlotsCount, LastEquipmentColumn() + 1) * TileSize + tileSpace;
-            private static float PanelHeight => (QuickSlotsCount > 0 ? 4 : 3) * TileSize;
+            private static float PanelHeight => (QuickSlotsCount > 0 ? 4 : 3) * TileSize + (IsMinimalUI() ? 0 : tileSpace);
             private static float PanelLeftOffset => EquipmentPanelLeftOffset.Value;
 
             internal static Vector2 PanelOffset
@@ -545,21 +565,21 @@ namespace AzuExtendedPlayerInventory.EPI
         {
             private static bool isDirty = false;
 
-            public static List<ItemDrop.ItemData> GetItems()
+            public static List<ItemDrop.ItemData> GetItems(bool equippedOnly = false)
             {
-                List<ItemDrop.ItemData> quickSlotItems = new();
+                List<ItemDrop.ItemData> equipmentSlotItems = new();
 
                 if (PlayerInventory == null)
-                    return quickSlotItems;
+                    return equipmentSlotItems;
 
                 for (int i = 0; i < EquipmentSlotsCount; i++)
                 {
                     ItemDrop.ItemData item = GetItemInSlot(i);
-                    if (item != null)
-                        quickSlotItems.Add(item);
+                    if (item != null && (!equippedOnly || Player.m_localPlayer.IsItemEquiped(item)))
+                        equipmentSlotItems.Add(item);
                 }
 
-                return quickSlotItems;
+                return equipmentSlotItems;
             }
 
             /// <summary>
@@ -800,6 +820,39 @@ namespace AzuExtendedPlayerInventory.EPI
                     }
 
                     return false;
+                }
+            }
+
+            public static class ExtraUtilitySlots
+            {
+                public static ItemDrop.ItemData GetExtraSlot1(Player player)
+                {
+                    return player.GetExtraUtility(0);
+                }
+
+                public static ItemDrop.ItemData GetExtraSlot2(Player player)
+                {
+                    return player.GetExtraUtility(1);
+                }
+
+                public static IEnumerable<ItemDrop.ItemData> GetItems(bool equippedOnly = false)
+                {
+                    return EquipmentSlots.GetItems(equippedOnly).Where(item => item != Player.m_localPlayer.m_utilityItem && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility);
+                }
+
+                public static bool TryGetUtilityItemIndex(ItemDrop.ItemData item, out int utilityIndex)
+                {
+                    utilityIndex = -1;
+                    if (!TryGetItemSlot(item, out int slotIndex))
+                        return false;
+
+                    utilityIndex = slotIndex - EquipmentPanel.vanillaSlots.Count;
+                    return 0 <= utilityIndex && utilityIndex < 2;
+                }
+
+                public static bool IsItemEquipped(Humanoid human, ItemDrop.ItemData item)
+                {
+                    return item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility && TryGetUtilityItemIndex(item, out int utilityIndex) && human.GetExtraUtility(utilityIndex) != null;
                 }
             }
         }
@@ -1183,5 +1236,23 @@ namespace AzuExtendedPlayerInventory.EPI
             if (granted)
                 ExtendedPlayerInventory.CheckPlayerInventoryItemsOverlappingOrOutOfGrid();
         }
+    }
+
+    [Serializable]
+    public class HumanoidExtraUtilitySlots
+    {
+        public ItemDrop.ItemData utility1 = null!;
+        public ItemDrop.ItemData utility2 = null!;
+    }
+
+    public static class HumanoidExtension
+    {
+        private static readonly ConditionalWeakTable<Humanoid, HumanoidExtraUtilitySlots> data = new ConditionalWeakTable<Humanoid, HumanoidExtraUtilitySlots>();
+
+        public static HumanoidExtraUtilitySlots GetExtraUtilityData(this Humanoid humanoid) => data.GetOrCreateValue(humanoid);
+
+        public static ItemDrop.ItemData GetExtraUtility(this Humanoid humanoid, int index) => index == 0 ? humanoid.GetExtraUtilityData().utility1 : humanoid.GetExtraUtilityData().utility2;
+
+        public static ItemDrop.ItemData SetExtraUtility(this Humanoid humanoid, int index, ItemDrop.ItemData item) => index == 0 ? humanoid.GetExtraUtilityData().utility1 = item : humanoid.GetExtraUtilityData().utility2 = item;
     }
 }

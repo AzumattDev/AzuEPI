@@ -132,7 +132,13 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         #region Equipment panel configs
         // New configs
-        
+
+        ExtraUtilitySlotsAmount = config("2 - Extended Inventory", "Extra utility slots amount", 0, new ConfigDescription("How much extra utility slots should be added", new AcceptableValueRange<int>(0, 2)));
+        ExtraUtilitySlotsAmount.SettingChanged += (sender, args) => UpdateExtraUtilitySlots();
+
+        ExtraUtilitySlotsPosition = config("2 - Extended Inventory", "Extra utility slots position", 5, new ConfigDescription("How much extra utility slots should be added", new AcceptableValueRange<int>(0, 10)));
+        ExtraUtilitySlotsPosition.SettingChanged += (sender, args) => UpdateExtraUtilitySlots();
+
         KeepUnequippedInSlot = config("2 - Extended Inventory", "Keep unequipped item in slot", Toggle.On, "Items will be placed in a suitable free slot when they are received (from all sources)." +
                                                                                                            "\nItems will remain in slots if they are broken or removed." +
                                                                                                            "\nIf disabled - items will be placed in the inventory or if inventory is full will stay until there will be free slot" +
@@ -145,7 +151,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         QuickSlotsAlignmentCenter = config("2 - Extended Inventory", "Quickslots alignment middle", Toggle.Off, "Quickslots at Equipment Panel. Off - QuickSlots will be placed with Left alignment, On - Center alignment");
         QuickSlotsAlignmentCenter.SettingChanged += (sender, args) => EquipmentPanel.SetSlotsPositions();
 
-        string order = $"{EquipmentSlot.helmetSlotID},{EquipmentSlot.legsSlotID},{EquipmentSlot.utilitySlotID},{EquipmentSlot.chestSlotID},{EquipmentSlot.backSlotID}";
+        string order = $"{Slot.helmetSlotID},{Slot.legsSlotID},{Slot.utilitySlotID},{Slot.chestSlotID},{Slot.backSlotID}";
         VanillaSlotsOrder = config("2 - Extended Inventory", "Vanilla equipment slots order", order, "Comma separated list defining order of vanilla equipment slots", false);
         VanillaSlotsOrder.SettingChanged += (s, e) => EquipmentPanel.ReorderVanillaSlots();
 
@@ -179,6 +185,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         quickSlotLabelMargin.SettingChanged += (s, e) => QuickSlots.MarkDirty();
         quickSlotLabelFontSize.SettingChanged += (s, e) => QuickSlots.MarkDirty();
         quickSlotLabelFontColor.SettingChanged += (s, e) => QuickSlots.MarkDirty();
+
+        UpdateExtraUtilitySlots();
 
         UpdateHotkeysConfig();
 
@@ -244,9 +252,6 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         EquipmentPanel.InitializeVanillaSlotsOrder();
         EquipmentPanel.ReorderVanillaSlots();
-
-        API.AddSlot("Utility 2", null!, item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility, 5);
-        API.AddSlot("Utility 3", null!, item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility, 6);
     }
 
     private void LateUpdate()
@@ -332,6 +337,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<float> EquipmentPanelLeftOffset = null!;
     public static ConfigEntry<Toggle> QuickSlotsAlignmentCenter = null!;
     public static ConfigEntry<int> QuickSlotsAmount = null!;
+    public static ConfigEntry<int> ExtraUtilitySlotsAmount = null!;
+    public static ConfigEntry<int> ExtraUtilitySlotsPosition = null!;
 
     public static ConfigEntry<KeyboardShortcut> HotKey1 = null!;
     public static ConfigEntry<KeyboardShortcut> HotKey2 = null!;
