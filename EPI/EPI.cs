@@ -58,6 +58,10 @@ namespace AzuExtendedPlayerInventory.EPI
 
         public const int vanillaInventoryHeight = 4;
 
+        public static int QuickSlotsCount => Hotkeys.Count;
+
+        public static int EquipmentSlotsCount => slots.Count - QuickSlotsCount;
+
         public static Inventory PlayerInventory => Player.m_localPlayer?.GetInventory();
         public static int InventoryWidth => PlayerInventory != null ? PlayerInventory.GetWidth() : 8;
         public static int InventoryHeightPlayer => vanillaInventoryHeight + ExtraRows.Value; // The value is stable to temporary changes in inventory height.
@@ -720,7 +724,7 @@ namespace AzuExtendedPlayerInventory.EPI
                         bool wasEquipped = Player.m_localPlayer.IsItemEquiped(itemGrid) || Player.m_localPlayer.IsItemEquiped(itemSlot);
 
                         Player.m_localPlayer.UnequipItem(itemSlot);
-                        Player.m_localPlayer.UnequipItem(itemGrid); 
+                        Player.m_localPlayer.UnequipItem(itemGrid);
 
                         (itemSlot.m_gridPos, itemGrid.m_gridPos) = (itemGrid.m_gridPos, itemSlot.m_gridPos);
 

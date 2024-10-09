@@ -130,7 +130,7 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                         var quickSlotInventory = player.m_inventory;
                         int width = quickSlotInventory.GetWidth();
                         int adjustedHeight = quickSlotInventory.GetHeight() - API.GetAddedRows(width);
-                        int index = adjustedHeight * width + EquipmentSlotsCount + hotkeyBar.m_selected;
+                        int index = adjustedHeight * width + ExtendedPlayerInventory.EquipmentSlotsCount + hotkeyBar.m_selected;
 
                         var item = quickSlotInventory.GetItemAt(index % width, index / width);
                         if (item != null)

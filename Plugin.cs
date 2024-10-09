@@ -13,6 +13,7 @@ using HarmonyLib;
 using JetBrains.Annotations;
 using ServerSync;
 using UnityEngine;
+using static AzuExtendedPlayerInventory.EPI.ExtendedPlayerInventory;
 
 namespace AzuExtendedPlayerInventory;
 
@@ -59,13 +60,14 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         /* Extended Player Inventory Config options */
         AutoEquip = config("2 - Extended Inventory", "Auto Equip", Toggle.On, "Automatically equip items that go into the gear slots. Applies when picking up items, transferring between containers, or picking up your tombstone.");
+        AutoEquip.SettingChanged += (sender, args) => EquipmentSlots.MarkDirty();
         ShowQuickSlots = config("2 - Extended Inventory", "Show Quickslots", Toggle.On, "Should the quickslots be shown?");
         ShowQuickSlots.SettingChanged += (sender, args) => { HotkeyBarController.DeselectBars();};
         ExtraRows = config("2 - Extended Inventory", "Extra Inventory Rows", 0, "Number of extra ordinary rows. (This can cause overlap with chest GUI, make sure you hold CTRL (the default key) and drag to desired position)");
         // Fire an event handler on setting change for ExtraRows that will update the inventory size
-        ExtraRows.SettingChanged += (sender, args) => ExtendedPlayerInventory.UpdatePlayerInventorySize();
+        ExtraRows.SettingChanged += (sender, args) => UpdatePlayerInventorySize();
         AddEquipmentRow = config("2 - Extended Inventory", "Add Equipment Row", Toggle.On, "Add special row for equipped items and quick slots. (IF YOU ARE USING RANDY KNAPPS EAQs KEEP THIS VALUE OFF)");
-        AddEquipmentRow.SettingChanged += (sender, args) => { CheckRandy(); ExtendedPlayerInventory.UpdatePlayerInventorySize(); };
+        AddEquipmentRow.SettingChanged += (sender, args) => { CheckRandy(); UpdatePlayerInventorySize(); };
         DisplayEquipmentRowSeparate = config("2 - Extended Inventory", "Display Equipment Row Separate", Toggle.On, "Display equipment and quickslots in their own area. (IF YOU ARE USING RANDY KNAPPS EAQs KEEP THIS VALUE OFF)");
 
         DisplayEquipmentRowSeparate.SettingChanged += (sender, args) => CheckRandy();
@@ -78,11 +80,11 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         RightHandText = config("2 - Extended Inventory", "Right Hand Text", "R Hand", "Text to show for right hand slot.", false);
         LeftHandText = config("2 - Extended Inventory", "Left Hand Text", "L Hand", "Text to show for left hand slot.", false);
 
-        HelmetText.SettingChanged += (s, e) => ExtendedPlayerInventory.EquipmentPanel.UpdateVanillaSlotNames();
-        ChestText.SettingChanged += (s, e) => ExtendedPlayerInventory.EquipmentPanel.UpdateVanillaSlotNames();
-        LegsText.SettingChanged += (s, e) => ExtendedPlayerInventory.EquipmentPanel.UpdateVanillaSlotNames();
-        BackText.SettingChanged += (s, e) => ExtendedPlayerInventory.EquipmentPanel.UpdateVanillaSlotNames();
-        UtilityText.SettingChanged += (s, e) => ExtendedPlayerInventory.EquipmentPanel.UpdateVanillaSlotNames();
+        HelmetText.SettingChanged += (s, e) => EquipmentPanel.UpdateVanillaSlotNames();
+        ChestText.SettingChanged += (s, e) => EquipmentPanel.UpdateVanillaSlotNames();
+        LegsText.SettingChanged += (s, e) => EquipmentPanel.UpdateVanillaSlotNames();
+        BackText.SettingChanged += (s, e) => EquipmentPanel.UpdateVanillaSlotNames();
+        UtilityText.SettingChanged += (s, e) => EquipmentPanel.UpdateVanillaSlotNames();
 
         QuickAccessScale = config("2 - Extended Inventory", "QuickAccess Scale", 0.85f, "Scale of quick access bar. ", false);
 
@@ -133,29 +135,31 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         
         KeepUnequippedInSlot = config("2 - Extended Inventory", "Keep unequipped item in slot", Toggle.On, "Items will be placed in a suitable free slot when they are received (from all sources)." +
                                                                                                            "\nItems will remain in slots if they are broken or removed." +
-                                                                                                           "\nIf disabled - items will be placed in the inventory or if inventory is full will stay until there will be free slot.");
+                                                                                                           "\nIf disabled - items will be placed in the inventory or if inventory is full will stay until there will be free slot" +
+                                                                                                           "\nIf disabled - dragging items into slot will start equipping action.");
+        KeepUnequippedInSlot.SettingChanged += (sender, args) => EquipmentSlots.MarkDirty();
 
         QuickSlotsAmount = config("2 - Extended Inventory", "Quickslots amount", 3, new ConfigDescription("How much quickslots should be added", new AcceptableValueRange<int>(0, 6)));
         QuickSlotsAmount.SettingChanged += (sender, args) => UpdateHotkeysConfig();
 
         QuickSlotsAlignmentCenter = config("2 - Extended Inventory", "Quickslots alignment middle", Toggle.Off, "Quickslots at Equipment Panel. Off - QuickSlots will be placed with Left alignment, On - Center alignment");
-        QuickSlotsAlignmentCenter.SettingChanged += (sender, args) => ExtendedPlayerInventory.EquipmentPanel.SetSlotsPositions();
+        QuickSlotsAlignmentCenter.SettingChanged += (sender, args) => EquipmentPanel.SetSlotsPositions();
 
         string order = $"{EquipmentSlot.helmetSlotID},{EquipmentSlot.legsSlotID},{EquipmentSlot.utilitySlotID},{EquipmentSlot.chestSlotID},{EquipmentSlot.backSlotID}";
         VanillaSlotsOrder = config("2 - Extended Inventory", "Vanilla equipment slots order", order, "Comma separated list defining order of vanilla equipment slots", false);
-        VanillaSlotsOrder.SettingChanged += (s, e) => ExtendedPlayerInventory.EquipmentPanel.ReorderVanillaSlots();
+        VanillaSlotsOrder.SettingChanged += (s, e) => EquipmentPanel.ReorderVanillaSlots();
 
         EquipmentSlotsAlignment = config("2 - Extended Inventory", "Equipment slots alignment", SlotAlignment.VerticalTopHorizontalMiddle, "Equipment slots alignment. Set \"Vertical Middle Horizontal Left\" to make it look like EaQS layout", false);
-        EquipmentSlotsAlignment.SettingChanged += (s, e) => ExtendedPlayerInventory.EquipmentPanel.SetSlotsPositions();
+        EquipmentSlotsAlignment.SettingChanged += (s, e) => EquipmentPanel.SetSlotsPositions();
 
         DisplayEquipmentRowSeparatePanel = config("2 - Extended Inventory", "Display Equipment Row Separate Panel", Toggle.Off, "Display equipment and quickslots in their own panel. (depends on \"Display Equipment Row Separate\" config value)");
-        DisplayEquipmentRowSeparatePanel.SettingChanged += (sender, args) => ExtendedPlayerInventory.EquipmentPanel.UpdatePanel();
+        DisplayEquipmentRowSeparatePanel.SettingChanged += (sender, args) => EquipmentPanel.UpdatePanel();
 
         SeparatePanelOffset = config("2 - Extended Inventory", "Equipment Panel Separate Position", new Vector2(0f, 0f), "Relative position of separate panel with equipment and quick slots");
-        SeparatePanelOffset.SettingChanged += (sender, args) => ExtendedPlayerInventory.EquipmentPanel.UpdatePanel();
+        SeparatePanelOffset.SettingChanged += (sender, args) => EquipmentPanel.UpdatePanel();
 
         EquipmentPanelLeftOffset = config("2 - Extended Inventory", "Equipment Panel Left Offset", 80f, "Horizontal offset from main inventory panel");
-        EquipmentPanelLeftOffset.SettingChanged += (sender, args) => ExtendedPlayerInventory.EquipmentPanel.UpdatePanel();
+        EquipmentPanelLeftOffset.SettingChanged += (sender, args) => EquipmentPanel.UpdatePanel();
 
         equipmentSlotLabelAlignment = config("4 - Equipment slots - Label style", "Horizontal alignment", TMPro.HorizontalAlignmentOptions.Center, "Horizontal alignment of text component in equipment slot label", false);
         equipmentSlotLabelWrappingMode = config("4 - Equipment slots - Label style", "Text wrapping mode", TMPro.TextWrappingModes.PreserveWhitespaceNoWrap, "Size of text component in slot label", false);
@@ -170,11 +174,11 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         quickSlotLabelFontSize = config("4 - Quick slots - Label style", "Font size", new Vector2(12f, 16f), "Min and Max text size in slot label", false);
         quickSlotLabelFontColor = config("4 - Quick slots - Label style", "Font color", new Color(0.596f, 0.816f, 1f), "Text color in slot label", false);
 
-        quickSlotLabelAlignment.SettingChanged += (s, e) => ExtendedPlayerInventory.QuickSlots.MarkDirty();
-        quickSlotLabelWrappingMode.SettingChanged += (s, e) => ExtendedPlayerInventory.QuickSlots.MarkDirty();
-        quickSlotLabelMargin.SettingChanged += (s, e) => ExtendedPlayerInventory.QuickSlots.MarkDirty();
-        quickSlotLabelFontSize.SettingChanged += (s, e) => ExtendedPlayerInventory.QuickSlots.MarkDirty();
-        quickSlotLabelFontColor.SettingChanged += (s, e) => ExtendedPlayerInventory.QuickSlots.MarkDirty();
+        quickSlotLabelAlignment.SettingChanged += (s, e) => QuickSlots.MarkDirty();
+        quickSlotLabelWrappingMode.SettingChanged += (s, e) => QuickSlots.MarkDirty();
+        quickSlotLabelMargin.SettingChanged += (s, e) => QuickSlots.MarkDirty();
+        quickSlotLabelFontSize.SettingChanged += (s, e) => QuickSlots.MarkDirty();
+        quickSlotLabelFontColor.SettingChanged += (s, e) => QuickSlots.MarkDirty();
 
         UpdateHotkeysConfig();
 
@@ -216,7 +220,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         QuickSlotsAmount.Value = Mathf.Clamp(QuickSlotsAmount.Value, 0, Hotkeys.Count);
 
-        ExtendedPlayerInventory.UpdateQuickSlots();
+        UpdateQuickSlots();
 
         static void TryAddHotKey(ConfigEntry<KeyboardShortcut> hotkey, ConfigEntry<string> text)
         {
@@ -233,22 +237,18 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         }
     }
 
-    public static int QuickSlotsCount => Hotkeys.Count;
-
-    public static int EquipmentSlotsCount => ExtendedPlayerInventory.slots.Count - QuickSlotsCount;
-
     private void Start()
     {
         CheckRandy();
         CheckWeightBase();
 
-        ExtendedPlayerInventory.EquipmentPanel.InitializeVanillaSlotsOrder();
-        ExtendedPlayerInventory.EquipmentPanel.ReorderVanillaSlots();
+        EquipmentPanel.InitializeVanillaSlotsOrder();
+        EquipmentPanel.ReorderVanillaSlots();
     }
 
     private void LateUpdate()
     {
-        ExtendedPlayerInventory.EquipmentSlots.ValidateSlotsAndAutoEquip();
+        EquipmentSlots.ValidateSlotsAndAutoEquip();
     }
 
     private void OnDestroy()

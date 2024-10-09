@@ -34,10 +34,12 @@ public static class InventoryGuiPatches
     }
 
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnSelectedItem))]
-    public static class InventoryGui_OnSelectedItem_PreventDragEndIfItemUnfit
+    public static class InventoryGui_OnSelectedItem_DragValidation_AutoEquip
     {
-        public static bool Prefix(InventoryGui __instance, InventoryGrid grid, ItemDrop.ItemData item, Vector2i pos)
+        public static bool Prefix(InventoryGui __instance, InventoryGrid grid, ref ItemDrop.ItemData item, ref Vector2i pos, ref Vector2i __state)
         {
+            __state = new Vector2i(-1, -1);
+
             Player localPlayer = Player.m_localPlayer;
             if (localPlayer.IsTeleporting())
                 return true;
@@ -45,91 +47,102 @@ public static class InventoryGuiPatches
             if (!__instance.m_dragGo)
                 return true;
 
-            // If the dragged item is unfit for target slot
-            if (grid == __instance.m_playerGrid && EquipmentSlots.TryGetSlotIndex(pos, out int slotIndex) && __instance.m_dragItem != null && !EquipmentSlots.IsValidItemForSlot(__instance.m_dragItem, slotIndex))
+            if (grid == __instance.m_playerGrid && EquipmentSlots.TryGetSlotIndex(pos, out int slotIndex))
             {
-                AzuExtendedPlayerInventoryLogger.LogInfo($"Prevented dragging {__instance.m_dragItem.m_shared.m_name} into unfit slot {slots[slotIndex]}");
-                return false;
+                // If the dragged item is unfit for target slot
+                if (__instance.m_dragItem != null && !EquipmentSlots.IsValidItemForSlot(__instance.m_dragItem, slotIndex))
+                {
+                    AzuExtendedPlayerInventoryLogger.LogInfo($"OnSelectedItem Prevented dragging {__instance.m_dragItem.m_shared.m_name} {__instance.m_dragItem.m_gridPos} into unfit slot {slots[slotIndex]}");
+                    return false;
+                }
+
+                // If item is unequipped and will not be automatically equipped
+                if (__instance.m_dragItem != null && AutoEquip.Value.IsOff() && KeepUnequippedInSlot.Value.IsOff() && !Player.m_localPlayer.IsItemEquiped(__instance.m_dragItem))
+                {
+                    AzuExtendedPlayerInventoryLogger.LogInfo($"OnSelectedItem Dragging converted into Queued equip action on {__instance.m_dragItem.m_shared.m_name} {__instance.m_dragItem.m_gridPos}");
+                    
+                    Player.m_localPlayer.QueueEquipAction(__instance.m_dragItem);
+                    
+                    // Clear item and position to prevent autoequip and unequip
+                    item = null;
+                    pos = __state;
+                    __instance.SetupDragItem(null, null, 1);
+                    return false;
+                }
             }
 
             // If drag item is in slot and interchanged item is unfit for dragged item slot
-            if (item != null && EquipmentSlots.TryGetItemSlot(__instance.m_dragItem, out int slotIndex1) && !EquipmentSlots.IsValidItemForSlot(item, slotIndex1))
+            if (__instance.m_dragItem != null && item != null && EquipmentSlots.TryGetItemSlot(__instance.m_dragItem, out int slotIndex1) && !EquipmentSlots.IsValidItemForSlot(item, slotIndex1))
             {
-                AzuExtendedPlayerInventoryLogger.LogInfo($"Prevented swapping {__instance.m_dragItem.m_shared.m_name} {slots[slotIndex1]} with unfit item {item.m_shared.m_name}");
+                AzuExtendedPlayerInventoryLogger.LogInfo($"OnSelectedItem Prevented swapping {__instance.m_dragItem.m_shared.m_name} {slots[slotIndex1]} with unfit item {item.m_shared.m_name}");
                 return false;
             }
-            
+
+            // Save position dragged from to check on postfix
+            if (__instance.m_dragInventory == PlayerInventory && __instance.m_dragItem != null)
+                __state = __instance.m_dragItem.m_gridPos;
+
             return true;
+        }
+
+        public static void Postfix(InventoryGui __instance, InventoryGrid grid, Vector2i pos, ref Vector2i __state)
+        {
+            // If dragging is in progress
+            if (__instance.m_dragGo)
+                return;
+
+            if (pos == __state)
+                return;
+
+            if (grid == __instance.m_playerGrid)
+                CheckAutoEquip(pos);
+
+            if (__state != new Vector2i(-1, -1))
+                CheckAutoEquip(__state);
+        }
+
+        private static void CheckAutoEquip(Vector2i pos)
+        {
+            ItemDrop.ItemData item = PlayerInventory.GetItemAt(pos.x, pos.y);
+            if (EquipmentSlots.IsItemAtSlot(item) && AutoEquip.Value.IsOn())
+                Player.m_localPlayer.EquipItem(item);
+            else
+                Player.m_localPlayer.UnequipItem(item);
         }
     }
 
     [HarmonyPatch(typeof(InventoryGrid), nameof(InventoryGrid.DropItem))]
-    public static class InventoryGrid_DropItem_SwapItemKeepEquipped
+    public static class InventoryGrid_DropItem_DropPrevention
     {
-        public static bool Prefix(InventoryGrid __instance, Inventory fromInventory, ItemDrop.ItemData item, Vector2i pos, ref bool __result)
+        public static bool Prefix(InventoryGrid __instance, Inventory fromInventory, ItemDrop.ItemData item, Vector2i pos)
         {
             ItemDrop.ItemData itemAt = __instance.m_inventory.GetItemAt(pos.x, pos.y);
             if (itemAt == item)
                 return true;
 
-            if (__instance.m_inventory != PlayerInventory || __instance != InventoryGui.instance.m_playerGrid)
+            if (__instance.m_inventory != PlayerInventory && __instance != InventoryGui.instance.m_playerGrid)
                 return true;
 
-            bool targetEquipment = EquipmentSlots.TryGetSlotIndex(pos, out int targetSlot);
+            bool targetEquipment = EquipmentSlots.TryGetSlotIndex(pos, out int targetSlot) && __instance.m_inventory == PlayerInventory;
 
             // If the dropped item is unfit for target slot
             if (item != null && targetEquipment && !EquipmentSlots.IsValidItemForSlot(item, targetSlot))
             {
-                AzuExtendedPlayerInventoryLogger.LogInfo($"Prevented dragging {item.m_shared.m_name} {item.m_gridPos} into unfit slot {slots[targetSlot]}");
+                AzuExtendedPlayerInventoryLogger.LogInfo($"DropItem Prevented dropping {item.m_shared.m_name} {item.m_gridPos} into unfit slot {slots[targetSlot]}");
                 return false;
             }
 
             // If dropped item is in slot and interchanged item is unfit for dragged item slot
-            if (fromInventory == PlayerInventory && EquipmentSlots.TryGetItemSlot(item, out int currentSlot) && itemAt != null && !EquipmentSlots.IsValidItemForSlot(itemAt, currentSlot))
+            if (item != null && itemAt != null && fromInventory == PlayerInventory && EquipmentSlots.TryGetItemSlot(item, out int currentSlot)  && !EquipmentSlots.IsValidItemForSlot(itemAt, currentSlot))
             {
-                AzuExtendedPlayerInventoryLogger.LogInfo($"Prevented swapping {item.m_shared.m_name} {slots[currentSlot]} with unfit item {itemAt.m_shared.m_name} {pos}");
+                AzuExtendedPlayerInventoryLogger.LogInfo($"DropItem Prevented swapping {item.m_shared.m_name} {slots[currentSlot]} with unfit item {itemAt.m_shared.m_name} {pos}");
                 return false;
             }
 
-            // If dropped item is fit in slot and inventory is the same - fast swap positions
-            if (fromInventory == PlayerInventory && targetEquipment && EquipmentSlots.IsValidItemForSlot(item, targetSlot))
+            // If item is unequipped and will not be automatically equipped after drop
+            if (itemAt == null && item != null && AutoEquip.Value.IsOff() && KeepUnequippedInSlot.Value.IsOff() && targetEquipment)
             {
-                if (itemAt != null && item != null)
-                {
-                    bool wasEquipped = Player.m_localPlayer.IsItemEquiped(itemAt) || Player.m_localPlayer.IsItemEquiped(item);
-
-                    Player.m_localPlayer.RemoveEquipAction(itemAt);
-                    Player.m_localPlayer.UnequipItem(itemAt, false);
-                    Player.m_localPlayer.RemoveEquipAction(item);
-                    Player.m_localPlayer.UnequipItem(item, false);
-
-                    AzuExtendedPlayerInventoryLogger.LogInfo($"Item {item.m_shared.m_name} {item.m_gridPos} was swapped with {itemAt.m_shared.m_name} {itemAt.m_gridPos} on InventoryGrid.DropItem");
-
-                    (itemAt.m_gridPos, item.m_gridPos) = (item.m_gridPos, itemAt.m_gridPos);
-
-                    if ((AutoEquip.Value.IsOn() || wasEquipped) && !Player.m_localPlayer.IsItemEquiped(item) && item.IsEquipable() && item.m_durability > 0)
-                        Player.m_localPlayer.EquipItem(item, false);
-                }
-                else if (itemAt == null && item != null)
-                {
-                    AzuExtendedPlayerInventoryLogger.LogInfo($"Item {item.m_shared.m_name} {item.m_gridPos} moved into {pos}");
-                    item.m_gridPos = pos;
-                }
-
-                if (itemAt != null && Player.m_localPlayer.IsItemEquiped(itemAt))
-                {
-                    Player.m_localPlayer.RemoveEquipAction(itemAt);
-                    Player.m_localPlayer.UnequipItem(itemAt, false);
-                }
-
-                ItemDrop.ItemData itemSlot = EquipmentSlots.GetItemInSlot(targetSlot);
-
-                if (AutoEquip.Value.IsOn() && itemSlot.IsEquipable() && itemSlot.m_durability > 0)
-                    Player.m_localPlayer.EquipItem(itemSlot, false);
-
-                PlayerInventory.Changed();
-
-                __result = true;
+                AzuExtendedPlayerInventoryLogger.LogInfo($"DropItem Prevented dropping {item.m_shared.m_name} {item.m_gridPos} into slot {slots[targetSlot]} with both autoequip and keep unequipped disabled");
                 return false;
             }
 

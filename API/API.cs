@@ -66,8 +66,8 @@ public class API
 		if (ExtendedPlayerInventory.slots.FindIndex(s => s.Name == slotName) < 0)
 		{
 			EquipmentSlot slot = new() { Name = slotName, Get = getItem, Valid = isValid };
-			if (index < 0 || index > AzuExtendedPlayerInventoryPlugin.EquipmentSlotsCount)
-				index = AzuExtendedPlayerInventoryPlugin.EquipmentSlotsCount;
+			if (index < 0 || index > ExtendedPlayerInventory.EquipmentSlotsCount)
+				index = ExtendedPlayerInventory.EquipmentSlotsCount;
 
             ExtendedPlayerInventory.slots.Insert(index, slot);
 
