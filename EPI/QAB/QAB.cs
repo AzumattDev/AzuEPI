@@ -135,7 +135,7 @@ namespace AzuExtendedPlayerInventory.EPI.QAB
                         var item = quickSlotInventory.GetItemAt(index % width, index / width);
                         if (item != null)
                         {
-                            AzuExtendedPlayerInventoryLogger.LogInfo($"QuickAccessBar item {item.m_shared.m_name}");
+                            LogInfo($"QuickAccessBar item {item.m_shared.m_name}");
                             player.UseItem(null, item, false);
                         }
                     }

@@ -11,11 +11,11 @@ namespace AzuEPI.EPI.Utilities
         private static void Prefix(ZNetPeer peer)
         {
             // Register version check call
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug("Registering version RPC handler");
+            AzuExtendedPlayerInventoryPlugin.LogInfo("Registering version RPC handler");
             peer.m_rpc.Register($"{AzuExtendedPlayerInventoryPlugin.ModName}_VersionCheck", new Action<ZRpc, ZPackage>(RpcHandlers.RPC_AzuEPI_Version));
 
             // Make calls to check versions
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo("Invoking version check");
+            AzuExtendedPlayerInventoryPlugin.LogInfo("Invoking version check");
             ZPackage zpackage = new();
             zpackage.Write(AzuExtendedPlayerInventoryPlugin.ModVersion);
             peer.m_rpc.Invoke($"{AzuExtendedPlayerInventoryPlugin.ModName}_VersionCheck", zpackage);
@@ -62,7 +62,7 @@ namespace AzuEPI.EPI.Utilities
         {
             if (!__instance.IsServer()) return;
             // Remove peer from validated list
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo($"Peer ({peer.m_rpc.m_socket.GetHostName()}) disconnected, removing from validated list");
+            AzuExtendedPlayerInventoryPlugin.LogInfo($"Peer ({peer.m_rpc.m_socket.GetHostName()}) disconnected, removing from validated list");
             _ = RpcHandlers.ValidatedPeers.Remove(peer.m_rpc);
         }
     }
@@ -74,7 +74,7 @@ namespace AzuEPI.EPI.Utilities
         public static void RPC_AzuEPI_Version(ZRpc rpc, ZPackage pkg)
         {
             string version = pkg.ReadString();
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo("Version check, local: " +
+            AzuExtendedPlayerInventoryPlugin.LogInfo("Version check, local: " +
                                                                                       AzuExtendedPlayerInventoryPlugin.ModVersion +
                                                                                       ",  remote: " + version);
             if (version != AzuExtendedPlayerInventoryPlugin.ModVersion)
@@ -90,12 +90,12 @@ namespace AzuEPI.EPI.Utilities
                 if (!ZNet.instance.IsServer())
                 {
                     // Enable mod on client if versions match
-                    AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo("Received same version from server!");
+                    AzuExtendedPlayerInventoryPlugin.LogInfo("Received same version from server!");
                 }
                 else
                 {
                     // Add client to validated list
-                    AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo($"Adding peer ({rpc.m_socket.GetHostName()}) to validated list");
+                    AzuExtendedPlayerInventoryPlugin.LogInfo($"Adding peer ({rpc.m_socket.GetHostName()}) to validated list");
                     ValidatedPeers.Add(rpc);
                 }
             }

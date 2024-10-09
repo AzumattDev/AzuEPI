@@ -13,7 +13,7 @@ public class TombstonePatches
             if (!__instance.GetComponent<TombStone>())
                 return;
 
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug("TombStone_Awake");
+            AzuExtendedPlayerInventoryPlugin.LogInfo("TombStone_Awake");
 
             int targetHeight = ExtendedPlayerInventory.GetTargetInventoryHeight(ExtendedPlayerInventory.InventorySizeFull, __instance.m_width);
             // Let it be if height is sufficient
@@ -27,7 +27,7 @@ public class TombstonePatches
     {
         private static void Prefix(Container ___m_container)
         {
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug("TombStone_Interact");
+            AzuExtendedPlayerInventoryPlugin.LogInfo("TombStone_Interact");
 
             int targetHeight = ExtendedPlayerInventory.GetTargetInventoryHeight(ExtendedPlayerInventory.InventorySizeFull, ___m_container.m_width);
             

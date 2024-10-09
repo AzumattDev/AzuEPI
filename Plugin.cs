@@ -133,6 +133,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         #region Equipment panel configs
         // New configs
 
+        LoggingEnabled = config("1 - General", "Logging enabled", Toggle.Off, "If on, mod will emit more logging entries.");
+
         ExtraUtilitySlotsAmount = config("2 - Extended Inventory", "Extra utility slots amount", 0, new ConfigDescription("How much extra utility slots should be added", new AcceptableValueRange<int>(0, 2)));
         ExtraUtilitySlotsAmount.SettingChanged += (sender, args) => UpdateExtraUtilitySlots();
 
@@ -245,6 +247,12 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         }
     }
 
+    internal static void LogInfo(object data)
+    {
+        if (LoggingEnabled.Value.IsOn())
+            AzuExtendedPlayerInventoryLogger.LogInfo(data);
+    }
+
     private void Start()
     {
         CheckRandy();
@@ -281,7 +289,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         if (!File.Exists(ConfigFileFullPath)) return;
         try
         {
-            AzuExtendedPlayerInventoryLogger.LogDebug("ReadConfigValues called");
+            LogInfo("ReadConfigValues called");
             Config.Reload();
         }
         catch
@@ -339,6 +347,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<int> QuickSlotsAmount = null!;
     public static ConfigEntry<int> ExtraUtilitySlotsAmount = null!;
     public static ConfigEntry<int> ExtraUtilitySlotsPosition = null!;
+    public static ConfigEntry<Toggle> LoggingEnabled = null!;
 
     public static ConfigEntry<KeyboardShortcut> HotKey1 = null!;
     public static ConfigEntry<KeyboardShortcut> HotKey2 = null!;

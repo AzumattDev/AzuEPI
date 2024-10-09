@@ -745,7 +745,7 @@ namespace AzuExtendedPlayerInventory.EPI
                     // Put item to slot if slot function tells us to
                     if (itemGrid == null && itemSlot != null)
                     {
-                        AzuExtendedPlayerInventoryLogger.LogInfo($"Item {itemSlot.m_shared.m_name} {itemSlot.m_gridPos} was moved into slot {slot} {pos}");
+                        LogInfo($"Item {itemSlot.m_shared.m_name} {itemSlot.m_gridPos} was moved into slot {slot} {pos}");
 
                         itemSlot.m_gridPos = pos;
                         itemGrid = GetItemInSlot(i);
@@ -756,7 +756,7 @@ namespace AzuExtendedPlayerInventory.EPI
                     // Swap items if slot function tells us to
                     else if (itemGrid != null && itemSlot != null && itemSlot.m_gridPos != pos && itemGrid.m_gridPos == pos)
                     {
-                        AzuExtendedPlayerInventoryLogger.LogInfo($"Item {itemSlot.m_shared.m_name} {itemSlot.m_gridPos} was swapped into slot {slot} with item {itemGrid.m_shared.m_name} {itemGrid.m_gridPos}");
+                        LogInfo($"Item {itemSlot.m_shared.m_name} {itemSlot.m_gridPos} was swapped into slot {slot} with item {itemGrid.m_shared.m_name} {itemGrid.m_gridPos}");
 
                         bool wasEquipped = Player.m_localPlayer.IsItemEquiped(itemGrid) || Player.m_localPlayer.IsItemEquiped(itemSlot);
 
@@ -781,7 +781,7 @@ namespace AzuExtendedPlayerInventory.EPI
 
                     if (!IsValidItemForSlot(item, slotIndex))
                     {
-                        AzuExtendedPlayerInventoryLogger.LogInfo($"Item {item.m_shared.m_name} unfit slot {slots[slotIndex]}");
+                        LogInfo($"Item {item.m_shared.m_name} unfit slot {slots[slotIndex]}");
                         // Keep item in slot until there is emtpy slot to move it
                         if (!PutIntoFirstEmptySlot(item))
                             return;
@@ -789,13 +789,13 @@ namespace AzuExtendedPlayerInventory.EPI
 
                     if (AutoEquip.Value.IsOn() && !Player.m_localPlayer.IsItemEquiped(item) && item.IsEquipable() && item.m_durability > 0)
                     {
-                        AzuExtendedPlayerInventoryLogger.LogInfo($"Autoequip item {item.m_shared.m_name} {item.m_gridPos} {slots[slotIndex]}");
+                        LogInfo($"Autoequip item {item.m_shared.m_name} {item.m_gridPos} {slots[slotIndex]}");
                         Player.m_localPlayer.EquipItem(item, false);
                     }
 
                     if (KeepUnequippedInSlot.Value.IsOff() && !Player.m_localPlayer.IsItemEquiped(item) && item.IsEquipable())
                     {
-                        AzuExtendedPlayerInventoryLogger.LogInfo($"Item {item.m_shared.m_name} {item.m_gridPos} at slot {slots[slotIndex]} is unequipped and should be removed");
+                        LogInfo($"Item {item.m_shared.m_name} {item.m_gridPos} at slot {slots[slotIndex]} is unequipped and should be removed");
                         // Keep item in slot until there is emtpy slot to move it
                         if (!PutIntoFirstEmptySlot(item))
                             return;
@@ -807,14 +807,14 @@ namespace AzuExtendedPlayerInventory.EPI
                     Vector2i gridPos = PlayerInventory.FindEmptySlot(true);
                     if (gridPos.x > -1 && gridPos.y > -1)
                     {
-                        AzuExtendedPlayerInventoryLogger.LogInfo($"Item {item.m_shared.m_name} {item.m_gridPos} was put into first free slot {gridPos}");
+                        LogInfo($"Item {item.m_shared.m_name} {item.m_gridPos} was put into first free slot {gridPos}");
                         item.m_gridPos = gridPos;
                         return true;
                     }
 
                     if (TryFindFreeSlotForItem(item, out int x, out int y))
                     {
-                        AzuExtendedPlayerInventoryLogger.LogInfo($"Item {item.m_shared.m_name} {item.m_gridPos} was put into first free valid equipment slot {new Vector2i(x, y)}");
+                        LogInfo($"Item {item.m_shared.m_name} {item.m_gridPos} was put into first free valid equipment slot {new Vector2i(x, y)}");
                         item.m_gridPos = new Vector2i(x, y);
                         return true;
                     }

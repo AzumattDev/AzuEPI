@@ -52,14 +52,14 @@ public static class InventoryGuiPatches
                 // If the dragged item is unfit for target slot
                 if (__instance.m_dragItem != null && !EquipmentSlots.IsValidItemForSlot(__instance.m_dragItem, slotIndex))
                 {
-                    AzuExtendedPlayerInventoryLogger.LogInfo($"OnSelectedItem Prevented dragging {__instance.m_dragItem.m_shared.m_name} {__instance.m_dragItem.m_gridPos} into unfit slot {slots[slotIndex]}");
+                    LogInfo($"OnSelectedItem Prevented dragging {__instance.m_dragItem.m_shared.m_name} {__instance.m_dragItem.m_gridPos} into unfit slot {slots[slotIndex]}");
                     return false;
                 }
 
                 // If item is unequipped and will not be automatically equipped
                 if (__instance.m_dragItem != null && AutoEquip.Value.IsOff() && KeepUnequippedInSlot.Value.IsOff() && !Player.m_localPlayer.IsItemEquiped(__instance.m_dragItem))
                 {
-                    AzuExtendedPlayerInventoryLogger.LogInfo($"OnSelectedItem Dragging converted into Queued equip action on {__instance.m_dragItem.m_shared.m_name} {__instance.m_dragItem.m_gridPos}");
+                    LogInfo($"OnSelectedItem Dragging converted into Queued equip action on {__instance.m_dragItem.m_shared.m_name} {__instance.m_dragItem.m_gridPos}");
                     
                     Player.m_localPlayer.QueueEquipAction(__instance.m_dragItem);
                     
@@ -74,7 +74,7 @@ public static class InventoryGuiPatches
             // If drag item is in slot and interchanged item is unfit for dragged item slot
             if (__instance.m_dragItem != null && item != null && EquipmentSlots.TryGetItemSlot(__instance.m_dragItem, out int slotIndex1) && !EquipmentSlots.IsValidItemForSlot(item, slotIndex1))
             {
-                AzuExtendedPlayerInventoryLogger.LogInfo($"OnSelectedItem Prevented swapping {__instance.m_dragItem.m_shared.m_name} {slots[slotIndex1]} with unfit item {item.m_shared.m_name}");
+                LogInfo($"OnSelectedItem Prevented swapping {__instance.m_dragItem.m_shared.m_name} {slots[slotIndex1]} with unfit item {item.m_shared.m_name}");
                 return false;
             }
 
@@ -128,21 +128,21 @@ public static class InventoryGuiPatches
             // If the dropped item is unfit for target slot
             if (item != null && targetEquipment && !EquipmentSlots.IsValidItemForSlot(item, targetSlot))
             {
-                AzuExtendedPlayerInventoryLogger.LogInfo($"DropItem Prevented dropping {item.m_shared.m_name} {item.m_gridPos} into unfit slot {slots[targetSlot]}");
+                LogInfo($"DropItem Prevented dropping {item.m_shared.m_name} {item.m_gridPos} into unfit slot {slots[targetSlot]}");
                 return false;
             }
 
             // If dropped item is in slot and interchanged item is unfit for dragged item slot
             if (item != null && itemAt != null && fromInventory == PlayerInventory && EquipmentSlots.TryGetItemSlot(item, out int currentSlot)  && !EquipmentSlots.IsValidItemForSlot(itemAt, currentSlot))
             {
-                AzuExtendedPlayerInventoryLogger.LogInfo($"DropItem Prevented swapping {item.m_shared.m_name} {slots[currentSlot]} with unfit item {itemAt.m_shared.m_name} {pos}");
+                LogInfo($"DropItem Prevented swapping {item.m_shared.m_name} {slots[currentSlot]} with unfit item {itemAt.m_shared.m_name} {pos}");
                 return false;
             }
 
             // If item is unequipped and will not be automatically equipped after drop
             if (itemAt == null && item != null && AutoEquip.Value.IsOff() && KeepUnequippedInSlot.Value.IsOff() && targetEquipment)
             {
-                AzuExtendedPlayerInventoryLogger.LogInfo($"DropItem Prevented dropping {item.m_shared.m_name} {item.m_gridPos} into slot {slots[targetSlot]} with both autoequip and keep unequipped disabled");
+                LogInfo($"DropItem Prevented dropping {item.m_shared.m_name} {item.m_gridPos} into slot {slots[targetSlot]} with both autoequip and keep unequipped disabled");
                 return false;
             }
 
@@ -189,7 +189,7 @@ public static class InventoryGuiPatches
 
             if (EquipmentSlots.IsItemAtSlot(item) && item.IsEquipable() && Player.m_localPlayer.IsItemEquiped(item) && KeepUnequippedInSlot.Value.IsOff() && !PlayerInventory.CanAddItem(item))
             {
-                AzuExtendedPlayerInventoryLogger.LogDebug("Inventory full, blocking item unequip");
+                LogInfo("Inventory full, blocking item unequip");
                 Player.m_localPlayer.Message(MessageHud.MessageType.Center, "$inventory_full");
                 return false;
             }

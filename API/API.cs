@@ -73,7 +73,7 @@ public class API
 
             ExtendedPlayerInventory.ShiftExtraInventorySlots(index, 1);
 
-			AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug($"Added slot {slotName}");
+			AzuExtendedPlayerInventoryPlugin.LogInfo($"Added slot {slotName}");
 
 			SlotAdded?.Invoke(slotName);
 

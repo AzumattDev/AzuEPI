@@ -100,7 +100,7 @@ public class InventoryPatches
             if (!ExtendedPlayerInventory.EquipmentSlots.TryFindFreeSlotForItem(item, out int x, out int y))
                 return true;
 
-            AzuExtendedPlayerInventoryLogger.LogInfo($"{__instance.AddItem(item, item.m_stack, x, y)} {item.m_shared.m_name} {x} {y}");
+            LogInfo($"{__instance.AddItem(item, item.m_stack, x, y)} {item.m_shared.m_name} {x} {y}");
            
             if (ExtendedPlayerInventory.EquipmentSlots.TryGetSlotIndex(new Vector2i(x, y), out int slotIndex) && ExtendedPlayerInventory.EquipmentSlots.GetItemInSlot(slotIndex) is ItemDrop.ItemData itemSlot)
                 Player.m_localPlayer.EquipItem(itemSlot, false);
@@ -132,9 +132,9 @@ public class InventoryPatches
     {
         private static void Postfix(Inventory __instance, Inventory original)
         {
-            AzuExtendedPlayerInventoryLogger.LogDebug("MoveInventoryToGrave");
+            LogInfo("MoveInventoryToGrave");
 
-            AzuExtendedPlayerInventoryLogger.LogDebug($"inv: {__instance.GetHeight()} orig: {original.GetHeight()}");
+            LogInfo($"inv: {__instance.GetHeight()} orig: {original.GetHeight()}");
         }
     }
 

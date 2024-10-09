@@ -18,7 +18,7 @@ public class PlayerPatches
     {
         private static void Prefix(Player __instance)
         {
-            AzuExtendedPlayerInventoryLogger.LogDebug("Player_Awake");
+            LogInfo("Player_Awake");
 
             __instance.m_inventory.m_height = InventoryHeightFull;
             __instance.m_tombstone.GetComponent<Container>().m_height = InventoryHeightFull;
@@ -128,7 +128,7 @@ public class PlayerPatches
         {
             if (player.m_inventory.CanAddItem(itemData))
             {
-                AzuExtendedPlayerInventoryLogger.LogInfo($"Adding {Localization.instance.Localize(itemData.m_shared.m_name)} to inventory");
+                LogInfo($"Adding {Localization.instance.Localize(itemData.m_shared.m_name)} to inventory");
                 fromInventory.RemoveItem(itemData);
                 player.m_inventory.AddItem(itemData);
 
@@ -139,7 +139,7 @@ public class PlayerPatches
             }
             else
             {
-                AzuExtendedPlayerInventoryLogger.LogInfo($"Dropping {Localization.instance.Localize(itemData.m_shared.m_name)}");
+                LogInfo($"Dropping {Localization.instance.Localize(itemData.m_shared.m_name)}");
                 Transform transform = player.transform;
                 ItemDrop itemDrop = ItemDrop.DropItem(itemData, itemData.m_stack, transform.position + transform.forward + transform.up, transform.rotation);
                 if (itemDrop == null) return;
