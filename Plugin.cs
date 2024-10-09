@@ -289,7 +289,6 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         if (!File.Exists(ConfigFileFullPath)) return;
         try
         {
-            LogInfo("ReadConfigValues called");
             Config.Reload();
         }
         catch

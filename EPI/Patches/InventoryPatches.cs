@@ -127,17 +127,6 @@ public class InventoryPatches
         }
     }
 
-    [HarmonyPatch(typeof(Inventory), nameof(Inventory.MoveInventoryToGrave))]
-    private static class Inventory_MoveInventoryToGrave_LogHeight
-    {
-        private static void Postfix(Inventory __instance, Inventory original)
-        {
-            LogInfo("MoveInventoryToGrave");
-
-            LogInfo($"inv: {__instance.GetHeight()} orig: {original.GetHeight()}");
-        }
-    }
-
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.SlotsUsedPercentage))]
     private static class Inventory_SlotsUsedPercentage_ExcludeRedundantSlots
     {

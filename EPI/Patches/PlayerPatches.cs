@@ -18,8 +18,6 @@ public class PlayerPatches
     {
         private static void Prefix(Player __instance)
         {
-            LogInfo("Player_Awake");
-
             __instance.m_inventory.m_height = InventoryHeightFull;
             __instance.m_tombstone.GetComponent<Container>().m_height = InventoryHeightFull;
         }
@@ -47,7 +45,7 @@ public class PlayerPatches
         {
             if (fromPlayer == null)
             {
-                AzuExtendedPlayerInventoryLogger.LogError("Tried to load an ExtendedPlayerData with a null player!");
+                AzuExtendedPlayerInventoryLogger.LogWarning("Tried to load an ExtendedPlayerData with a null player!");
                 return;
             }
 
