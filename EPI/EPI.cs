@@ -545,6 +545,23 @@ namespace AzuExtendedPlayerInventory.EPI
         {
             private static bool isDirty = false;
 
+            public static List<ItemDrop.ItemData> GetItems()
+            {
+                List<ItemDrop.ItemData> quickSlotItems = new();
+
+                if (PlayerInventory == null)
+                    return quickSlotItems;
+
+                for (int i = 0; i < EquipmentSlotsCount; i++)
+                {
+                    ItemDrop.ItemData item = GetItemInSlot(i);
+                    if (item != null)
+                        quickSlotItems.Add(item);
+                }
+
+                return quickSlotItems;
+            }
+
             /// <summary>
             /// Checks if slots position could be transformed into inventory grid position
             /// </summary>
@@ -695,7 +712,7 @@ namespace AzuExtendedPlayerInventory.EPI
                         continue;
 
                     ItemDrop.ItemData itemGrid = GetItemInSlot(i);
-                    ItemDrop.ItemData itemSlot = slot.Get(Player.m_localPlayer);
+                    ItemDrop.ItemData itemSlot = slot.Get != null ? slot.Get(Player.m_localPlayer) : null;
 
                     if (itemGrid == null && itemSlot == null)
                         continue;

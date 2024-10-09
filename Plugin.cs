@@ -244,6 +244,9 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         EquipmentPanel.InitializeVanillaSlotsOrder();
         EquipmentPanel.ReorderVanillaSlots();
+
+        API.AddSlot("Utility 2", null!, item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility, 5);
+        API.AddSlot("Utility 3", null!, item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility, 6);
     }
 
     private void LateUpdate()

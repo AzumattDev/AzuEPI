@@ -64,7 +64,7 @@ public static class InventoryGuiPatches
                     Player.m_localPlayer.QueueEquipAction(__instance.m_dragItem);
                     
                     // Clear item and position to prevent autoequip and unequip
-                    item = null;
+                    item = null!;
                     pos = __state;
                     __instance.SetupDragItem(null, null, 1);
                     return false;

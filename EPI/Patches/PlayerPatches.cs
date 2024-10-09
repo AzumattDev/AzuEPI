@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using HarmonyLib;
@@ -160,7 +161,7 @@ public class PlayerPatches
 
         private static void Postfix(Player __instance, Inventory ___m_inventory)
         {
-            ___m_inventory.m_height = ExtendedPlayerInventory.InventoryHeightFull;
+            ___m_inventory.m_height = InventoryHeightFull;
 
             tombstoneContainer ??= __instance.m_tombstone.GetComponent<Container>();
             tombstoneContainer.m_height = ___m_inventory.m_height;
@@ -168,7 +169,7 @@ public class PlayerPatches
             if (!IsValidPlayer(__instance))
                 return;
 
-            ExtendedPlayerInventory.QuickSlots.UpdateItemUse();
+            QuickSlots.UpdateItemUse();
         }
     }
 
@@ -195,10 +196,89 @@ public class PlayerPatches
     [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.EquipItem))]
     private static class Humanoid_EquipItem_ValidateInventory
     {
-        private static void Postfix(Humanoid __instance)
+        private static void Prefix(Humanoid __instance, ItemDrop.ItemData item)
         {
+            if (item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility && __instance.m_utilityItem != null)
+            {
+                if (EquipmentSlots.TryGetItemSlot(item, out int slotIndex) && EquipmentSlots.IsValidItemForSlot(item, slotIndex))
+                {
+                    item.m_shared.m_itemType = (ItemDrop.ItemData.ItemType)727;
+                }
+                else if (EquipmentSlots.TryFindFreeSlotForItem(item, out int x, out int y))
+                {
+                    item.m_gridPos = new Vector2i(x, y);
+                    item.m_shared.m_itemType = (ItemDrop.ItemData.ItemType)727;
+                }
+            }
+        }
+
+        private static void Postfix(Humanoid __instance, ItemDrop.ItemData item, ref bool __result)
+        {
+            if (item.m_shared.m_itemType == (ItemDrop.ItemData.ItemType)727)
+                item.m_shared.m_itemType = ItemDrop.ItemData.ItemType.Utility;
+
+            if (__instance.IsItemEquiped(item))
+            {
+                item.m_equipped = true;
+                __result = true;
+            }
+
             if (__instance is Player player && IsValidPlayer(player) && !player.m_isLoading)
                 EquipmentSlots.MarkDirty();
+        }
+    }
+
+    [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.IsItemEquiped))]
+    private static class Humanoid_IsItemEquiped_SimilarSlots
+    {
+        private static void Postfix(Humanoid __instance, ItemDrop.ItemData item, ref bool __result)
+        {
+            __result = __result || EquipmentSlots.TryGetItemSlot(item, out int slotIndex) && slots[slotIndex] is EquipmentSlot slot && slot.Get == null;
+        }
+    }
+
+    [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.UnequipAllItems))]
+    private static class Humanoid_UnequipAllItems_UnequipmEquipmentSlots
+    {
+        private static void Postfix(Humanoid __instance)
+        {
+            EquipmentSlots.GetItems().Do(item => __instance.UnequipItem(item));
+        }
+    }
+
+    [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.UpdateEquipmentStatusEffects))]
+    private static class Humanoid_UpdateEquipmentStatusEffects_EquipmentSlotsEquipEffect
+    {
+        private static void Prefix(Humanoid __instance, ref HashSet<StatusEffect> __state)
+        {
+            HashSet<StatusEffect> hashSet = new();
+
+            EquipmentSlots.GetItems().DoIf(item => (bool)item.m_shared.m_equipStatusEffect, item => hashSet.Add(item.m_shared.m_equipStatusEffect));
+
+            EquipmentSlots.GetItems().DoIf(item => __instance.HaveSetEffect(item), item => hashSet.Add(item.m_shared.m_setStatusEffect));
+
+            foreach (StatusEffect equipmentStatusEffect in __instance.m_equipmentStatusEffects)
+            {
+                if (!hashSet.Contains(equipmentStatusEffect))
+                {
+                    __instance.m_seman.RemoveStatusEffect(equipmentStatusEffect.NameHash());
+                }
+            }
+
+            __state = hashSet;
+        }
+
+        private static void Postfix(Humanoid __instance, HashSet<StatusEffect> __state)
+        {
+            foreach (StatusEffect item in __state)
+            {
+                if (!__instance.m_equipmentStatusEffects.Contains(item))
+                {
+                    __instance.m_seman.AddStatusEffect(item);
+                }
+            }
+
+            __instance.m_equipmentStatusEffects.UnionWith(__state);
         }
     }
 }
