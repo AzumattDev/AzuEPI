@@ -120,7 +120,7 @@
             <HintPath>$(CorlibPath)\UnityEngine.InputLegacyModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.ParticleSystemModule">
-          <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\UnityEngine.ParticleSystemModule.dll</HintPath>
+            <HintPath>$(CorelibPath)\UnityEngine.ParticleSystemModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.UI">
             <HintPath>$(CorlibPath)\UnityEngine.UI.dll</HintPath>
@@ -147,6 +147,7 @@
         <Compile Include="Managers\Patcher.cs"/>
         <Compile Include="Moveable\DragControl.cs"/>
         <Compile Include="Moveable\MoveableChestInventory.cs"/>
+        <Compile Include="EPI\Utilities\TerminalCommands.cs" />
         <Compile Include="Plugin.cs"/>
         <Compile Include="Properties\AssemblyInfo.cs"/>
     </ItemGroup>
@@ -167,7 +168,6 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="API\API.cs"/>
-        <Compile Include="EPI\Utilities\TerminalCommands.cs" />
         <None Include="App.config"/>
     </ItemGroup>
     <ItemGroup>
@@ -175,7 +175,7 @@
         <PackageReference Include="YamlDotNet" Version="13.1.0"/>
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
-    <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+    <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
          Other similar extension points exist, see Microsoft.Common.targets.
     <Target Name="BeforeBuild">
     </Target>

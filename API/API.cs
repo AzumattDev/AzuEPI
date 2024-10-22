@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using JetBrains.Annotations;
 using UnityEngine;
+
 #if ! API
 using System.Linq;
 using AzuExtendedPlayerInventory.EPI.Patches;
@@ -97,7 +98,7 @@ public class API
 			UpdateSlots(slotIndex, -1);
 
 			InventoryGuiPatches.UpdateInventory_Patch.slots.RemoveAt(slotIndex);
-			
+
 			InventoryGuiPatches.UpdateInventory_Patch.ResizeSlots();
 			SlotRemoved?.Invoke(slotName);
 
@@ -106,7 +107,7 @@ public class API
 #endif
 		return false;
 	}
-	
+
 #if ! API
 	private static void UpdateSlots(int index, int shift)
 	{
@@ -171,7 +172,7 @@ public class API
     return new SlotInfo();
 #endif
 	}
-	
+
 	public static List<ItemDrop.ItemData> GetQuickSlotsItems()
 	{
 #if ! API
@@ -218,4 +219,3 @@ public class SlotInfo
 	public Func<Player, ItemDrop.ItemData?>?[] GetItemFuncs { get; set; } = { };
 	public Func<ItemDrop.ItemData, bool>?[] IsValidFuncs { get; set; } = { };
 }
-
