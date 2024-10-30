@@ -21,7 +21,7 @@ public class PlayerPatches
     }
 
     [HarmonyPatch(typeof(Player), nameof(Player.OnSpawned))]
-    private static class InventoryGuiAwakePatch
+    private static class PlayerOnSpawnedPatch
     {
         public const string Sentinel = "<|>";
         public static Inventory QuickSlotInventory = new(nameof(QuickSlotInventory), null, 3, 1);

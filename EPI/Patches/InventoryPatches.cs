@@ -99,16 +99,18 @@ public class InventoryPatches
     }
 
 
-    [HarmonyPatch(typeof(Inventory), nameof(Inventory.AddItem), typeof(ItemDrop.ItemData), typeof(int), typeof(int),
-        typeof(int))]
+    [HarmonyPatch(typeof(Inventory), nameof(Inventory.AddItem), typeof(ItemDrop.ItemData), typeof(int), typeof(int), typeof(int))]
     private static class InventoryAddItemPatch2
     {
         private static void Prefix(Inventory __instance, ref int ___m_width, ref int ___m_height, int x, int y)
         {
             int addedRows = API.GetAddedRows(___m_width);
 
-            if (y < ___m_height)
+            if (y <= ___m_height)
+            {
                 return;
+            }
+
             ___m_height = y + addedRows;
         }
     }

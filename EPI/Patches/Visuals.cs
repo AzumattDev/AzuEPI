@@ -5,35 +5,70 @@ using System.Reflection.Emit;
 using AzuExtendedPlayerInventory;
 using HarmonyLib;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.EquipItem))]
 internal static class EquipItem
 {
     private static void Equip(Humanoid humanoid, ItemDrop.ItemData item, bool triggerEquipmentEffects)
     {
-        //if (humanoid is Player player && item?.IsEquipable() == true && API.IsCustomSlot(API.CustomSlots.FirstOrDefault(x => x?.EquipmentSlot != null && x.EquipmentSlot.Valid(item))))
         if (humanoid is Player player && item?.IsEquipable() == true)
         {
-            player.UnequipItem(PlayerVisual.PlayerVisuals[player.m_visEquipment].EquippedItems.FirstOrDefault(x => x?.m_shared.m_name == item.m_shared.m_name), triggerEquipmentEffects);
-            ItemDrop.ItemData? firstOrDefault = PlayerVisual.PlayerVisuals[player.m_visEquipment].EquippedItems.FirstOrDefault(x => x?.m_shared.m_name == item.m_shared.m_name);
-            if (firstOrDefault != null)
+            PlayerVisual? visual = PlayerVisual.PlayerVisuals[player.m_visEquipment];
+
+            // Check if the item is a utility item and handle accordingly
+            if (item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility)
             {
-                PlayerVisual.PlayerVisuals[player.m_visEquipment].EquippedItems.Remove(firstOrDefault);
+                // Unequip the current utility item if it exists
+                if (player.m_utilityItem != null)
+                {
+                    /#1#/ cache the utility item to be unequipped
+                    ItemDrop.ItemData utilityItem = player.m_utilityItem;
+                    player.UnequipItem(player.m_utilityItem, triggerEquipmentEffects);
+                    visual.EquippedItems.Remove(player.m_utilityItem);#1#
+                    if (ObjectDB.instance?.GetItemPrefab(item.m_dropPrefab?.name) is { } utilityItemPrefab)
+                    {
+                        ItemDrop.ItemData.SharedData sharedData = utilityItemPrefab.GetComponent<ItemDrop>().m_itemData.m_shared;
+                        sharedData.m_itemType = ItemDrop.ItemData.ItemType.Material;
+                    }
+                    
+                    if (ObjectDB.instance)
+                    {
+                        if (Player.m_localPlayer is { } player2 && player2 && player2.m_utilityItem.m_shared.m_name == "$item_wishbone")
+                        {
+                            player2.UnequipItem(player2.m_utilityItem);
+                        }
+                        Inventory[] inventories = Player.s_players.Select(p => p.GetInventory()).Concat(Object.FindObjectsOfType<Container>().Select(c => c.GetInventory())).Where(c => c is not null).ToArray();
+                        foreach (ItemDrop.ItemData itemdata in ObjectDB.instance.m_items.Select(p => p.GetComponent<ItemDrop>()).Where(c => c && c.GetComponent<ZNetView>()).Concat(ItemDrop.s_instances).Select(i => i.m_itemData).Concat(inventories.SelectMany(i => i.GetAllItems())))
+                        {
+                            if (itemdata.m_shared.m_name == item.m_shared.m_name)
+                            {
+                                itemdata.m_shared.m_itemType = ItemDrop.ItemData.ItemType.Material;
+                            }
+                        }
+                    }
+
+                    
+                    item.m_equipped = true;
+
+                    /#1#/ Set the item back to equipped if it was already equipped
+                    player.m_utilityItem = utilityItem;
+                    visual.EquippedItems.Add(utilityItem);#1#
+                }
             }
 
-            PlayerVisual.PlayerVisuals[player.m_visEquipment].EquippedItems.Add(item);
+            ItemDrop.ItemData? existingItem = visual.EquippedItems.FirstOrDefault(x => x?.m_shared.m_name == item.m_shared.m_name);
+            if (existingItem != null)
+            {
+                player.UnequipItem(existingItem, triggerEquipmentEffects);
+                visual.EquippedItems.Remove(existingItem);
+            }
+
+            visual.EquippedItems.Add(item);
+            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo($"Equipped {item.m_shared.m_name}");
+
+            // Set the item back to equipped if it was already equipped
         }
-        /*if (humanoid is Player player && item?.IsEquipable() == true && API.IsCustomSlot(API.CustomSlots.FirstOrDefault(x => x?.EquipmentSlot != null && x.EquipmentSlot.Valid(item))))
-        {
-            // Unequip the item in the slot if already equipped
-            if (ExtendedPlayerInventory.IsAtEquipmentSlot(player.m_inventory, item, out int which))
-            {
-                player.UnequipItem(item, triggerEquipmentEffects);
-                PlayerVisual.PlayerVisuals[player.m_visEquipment].equippedItems.Add(item);
-            }
-
-            item.m_equipped = true;
-        }#1#
     }
 
     private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructionEnumerable)
@@ -60,10 +95,15 @@ internal static class UnequipItem
 {
     private static void Unequip(Humanoid humanoid, ItemDrop.ItemData item)
     {
-        //if (humanoid is Player player && item?.IsEquipable() == true && API.IsCustomSlot(API.CustomSlots.FirstOrDefault(x => x?.EquipmentSlot != null && x.EquipmentSlot.Valid(item))))
-        if (humanoid is Player player && item?.IsEquipable() == true && PlayerVisual.PlayerVisuals[player.m_visEquipment].EquippedItems.FirstOrDefault(x => x?.m_shared.m_name == item.m_shared.m_name) != null)
+        if (humanoid is Player player)
         {
-            PlayerVisual.PlayerVisuals[player.m_visEquipment].EquippedItems.Remove(item);
+            PlayerVisual? visual = PlayerVisual.PlayerVisuals[player.m_visEquipment];
+            ItemDrop.ItemData? equippedItem = visual.EquippedItems.FirstOrDefault(x => x?.m_shared.m_name == item.m_shared.m_name);
+            if (equippedItem != null)
+            {
+                visual.EquippedItems.Remove(equippedItem);
+                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo($"Unequipped {item.m_shared.m_name}");
+            }
         }
     }
 
@@ -85,6 +125,7 @@ internal static class UnequipItem
 [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.UpdateEquipmentStatusEffects))]
 internal static class ApplyStatusEffects
 {
+    [HarmonyAfter("org.bepinex.plugins.jewelcrafting")]
     private static void CollectEffects(Humanoid humanoid, HashSet<StatusEffect?> statusEffects)
     {
         if (humanoid is Player player && PlayerVisual.PlayerVisuals.TryGetValue(player.m_visEquipment, out PlayerVisual visual))
@@ -98,7 +139,10 @@ internal static class ApplyStatusEffects
 
                 if (humanoid.HaveSetEffect(item))
                 {
-                    statusEffects.Add(item!.m_shared.m_equipStatusEffect);
+                    if (item!.m_shared.m_equipStatusEffect is { } statusEffect2) // Need to check for null, otherwise NRE
+                    {
+                        statusEffects.Add(statusEffect2);
+                    }
                 }
             }
         }
@@ -124,6 +168,7 @@ internal static class IsEquipable
     {
         if (API.GetSlots().IsValidFuncs.Any(func => func != null && func(__instance)))
         {
+            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo($"{__instance.m_shared.m_name} is equipable");
             __result = true;
         }
     }
@@ -136,6 +181,8 @@ internal static class IsItemEquiped
     {
         if (__instance is Player player && PlayerVisual.PlayerVisuals.TryGetValue(player.m_visEquipment, out PlayerVisual visual) && visual.EquippedItems.Contains(item))
         {
+            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo($"Checking if {item?.m_shared.m_name} is equipped");
+            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo($"{item?.m_shared.m_name} is equipped");
             __result = true;
         }
     }
@@ -148,6 +195,14 @@ internal static class AddVisual
     private static void Prefix(Player __instance)
     {
         PlayerVisual.PlayerVisuals.Add(__instance.GetComponent<VisEquipment>(), new PlayerVisual(__instance.GetComponent<VisEquipment>()));
+    }
+
+    private static void Postfix(Player __instance)
+    {
+        if (__instance.GetField<ItemDrop.ItemData>("m_utilityItem2") == null)
+        {
+            __instance.SetField<ItemDrop.ItemData>("m_utilityItem2", null);
+        }
     }
 }
 
@@ -179,7 +234,9 @@ internal static class SetupVisEquipment
     {
         if (__instance is Player player && PlayerVisual.PlayerVisuals.TryGetValue(player.m_visEquipment, out PlayerVisual visual))
         {
-            visual.SetItems(visual.EquippedItems.Select(item => item?.m_dropPrefab?.name ?? "").ToList());
+            List<string> names = visual.EquippedItems.Select(item => item?.m_dropPrefab?.name ?? "").ToList();
+            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo($"Setting items {string.Join(", ", names)}");
+            visual.SetItems(names);
         }
     }
 }
@@ -211,12 +268,11 @@ internal static class UpdateEquipmentVisuals
     }
 }
 
-
 public class PlayerVisual
 {
     public static readonly Dictionary<VisEquipment, PlayerVisual> PlayerVisuals = new();
     private readonly VisEquipment _visEquipment;
-    public readonly List<ItemDrop.ItemData?> EquippedItems = new();
+    public readonly HashSet<ItemDrop.ItemData?> EquippedItems = new();
     private List<string> _itemNames = new();
     private readonly List<GameObject> _itemInstances = new();
     private List<int> _currentItemHashes = new();
@@ -289,9 +345,33 @@ public class PlayerVisual
         {
             foreach (string? name in names)
             {
-                zdo.Set(name, string.IsNullOrEmpty(name) ? 0 : name.GetStableHashCode());
+                int hash = string.IsNullOrEmpty(name) ? 0 : name.GetStableHashCode();
+                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo($"Setting {name} to {hash}");
+                zdo.Set(name, hash);
             }
         }
     }
-}*/
+}
 
+public static class ReflectionExtensions
+{
+    public static void SetField<T>(this object obj, string fieldName, T value)
+    {
+        var field = obj.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+        if (field != null)
+        {
+            field.SetValue(obj, value);
+        }
+    }
+
+    public static T GetField<T>(this object obj, string fieldName)
+    {
+        var field = obj.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+        if (field != null)
+        {
+            return (T)field.GetValue(obj);
+        }
+
+        return default(T);
+    }
+}*/

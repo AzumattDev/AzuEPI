@@ -40,7 +40,7 @@ public class Utilities
         List<ItemDrop.ItemData> itemsToFix = new();
         if (playerInventory == null) return;
         if (playerInventory?.m_inventory != null)
-            for (int index = 0; index < playerInventory.m_inventory.Count; index++)
+            for (int index = 0; index < playerInventory.m_inventory.Count; ++index)
             {
                 ItemDrop.ItemData? itemData = playerInventory.m_inventory[index];
                 bool overlappingItem = curPositions.Exists(pos => pos == itemData.m_gridPos);
@@ -57,7 +57,9 @@ public class Utilities
 
                 curPositions.Add(itemData.m_gridPos);
             }
-
+#if DEBUG
+        AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning("Fixing player inventory.");
+#endif
         foreach (ItemDrop.ItemData brokenItem in itemsToFix) TryAddItemToInventory(playerInventory!, brokenItem);
     }
 

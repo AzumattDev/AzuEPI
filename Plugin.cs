@@ -1,4 +1,5 @@
-﻿using APIManager;
+﻿using System.Collections.Generic;
+using APIManager;
 using AzuExtendedPlayerInventory.EPI;
 using AzuExtendedPlayerInventory.EPI.Patches;
 using AzuExtendedPlayerInventory.EPI.QAB;
@@ -23,7 +24,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     }
 
     internal const string ModName = "AzuExtendedPlayerInventory";
-    internal const string ModVersion = "1.4.4";
+    internal const string ModVersion = "1.4.5";
     internal const string Author = "Azumatt";
     private const string ModGUID = Author + "." + ModName;
     private static readonly string ConfigFileName = ModGUID + ".cfg";
@@ -119,9 +120,9 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         _harmony.PatchAll();
         SetupWatcher();
 
-        if (Chainloader.PluginInfos.TryGetValue("vapok.mods.adventurebackpacks", out PluginInfo? advBackpacks))
-            if (advBackpacks != null)
-                API.AddSlot("AdvPack", GetBackpackItem, IsBackpackItem);
+        //if (Chainloader.PluginInfos.TryGetValue("vapok.mods.adventurebackpacks", out PluginInfo? advBackpacks))
+        //    if (advBackpacks != null)
+        //        API.AddSlot("AdvPack", GetBackpackItem, IsBackpackItem);
     }
 
     private void Start()
