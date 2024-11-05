@@ -49,7 +49,7 @@ public class InventoryPatches
             int adjustedHeight = ___m_height - addedRows;
 
             int count = ___m_inventory.FindAll(i => i.m_gridPos.y < adjustedHeight).Count;
-            __result = adjustedHeight * ___m_width - count;
+            __result = (adjustedHeight) * ___m_width - count;
             return false;
         }
     }
@@ -68,7 +68,7 @@ public class InventoryPatches
             int adjustedHeight = ___m_height - addedRows;
 
             int count = ___m_inventory.FindAll(i => i.m_gridPos.y < adjustedHeight).Count;
-            __result = count < ___m_width * adjustedHeight;
+            __result = count < ___m_width * (adjustedHeight);
             return false;
         }
     }
@@ -114,6 +114,25 @@ public class InventoryPatches
             ___m_height = y + addedRows;
         }
     }
+
+    [HarmonyPatch(typeof(Inventory), nameof(Inventory.CanAddItem), typeof(ItemDrop.ItemData), typeof(int))]
+    static class InventoryCanAddItempatch
+    {
+        public static bool Prefix(Inventory __instance, ItemDrop.ItemData item, ref bool __result, int stack = -1)
+        {
+            return EPICanAddItem(__instance, item, stack);
+        }
+
+        public static bool EPICanAddItem(Inventory inv, ItemDrop.ItemData item, int stack = -1)
+        {
+            if (inv.HaveEmptySlot())
+                return true;
+            if (stack <= 0)
+                stack = item.m_stack;
+            return inv.FindFreeStackSpace(item.m_shared.m_name, (float) item.m_worldLevel) >= stack;
+        }
+    }
+
 
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.MoveInventoryToGrave))]
     private static class MoveInventoryToGravePatch

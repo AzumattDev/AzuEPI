@@ -232,9 +232,9 @@ public class InventoryGuiPatches
             float left = leftOffset;
             for (int i = 0; i < slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length; ++i)
             {
-                float y = i % 3 * -tileSize;
+                float y = (i % 3) * -tileSize;
                 // ReSharper disable once PossibleLossOfFraction
-                float x = left + i / 3 * tileSize + ((i % 3 > (slots.Count - 1) % 3 ? 1 : 0) + Math.Max(9 + AzuExtendedPlayerInventoryPlugin.Hotkeys.Length - slots.Count - 1, 0) / 3) * tileSize / 2;
+                float x = left + (i / 3) * tileSize + ((i % 3 > (slots.Count - 1) % 3 ? 1 : 0) + Math.Max(9 + AzuExtendedPlayerInventoryPlugin.Hotkeys.Length - slots.Count - 1, 0) / 3) * tileSize / 2;
                 slots[i].Position = new Vector2(x, y);
             }
 
