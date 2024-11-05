@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using HarmonyLib;
-using UnityEngine;
 
 namespace AzuExtendedPlayerInventory.EPI.Patches;
 
@@ -14,16 +12,13 @@ public class InventoryPatches
             bool addEquipmentRow = AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On;
             if (!addEquipmentRow || !Player.m_localPlayer || __instance != Player.m_localPlayer.GetInventory())
                 return true;
-            bool equippedWeaponUpgrade = InventoryGui.instance.m_craftTimer >=
-                                         InventoryGui.instance.m_craftDuration &&
-                                         InventoryGui.instance.m_craftUpgradeItem is { } item
+            bool equippedWeaponUpgrade = InventoryGui.instance.m_craftTimer >= InventoryGui.instance.m_craftDuration
+                                         && InventoryGui.instance.m_craftUpgradeItem is { } item
                                          && ExtendedPlayerInventory.IsEquipmentSlotFree(__instance, item, out _);
             if (equippedWeaponUpgrade)
-            {
                 // When upgrading equipment: AddItem only checks for space. Return an arbitrary slot here. The AddItem(ItemData) patch will move it to the right slot.
                 __result = Vector2i.zero;
-            }
-            
+
             int addedRows = API.GetAddedRows(__instance.GetWidth());
             ___m_height -= addedRows;
             return !equippedWeaponUpgrade;
@@ -31,12 +26,11 @@ public class InventoryPatches
 
         private static void Postfix(Inventory __instance, ref int ___m_height)
         {
-            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || !Player.m_localPlayer ||
-                __instance != Player.m_localPlayer.GetInventory())
+            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || !Player.m_localPlayer || __instance != Player.m_localPlayer.GetInventory())
                 return;
-            
+
             int addedRows = API.GetAddedRows(__instance.GetWidth());
-            
+
             ___m_height += addedRows;
         }
     }
@@ -44,12 +38,7 @@ public class InventoryPatches
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.GetEmptySlots))]
     private static class GetEmptySlotsPatch
     {
-        private static bool Prefix(
-            Inventory __instance,
-            ref int __result,
-            List<ItemDrop.ItemData> ___m_inventory,
-            int ___m_width,
-            int ___m_height)
+        private static bool Prefix(Inventory __instance, ref int __result, List<ItemDrop.ItemData> ___m_inventory, int ___m_width, int ___m_height)
         {
             if (Player.m_localPlayer == null) return true;
             if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || __instance != Player.m_localPlayer.GetInventory())
@@ -68,12 +57,7 @@ public class InventoryPatches
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.HaveEmptySlot))]
     private static class HaveEmptySlotPatch
     {
-        private static bool Prefix(
-            Inventory __instance,
-            ref bool __result,
-            List<ItemDrop.ItemData> ___m_inventory,
-            int ___m_width,
-            int ___m_height)
+        private static bool Prefix(Inventory __instance, ref bool __result, List<ItemDrop.ItemData> ___m_inventory, int ___m_width, int ___m_height)
         {
             if (Player.m_localPlayer == null) return true;
             if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || __instance != Player.m_localPlayer.GetInventory())
@@ -92,11 +76,7 @@ public class InventoryPatches
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.AddItem), typeof(ItemDrop.ItemData))]
     private static class InventoryAddItemPatch1
     {
-        private static bool Prefix(
-            Inventory __instance,
-            ref bool __result,
-            List<ItemDrop.ItemData> ___m_inventory,
-            ItemDrop.ItemData item)
+        private static bool Prefix(Inventory __instance, ref bool __result, List<ItemDrop.ItemData> ___m_inventory, ItemDrop.ItemData item)
         {
             if (Player.m_localPlayer == null) return true;
             if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || !Player.m_localPlayer || __instance != Player.m_localPlayer.GetInventory())
@@ -119,24 +99,40 @@ public class InventoryPatches
     }
 
 
-    [HarmonyPatch(typeof(Inventory), nameof(Inventory.AddItem), typeof(ItemDrop.ItemData), typeof(int), typeof(int),
-        typeof(int))]
+    [HarmonyPatch(typeof(Inventory), nameof(Inventory.AddItem), typeof(ItemDrop.ItemData), typeof(int), typeof(int), typeof(int))]
     private static class InventoryAddItemPatch2
     {
-        private static void Prefix(
-            Inventory __instance,
-            ref int ___m_width,
-            ref int ___m_height,
-            int x,
-            int y)
+        private static void Prefix(Inventory __instance, ref int ___m_width, ref int ___m_height, int x, int y)
         {
             int addedRows = API.GetAddedRows(___m_width);
 
-            if (y < ___m_height)
+            if (y <= ___m_height)
+            {
                 return;
+            }
+
             ___m_height = y + addedRows;
         }
     }
+
+    [HarmonyPatch(typeof(Inventory), nameof(Inventory.CanAddItem), typeof(ItemDrop.ItemData), typeof(int))]
+    static class InventoryCanAddItempatch
+    {
+        public static bool Prefix(Inventory __instance, ItemDrop.ItemData item, ref bool __result, int stack = -1)
+        {
+            return EPICanAddItem(__instance, item, stack);
+        }
+
+        public static bool EPICanAddItem(Inventory inv, ItemDrop.ItemData item, int stack = -1)
+        {
+            if (inv.HaveEmptySlot())
+                return true;
+            if (stack <= 0)
+                stack = item.m_stack;
+            return inv.FindFreeStackSpace(item.m_shared.m_name, (float) item.m_worldLevel) >= stack;
+        }
+    }
+
 
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.MoveInventoryToGrave))]
     private static class MoveInventoryToGravePatch

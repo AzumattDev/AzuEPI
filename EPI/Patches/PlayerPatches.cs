@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
+﻿using System.Reflection;
 using AzuExtendedPlayerInventory.EPI.Utilities;
-using HarmonyLib;
-using UnityEngine;
+using BepInEx.Bootstrap;
 using Object = UnityEngine.Object;
 
 namespace AzuExtendedPlayerInventory.EPI.Patches;
@@ -24,23 +21,24 @@ public class PlayerPatches
     }
 
     [HarmonyPatch(typeof(Player), nameof(Player.OnSpawned))]
-    static class InventoryGuiAwakePatch
+    private static class PlayerOnSpawnedPatch
     {
         public const string Sentinel = "<|>";
-        public static Inventory QuickSlotInventory = new Inventory(nameof(QuickSlotInventory), null, 3, 1);
-        public static Inventory EquipmentSlotInventory = new Inventory(nameof(EquipmentSlotInventory), null, 5, 1);
+        public static Inventory QuickSlotInventory = new(nameof(QuickSlotInventory), null, 3, 1);
+        public static Inventory EquipmentSlotInventory = new(nameof(EquipmentSlotInventory), null, 5, 1);
         private static readonly MethodInfo MemberwiseCloneMethod = AccessTools.DeclaredMethod(typeof(object), "MemberwiseClone");
-        public static T Clone<T>(T input) where T : notnull => (T)MemberwiseCloneMethod.Invoke(input, Array.Empty<object>());
 
-        static void Postfix(Player __instance)
+        public static T Clone<T>(T input) where T : notnull
+        {
+            return (T)MemberwiseCloneMethod.Invoke(input, Array.Empty<object>());
+        }
+
+        private static void Postfix(Player __instance)
         {
             if (Player.m_localPlayer == null || Player.m_localPlayer != __instance)
                 return;
 
-            if (!BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("randyknapp.mods.equipmentandquickslots", out var RandyEAQ))
-            {
-                Load(__instance);
-            }
+            if (!Chainloader.PluginInfos.TryGetValue("randyknapp.mods.equipmentandquickslots", out PluginInfo? RandyEAQ)) Load(__instance);
         }
 
         public static void Load(Player fromPlayer)
@@ -55,7 +53,7 @@ public class PlayerPatches
 
             if (LoadValue(fromPlayer, "QuickSlotInventory", out string quickSlotData))
             {
-                ZPackage pkg = new ZPackage(quickSlotData);
+                ZPackage pkg = new(quickSlotData);
                 QuickSlotInventory.Load(pkg);
                 fromPlayer.m_inventory.MoveAll(QuickSlotInventory);
                 foreach (ItemDrop.ItemData? item in QuickSlotInventory.GetAllItems())
@@ -76,7 +74,7 @@ public class PlayerPatches
 
             if (LoadValue(fromPlayer, "EquipmentSlotInventory", out string equipSlotData))
             {
-                ZPackage pkg = new ZPackage(equipSlotData);
+                ZPackage pkg = new(equipSlotData);
                 EquipmentSlotInventory.Load(pkg);
                 //fromPlayer.m_inventory.MoveAll(EquipmentSlotInventory);
                 foreach (ItemDrop.ItemData? item in EquipmentSlotInventory.GetAllItems())
@@ -100,7 +98,7 @@ public class PlayerPatches
             if (player.m_customData.TryGetValue(key, out value))
                 return true;
 
-            var foundInKnownTexts = player.m_knownTexts.TryGetValue(key, out value);
+            bool foundInKnownTexts = player.m_knownTexts.TryGetValue(key, out value);
             if (!foundInKnownTexts)
                 key = Sentinel + key;
             foundInKnownTexts = player.m_knownTexts.TryGetValue(key, out value);
@@ -132,10 +130,7 @@ public class PlayerPatches
                 fromInventory.RemoveItem(itemData);
                 player.m_inventory.AddItem(itemData);
 
-                if (useItem)
-                {
-                    player.UseItem(player.GetInventory(), itemData, false);
-                }
+                if (useItem) player.UseItem(player.GetInventory(), itemData, false);
             }
             else
             {
@@ -143,17 +138,11 @@ public class PlayerPatches
                 Transform transform = player.transform;
                 ItemDrop itemDrop = ItemDrop.DropItem(itemData, itemData.m_stack, transform.position + transform.forward + transform.up, transform.rotation);
                 if (itemDrop == null) return;
-                if (itemDrop.m_itemData.m_equipped)
-                {
-                    itemDrop.m_itemData.m_equipped = false;
-                }
+                if (itemDrop.m_itemData.m_equipped) itemDrop.m_itemData.m_equipped = false;
 
 
                 bool pickedUp = player.Pickup(itemDrop.gameObject, false, false);
-                if (pickedUp && useItem)
-                {
-                    player.UseItem(player.GetInventory(), itemDrop.m_itemData, false);
-                }
+                if (pickedUp && useItem) player.UseItem(player.GetInventory(), itemDrop.m_itemData, false);
             }
         }
     }
@@ -172,12 +161,8 @@ public class PlayerPatches
 
             int hotkey = 0;
             while (!AzuExtendedPlayerInventoryPlugin.Hotkeys[hotkey].Value.IsKeyDown())
-            {
                 if (++hotkey == AzuExtendedPlayerInventoryPlugin.Hotkeys.Length)
-                {
                     return;
-                }
-            }
 
             int index = (4 + AzuExtendedPlayerInventoryPlugin.ExtraRows.Value) * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length + hotkey;
             ItemDrop.ItemData itemAt = ___m_inventory.GetItemAt(index % width, index / width);
@@ -203,25 +188,21 @@ public class PlayerPatches
     }
 
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnRightClickItem))]
-    static class InventoryGuiOnRightClickItemPatch
+    private static class InventoryGuiOnRightClickItemPatch
     {
-        static bool Prefix(InventoryGui __instance, InventoryGrid grid, ItemDrop.ItemData item, Vector2i pos)
+        private static bool Prefix(InventoryGui __instance, InventoryGrid grid, ItemDrop.ItemData item, Vector2i pos)
         {
             if (item == null || !Player.m_localPlayer || grid.GetInventory() == null)
                 return true;
             Player p = Player.m_localPlayer;
             if (grid.m_inventory == Player.m_localPlayer.GetInventory())
-            {
                 if (ExtendedPlayerInventory.IsAtEquipmentSlot(p.m_inventory, item, out int which) && (item == p.m_helmetItem || item == p.m_chestItem || item == p.m_legItem || item == p.m_shoulderItem || item == p.m_utilityItem))
-                {
                     if (!p.m_inventory.CanAddItem(item))
                     {
                         AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo("Inventory full, blocking item unequip");
                         Player.m_localPlayer.Message(MessageHud.MessageType.Center, "$inventory_full");
                         return false;
                     }
-                }
-            }
 
             return true;
         }

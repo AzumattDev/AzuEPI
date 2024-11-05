@@ -1,19 +1,14 @@
-﻿using System;
-using System.IO;
-using System.Linq;
+﻿using System.Collections.Generic;
+using APIManager;
 using AzuExtendedPlayerInventory.EPI;
 using AzuExtendedPlayerInventory.EPI.Patches;
 using AzuExtendedPlayerInventory.EPI.QAB;
 using AzuExtendedPlayerInventory.EPI.Utilities;
 using AzuExtendedPlayerInventory.Moveable;
-using BepInEx;
 using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using BepInEx.Logging;
-using HarmonyLib;
-using JetBrains.Annotations;
 using ServerSync;
-using UnityEngine;
 
 namespace AzuExtendedPlayerInventory;
 
@@ -22,34 +17,34 @@ namespace AzuExtendedPlayerInventory;
 [BepInDependency("ishid4.mods.betterarchery", BepInDependency.DependencyFlags.SoftDependency)] // To make sure we load after Better Archery
 public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 {
+    public enum Toggle
+    {
+        On = 1,
+        Off = 0
+    }
+
     internal const string ModName = "AzuExtendedPlayerInventory";
-    internal const string ModVersion = "1.4.3";
+    internal const string ModVersion = "1.4.6";
     internal const string Author = "Azumatt";
     private const string ModGUID = Author + "." + ModName;
-    private static string ConfigFileName = ModGUID + ".cfg";
-    private static string ConfigFileFullPath = Paths.ConfigPath + Path.DirectorySeparatorChar + ConfigFileName;
+    private static readonly string ConfigFileName = ModGUID + ".cfg";
+    private static readonly string ConfigFileFullPath = Paths.ConfigPath + Path.DirectorySeparatorChar + ConfigFileName;
     internal static string ConnectionError = "";
-    private readonly Harmony _harmony = new(ModGUID);
     public static readonly ManualLogSource AzuExtendedPlayerInventoryLogger = BepInEx.Logging.Logger.CreateLogSource(ModName);
     private static readonly ConfigSync ConfigSync = new(ModGUID) { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = ModVersion };
 
     internal static AzuExtendedPlayerInventoryPlugin context = null!;
     internal static bool WbInstalled;
-
-    public enum Toggle
-    {
-        On = 1,
-        Off = 0,
-    }
+    private readonly Harmony _harmony = new(ModGUID);
 
     private void Awake()
     {
-        APIManager.Patcher.Patch();
+        Patcher.Patch();
 
         context = this;
         _serverConfigLocked = config("1 - General", "Lock Configuration", Toggle.On, "If on, the configuration is locked and can be changed by server admins only.");
         _ = ConfigSync.AddLockingConfigEntry(_serverConfigLocked);
-        
+
 
         /* Extended Player Inventory Config options */
         AutoEquip = config("2 - Extended Inventory", "Auto Equip", Toggle.On, "Automatically equip items that go into the gear slots. Applies when picking up items, transferring between containers, or picking up your tombstone.");
@@ -69,8 +64,6 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         LegsText = config("2 - Extended Inventory", "Legs Text", "Legs", "Text to show for legs slot.", false);
         BackText = config("2 - Extended Inventory", "Back Text", "Back", "Text to show for back slot.", false);
         UtilityText = config("2 - Extended Inventory", "Utility Text", "Utility", "Text to show for utility slot.", false);
-        RightHandText = config("2 - Extended Inventory", "Right Hand Text", "R Hand", "Text to show for right hand slot.", false);
-        LeftHandText = config("2 - Extended Inventory", "Left Hand Text", "L Hand", "Text to show for left hand slot.", false);
 
         QuickAccessScale = config("2 - Extended Inventory", "QuickAccess Scale", 0.85f, "Scale of quick access bar. ", false);
 
@@ -91,8 +84,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         MoveableChestInventory.ChestInventoryX = config("3 - Chest Inventory", "Chest Inventory X", -1f, "Current X of chest", false);
         MoveableChestInventory.ChestInventoryY = config("3 - Chest Inventory", "Chest Inventory Y", -1f, "Current Y of chest", false);
         MoveableChestInventory.ChestDragKeys = config("3 - Chest Inventory", "Drag Keys (Chest Drag)", new KeyboardShortcut(KeyCode.Mouse0, KeyCode.LeftControl), "Key or keys (to move the container). It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
-        
-        
+
+
         MakeDropAllButton = config("3 - Button", "Drop All Button", Toggle.Off, "Key or keys (to move the container). It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
         DropAllButtonPosition = config("3 - Button", "Button Position", new Vector2(880.00f, 10.00f), "Button position relative to the inventory background's top left corner", false);
 
@@ -100,13 +93,13 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         {
             HotKey1,
             HotKey2,
-            HotKey3,
+            HotKey3
         };
         HotkeyTexts = new[]
         {
             HotKey1Text,
             HotKey2Text,
-            HotKey3Text,
+            HotKey3Text
         };
 
         if (Chainloader.PluginInfos.TryGetValue("ishid4.mods.betterarchery", out var BetterArchery))
@@ -127,16 +120,28 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         _harmony.PatchAll();
         SetupWatcher();
 
-        /*if (Chainloader.PluginInfos.TryGetValue("vapok.mods.adventurebackpacks", out PluginInfo? advBackpacks) && AdvBackpackSlot.Value == Toggle.On)
-        {
-            if (advBackpacks != null)
-            {
-                API.AddSlot("AdvPack", GetBackpackItem, IsBackpackItem);
-            }
-        }*/
+        //if (Chainloader.PluginInfos.TryGetValue("vapok.mods.adventurebackpacks", out PluginInfo? advBackpacks))
+        //    if (advBackpacks != null)
+        //        API.AddSlot("AdvPack", GetBackpackItem, IsBackpackItem);
     }
 
-    private ItemDrop.ItemData? GetBackpackItem(Humanoid player)
+    private void Start()
+    {
+        CheckRandy();
+        CheckWeightBase();
+
+        if (Chainloader.PluginInfos.TryGetValue(ExtendedPlayerInventory.MinimalUiguid, out var MinimalUI) && MinimalUI is not null) InventoryGuiPatches.UpdateInventory_Patch.leftOffset += 10;
+
+        InventoryGuiPatches.UpdateInventory_Patch.ResizeSlots();
+    }
+
+    private void OnDestroy()
+    {
+        Config.Save();
+    }
+
+
+    internal static ItemDrop.ItemData? GetBackpackItem(Humanoid player)
     {
         ItemDrop.ItemData? utilitySlot = player.GetInventory().GetEquippedItems().FirstOrDefault(i => i != null && i.m_dropPrefab
                                                                                                                 && i.m_dropPrefab.name
@@ -152,7 +157,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         return utilitySlot;
     }
 
-    private bool IsBackpackItem(ItemDrop.ItemData? item)
+    internal static bool IsBackpackItem(ItemDrop.ItemData? item)
     {
         return item != null && item.m_dropPrefab && item.m_dropPrefab.name
             is "BackpackMeadows"
@@ -163,24 +168,6 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             or "BackpackMistlands"
             or "CapeSilverBackpack"
             or "CapeIronBackpack";
-    }
-
-    private void Start()
-    {
-        CheckRandy();
-        CheckWeightBase();
-
-        if (BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue(ExtendedPlayerInventory.MinimalUiguid, out var MinimalUI) && MinimalUI is not null)
-        {
-            InventoryGuiPatches.UpdateInventory_Patch.leftOffset += 10;
-        }
-
-        InventoryGuiPatches.UpdateInventory_Patch.ResizeSlots();
-    }
-
-    private void OnDestroy()
-    {
-        Config.Save();
     }
 
     private void SetupWatcher()
@@ -225,18 +212,16 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     private static void CheckRandy()
     {
         if (DisplayEquipmentRowSeparate.Value == Toggle.Off && AddEquipmentRow.Value == Toggle.Off) return;
-        if (!BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("randyknapp.mods.equipmentandquickslots", out var RandyEAQ)) return;
+        if (!Chainloader.PluginInfos.TryGetValue("randyknapp.mods.equipmentandquickslots", out var RandyEAQ)) return;
         DisplayEquipmentRowSeparate.Value = Toggle.Off;
         AddEquipmentRow.Value = Toggle.Off;
         context.Config.Save();
-        AzuExtendedPlayerInventoryLogger.LogWarning($"{Environment.NewLine}RandyKnapp's Equipment and Quickslots mod has been detected. " +
-                                                    $"This mod is not fully compatible with his. " +
-                                                    $"As a result, the Display Equipment Row Separate and Add Equipment Row options for this mod have been disabled and the configuration saved.");
+        AzuExtendedPlayerInventoryLogger.LogWarning($"{Environment.NewLine}RandyKnapp's Equipment and Quickslots mod has been detected. This mod is not fully compatible with his. As a result, the Display Equipment Row Separate and Add Equipment Row options for this mod have been disabled and the configuration saved.");
     }
 
     private static void CheckWeightBase()
     {
-        if (!BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue("MadBuffoon.WeightBase", out var WbInfo)) return;
+        if (!Chainloader.PluginInfos.TryGetValue("MadBuffoon.WeightBase", out var WbInfo)) return;
         WbInstalled = true;
     }
 
@@ -256,8 +241,6 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<string> LegsText = null!;
     public static ConfigEntry<string> BackText = null!;
     public static ConfigEntry<string> UtilityText = null!;
-    public static ConfigEntry<string> RightHandText = null!;
-    public static ConfigEntry<string> LeftHandText = null!;
     public static ConfigEntry<float> QuickAccessScale = null!;
 
     public static ConfigEntry<KeyboardShortcut> HotKey1 = null!;
@@ -278,14 +261,9 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<Vector2> UIAnchor = null!;
     public static ConfigEntry<Vector3> LocalScale = null!;
 
-    private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description,
-        bool synchronizedSetting = true)
+    private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description, bool synchronizedSetting = true)
     {
-        ConfigDescription extendedDescription =
-            new(
-                description.Description +
-                (synchronizedSetting ? " [Synced with Server]" : " [Not Synced with Server]"),
-                description.AcceptableValues, description.Tags);
+        ConfigDescription extendedDescription = new(description.Description + (synchronizedSetting ? " [Synced with Server]" : " [Not Synced with Server]"), description.AcceptableValues, description.Tags);
         ConfigEntry<T> configEntry = Config.Bind(group, name, value, extendedDescription);
         //var configEntry = Config.Bind(group, name, value, description);
 
@@ -295,31 +273,39 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         return configEntry;
     }
 
-    private ConfigEntry<T> config<T>(string group, string name, T value, string description,
-        bool synchronizedSetting = true)
+    private ConfigEntry<T> config<T>(string group, string name, T value, string description, bool synchronizedSetting = true)
     {
         return config(group, name, value, new ConfigDescription(description), synchronizedSetting);
     }
 
     private class ConfigurationManagerAttributes
     {
-        [UsedImplicitly] public int? Order = null!;
-        [UsedImplicitly] public bool? Browsable = null!;
-        [UsedImplicitly] public string? Category = null!;
-        [UsedImplicitly] public Action<ConfigEntryBase>? CustomDrawer = null!;
+        [UsedImplicitly] public bool? Browsable;
+        [UsedImplicitly] public string? Category;
+        [UsedImplicitly] public Action<ConfigEntryBase>? CustomDrawer;
+        [UsedImplicitly] public int? Order;
     }
 
-    class AcceptableShortcuts : AcceptableValueBase
+    private class AcceptableShortcuts : AcceptableValueBase
     {
         public AcceptableShortcuts() : base(typeof(KeyboardShortcut))
         {
         }
 
-        public override object Clamp(object value) => value;
-        public override bool IsValid(object value) => true;
+        public override object Clamp(object value)
+        {
+            return value;
+        }
 
-        public override string ToDescriptionString() =>
-            "# Acceptable values: " + string.Join(", ", UnityInput.Current.SupportedKeyCodes);
+        public override bool IsValid(object value)
+        {
+            return true;
+        }
+
+        public override string ToDescriptionString()
+        {
+            return "# Acceptable values: " + string.Join(", ", UnityInput.Current.SupportedKeyCodes);
+        }
     }
 
     #endregion

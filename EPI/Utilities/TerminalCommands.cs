@@ -1,21 +1,15 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using AzuExtendedPlayerInventory;
-using BepInEx.Bootstrap;
-using HarmonyLib;
-using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace AzuEPI.EPI.Utilities;
 
 // Patch the Terminal.Init to add commands to the terminal
 [HarmonyPatch(typeof(Terminal), nameof(Terminal.InitTerminal))]
-static class TerminalInitTerminalPatch
+internal static class TerminalInitTerminalPatch
 {
-    static void Postfix(Terminal __instance)
+    private static void Postfix(Terminal __instance)
     {
-        Terminal.ConsoleCommand RemoveAll = new("azuepi.removeall",
-            "Removes all items from your inventory",
+        Terminal.ConsoleCommand RemoveAll = new("azuepi.removeall", "Removes all items from your inventory",
             args =>
             {
                 if (Player.m_localPlayer == null)
@@ -27,8 +21,7 @@ static class TerminalInitTerminalPatch
                 Player.m_localPlayer.GetInventory().m_inventory.RemoveAll(x => x != null);
             });
 
-        Terminal.ConsoleCommand QuickFixInventory = new("azuepi.quickfix",
-            "Fixes the inventory if something is wrong with it",
+        Terminal.ConsoleCommand QuickFixInventory = new("azuepi.quickfix", "Fixes the inventory if something is wrong with it",
             args =>
             {
                 if (Player.m_localPlayer == null)
@@ -40,8 +33,7 @@ static class TerminalInitTerminalPatch
                 AzuExtendedPlayerInventory.EPI.Utilities.Utilities.InventoryFix();
             });
 
-        Terminal.ConsoleCommand BreakEquipment = new("azuepi.breakall",
-            "Break all the equipment in your inventory",
+        Terminal.ConsoleCommand BreakEquipment = new("azuepi.breakall", "Break all the equipment in your inventory",
             args =>
             {
                 if (Player.m_localPlayer == null)
@@ -51,14 +43,10 @@ static class TerminalInitTerminalPatch
                 }
 
                 List<ItemDrop.ItemData>? inventory = Player.m_localPlayer.GetInventory().m_inventory;
-                foreach (ItemDrop.ItemData itemData in inventory.Where(itemData => itemData.m_equipped && itemData.m_shared.m_useDurability))
-                {
-                    itemData.m_durability = 0;
-                }
+                foreach (ItemDrop.ItemData itemData in inventory.Where(itemData => itemData.m_equipped && itemData.m_shared.m_useDurability)) itemData.m_durability = 0;
             });
 
-        Terminal.ConsoleCommand DropAll = new Terminal.ConsoleCommand("azuepi.dropall",
-            "Drop every item in your inventory to the ground",
+        Terminal.ConsoleCommand DropAll = new("azuepi.dropall", "Drop every item in your inventory to the ground",
             args =>
             {
                 if (Player.m_localPlayer == null)
@@ -76,8 +64,7 @@ static class TerminalInitTerminalPatch
                 }
             });
 
-        Terminal.ConsoleCommand InvCheck = new Terminal.ConsoleCommand("azuepi.invlistall",
-            "List every item in your inventory (will be printed to the console)",
+        Terminal.ConsoleCommand InvCheck = new("azuepi.invlistall", "List every item in your inventory (will be printed to the console)",
             args =>
             {
                 if (Player.m_localPlayer == null)
@@ -99,8 +86,7 @@ static class TerminalInitTerminalPatch
                 }
             });
 
-        Terminal.ConsoleCommand RepairAll = new Terminal.ConsoleCommand("azuepi.repairall",
-            "Repair all items in your inventory",
+        Terminal.ConsoleCommand RepairAll = new("azuepi.repairall", "Repair all items in your inventory",
             args =>
             {
                 if (Player.m_localPlayer == null)
@@ -116,10 +102,7 @@ static class TerminalInitTerminalPatch
                     return;
                 }
 
-                while (HaveRepairableItems())
-                {
-                    RepairItems();
-                }
+                while (HaveRepairableItems()) RepairItems();
 
 
                 bool HaveRepairableItems()
@@ -129,10 +112,8 @@ static class TerminalInitTerminalPatch
                     InventoryGui.instance.m_tempWornItems.Clear();
                     Player.m_localPlayer.GetInventory().GetWornItems(InventoryGui.instance.m_tempWornItems);
                     foreach (ItemDrop.ItemData tempWornItem in InventoryGui.instance.m_tempWornItems)
-                    {
                         if (CanRepairItems(tempWornItem))
                             return true;
-                    }
 
                     return false;
                 }

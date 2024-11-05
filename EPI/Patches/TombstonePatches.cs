@@ -1,8 +1,4 @@
-﻿using System;
-using HarmonyLib;
-using UnityEngine;
-
-namespace AzuExtendedPlayerInventory.EPI.Patches;
+﻿namespace AzuExtendedPlayerInventory.EPI.Patches;
 
 public class TombstonePatches
 {
@@ -42,19 +38,25 @@ public class TombstonePatches
     [HarmonyPatch(typeof(TombStone), nameof(TombStone.EasyFitInInventory))]
     private static class TemporarilyIncreaseCarryWeight
     {
-        static bool playerCurrentPickupState = false;
+        private static bool _playerCurrentPickupState;
+
         private static void Prefix(out int __state)
         {
-            playerCurrentPickupState = Player.m_enableAutoPickup;
+            _playerCurrentPickupState = Player.m_enableAutoPickup;
             Player.m_enableAutoPickup = false; // Temporarily disable auto pickup to prevent NRE
-            __state = (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On ? API.GetAddedRows(Player.m_localPlayer.m_inventory.m_width) : 0);
+            __state = AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On ? API.GetAddedRows(Player.m_localPlayer.m_inventory.m_width) : 0;
             Player.m_localPlayer.m_maxCarryWeight += 150f;
             Player.m_localPlayer.m_inventory.m_height += __state;
         }
-        private static void Postfix() => Utilities.Utilities.InventoryFix();
+
+        private static void Postfix()
+        {
+            Utilities.Utilities.InventoryFix();
+        }
+
         private static void Finalizer(int __state)
         {
-            Player.m_enableAutoPickup = playerCurrentPickupState;
+            Player.m_enableAutoPickup = _playerCurrentPickupState;
             Player.m_localPlayer.m_maxCarryWeight -= 150f;
             Player.m_localPlayer.m_inventory.m_height -= __state;
         }

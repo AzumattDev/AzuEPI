@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
+﻿using System.Collections.Generic;
 using AzuExtendedPlayerInventory;
-using HarmonyLib;
 
 namespace AzuEPI.EPI.Utilities
 {

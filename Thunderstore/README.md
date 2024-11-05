@@ -12,7 +12,7 @@ What is the difference in this version of ExtendedPlayerInventory compared to ot
 
 * This version comes with more compatibility in mind, as well as a few more features.
 * One core feature is making it very very hard to lose your items, even when your inventory bugs out.
-* It also comes with an API for mods/mod authors to add custom slots to the inventory. This is used by Jewelcrafting to
+* It also comes with an API for mods/mod authors to add custom slots to the inventory. This is used by Jewelcrafting, BowsBeforeHoes, Backpacks, MagicPlugin, FenrirsCurse and Wizardry to
   add dedicated slots for the utility items.
 * Seamless compatibility with Equipment And Quickslots, through automatic disabling of conflicting features. Also,
   seamless migration from it. Please see the **_Migration from Equipment And Quickslots_** section for more information.
@@ -31,20 +31,22 @@ correctly. Then, just make sure the dll ends up in your BepInEx/plugins folder.
 ## Other mods adding slots via the API (Extreme example)
 
 ![](https://i.imgur.com/t0upUgs.png)
+
 _**Mods that added slots in the image above:**_
 
 [Jewelcrafting](https://valheim.thunderstore.io/package/Smoothbrain/Jewelcrafting/),  [BowsBeforeHoes](https://valheim.thunderstore.io/package/Azumatt/BowsBeforeHoes/), [Backpacks](https://valheim.thunderstore.io/package/Smoothbrain/Backpacks/), [MagicPlugin](https://valheim.thunderstore.io/package/blacks7ar/MagicPlugin/),
-and Fenrir's Curse
+and [Fenrir's Curse](https://thunderstore.io/c/valheim/p/Azumatt/FenrirsCurse_PTR/)
 
 **_Mods that can be seen in the image above:_**
 
 [Jewelcrafting](https://valheim.thunderstore.io/package/Smoothbrain/Jewelcrafting/), [BowsBeforeHoes](https://valheim.thunderstore.io/package/Azumatt/BowsBeforeHoes/), [Backpacks](https://valheim.thunderstore.io/package/Smoothbrain/Backpacks/), [MagicPlugin](https://valheim.thunderstore.io/package/blacks7ar/MagicPlugin/),
 [Minimal_UI](https://valheim.thunderstore.io/package/Azumatt/Minimal_UI/), [RapidLoadouts](https://valheim.thunderstore.io/package/Azumatt/RapidLoadouts/),
-Fenrir's
-Curse,
+[Fenrir's Curse](https://thunderstore.io/c/valheim/p/Azumatt/FenrirsCurse_PTR/),
 and of course, AzuEPI.
 
 ## API Information/Wiki
+
+* Please note that *OTHER* mods add the slots using the API. AzuEPI doesn't make the slot validations, the respective mods using the API do. Meaning, Backpacks by Smoothbrain only looks at what their mod considers a backpack...for it's slot that it tells AzuEPI (using the API) to create.
 
 https://github.com/AzumattDev/AzuEPI/wiki/API-Home
 

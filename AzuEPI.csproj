@@ -120,13 +120,19 @@
             <HintPath>$(CorlibPath)\UnityEngine.InputLegacyModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.ParticleSystemModule">
-          <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\UnityEngine.ParticleSystemModule.dll</HintPath>
+            <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\UnityEngine.ParticleSystemModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.UI">
             <HintPath>$(CorlibPath)\UnityEngine.UI.dll</HintPath>
         </Reference>
         <Reference Include="Unity.TextMeshPro">
             <HintPath>$(GamePath)\valheim_Data\Managed\Unity.TextMeshPro.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.PhysicsModule">
+            <HintPath>$(GamePath)\valheim_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.ImageConversionModule">
+            <HintPath>$(GamePath)\valheim_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.UIModule">
             <HintPath>$(CorlibPath)\UnityEngine.UIModule.dll</HintPath>
@@ -167,7 +173,9 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="API\API.cs"/>
-        <Compile Include="EPI\Utilities\TerminalCommands.cs" />
+        <Compile Include="EPI\Patches\Visuals.cs"/>
+        <Compile Include="EPI\Utilities\TerminalCommands.cs"/>
+        <Compile Include="GlobalUsings.cs" />
         <None Include="App.config"/>
     </ItemGroup>
     <ItemGroup>

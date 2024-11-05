@@ -1,6 +1,5 @@
-﻿using HarmonyLib;
-using UnityEngine;
-using UnityEngine.UI;
+﻿using UnityEngine.UI;
+using Object = UnityEngine.Object;
 
 namespace AzuExtendedPlayerInventory.EPI.Patches;
 
@@ -13,13 +12,13 @@ public class HudPatches
         {
             if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off)
                 return;
-            
+
             API.HudAwake(__instance);
-            
+
             Transform transform = Object.Instantiate(__instance.m_rootObject.transform.Find("HotKeyBar"), __instance.m_rootObject.transform, true);
             transform.name = ExtendedPlayerInventory.QABName;
             transform.GetComponent<RectTransform>().localPosition = Vector3.zero;
-            
+
             API.HudAwakeComplete(__instance);
         }
     }
@@ -31,7 +30,7 @@ public class HudPatches
         {
             if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || Player.m_localPlayer == null)
                 return;
-            
+
             API.HudUpdate(__instance);
 
             float scaleFactor = GameObject.Find("LoadingGUI").GetComponent<CanvasScaler>().scaleFactor;
@@ -51,13 +50,9 @@ public class HudPatches
                 Vector2 sizeDelta = quickAccessBarRect.sizeDelta;
                 float quickAccessScale = AzuExtendedPlayerInventoryPlugin.QuickAccessScale.Value;
 
-                Rect rect = new Rect(
-                    anchoredPosition.x * scaleFactor,
-                    (float)(anchoredPosition.y * scaleFactor + Screen.height - sizeDelta.y * scaleFactor * quickAccessScale),
-                    (float)(sizeDelta.x * scaleFactor * quickAccessScale * 0.375),
-                    sizeDelta.y * scaleFactor * quickAccessScale);
+                Rect rect = new(anchoredPosition.x * scaleFactor, anchoredPosition.y * scaleFactor + Screen.height - sizeDelta.y * scaleFactor * quickAccessScale, (float)(sizeDelta.x * scaleFactor * quickAccessScale * 0.375), sizeDelta.y * scaleFactor * quickAccessScale);
 
-                if (rect.Contains(ExtendedPlayerInventory.lastMousePos) && (ExtendedPlayerInventory.currentlyDragging is "" or ExtendedPlayerInventory.QABName))
+                if (rect.Contains(ExtendedPlayerInventory.lastMousePos) && ExtendedPlayerInventory.currentlyDragging is "" or ExtendedPlayerInventory.QABName)
                 {
                     float deltaX = (mousePosition.x - ExtendedPlayerInventory.lastMousePos.x) / scaleFactor;
                     float deltaY = (mousePosition.y - ExtendedPlayerInventory.lastMousePos.y) / scaleFactor;
@@ -77,7 +72,7 @@ public class HudPatches
             }
 
             ExtendedPlayerInventory.lastMousePos = mousePosition;
-            
+
             API.HudUpdateComplete(__instance);
         }
     }

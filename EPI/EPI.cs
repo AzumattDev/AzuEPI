@@ -1,32 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using AzuExtendedPlayerInventory.EPI.Patches;
-using HarmonyLib;
 using TMPro;
-using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace AzuExtendedPlayerInventory.EPI
 {
     internal class ExtendedPlayerInventory
     {
-        public static List<HotkeyBar> HotkeyBars { get; set; } = null!;
+        public const string QABName = "QuickAccessBar";
+        public const string AzuBkgName = "AzuEquipmentBkg";
+        public const string DropAllButtonName = "AzuDropAllButton";
+        public const string MinimalUiguid = "Azumatt.MinimalUI";
 
-        public static int SelectedHotkeyBarIndex { get; set; } = -1;
-
-        private static GameObject _elementPrefab = null!;
-
-        public static Vector2 LastSlotPosition { get; set; }
+        private static readonly GameObject _elementPrefab = null!;
 
         internal static ItemDrop.ItemData?[] equipItems = new ItemDrop.ItemData[5];
 
         public static Vector3 lastMousePos;
         public static string currentlyDragging = null!;
         internal static readonly int Visible = Animator.StringToHash("visible");
-        public const string QABName = "QuickAccessBar";
-        public const string AzuBkgName = "AzuEquipmentBkg";
-        public const string DropAllButtonName = "AzuDropAllButton";
-        public const string MinimalUiguid = "Azumatt.MinimalUI";
+        public static List<HotkeyBar> HotkeyBars { get; set; } = null!;
+
+        public static int SelectedHotkeyBarIndex { get; set; } = -1;
+
+        public static Vector2 LastSlotPosition { get; set; }
 
         public static void SetSlotText(string value, Transform transform, bool center = true)
         {
@@ -82,40 +79,24 @@ namespace AzuExtendedPlayerInventory.EPI
     }
 
     [HarmonyPatch(typeof(Container), nameof(Container.RPC_TakeAllRespons))]
-    static class ContainerRPCRequestTakeAllPatch
+    internal static class ContainerRPCRequestTakeAllPatch
     {
-        static void Postfix(Container __instance, ref bool granted)
+        private static void Postfix(Container __instance, ref bool granted)
         {
             if (Player.m_localPlayer == null)
                 return;
-            if (granted)
-            {
-                Utilities.Utilities.InventoryFix();
-            }
+            if (granted) Utilities.Utilities.InventoryFix();
         }
     }
 
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.MoveAll))]
-    static class MoveAllToPatch // This should fix issues with AzuContainerSizes
+    internal static class MoveAllToPatch // This should fix issues with AzuContainerSizes
     {
-        static void Postfix(Inventory __instance, Inventory fromInventory)
+        private static void Postfix(Inventory __instance, Inventory fromInventory)
         {
             if (Player.m_localPlayer == null)
                 return;
-            if (__instance == Player.m_localPlayer.GetInventory())
-            {
-                Utilities.Utilities.InventoryFix();
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(ItemDrop.ItemData), nameof(ItemDrop.ItemData.Clone))]
-    public static class ItemData_Clone_Patch
-    {
-        public static void Postfix(ItemDrop.ItemData __instance, ref ItemDrop.ItemData __result)
-        {
-            // Fixes bug in vanilla valheim with cloning items with custom data
-            __result.m_customData = new Dictionary<string, string>(__instance.m_customData);
+            if (__instance == Player.m_localPlayer.GetInventory()) Utilities.Utilities.InventoryFix();
         }
     }
 }
