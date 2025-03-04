@@ -33,7 +33,7 @@ public class HudPatches
 
             API.HudUpdate(__instance);
 
-            float scaleFactor = GameObject.Find("LoadingGUI").GetComponent<CanvasScaler>().scaleFactor;
+            float scaleFactor = GuiScaler.m_largeGuiScale;
             Vector3 mousePosition = Input.mousePosition;
 
             ExtendedPlayerInventory.SetElementPositions();
