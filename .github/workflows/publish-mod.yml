@@ -1,0 +1,78 @@
+name: Publish Mod
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Check out the repository code.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Extract information from Thunderstore/manifest.json and set up variables.
+      - name: Extract manifest and set up variables
+        id: manifest
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF##*/}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
+          mod_name=$(jq -r '.name' Thunderstore/manifest.json)
+          mod_version=$(jq -r '.version_number' Thunderstore/manifest.json)
+          mod_description=$(jq -r '.description' Thunderstore/manifest.json)
+
+          ZIP_FILE="Thunderstore/${mod_name}_v${mod_version}.zip"
+          ZIP_FILENAME=$(basename "${ZIP_FILE}")
+
+          echo "mod_name=${mod_name}" >> $GITHUB_OUTPUT
+          echo "mod_version=${mod_version}" >> $GITHUB_OUTPUT
+          echo "mod_description=${mod_description}" >> $GITHUB_OUTPUT
+          echo "zip_file=${ZIP_FILE}" >> $GITHUB_OUTPUT
+          echo "zip_filename=${ZIP_FILENAME}" >> $GITHUB_OUTPUT
+
+          if [ ! -f "${ZIP_FILE}" ]; then
+            echo "Error: Zip file '${ZIP_FILE}' does not exist." >&2
+            exit 1
+          fi
+
+      # 3. Create a GitHub release using the pushed tag.
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.manifest.outputs.tag }}
+          release_name: Release ${{ steps.manifest.outputs.tag }}
+          draft: false
+          prerelease: false
+
+      # 4. Upload the zip file as a release asset.
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.manifest.outputs.zip_file }}
+          asset_name: ${{ steps.manifest.outputs.zip_filename }}
+          asset_content_type: application/zip
+
+      # 5. Publish the package to Thunderstore using the uploaded zip.
+      - name: Publish package to Thunderstore
+        uses: GreenTF/upload-thunderstore-package@v4.3
+        with:
+          namespace: Azumatt
+          description: ${{ steps.manifest.outputs.mod_description }}
+          token: ${{ secrets.THUNDERSTORE_TOKEN }}
+          name: ${{ steps.manifest.outputs.mod_name }}
+          version: ${{ steps.manifest.outputs.mod_version }}
+          community: valheim
+          repo: https://thunderstore.io/c/valheim/
+          file: ${{ steps.manifest.outputs.zip_file }}
+          categories: |
+            bog-witch-update
