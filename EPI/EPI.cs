@@ -51,10 +51,45 @@ namespace AzuExtendedPlayerInventory.EPI
             return which >= 0 && inventory.GetItemAt(which, inventory.GetHeight() - addedRows) == null;
         }
 
+        /*internal static bool IsQuickslotFree(Inventory inventory, ItemDrop.ItemData item, out int which)
+        {
+            int addedRows = API.GetAddedRows(inventory.GetWidth());
+
+            // Count the equipment slots (which are not quickslots) in your custom row.
+            List<InventoryGuiPatches.Slot?> quickSlots = InventoryGuiPatches.UpdateInventory_Patch.slots.FindAll(s => s is { IsQuickslot: true });
+            // Find the first available quickslot index in the inventory grid that can hold the item.
+            bool freeslot = false;
+            which = -1; // Default to -1 if no quickslot is found
+            foreach (InventoryGuiPatches.Slot? quickSlot in quickSlots)
+            {
+                // Find the index of this quickslot in the slots list
+                which = InventoryGuiPatches.UpdateInventory_Patch.slots.IndexOf(quickSlot);
+                freeslot = which >= 0 && inventory.GetItemAt(which, inventory.GetHeight() - addedRows) == null;
+                if (freeslot) break;
+            }
+
+            return freeslot;
+        }*/
+
+
         internal static bool IsAtEquipmentSlot(Inventory inventory, ItemDrop.ItemData item, out int which)
         {
             var inventoryRows = inventory.GetHeight() - API.GetAddedRows(inventory.GetWidth());
             if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || item.m_gridPos.y < inventoryRows || (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x >= InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length)
+            {
+                which = -1;
+                return false;
+            }
+
+            which = (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x;
+            return true;
+        }
+
+        // Add a method to get the slots that are not equipment slots but are the quickslots (last 3 slots)
+        internal static bool IsAtQuickSlot(Inventory inventory, ItemDrop.ItemData item, out int which)
+        {
+            var inventoryRows = inventory.GetHeight() - API.GetAddedRows(inventory.GetWidth());
+            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || item.m_gridPos.y < inventoryRows || (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x < InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length)
             {
                 which = -1;
                 return false;
