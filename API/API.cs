@@ -55,7 +55,7 @@ public class API
             InventoryGuiPatches.UpdateInventory_Patch.ResizeSlots();
 
             AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug($"Added slot {slotName}");
-            AddAdditionalValidations();
+            //AddAdditionalValidations();
             SlotAdded?.Invoke(slotName);
 
             return true;

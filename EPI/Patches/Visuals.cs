@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿/*using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -22,10 +22,10 @@ internal static class EquipItem
                 // Unequip the current utility item if it exists
                 if (player.m_utilityItem != null)
                 {
-                    /*// cache the utility item to be unequipped
+                    /#1#/ cache the utility item to be unequipped
                     ItemDrop.ItemData utilityItem = player.m_utilityItem;
                     player.UnequipItem(player.m_utilityItem, triggerEquipmentEffects);
-                    visual.EquippedItems.Remove(player.m_utilityItem);*/
+                    visual.EquippedItems.Remove(player.m_utilityItem);#1#
                     if (ObjectDB.instance?.GetItemPrefab(item.m_dropPrefab?.name) is { } utilityItemPrefab)
                     {
                         ItemDrop.ItemData.SharedData sharedData = utilityItemPrefab.GetComponent<ItemDrop>().m_itemData.m_shared;
@@ -51,9 +51,9 @@ internal static class EquipItem
                     
                     item.m_equipped = true;
 
-                    /*// Set the item back to equipped if it was already equipped
+                    /#1#/ Set the item back to equipped if it was already equipped
                     player.m_utilityItem = utilityItem;
-                    visual.EquippedItems.Add(utilityItem);*/
+                    visual.EquippedItems.Add(utilityItem);#1#
                 }
             }
 
@@ -374,4 +374,4 @@ public static class ReflectionExtensions
 
         return default(T);
     }
-}
+}*/
