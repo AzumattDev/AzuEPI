@@ -24,7 +24,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     }
 
     internal const string ModName = "AzuExtendedPlayerInventory";
-    internal const string ModVersion = "1.4.9";
+    internal const string ModVersion = "1.4.10";
     internal const string Author = "Azumatt";
     private const string ModGUID = Author + "." + ModName;
     private static readonly string ConfigFileName = ModGUID + ".cfg";
@@ -64,6 +64,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         LegsText = config("2 - Extended Inventory", "Legs Text", "Legs", "Text to show for legs slot.", false);
         BackText = config("2 - Extended Inventory", "Back Text", "Back", "Text to show for back slot.", false);
         UtilityText = config("2 - Extended Inventory", "Utility Text", "Utility", "Text to show for utility slot.", false);
+        TrinketText = config("2 - Extended Inventory", "Trinket Text", "Trinket", "Text to show for trinket slot.", false);
 
         QuickAccessScale = config("2 - Extended Inventory", "QuickAccess Scale", 0.85f, "Scale of quick access bar. ", false);
 
@@ -240,6 +241,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<string> ChestText = null!;
     public static ConfigEntry<string> LegsText = null!;
     public static ConfigEntry<string> BackText = null!;
+    public static ConfigEntry<string> TrinketText = null!;
     public static ConfigEntry<string> UtilityText = null!;
     public static ConfigEntry<float> QuickAccessScale = null!;
 

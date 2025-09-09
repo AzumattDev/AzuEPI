@@ -196,7 +196,7 @@ public class PlayerPatches
                 return true;
             Player p = Player.m_localPlayer;
             if (grid.m_inventory == Player.m_localPlayer.GetInventory())
-                if (ExtendedPlayerInventory.IsAtEquipmentSlot(p.m_inventory, item, out int which) && (item == p.m_helmetItem || item == p.m_chestItem || item == p.m_legItem || item == p.m_shoulderItem || item == p.m_utilityItem))
+                if (ExtendedPlayerInventory.IsAtEquipmentSlot(p.m_inventory, item, out int which) && (item == p.m_helmetItem || item == p.m_chestItem || item == p.m_legItem || item == p.m_shoulderItem || item == p.m_utilityItem || item == p.m_trinketItem))
                     if (!p.m_inventory.CanAddItem(item))
                     {
                         AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo("Inventory full, blocking item unequip");

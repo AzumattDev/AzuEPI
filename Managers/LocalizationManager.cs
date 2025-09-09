@@ -4,10 +4,13 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text;
 using BepInEx;
+using BepInEx.Bootstrap;
 using BepInEx.Configuration;
 using HarmonyLib;
 using JetBrains.Annotations;
+using UnityEngine;
 using YamlDotNet.Serialization;
 
 namespace LocalizationManager;
@@ -41,7 +44,7 @@ public class Localizer
                     types = e.Types.Where(t => t != null).Select(t => t.GetTypeInfo());
                 }
 
-                _plugin = (BaseUnityPlugin)BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent(types.First(t => t.IsClass && typeof(BaseUnityPlugin).IsAssignableFrom(t)));
+                _plugin = (BaseUnityPlugin)Chainloader.ManagerObject.GetComponent(types.First(t => t.IsClass && typeof(BaseUnityPlugin).IsAssignableFrom(t)));
             }
 
             return _plugin;
@@ -109,7 +112,9 @@ public class Localizer
         }
     }
 
-    public static void Load() => LoadLocalization(Localization.instance, Localization.instance.GetSelectedLanguage());
+    public static void Load() => _ = plugin;
+    
+    public static void LoadLocalizationLater(Localization __instance) => LoadLocalization(Localization.instance, __instance.GetSelectedLanguage());
 
     private static void LoadLocalization(Localization __instance, string language)
     {
@@ -127,7 +132,7 @@ public class Localizer
             if (localizationFiles.ContainsKey(key))
             {
                 // Handle duplicate key
-                UnityEngine.Debug.LogWarning($"Duplicate key {key} found for {plugin.Info.Metadata.Name}. The duplicate file found at {file} will be skipped.");
+                Debug.LogWarning($"Duplicate key {key} found for {plugin.Info.Metadata.Name}. The duplicate file found at {file} will be skipped.");
             }
             else
             {
@@ -140,7 +145,7 @@ public class Localizer
             throw new Exception($"Found no English localizations in mod {plugin.Info.Metadata.Name}. Expected an embedded resource translations/English.json or translations/English.yml.");
         }
 
-        Dictionary<string, string>? localizationTexts = new DeserializerBuilder().IgnoreFields().Build().Deserialize<Dictionary<string, string>?>(System.Text.Encoding.UTF8.GetString(englishAssemblyData));
+        Dictionary<string, string>? localizationTexts = new DeserializerBuilder().IgnoreFields().Build().Deserialize<Dictionary<string, string>?>(Encoding.UTF8.GetString(englishAssemblyData));
         if (localizationTexts is null)
         {
             throw new Exception($"Localization for mod {plugin.Info.Metadata.Name} failed: Localization file was empty.");
@@ -149,19 +154,19 @@ public class Localizer
         string? localizationData = null;
         if (language != "English")
         {
-            if (localizationFiles.ContainsKey(language))
+            if (localizationFiles.TryGetValue(language, out string? localizationFile))
             {
-                localizationData = File.ReadAllText(localizationFiles[language]);
+                localizationData = File.ReadAllText(localizationFile);
             }
             else if (LoadTranslationFromAssembly(language) is { } languageAssemblyData)
             {
-                localizationData = System.Text.Encoding.UTF8.GetString(languageAssemblyData);
+                localizationData = Encoding.UTF8.GetString(languageAssemblyData);
             }
         }
 
-        if (localizationData is null && localizationFiles.ContainsKey("English"))
+        if (localizationData is null && localizationFiles.TryGetValue("English", out string? localizationFile1))
         {
-            localizationData = File.ReadAllText(localizationFiles["English"]);
+            localizationData = File.ReadAllText(localizationFile1);
         }
 
         if (localizationData is not null)
@@ -182,7 +187,8 @@ public class Localizer
     static Localizer()
     {
         Harmony harmony = new("org.bepinex.helpers.LocalizationManager");
-        harmony.Patch(AccessTools.DeclaredMethod(typeof(Localization), nameof(Localization.LoadCSV)), postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(Localizer), nameof(LoadLocalization))));
+        harmony.Patch(AccessTools.DeclaredMethod(typeof(Localization), nameof(Localization.SetupLanguage)), postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(Localizer), nameof(LoadLocalization))));
+        harmony.Patch(AccessTools.DeclaredMethod(typeof(FejdStartup), nameof(FejdStartup.SetupGui)), postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(Localizer), nameof(LoadLocalizationLater))));
     }
 
     private static byte[]? LoadTranslationFromAssembly(string language)
