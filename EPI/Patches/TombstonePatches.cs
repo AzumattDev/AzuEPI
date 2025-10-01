@@ -1,4 +1,8 @@
-﻿namespace AzuExtendedPlayerInventory.EPI.Patches;
+﻿using AzuEPI;
+using AzuEPI.EPI.Utilities;
+using AzuExtendedPlayerInventory;
+
+namespace AzuExtendedPlayerInventory.EPI.Patches;
 
 public class TombstonePatches
 {
@@ -51,7 +55,7 @@ public class TombstonePatches
 
         private static void Postfix()
         {
-            Utilities.Utilities.InventoryFix();
+            Utilities.InventoryFix();
         }
 
         private static void Finalizer(int __state)

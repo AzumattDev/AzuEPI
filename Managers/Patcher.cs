@@ -1,15 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using BepInEx;
-using BepInEx.Preloader;
+﻿using BepInEx.Preloader;
 using BepInEx.Preloader.Patching;
-using HarmonyLib;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using UnityEngine;
 using CustomAttributeNamedArgument = Mono.Cecil.CustomAttributeNamedArgument;
 using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
@@ -187,14 +179,12 @@ public static class Patcher
 					Directory.CreateDirectory(dumpedAssembliesPath);
 					File.WriteAllBytes(dumpedAssemblyPath, __0);
 
-					// skip main assembly load code
 					assemblyPath = dumpedAssemblyPath;
 					__result = null;
 					return false;
 				}
 				catch (BadImageFormatException)
 				{
-					// No chance, nothing we can do here
 				}
 				catch (Exception e)
 				{
@@ -254,7 +244,7 @@ public static class Patcher
 			{
 				DispatchAttributes(parameter, referencingEntityName);
 
-				for (int i = 0; i < parameter.Constraints.Count; i++)
+				for (int i = 0; i < parameter.Constraints.Count; ++i)
 				{
 					parameter.Constraints[i] = VisitType(parameter.Constraints[i], referencingEntityName);
 				}
@@ -437,7 +427,7 @@ public static class Patcher
 
 		void DispatchGenericArguments(IGenericInstance genericInstance, string referencingEntityName)
 		{
-			for (int i = 0; i < genericInstance.GenericArguments.Count; i++)
+			for (int i = 0; i < genericInstance.GenericArguments.Count; ++i)
 			{
 				genericInstance.GenericArguments[i] = VisitType(genericInstance.GenericArguments[i], referencingEntityName);
 			}

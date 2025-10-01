@@ -1,7 +1,7 @@
-﻿using System.Reflection;
-using AzuExtendedPlayerInventory.EPI.Utilities;
-using BepInEx.Bootstrap;
-using Object = UnityEngine.Object;
+﻿using AzuEPI;
+using AzuEPI.EPI;
+using AzuEPI.EPI.Utilities;
+using AzuExtendedPlayerInventory;
 
 namespace AzuExtendedPlayerInventory.EPI.Patches;
 
@@ -62,11 +62,8 @@ public class PlayerPatches
                     TryAddItemToInventory(fromPlayer, item, fromPlayer.m_inventory, false);
                 }
 
-
-                // Clear QuickSlotInventory after moving items
                 QuickSlotInventory.RemoveAll();
 
-                // Update saved state of QuickSlotInventory
                 pkg = new ZPackage();
                 QuickSlotInventory.Save(pkg);
                 SaveValue(fromPlayer, "QuickSlotInventory", pkg.GetBase64());
@@ -83,10 +80,8 @@ public class PlayerPatches
                     TryAddItemToInventory(fromPlayer, item, fromPlayer.m_inventory);
                 }
 
-                // Clear EquipmentSlotInventory after moving items
                 EquipmentSlotInventory.RemoveAll();
 
-                // Update saved state of EquipmentSlotInventory
                 pkg = new ZPackage();
                 EquipmentSlotInventory.Save(pkg);
                 SaveValue(fromPlayer, "EquipmentSlotInventory", pkg.GetBase64());
@@ -140,7 +135,6 @@ public class PlayerPatches
                 if (itemDrop == null) return;
                 if (itemDrop.m_itemData.m_equipped) itemDrop.m_itemData.m_equipped = false;
 
-
                 bool pickedUp = player.Pickup(itemDrop.gameObject, false, false);
                 if (pickedUp && useItem) player.UseItem(player.GetInventory(), itemDrop.m_itemData, false);
             }
@@ -156,7 +150,7 @@ public class PlayerPatches
             int height = 4 + AzuExtendedPlayerInventoryPlugin.ExtraRows.Value + (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On ? API.GetAddedRows(width) : 0);
             ___m_inventory.m_height = height;
             __instance.m_tombstone.GetComponent<Container>().m_height = height;
-            if (Utilities.Utilities.IgnoreKeyPresses(true) || AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off)
+            if (Utilities.IgnoreKeyPresses(true) || AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off)
                 return;
 
             int hotkey = 0;

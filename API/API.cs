@@ -2,6 +2,7 @@
 using BepInEx.Bootstrap;
 #if ! API
 using AzuExtendedPlayerInventory.EPI.Patches;
+using AzuEPI.PlayerPreview;
 #endif
 
 namespace AzuExtendedPlayerInventory;
@@ -9,27 +10,22 @@ namespace AzuExtendedPlayerInventory;
 [PublicAPI]
 public class API
 {
-    // Delegate types for the event handlers
     public delegate void SlotAddedHandler(string slotName);
 
     public delegate void SlotRemovedHandler(string slotName);
 
+#if !API
     internal static HashSet<InventoryGuiPatches.EquipmentSlot?> CustomSlots { get; } = new();
+#endif
 
-    internal static bool IsCustomSlot(InventoryGuiPatches.EquipmentSlot? slot)
-    {
-        return CustomSlots.Contains(slot);
-    }
-
-    // Using events to allow other code to register for updates.
     public static event Action<Hud>? OnHudAwake;
     public static event Action<Hud>? OnHudAwakeComplete;
     public static event Action<Hud>? OnHudUpdate;
     public static event Action<Hud>? OnHudUpdateComplete;
 
-    // Events fired when a slot is added or removed
     public static event SlotAddedHandler? SlotAdded;
     public static event SlotRemovedHandler? SlotRemoved;
+    public static event Action<string>? OnRegisterVisualPrefab;
 
     public static bool IsLoaded()
     {
@@ -40,28 +36,96 @@ public class API
 #endif
     }
 
-    // Add a new slot
     public static bool AddSlot(string slotName, Func<Player, ItemDrop.ItemData?> getItem, Func<ItemDrop.ItemData, bool> isValid, int index = -1)
     {
-#if ! API
-        if (InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s.Name == slotName) < 0)
+#if !API
+        if (string.IsNullOrWhiteSpace(slotName) || (getItem == null && isValid == null)) return false;
+
+        int existingIdx = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s.Name == slotName);
+        if (existingIdx >= 0 && InventoryGuiPatches.UpdateInventory_Patch.slots[existingIdx] is InventoryGuiPatches.EquipmentSlot existing)
         {
-            InventoryGuiPatches.EquipmentSlot? slot = new() { Name = slotName, Get = getItem, Valid = isValid };
-            if (index < 0 || index > InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length) index = InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length;
-
-            UpdateSlots(index, 1);
-            InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(index, slot);
-            CustomSlots.Add(slot);
-            InventoryGuiPatches.UpdateInventory_Patch.ResizeSlots();
-
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug($"Added slot {slotName}");
-            //AddAdditionalValidations();
-            SlotAdded?.Invoke(slotName);
-
+            ComposeOntoSlot(existing, isValid, getItem);
+            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug($"Extended slot {slotName}");
             return true;
         }
+
+        var slot = new InventoryGuiPatches.EquipmentSlot
+        {
+            Name = slotName.StartsWith("$") && Localization.instance != null ? Localization.instance.Localize(slotName) : slotName,
+            Get = getItem,
+            Valid = isValid
+        };
+
+        if (index < 0 || index > InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length)
+            index = InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length;
+
+        UpdateSlots(index, 1);
+        InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(index, slot);
+        CustomSlots.Add(slot);
+        InventoryGuiPatches.UpdateInventory_Patch.ResizeSlots();
+
+        AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug($"Added slot {slotName}");
+        SlotAdded?.Invoke(slotName);
+
+        return true;
+#else
+    return false;
 #endif
-        return false;
+    }
+
+    public static bool AddSlot(string slotName, string prefabName, int index = -1)
+    {
+#if !API
+        if (string.IsNullOrWhiteSpace(slotName) || string.IsNullOrWhiteSpace(prefabName)) return false;
+
+        bool IsValid(ItemDrop.ItemData item) => item != null && item.m_dropPrefab && item.m_dropPrefab.name == prefabName;
+
+        ItemDrop.ItemData? Get(Player p) => p?.GetInventory()?.GetEquippedItems()
+            ?.FirstOrDefault(i => i != null && i.m_dropPrefab && i.m_dropPrefab.name == prefabName);
+
+        var ok = AddSlot(slotName, Get, IsValid, index);
+        if (ok) RegisterVisualsForSlot(slotName, prefabName);
+        return ok;
+#else
+    return false;
+#endif
+    }
+
+    public static bool AddSlot(string slotName, IEnumerable<string> prefabNames, int index = -1)
+    {
+#if !API
+        if (string.IsNullOrWhiteSpace(slotName) || prefabNames == null) return false;
+
+        var set = new HashSet<string>(prefabNames.Where(n => !string.IsNullOrWhiteSpace(n)), StringComparer.Ordinal);
+        if (set.Count == 0) return false;
+
+        bool IsValid(ItemDrop.ItemData item) => item != null && item.m_dropPrefab && set.Contains(item.m_dropPrefab.name);
+
+        ItemDrop.ItemData? Get(Player p) => p?.GetInventory()?.GetEquippedItems()
+            ?.FirstOrDefault(i => i != null && i.m_dropPrefab && set.Contains(i.m_dropPrefab.name));
+
+        var ok = AddSlot(slotName, Get, IsValid, index);
+        if (ok) RegisterVisualsForSlot(slotName, set.ToArray());
+        return ok;
+#else
+    return false;
+#endif
+    }
+
+    public static bool AddSlot(string slotName, Func<ItemDrop.ItemData, bool> isValid, int index = -1, IEnumerable<string>? prefabNamesForVisuals = null)
+    {
+#if !API
+        if (string.IsNullOrWhiteSpace(slotName) || isValid == null) return false;
+
+        ItemDrop.ItemData? AutoGet(Player p) => p?.GetInventory()?.GetEquippedItems()
+            ?.FirstOrDefault(i => i != null && isValid(i));
+
+        var ok = AddSlot(slotName, AutoGet, isValid, index);
+        if (ok && prefabNamesForVisuals != null) RegisterVisualsForSlot(slotName, prefabNamesForVisuals.ToArray());
+        return ok;
+#else
+    return false;
+#endif
     }
 
     public static bool RemoveSlot(string slotName)
@@ -140,7 +204,6 @@ public class API
 #endif
     }
 
-
     public static int GetAddedRows(int width)
     {
 #if ! API
@@ -151,6 +214,102 @@ public class API
 		return 0;
 #endif
     }
+
+    public static void RegisterVisualPrefabs(string slotName, params (string prefabName, string visualName)[] pairs)
+    {
+#if !API
+        foreach (var (prefab, visual) in pairs)
+        {
+            if (string.IsNullOrWhiteSpace(prefab)) continue;
+            CustomEquipVisuals.Register(prefab);
+            CustomEquipVisuals.RegisterForSlot(prefab, slotName, visual);
+            try
+            {
+                OnRegisterVisualPrefab?.Invoke(prefab);
+            }
+            catch
+            {
+            }
+        }
+#endif
+    }
+
+#if ! API
+    private static void RegisterVisualsForSlot(string slotName, params string[] prefabNames)
+    {
+        if (string.IsNullOrWhiteSpace(slotName) || prefabNames == null) return;
+
+        foreach (var n in prefabNames.Where(s => !string.IsNullOrWhiteSpace(s)))
+        {
+            CustomEquipVisuals.Register(n);
+            CustomEquipVisuals.RegisterForSlot(n, slotName);
+
+            try
+            {
+                OnRegisterVisualPrefab?.Invoke(n);
+            }
+            catch
+            {
+                /* ignore listeners */
+            }
+        }
+    }
+
+    private static void ComposeOntoSlot(InventoryGuiPatches.EquipmentSlot slot, Func<ItemDrop.ItemData, bool> isValid, Func<Player, ItemDrop.ItemData?> getItem)
+    {
+        var originalValid = slot.Valid;
+        var originalGet = slot.Get;
+
+        slot.Valid = item =>
+        {
+            try
+            {
+                if (originalValid?.Invoke(item) == true) return true;
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                if (isValid(item)) return true;
+            }
+            catch
+            {
+            }
+
+            return false;
+        };
+
+        slot.Get = player =>
+        {
+            ItemDrop.ItemData? res = null;
+            try
+            {
+                res = originalGet?.Invoke(player);
+            }
+            catch
+            {
+            }
+
+            if (res != null) return res;
+            try
+            {
+                return getItem(player);
+            }
+            catch
+            {
+                return null;
+            }
+        };
+    }
+
+    internal static bool IsCustomSlot(InventoryGuiPatches.EquipmentSlot? slot)
+    {
+        return CustomSlots.Contains(slot);
+    }
+
+#endif
 
 #if ! API
     public static void HudAwake(Hud __instance)
@@ -175,7 +334,7 @@ public class API
 #endif
 
 #if ! API
-    private static void UpdateSlots(int index, int shift)
+    internal static void UpdateSlots(int index, int shift)
     {
         if (Player.m_localPlayer)
         {
@@ -202,66 +361,6 @@ public class API
             inv.m_height = baseRows + Mathf.CeilToInt((float)(InventoryGuiPatches.UpdateInventory_Patch.slots.Count + shift) / width);
         }
     }
-
-    public static void AddAdditionalValidations()
-    {
-        if (Chainloader.PluginInfos.TryGetValue("vapok.mods.adventurebackpacks", out PluginInfo? advBackpacks))
-            if (advBackpacks != null)
-            {
-                var existingSlot = InventoryGuiPatches.UpdateInventory_Patch.slots.FirstOrDefault(s => s?.Name == Localization.instance.Localize("$bp_backpack_slot_name"));
-                if (existingSlot?.EquipmentSlot != null)
-                {
-                    Func<ItemDrop.ItemData, bool> originalIsValid = existingSlot.EquipmentSlot.Valid;
-                    Func<ItemDrop.ItemData, bool> additionalIsValid = AzuExtendedPlayerInventoryPlugin.IsBackpackItem;
-
-                    // Do the original gets as well
-                    Func<Player, ItemDrop.ItemData?> originalGet = existingSlot.EquipmentSlot.Get;
-                    Func<Player, ItemDrop.ItemData?> additionalGet = AzuExtendedPlayerInventoryPlugin.GetBackpackItem;
-
-
-                    AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning("Adding additional validation for Adventure Backpacks");
-                    existingSlot.EquipmentSlot.Valid = item => originalIsValid(item) || additionalIsValid(item);
-                    existingSlot.EquipmentSlot.Get = player => originalGet(player) ?? additionalGet(player);
-                }
-            }
-    }
-
-    /*public static void AddAdditionalValidations2()
-    {
-        foreach (var existingSlot in InventoryGuiPatches.UpdateInventory_Patch.slots)
-        {
-            if (existingSlot?.EquipmentSlot != null)
-            {
-                Func<ItemDrop.ItemData, bool> originalIsValid = existingSlot.EquipmentSlot.Valid;
-                Func<Player, ItemDrop.ItemData?> originalGet = existingSlot.EquipmentSlot.Get;
-
-                // Combine original validation with additional generic validation
-                existingSlot.EquipmentSlot.Valid = item => originalIsValid(item) || AdditionalValidation(item);
-
-                // Combine original get with additional generic get
-                existingSlot.EquipmentSlot.Get = player => originalGet(player) ?? AdditionalGet(player);
-            }
-        }
-    }
-
-    private static bool AdditionalValidation(ItemDrop.ItemData item)
-    {
-        // Add generic validation logic here
-        // Example: return true if the item is equipable
-        return item.IsEquipable() && PlayerVisual.PlayerVisuals.TryGetValue(Player.m_localPlayer.m_visEquipment, out PlayerVisual visual) && visual.EquippedItems.Contains(item);
-    }
-
-    private static ItemDrop.ItemData? AdditionalGet(Player player)
-    {
-        // Add generic get logic here
-        // Example: find the first item that meets certain criteria
-        if (PlayerVisual.PlayerVisuals.TryGetValue(player.m_visEquipment, out PlayerVisual visual))
-        {
-            return visual.EquippedItems.FirstOrDefault(item => item?.IsEquipable() == true);
-        }
-
-        return null;
-    }*/
 #endif
 }
 

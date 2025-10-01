@@ -1,17 +1,7 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
+﻿using System.Collections;
 using System.Reflection.Emit;
-using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
-using BepInEx;
-using BepInEx.Bootstrap;
-using HarmonyLib;
-using JetBrains.Annotations;
-using UnityEngine;
 
 namespace ItemDataManager;
 
@@ -22,7 +12,6 @@ public abstract class ItemData
 
 	protected virtual bool AllowStackingIdenticalValues { get; set; } = false;
 
-	// Value is the raw data stored on the Item. An ItemData implementing class may either use it directly, or attach a [SerializeField] attribute to at least one field, in which case Value will be maintained by the default Load() and Save() implementations.
 	public string Value
 	{
 		get => Item.m_customData.TryGetValue(CustomDataKey, out string data) ? data : "";
@@ -95,10 +84,6 @@ public abstract class ItemData
 	public virtual void Unload() { }
 	public virtual void Upgraded() { }
 
-	// data arg is ItemData this ItemData is stacked with (identical Key) - if the other item has no such ItemData, null is passed
-	// If null, stacking disallowed.
-	// If non-null, the new item will have ItemData with this new string-value
-	// By default stacking is disallowed. Set AllowStackingIdenticalValues property to true for trivial by Value comparisons.
 	public virtual string? TryStack(ItemData? data) => AllowStackingIdenticalValues && data?.Value == Value ? Value : null;
 
 	private static readonly FieldInfo parameterInfoClassImpl = AccessTools.DeclaredField(typeof(ParameterInfo), "ClassImpl");
@@ -258,7 +243,7 @@ public class ItemInfo : IEnumerable<ItemData>
 		ItemDataManager.ItemData.constructingInfo = selfReference ??= new WeakReference<ItemInfo>(this);
 		T obj = new() { info = selfReference, Key = key, CustomDataKey = fullKey };
 		data[compoundKey] = obj;
-		obj.Value = ""; // initial Store
+		obj.Value = "";
 		obj.FirstLoad();
 		return obj;
 	}
@@ -557,7 +542,6 @@ public class ItemInfo : IEnumerable<ItemData>
 		for (int i = 0; i < instructions.Length; ++i)
 		{
 			yield return instructions[i];
-			// get hold of the loop variable store (the itemdata we want to compare against)
 			if (loadingInstruction == null && instructions[i].opcode == OpCodes.Call && ((MethodInfo)instructions[i].operand).Name == "get_Current")
 			{
 				loadingInstruction = instructions[i + 1].Clone();
@@ -660,9 +644,7 @@ public class ItemInfo : IEnumerable<ItemData>
 
 	private static IEnumerable<CodeInstruction> HandleAutostackableItems(IEnumerable<CodeInstruction> instructionList, ILGenerator ilg)
 	{
-		// Turn:
 		// if (component.m_itemData.m_stack <= num) { ... }
-		// into:
 		// if (component.m_itemData.m_stack <= num && (dict = IsStackable(this, component)) is not null) { ... ApplyCustomItemDataStackableAutoStack(this, dict); }
 
 		List<CodeInstruction> instructions = instructionList.ToList();
@@ -759,7 +741,7 @@ public class ItemInfo : IEnumerable<ItemData>
 					foreach (KeyValuePair<string, string> keyValuePair in item.m_itemData.m_customData)
 					{
 						zdo.Set($"data_{num}", keyValuePair.Key);
-						zdo.Set($"data__{num++}", keyValuePair.Value);
+						zdo.Set($"data__{++num}", keyValuePair.Value);
 					}
 				}
 			}
@@ -810,7 +792,6 @@ public class ItemInfo : IEnumerable<ItemData>
 
 		harmony.Patch(AccessTools.DeclaredMethod(typeof(InventoryGui), nameof(InventoryGui.DoCrafting)), transpiler: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(TransferCustomItemDataOnUpgrade))), finalizer: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(ResetCurrentlyUpgradingItem))));
 
-		// Force loads
 		foreach (MethodInfo method in typeof(ItemDrop.ItemData).GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic).Where(m => m.Name == nameof(ItemDrop.LoadFromZDO)))
 		{
 			harmony.Patch(method, postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(RegisterForceLoadedTypes))));

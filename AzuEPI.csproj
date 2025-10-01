@@ -120,19 +120,22 @@
             <HintPath>$(CorlibPath)\UnityEngine.InputLegacyModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.ParticleSystemModule">
-            <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\UnityEngine.ParticleSystemModule.dll</HintPath>
+            <HintPath>$(CorlibPath)\UnityEngine.ParticleSystemModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.UI">
             <HintPath>$(CorlibPath)\UnityEngine.UI.dll</HintPath>
         </Reference>
         <Reference Include="Unity.TextMeshPro">
-            <HintPath>$(GamePath)\valheim_Data\Managed\Unity.TextMeshPro.dll</HintPath>
+            <HintPath>$(CorlibPath)\Unity.TextMeshPro.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.PhysicsModule">
-            <HintPath>$(GamePath)\valheim_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
+            <HintPath>$(CorlibPath)\UnityEngine.PhysicsModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.ImageConversionModule">
-            <HintPath>$(GamePath)\valheim_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
+            <HintPath>$(CorlibPath)\UnityEngine.ImageConversionModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.TextRenderingModule">
+            <HintPath>$(CorlibPath)\UnityEngine.TextRenderingModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.UIModule">
             <HintPath>$(CorlibPath)\UnityEngine.UIModule.dll</HintPath>
@@ -155,6 +158,8 @@
         <Compile Include="Moveable\MoveableChestInventory.cs"/>
         <Compile Include="Plugin.cs"/>
         <Compile Include="Properties\AssemblyInfo.cs"/>
+        <Compile Include="EPI\Utilities\TerminalCommands.cs"/>
+        <Compile Include="EPI\Patches\BoneReorder.cs"/>
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)|$(Platform)' != 'API|AnyCPU'">
         <Content Include=".gitignore"/>
@@ -173,20 +178,42 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="API\API.cs"/>
-        <Compile Include="EPI\Patches\Visuals.cs"/>
-        <Compile Include="EPI\Utilities\TerminalCommands.cs"/>
-        <Compile Include="GlobalUsings.cs" />
+        <Compile Include="GamepadCompatibility.cs" />
+
+        <Compile Include="GlobalUsings.cs"/>
+
+        <Compile Include="Loadout\LoadoutPatches.cs" />
+
+        <Compile Include="Loadout\PersonalLoadoutGui.cs" />
+
+        <Compile Include="Loadout\PersonalLoadoutGuiDetails.cs" />
+
+        <Compile Include="Loadout\UIDragger.cs" />
+
+        <Compile Include="PlayerPreview\PlayerRotationController.cs" />
+
+        <Compile Include="PlayerPreview\PreviewUI.cs" />
+
+        <Compile Include="PlayerPreview\Stats\Stats.cs" />
+
+        <Compile Include="PlayerPreview\VisualHandler.cs" />
+
+        <Compile Include="Vanity\VanityAPI.cs" />
+
+        <Compile Include="Vanity\VanityPanelController.cs" />
+
+        <Compile Include="Vanity\VanityPatches.cs" />
         <None Include="App.config"/>
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.43">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="YamlDotNet" Version="16.3.0" />
+        <PackageReference Include="YamlDotNet" Version="16.3.0"/>
     </ItemGroup>
     <ItemGroup>
-      <Content Include=".github\workflows\publish-mod.yml" />
+        <Content Include=".github\workflows\publish-mod.yml"/>
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

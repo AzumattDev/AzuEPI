@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using AzuEPI;
+using AzuEPI.EPI;
+using AzuExtendedPlayerInventory;
 
 namespace AzuExtendedPlayerInventory.EPI.Patches;
 
@@ -16,7 +18,6 @@ public class InventoryPatches
                                          && InventoryGui.instance.m_craftUpgradeItem is { } item
                                          && ExtendedPlayerInventory.IsEquipmentSlotFree(__instance, item, out _);
             if (equippedWeaponUpgrade)
-                // When upgrading equipment: AddItem only checks for space. Return an arbitrary slot here. The AddItem(ItemData) patch will move it to the right slot.
                 __result = Vector2i.zero;
 
             int addedRows = API.GetAddedRows(__instance.GetWidth());
@@ -89,7 +90,6 @@ public class InventoryPatches
 
             int adjustedHeight = __instance.GetHeight() - addedRows;
 
-
             __instance.AddItem(item, item.m_stack, which % __instance.GetWidth(), adjustedHeight + which / __instance.GetWidth());
             Player.m_localPlayer.EquipItem(item, false);
             __instance.Changed();
@@ -97,7 +97,6 @@ public class InventoryPatches
             return false;
         }
     }
-
 
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.AddItem), typeof(ItemDrop.ItemData), typeof(int), typeof(int), typeof(int))]
     private static class InventoryAddItemPatch2
@@ -132,7 +131,6 @@ public class InventoryPatches
             return inv.FindFreeStackSpace(item.m_shared.m_name, (float) item.m_worldLevel) >= stack;
         }
     }
-
 
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.MoveInventoryToGrave))]
     private static class MoveInventoryToGravePatch

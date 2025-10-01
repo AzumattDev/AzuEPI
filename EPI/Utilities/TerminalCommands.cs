@@ -3,7 +3,6 @@ using AzuExtendedPlayerInventory;
 
 namespace AzuEPI.EPI.Utilities;
 
-// Patch the Terminal.Init to add commands to the terminal
 [HarmonyPatch(typeof(Terminal), nameof(Terminal.InitTerminal))]
 internal static class TerminalInitTerminalPatch
 {
@@ -30,7 +29,7 @@ internal static class TerminalInitTerminalPatch
                     return;
                 }
 
-                AzuExtendedPlayerInventory.EPI.Utilities.Utilities.InventoryFix();
+                Utilities.InventoryFix();
             });
 
         Terminal.ConsoleCommand BreakEquipment = new("azuepi.breakall", "Break all the equipment in your inventory",
@@ -81,7 +80,6 @@ internal static class TerminalInitTerminalPatch
                     string prefabName = itemData.m_dropPrefab != null ? itemData.m_dropPrefab.name : "";
                     args.Context.AddString($"{prefabName} [{itemData.m_shared.m_name}] ({itemData.m_gridPos.x}, {itemData.m_gridPos.y})");
 
-
                     AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning($"- {prefabName} [{itemData.m_shared.m_name}] ({itemData.m_gridPos.x}, {itemData.m_gridPos.y})");
                 }
             });
@@ -103,7 +101,6 @@ internal static class TerminalInitTerminalPatch
                 }
 
                 while (HaveRepairableItems()) RepairItems();
-
 
                 bool HaveRepairableItems()
                 {
@@ -142,6 +139,41 @@ internal static class TerminalInitTerminalPatch
                     }
 
                     Player.m_localPlayer.Message(MessageHud.MessageType.Center, "No more items to repair");
+                }
+            }, true);
+        
+        Terminal.ConsoleCommand SlotFree = new("azuepi.slotsfree", "List",
+            args =>
+            {
+                if (Player.m_localPlayer == null)
+                {
+                    args.Context.AddString("No local player found, please make sure you're in-game");
+                    return;
+                }
+
+                if (API.GetAddedRows(Player.m_localPlayer.GetInventory().GetWidth()) == 0)
+                {
+                    args.Context.AddString("You don't have any extra rows added");
+                    return;
+                }
+
+                if (ExtendedPlayerInventory.IsEquipmentSlotFree(Player.m_localPlayer.GetInventory(), out int whichEq))
+                {
+                    args.Context.AddString($"You have a free equipment slot at index {whichEq}");
+                }
+                else
+                {
+                    args.Context.AddString("You don't have any free equipment slots");
+                }
+                {
+                }
+                if (ExtendedPlayerInventory.IsQuickSlotFree(Player.m_localPlayer.GetInventory(), out int which))
+                {
+                    args.Context.AddString($"You have a free quickslot at index {which}");
+                }
+                else
+                {
+                    args.Context.AddString("You don't have any free quickslots");
                 }
             }, true);
     }

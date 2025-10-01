@@ -1,5 +1,5 @@
-﻿using UnityEngine.UI;
-using Object = UnityEngine.Object;
+﻿using AzuEPI;
+using AzuEPI.EPI;
 
 namespace AzuExtendedPlayerInventory.EPI.Patches;
 

@@ -1,6 +1,6 @@
-﻿using UnityEngine.EventSystems;
+﻿using AzuExtendedPlayerInventory;
 
-namespace AzuExtendedPlayerInventory.Moveable;
+namespace AzuEPI.Moveable;
 
 public class DragControl : MonoBehaviour, IDragHandler, IEndDragHandler
 {

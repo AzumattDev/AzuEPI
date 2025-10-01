@@ -1,20 +1,19 @@
-﻿using System.Collections.Generic;
-using APIManager;
-using AzuExtendedPlayerInventory.EPI;
+﻿using APIManager;
+using AzuEPI.EPI.Patches;
+using AzuEPI.EPI.QAB;
+using AzuEPI.EPI.Utilities;
+using AzuEPI.Moveable;
+using AzuExtendedPlayerInventory;
 using AzuExtendedPlayerInventory.EPI.Patches;
-using AzuExtendedPlayerInventory.EPI.QAB;
-using AzuExtendedPlayerInventory.EPI.Utilities;
-using AzuExtendedPlayerInventory.Moveable;
-using BepInEx.Bootstrap;
-using BepInEx.Configuration;
 using BepInEx.Logging;
+using LocalizationManager;
 using ServerSync;
 
 namespace AzuExtendedPlayerInventory;
 
 [BepInPlugin(ModGUID, ModName, ModVersion)]
-[BepInDependency("vapok.mods.adventurebackpacks", BepInDependency.DependencyFlags.SoftDependency)] // To make sure we load after Adventure Backpacks
-[BepInDependency("ishid4.mods.betterarchery", BepInDependency.DependencyFlags.SoftDependency)] // To make sure we load after Better Archery
+[BepInDependency("vapok.mods.adventurebackpacks", BepInDependency.DependencyFlags.SoftDependency)]
+[BepInDependency("ishid4.mods.betterarchery", BepInDependency.DependencyFlags.SoftDependency)]
 public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 {
     public enum Toggle
@@ -24,7 +23,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     }
 
     internal const string ModName = "AzuExtendedPlayerInventory";
-    internal const string ModVersion = "1.4.11";
+    internal const string ModVersion = "1.4.12";
     internal const string Author = "Azumatt";
     private const string ModGUID = Author + "." + ModName;
     private static readonly string ConfigFileName = ModGUID + ".cfg";
@@ -39,19 +38,49 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     private void Awake()
     {
+        Localizer.Load();
         Patcher.Patch();
 
         context = this;
         _serverConfigLocked = config("1 - General", "Lock Configuration", Toggle.On, "If on, the configuration is locked and can be changed by server admins only.");
         _ = ConfigSync.AddLockingConfigEntry(_serverConfigLocked);
 
+        WishboneSlot = config("1.5 - Slots", "Wishbone Slot", Toggle.On, "If on, adds a wishbone slot to the equipment row.");
+        WispLightSlot = config("1.5 - Slots", "Demister (Wisplight) Slot", Toggle.On, "If on, adds a demister slot to the equipment row.");
+
+        WishboneSlot.SettingChanged += (sender, args) =>
+        {
+            if (WishboneSlot.Value == Toggle.On)
+            {
+                API.AddSlot("$item_wishbone", "Wishbone", 5);
+            }
+            else
+            {
+                API.RemoveSlot("$item_wishbone");
+                if (Localization.instance != null)
+                    API.RemoveSlot(Localization.instance.Localize("$item_wishbone"));
+            }
+        };
+
+        WispLightSlot.SettingChanged += (sender, args) =>
+        {
+            if (WispLightSlot.Value == Toggle.On)
+            {
+                API.AddSlot("$item_demister", "Demister", WishboneSlot.Value == Toggle.On ? 6 : 5);
+            }
+            else
+            {
+                API.RemoveSlot("$item_demister");
+                if (Localization.instance != null)
+                    API.RemoveSlot(Localization.instance.Localize("$item_demister"));
+            }
+        };
 
         /* Extended Player Inventory Config options */
         AutoEquip = config("2 - Extended Inventory", "Auto Equip", Toggle.On, "Automatically equip items that go into the gear slots. Applies when picking up items, transferring between containers, or picking up your tombstone.");
         ShowQuickSlots = config("2 - Extended Inventory", "Show Quickslots", Toggle.On, "Should the quickslots be shown?");
         ShowQuickSlots.SettingChanged += (sender, args) => { HotkeyBarController.Hud_Update_Patch.DeselectHotkeyBar(); };
         ExtraRows = config("2 - Extended Inventory", "Extra Inventory Rows", 0, "Number of extra ordinary rows. (This can cause overlap with chest GUI, make sure you hold CTRL (the default key) and drag to desired position)");
-        // Fire an event handler on setting change for ExtraRows that will update the inventory size
         ExtraRows.SettingChanged += (sender, args) => { UpdateInventorySize(); };
         AddEquipmentRow = config("2 - Extended Inventory", "Add Equipment Row", Toggle.On, "Add special row for equipped items and quick slots. (IF YOU ARE USING RANDY KNAPPS EAQs KEEP THIS VALUE OFF)");
         AddEquipmentRow.SettingChanged += (sender, args) => { CheckRandy(); };
@@ -86,10 +115,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         MoveableChestInventory.ChestInventoryY = config("3 - Chest Inventory", "Chest Inventory Y", -1f, "Current Y of chest", false);
         MoveableChestInventory.ChestDragKeys = config("3 - Chest Inventory", "Drag Keys (Chest Drag)", new KeyboardShortcut(KeyCode.Mouse0, KeyCode.LeftControl), "Key or keys (to move the container). It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
 
-
         MakeDropAllButton = config("3 - Button", "Drop All Button", Toggle.Off, "Key or keys (to move the container). It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
         DropAllButtonPosition = config("3 - Button", "Button Position", new Vector2(880.00f, 10.00f), "Button position relative to the inventory background's top left corner", false);
-
         Hotkeys = new[]
         {
             HotKey1,
@@ -124,6 +151,20 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         //if (Chainloader.PluginInfos.TryGetValue("vapok.mods.adventurebackpacks", out PluginInfo? advBackpacks))
         //    if (advBackpacks != null)
         //        API.AddSlot("AdvPack", GetBackpackItem, IsBackpackItem);
+
+        if (WishboneSlot.Value == Toggle.On)
+        {
+            API.AddSlot("$item_wishbone", "Wishbone", 5);
+        }
+
+        if (WispLightSlot.Value == Toggle.On)
+        {
+            API.AddSlot("$item_demister", "Demister", WishboneSlot.Value == Toggle.On ? 6 : 5);
+        }
+        var index = InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length;
+        API.UpdateSlots(index, 1);
+        InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(index, new InventoryGuiPatches.EquipmentSlot { Name = TrinketText.Value, IsQuickSlot = false, Get = player => player.m_trinketItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Trinket });
+        InventoryGuiPatches.UpdateInventory_Patch.ResizeSlots();
     }
 
     private void Start()
@@ -131,44 +172,17 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         CheckRandy();
         CheckWeightBase();
 
-        if (Chainloader.PluginInfos.TryGetValue(ExtendedPlayerInventory.MinimalUiguid, out var MinimalUI) && MinimalUI is not null) InventoryGuiPatches.UpdateInventory_Patch.leftOffset += 10;
-
+        //if (Chainloader.PluginInfos.TryGetValue(ExtendedPlayerInventory.MinimalUiguid, out var MinimalUI) && MinimalUI is not null) InventoryGuiPatches.UpdateInventory_Patch.leftOffset += 10;
+        if (Chainloader.PluginInfos.TryGetValue("randyknapp.mods.epicloot", out var RandyEL) && RandyEL is not null)
+        {
+            API.AddSlot("Finger", new[] {"Andvaranaut", "GoldRubyRing", "SilverRing"});
+        }
         InventoryGuiPatches.UpdateInventory_Patch.ResizeSlots();
     }
 
     private void OnDestroy()
     {
         Config.Save();
-    }
-
-
-    internal static ItemDrop.ItemData? GetBackpackItem(Humanoid player)
-    {
-        ItemDrop.ItemData? utilitySlot = player.GetInventory().GetEquippedItems().FirstOrDefault(i => i != null && i.m_dropPrefab
-                                                                                                                && i.m_dropPrefab.name
-                                                                                                                    is "BackpackMeadows"
-                                                                                                                    or "BackpackBlackForest"
-                                                                                                                    or "BackpackSwamp"
-                                                                                                                    or "BackpackMountains"
-                                                                                                                    or "BackpackPlains"
-                                                                                                                    or "BackpackMistlands"
-                                                                                                                    or "CapeSilverBackpack"
-                                                                                                                    or "CapeIronBackpack");
-
-        return utilitySlot;
-    }
-
-    internal static bool IsBackpackItem(ItemDrop.ItemData? item)
-    {
-        return item != null && item.m_dropPrefab && item.m_dropPrefab.name
-            is "BackpackMeadows"
-            or "BackpackBlackForest"
-            or "BackpackSwamp"
-            or "BackpackMountains"
-            or "BackpackPlains"
-            or "BackpackMistlands"
-            or "CapeSilverBackpack"
-            or "CapeIronBackpack";
     }
 
     private void SetupWatcher()
@@ -197,7 +211,6 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         }
     }
 
-    // Create the UpdateInventorySize method
     public static void UpdateInventorySize()
     {
         if (InventoryGui.instance == null) return;
@@ -230,6 +243,9 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     private static ConfigEntry<Toggle> _serverConfigLocked = null!;
     public static ConfigEntry<Toggle> AutoEquip = null!;
+
+    public static ConfigEntry<Toggle> WishboneSlot = null!;
+    public static ConfigEntry<Toggle> WispLightSlot = null!;
 
     public static ConfigEntry<Toggle> AddEquipmentRow = null!;
     public static ConfigEntry<Toggle> DisplayEquipmentRowSeparate = null!;

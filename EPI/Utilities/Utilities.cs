@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
-using BepInEx.Configuration;
+﻿using System.Text.RegularExpressions;
+using AzuExtendedPlayerInventory;
 
-namespace AzuExtendedPlayerInventory.EPI.Utilities;
+namespace AzuEPI.EPI.Utilities;
 
 public class Utilities
 {
@@ -31,6 +31,17 @@ public class Utilities
                || StoreGui.IsVisible() || InventoryGui.IsVisible() || Menu.IsVisible() || TextViewer.instance?.IsVisible() == true;
     }
 
+    internal static int CombineHash(params int[] hashes)
+    {
+        unchecked
+        {
+            int h = 17;
+            foreach (var x in hashes)
+                h = h * 31 + x;
+            return h;
+        }
+    }
+
     public static void InventoryFix()
     {
         if (Player.m_localPlayer == null)
@@ -46,7 +57,7 @@ public class Utilities
                 bool overlappingItem = curPositions.Exists(pos => pos == itemData.m_gridPos);
                 if (overlappingItem || itemData.m_gridPos.x < 0 || itemData.m_gridPos.x >= playerInventory.m_width || itemData.m_gridPos.y < 0 || itemData.m_gridPos.y >= playerInventory.m_height || itemData.m_stack < 1)
                 {
-                    if (itemData.m_stack < 1) playerInventory.RemoveItem(itemData); // Fix anything that has a stack of 0 or less
+                    if (itemData.m_stack < 1) playerInventory.RemoveItem(itemData);
 
                     AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning(
                         overlappingItem
@@ -62,7 +73,6 @@ public class Utilities
 #endif
         foreach (ItemDrop.ItemData brokenItem in itemsToFix) TryAddItemToInventory(playerInventory!, brokenItem);
     }
-
 
     private static void TryAddItemToInventory(Inventory inventory, ItemDrop.ItemData itemData)
     {
@@ -82,7 +92,6 @@ public class Utilities
 public static class KeyboardExtensions
 {
     // thank you to 'Margmas' for giving me this snippet from VNEI https://github.com/MSchmoecker/VNEI/blob/master/VNEI/Logic/BepInExExtensions.cs#L21
-    // since KeyboardShortcut.IsPressed and KeyboardShortcut.IsDown behave un-intuitively
     public static bool IsKeyDown(this KeyboardShortcut shortcut)
     {
         return shortcut.MainKey != KeyCode.None && Input.GetKeyDown(shortcut.MainKey) && shortcut.Modifiers.All(Input.GetKey);
@@ -91,5 +100,15 @@ public static class KeyboardExtensions
     public static bool IsKeyHeld(this KeyboardShortcut shortcut)
     {
         return shortcut.MainKey != KeyCode.None && Input.GetKey(shortcut.MainKey) && shortcut.Modifiers.All(Input.GetKey);
+    }
+}
+
+public static class RegexUtilities
+{
+    private static readonly Regex AlphanumericRegex = new Regex(@"[^a-zA-Z0-9]", RegexOptions.Compiled);
+
+    public static string TrimInvalidCharacters(string input)
+    {
+        return AlphanumericRegex.Replace(input, string.Empty);
     }
 }
