@@ -1,4 +1,5 @@
 ﻿using APIManager;
+using AzuEPI.Compatibility;
 using AzuEPI.EPI.Patches;
 using AzuEPI.EPI.QAB;
 using AzuEPI.EPI.Utilities;
@@ -34,7 +35,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     internal static AzuExtendedPlayerInventoryPlugin context = null!;
     internal static bool WbInstalled;
-    private readonly Harmony _harmony = new(ModGUID);
+    internal readonly Harmony _harmony = new(ModGUID);
 
     private void Awake()
     {
@@ -147,11 +148,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         _harmony.PatchAll();
         SetupWatcher();
-
-        //if (Chainloader.PluginInfos.TryGetValue("vapok.mods.adventurebackpacks", out PluginInfo? advBackpacks))
-        //    if (advBackpacks != null)
-        //        API.AddSlot("AdvPack", GetBackpackItem, IsBackpackItem);
-
+        
         if (WishboneSlot.Value == Toggle.On)
         {
             API.AddSlot("$item_wishbone", "Wishbone", 5);
@@ -161,6 +158,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         {
             API.AddSlot("$item_demister", "Demister", WishboneSlot.Value == Toggle.On ? 6 : 5);
         }
+
         var index = InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length;
         API.UpdateSlots(index, 1);
         InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(index, new InventoryGuiPatches.EquipmentSlot { Name = TrinketText.Value, IsQuickSlot = false, Get = player => player.m_trinketItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Trinket });
@@ -171,12 +169,14 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     {
         CheckRandy();
         CheckWeightBase();
+        AdvBackpacksCompat.Init();
+        JudesEquipmentCompat.Init();
 
-        //if (Chainloader.PluginInfos.TryGetValue(ExtendedPlayerInventory.MinimalUiguid, out var MinimalUI) && MinimalUI is not null) InventoryGuiPatches.UpdateInventory_Patch.leftOffset += 10;
         if (Chainloader.PluginInfos.TryGetValue("randyknapp.mods.epicloot", out var RandyEL) && RandyEL is not null)
         {
-            API.AddSlot("Finger", new[] {"Andvaranaut", "GoldRubyRing", "SilverRing"});
+            API.AddSlot("Finger", new[] { "Andvaranaut", "GoldRubyRing", "SilverRing" });
         }
+
         InventoryGuiPatches.UpdateInventory_Patch.ResizeSlots();
     }
 
@@ -327,4 +327,17 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     }
 
     #endregion
+}
+
+public static class ToggleExtensions
+{
+    public static bool isOn(this AzuExtendedPlayerInventoryPlugin.Toggle toggle)
+    {
+        return toggle == AzuExtendedPlayerInventoryPlugin.Toggle.On;
+    }
+
+    public static bool isOff(this AzuExtendedPlayerInventoryPlugin.Toggle toggle)
+    {
+        return toggle == AzuExtendedPlayerInventoryPlugin.Toggle.Off;
+    }
 }

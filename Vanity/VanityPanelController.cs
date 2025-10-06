@@ -4,7 +4,6 @@ namespace AzuEPI.Vanity;
 
 internal static class VanityPanelController
 {
-
     public const string VanityPanelName = "VanityPanel";
     public const string VanityScrollRootName = "ScrollRoot";
     public const string VanityViewportName = "Viewport";
@@ -67,7 +66,7 @@ internal static class VanityPanelController
         if (!_scroll) BuildScrollTree();
         if (!_toggleBtn) BuildToggleButton(gui);
         if (!_resetVanitiesBtn) BuildResetButton(gui);
-        
+
         _fontSample = gui.m_craftButton?.GetComponentInChildren<TMP_Text>();
 
         RefreshGrid();
@@ -155,6 +154,8 @@ internal static class VanityPanelController
             AddHeader(headerLabel);
             var grid = AddGrid(headerLabel);
 
+            CreateNoneCell(slotPrefab, grid, MapItemTypeToVisSlot(group.Key));
+
             foreach (var data in group)
                 CreateCell(slotPrefab, grid, data, MapItemTypeToVisSlot(group.Key));
         }
@@ -169,13 +170,10 @@ internal static class VanityPanelController
 
     internal static void UpdateSelectedVisuals(VisSlot slot)
     {
-        var player = Player.m_localPlayer;
-        if (!player) return;
-
-        var ve = player.m_visEquipment;
+        var ve = Player.m_localPlayer?.m_visEquipment;
         if (!ve) return;
 
-        int targetHash = slot switch
+        int v = slot switch
         {
             VisSlot.Helmet => VanityAPI.Get(ve, VanityZdoKeys.Helmet),
             VisSlot.Chest => VanityAPI.Get(ve, VanityZdoKeys.Chest),
@@ -185,13 +183,18 @@ internal static class VanityPanelController
             _ => 0
         };
 
+        bool hidden = VanityAPI.IsHidden(v);
+
         if (_cellsBySlot.TryGetValue(slot, out var list))
         {
             foreach (var cell in list)
             {
-                bool isSelected = targetHash != 0 &&
-                                  cell.Item?.m_dropPrefab &&
-                                  cell.Item.m_dropPrefab.name.GetStableHashCode() == targetHash;
+                bool isSelected = cell.IsNone
+                    ? hidden
+                    : (!hidden && v != 0 &&
+                       cell.Item?.m_dropPrefab &&
+                       cell.Item.m_dropPrefab.name.GetStableHashCode() == v);
+
                 if (cell.SelectedBadge) cell.SelectedBadge.SetActive(isSelected);
             }
         }
@@ -274,7 +277,7 @@ internal static class VanityPanelController
         _scroll.scrollSensitivity = 800f;
 
         _viewport = BuildViewport(rootRT);
-       
+
         BuildContentStack(_viewport);
 
         _scroll.viewport = _viewport;
@@ -482,6 +485,79 @@ internal static class VanityPanelController
         return grid;
     }
 
+    private static void CreateNoneCell(GameObject slotPrefab, GridLayoutGroup grid, VisSlot slot)
+    {
+        var go = UnityEngine.Object.Instantiate(slotPrefab, grid.transform);
+        var rt = (RectTransform)go.transform;
+        rt.localScale = Vector3.one;
+
+        var le = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
+        le.minWidth = le.preferredWidth = grid.cellSize.x;
+        le.minHeight = le.preferredHeight = grid.cellSize.y;
+        le.flexibleWidth = 0;
+        le.flexibleHeight = 0;
+
+        var icon = go.transform.Find("icon").GetComponent<Image>();
+        icon.sprite = null;
+        icon.enabled = false;
+
+        DisableChild(go.transform, "amount");
+        DisableChild(go.transform, "equiped");
+        DisableChild(go.transform, "queued");
+        DisableChild(go.transform, "noteleport");
+        DisableChild(go.transform, "foodicon");
+        DisableChild(go.transform, "durability");
+        DisableChild(go.transform, "quality");
+        DisableChild(go.transform, "binding");
+        DisableChildrenContaining(go.transform, "JC_");
+
+        var labelGo = new GameObject("NoneLabel", typeof(RectTransform), typeof(TMP_Text));
+        var labelRT = (RectTransform)labelGo.transform;
+        labelRT.SetParent(go.transform, false);
+        labelRT.anchorMin = new Vector2(0.5f, 0.5f);
+        labelRT.pivot = new Vector2(0.5f, 0.5f);
+        labelRT.anchoredPosition = Vector2.zero;
+
+        var text = labelGo.AddComponent<TextMeshProUGUI>();
+        if (_fontSample)
+        {
+            text.font = _fontSample.font;
+            text.fontSharedMaterial = _fontSample.fontSharedMaterial;
+            text.fontSize = _fontSample.fontSize - 2f;
+            text.color = _fontSample.color;
+            text.enableWordWrapping = false;
+            text.alignment = TextAlignmentOptions.Center;
+        }
+        else
+        {
+            text.fontSize = 16f;
+            text.color = Color.white;
+            text.alignment = TextAlignmentOptions.Center;
+        }
+
+        text.alignment = TextAlignmentOptions.Center;
+        text.enableWordWrapping = true;
+        text.text = Localization.instance?.Localize("$menu_none") ?? "None";
+
+        var selectedBadge = FindOrCreateSelectedBadge(go.transform);
+
+        var btn = go.GetComponent<Button>();
+        btn.onClick = new Button.ButtonClickedEvent();
+
+        var cell = go.GetComponent<VanityCell>() ?? go.AddComponent<VanityCell>();
+        cell.Item = null;
+        cell.Icon = icon;
+        cell.Slot = slot;
+        cell.SelectedBadge = selectedBadge;
+        cell.IsNone = true;
+
+        GetOrCreateSlotList(slot).Add(cell);
+
+        var tooltipForNone = go.GetComponent<UITooltip>() ?? go.AddComponent<UITooltip>();
+        tooltipForNone.m_topic = Localization.instance?.Localize("$menu_none") ?? "None";
+        tooltipForNone.m_text = "";
+    }
+
     private static void CreateCell(GameObject slotPrefab, GridLayoutGroup grid, ItemDrop.ItemData data, VisSlot slot)
     {
         var go = UnityEngine.Object.Instantiate(slotPrefab, grid.transform);
@@ -511,7 +587,7 @@ internal static class VanityPanelController
         DisableChildrenContaining(go.transform, "JC_");
 
         var selectedBadge = FindOrCreateSelectedBadge(go.transform);
-        
+
         var btn = go.GetComponent<Button>();
         btn.onClick = new Button.ButtonClickedEvent();
 
@@ -625,6 +701,7 @@ public class VanityCell : MonoBehaviour
     public Image Icon;
     public VisSlot Slot;
     public GameObject SelectedBadge;
+    public bool IsNone = false;
 
     private void Awake()
     {
@@ -642,6 +719,7 @@ public class VanityCell : MonoBehaviour
 
     private void Update()
     {
+        if (IsNone) return;
         if (!Icon || Item?.m_shared == null || Player.m_localPlayer == null) return;
 
         bool known = Player.m_localPlayer.IsKnownMaterial(Item.m_shared.m_name);
@@ -651,21 +729,42 @@ public class VanityCell : MonoBehaviour
     public void OnRightClick(UIInputHandler _)
     {
         var ve = Player.m_localPlayer?.m_visEquipment;
-        if (!ve || Item?.m_dropPrefab == null) return;
+        var previewVe = AzuEPICharacterPanel.playerPreviewComp?.m_visEquipment;
+        if (!ve) return;
 
+        if (IsNone)
+        {
+            VanityAPI.SetHidden(ve, Slot, false);
+            if (previewVe) VanityAPI.SetHidden(previewVe, Slot, false);
+            VanityPanelController.UpdateSelectedVisuals(Slot);
+            VECloneSync.MirrorFrom(Player.m_localPlayer, AzuEPICharacterPanel.playerPreviewComp);
+            return;
+        }
+
+        if (Item?.m_dropPrefab == null) return;
         VanityAPI.ClearVanity(ve, Slot);
+        if (previewVe) VanityAPI.ClearVanity(previewVe, Slot);
         VanityPanelController.UpdateSelectedVisuals(Slot);
+        VECloneSync.MirrorFrom(Player.m_localPlayer, AzuEPICharacterPanel.playerPreviewComp);
     }
 
     public void OnLeftClick(UIInputHandler _)
     {
-        if (!Player.m_localPlayer.IsKnownMaterial(Item.m_shared.m_name)) return;
-
         var ve = Player.m_localPlayer?.m_visEquipment;
-        if (!ve || Item?.m_dropPrefab == null) return;
-
         var previewVe = AzuEPICharacterPanel.playerPreviewComp?.m_visEquipment;
-        if (!previewVe) return;
+        if (!ve || !previewVe) return;
+
+        if (IsNone)
+        {
+            VanityAPI.SetHidden(ve, Slot, true);
+            VanityAPI.SetHidden(previewVe, Slot, true);
+            VanityPanelController.UpdateSelectedVisuals(Slot);
+            VECloneSync.MirrorFrom(Player.m_localPlayer, AzuEPICharacterPanel.playerPreviewComp);
+            return;
+        }
+
+        if (Item?.m_shared == null || Item.m_dropPrefab == null) return;
+        if (!Player.m_localPlayer.IsKnownMaterial(Item.m_shared.m_name)) return;
 
         string prefab = Item.m_dropPrefab.name;
         switch (Slot)

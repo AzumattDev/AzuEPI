@@ -41,6 +41,18 @@ internal class ExtendedPlayerInventory
         transform1.GetComponent<RectTransform>().sizeDelta = new Vector2(80f, 17f);
         transform1.GetComponent<RectTransform>().anchoredPosition = new Vector2(30f, -10f);
     }
+    
+    private static int LinearIndexIntoEpiBlock(Inventory inv, int x, int y)
+    {
+        int width = inv.GetWidth();
+        int addedRows = API.GetAddedRows(width);
+        int adjustedHeight = inv.GetHeight() - addedRows; // vanilla rows only
+        if (y < adjustedHeight) return -1;
+
+        int baseLinear = adjustedHeight * width;
+        int linear = y * width + x;
+        return linear - baseLinear;
+    }
 
     internal static bool IsEquipmentSlotFree(Inventory inventory, ItemDrop.ItemData item, out int which)
     {
@@ -65,7 +77,7 @@ internal class ExtendedPlayerInventory
     internal static bool IsAtEquipmentSlot(Inventory inventory, ItemDrop.ItemData item, out int which)
     {
         var inventoryRows = inventory.GetHeight() - API.GetAddedRows(inventory.GetWidth());
-        if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || item.m_gridPos.y < inventoryRows || (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x >= InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length)
+        if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.isOff() || item.m_gridPos.y < inventoryRows || (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x >= InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length)
         {
             which = -1;
             return false;
@@ -78,7 +90,7 @@ internal class ExtendedPlayerInventory
     internal static bool IsAtQuickSlot(Inventory inventory, ItemDrop.ItemData item, out int which)
     {
         var inventoryRows = inventory.GetHeight() - API.GetAddedRows(inventory.GetWidth());
-        if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || item.m_gridPos.y < inventoryRows || (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x < InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length)
+        if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.isOff() || item.m_gridPos.y < inventoryRows || (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x < InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length)
         {
             which = -1;
             return false;
@@ -86,6 +98,68 @@ internal class ExtendedPlayerInventory
 
         which = (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x;
         return true;
+    }
+
+    internal static bool IsEquipmentCell(Inventory inv, int x, int y, out int whichSlot)
+    {
+        whichSlot = -1;
+        int li = LinearIndexIntoEpiBlock(inv, x, y);
+        if (li < 0) return false;
+        if (li >= InventoryGuiPatches.UpdateInventory_Patch.slots.Count) return false;
+        if (InventoryGuiPatches.UpdateInventory_Patch.slots[li] is not InventoryGuiPatches.EquipmentSlot) return false;
+        whichSlot = li;
+        return true;
+    }
+
+    internal static bool IsQuickCell(Inventory inv, int x, int y)
+    {
+        int li = LinearIndexIntoEpiBlock(inv, x, y);
+        if (li < 0) return false;
+        if (li >= InventoryGuiPatches.UpdateInventory_Patch.slots.Count) return false;
+        InventoryGuiPatches.Slot? s = InventoryGuiPatches.UpdateInventory_Patch.slots[li];
+        return s is not InventoryGuiPatches.EquipmentSlot && s.IsQuickSlot;
+    }
+
+    internal static bool IsHiddenCell(Inventory inv, int x, int y)
+    {
+        int li = LinearIndexIntoEpiBlock(inv, x, y);
+        return li >= 0 && li >= InventoryGuiPatches.UpdateInventory_Patch.slots.Count;
+    }
+    
+    internal static IEnumerable<Vector2i> EnumerateQuickCells(Inventory inv)
+    {
+        int width = inv.GetWidth();
+        int addedRows = API.GetAddedRows(width);
+        int adjustedHeight = inv.GetHeight() - addedRows;
+
+        int firstLinear = adjustedHeight * width;
+        int total = InventoryGuiPatches.UpdateInventory_Patch.slots.Count;
+
+        int quickCount = AzuExtendedPlayerInventoryPlugin.Hotkeys.Length;
+        int quickStart = total - quickCount;
+        for (int i = quickStart; i < total; i++)
+        {
+            int li = firstLinear + i;
+            yield return new Vector2i(li % width, li / width);
+        }
+    }
+    
+    internal static bool TryFindEmptyQuickCell(Inventory inv, out Vector2i pos)
+    {
+        foreach (var p in EnumerateQuickCells(inv))
+        {
+            if (inv.GetItemAt(p.x, p.y) != null) continue;
+            pos = p;
+            return true;
+        }
+
+        pos = new Vector2i(-1, -1);
+        return false;
+    }
+
+    internal static bool ShouldGuard(Inventory inv)
+    {
+        return Player.m_localPlayer && inv == Player.m_localPlayer.GetInventory() && AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.isOn();
     }
 
     public static void SetElementPositions()

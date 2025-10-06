@@ -10,7 +10,7 @@ public class HudPatches
     {
         private static void Postfix(Hud __instance)
         {
-            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off)
+            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.isOff())
                 return;
 
             API.HudAwake(__instance);
@@ -28,7 +28,7 @@ public class HudPatches
     {
         private static void Postfix(Hud __instance)
         {
-            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || Player.m_localPlayer == null)
+            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.isOff() || Player.m_localPlayer == null)
                 return;
 
             API.HudUpdate(__instance);

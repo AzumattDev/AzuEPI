@@ -1,6 +1,7 @@
 ﻿using System.Reflection.Emit;
 using AzuEPI;
 using AzuEPI.EPI;
+using AzuEPI.EPI.Patches;
 using AzuEPI.EPI.Utilities;
 using AzuEPI.Loadout;
 using AzuEPI.PlayerPreview;
@@ -27,8 +28,8 @@ public class InventoryGuiPatches
             bkg.SetSiblingIndex(index + 2);
             bkg.name = "AzuPlayerBkg";
             bkg.GetComponent<RectTransform>().anchorMin = new Vector2(-0.80f, 0);
-            __instance.m_crafting.Find("RepairSimple").GetComponent<RectTransform>().anchoredPosition += new Vector2(-480f, 0f);
-            __instance.m_crafting.Find("RepairButton").GetComponent<RectTransform>().anchoredPosition += new Vector2(-480f, 0f);
+            __instance.m_crafting.Find("RepairSimple").GetComponent<RectTransform>().anchoredPosition += new Vector2(-460f, 0f);
+            __instance.m_crafting.Find("RepairButton").GetComponent<RectTransform>().anchoredPosition += new Vector2(-460f, 0f);
             __instance.m_crafting.SetSiblingIndex(1);
 
             if (AzuEPICharacterPanel.instance == null)
@@ -119,9 +120,10 @@ public class InventoryGuiPatches
     {
         private static void Postfix(InventoryGui __instance, InventoryGrid ___m_playerGrid, Animator ___m_animator)
         {
-            if (!Player.m_localPlayer)
+            if (!Player.m_localPlayer || !InventoryGui.instance.m_playerGrid)
                 return;
-            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On)
+
+            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.isOn())
             {
                 var player = Player.m_localPlayer;
                 Inventory inventory = player.GetInventory();
@@ -151,29 +153,23 @@ public class InventoryGuiPatches
                 for (int index = 0; index < allItems.Count; ++index)
                 {
                     ItemDrop.ItemData t = allItems[index];
-                    try
+
+                    if (ExtendedPlayerInventory.IsAtEquipmentSlot(inventory, t, out int which) &&
+                        (which <= -1 || t != equippedItems[which]) &&
+                        (which <= -1 || UpdateInventory_Patch.slots[which] is not EquipmentSlot slot || !slot.Valid(t) || ExtendedPlayerInventory.equipItems[which] == t || (AzuExtendedPlayerInventoryPlugin.AutoEquip.Value.isOn() && !player.EquipItem(t, false))))
                     {
-                        if (ExtendedPlayerInventory.IsAtEquipmentSlot(inventory, t, out int which) &&
-                            (which <= -1 || t != equippedItems[which]) &&
-                            (which <= -1 || UpdateInventory_Patch.slots[which] is not EquipmentSlot slot || !slot.Valid(t) || ExtendedPlayerInventory.equipItems[which] == t || (AzuExtendedPlayerInventoryPlugin.AutoEquip.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On && !player.EquipItem(t, false))))
+                        Vector2i vector2I = inventory.FindEmptySlot(true);
+                        if (vector2I.x < 0 || vector2I.y < 0 || vector2I.y >= height - requiredRows)
                         {
-                            Vector2i vector2I = inventory.FindEmptySlot(true);
-                            if (vector2I.x < 0 || vector2I.y < 0 || vector2I.y >= height - requiredRows)
-                            {
-                                // it will drop them simply because it cannot be added to the inventory and it's "outside" the normal inventory when it breaks.
-                                if (t.m_durability > 0 && !inventory.CanAddItem(t))
-                                    player.DropItem(inventory, t, t.m_stack);
-                            }
-                            else
-                            {
-                                t.m_gridPos = vector2I;
-                                ___m_playerGrid.UpdateInventory(inventory, player, null);
-                            }
+                            // it will drop them simply because it cannot be added to the inventory and it's "outside" the normal inventory when it breaks.
+                            if (t.m_durability > 0 && !inventory.CanAddItem(t))
+                                player.DropItem(inventory, t, t.m_stack);
                         }
-                    }
-                    catch
-                    {
-                        // I'm not proud of this one, but it prevents the occasional NRE spam when spawning in for the first time. (and you have weapons in the hidden left/right slots)
+                        else
+                        {
+                            t.m_gridPos = vector2I;
+                            ___m_playerGrid.UpdateInventory(inventory, player, null);
+                        }
                     }
                 }
 
@@ -188,11 +184,18 @@ public class InventoryGuiPatches
 
             if (!___m_animator.GetBool(ExtendedPlayerInventory.Visible))
                 return;
+            if (__instance.m_player.transform.Find("PlayerScroll") == null) // If ValheimPlus didn't add a scrollbar
+            {
+                RectTransform bkgRect = __instance.m_player.Find("Bkg").GetComponent<RectTransform>();
 
-            RectTransform bkgRect = __instance.m_player.Find("Bkg").GetComponent<RectTransform>();
-            bkgRect.anchorMin = new Vector2(0.0f, (AzuExtendedPlayerInventoryPlugin.ExtraRows.Value + (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || AzuExtendedPlayerInventoryPlugin.DisplayEquipmentRowSeparate.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On ? 0 : API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()))) * -0.25f);
+                bkgRect.anchorMin = new Vector2(0.0f, (AzuExtendedPlayerInventoryPlugin.ExtraRows.Value
+                                                       + (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.isOff()
+                                                          || AzuExtendedPlayerInventoryPlugin.DisplayEquipmentRowSeparate.Value.isOn()
+                                                           ? 0
+                                                           : API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()))) * -0.25f);
+            }
 
-            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off)
+            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.isOff())
                 return;
 
             var equipmentBkgTransform = __instance.m_player.Find(ExtendedPlayerInventory.AzuBkgName);
@@ -246,7 +249,7 @@ public class InventoryGuiPatches
                     break;
             }
 
-            if (AzuExtendedPlayerInventoryPlugin.MakeDropAllButton.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On)
+            if (AzuExtendedPlayerInventoryPlugin.MakeDropAllButton.Value.isOn())
             {
                 RectTransform dropAllButtonTransform = null!;
 
@@ -276,6 +279,118 @@ public class InventoryGuiPatches
             {
                 if (dropallButton != null) Object.DestroyImmediate(dropallButton.gameObject);
             }
+
+            UpdateInvalidDropOverlays(__instance, ___m_playerGrid, Player.m_localPlayer);
+        }
+
+        private static void UpdateInvalidDropOverlays(InventoryGui ig, InventoryGrid playerGrid, Player player)
+        {
+            var dragGo = ig.m_dragGo;
+            var dragItem = ig.m_dragItem;
+            bool dragging = dragGo && dragItem != null;
+            var inv = player.GetInventory();
+            int width = inv.GetWidth();
+            int requiredRows = API.GetAddedRows(width);
+            int baseIndex = width * (inv.GetHeight() - requiredRows);
+
+            for (int i = 0; i < UpdateInventory_Patch.slots.Count; ++i)
+            {
+                var slot = UpdateInventory_Patch.slots[i];
+                if (slot == null) continue;
+
+                var elemIdx = baseIndex + i;
+                if (elemIdx < 0 || elemIdx >= playerGrid.m_elements.Count) continue;
+
+                var elem = playerGrid.m_elements[elemIdx];
+                var slotGo = elem.m_go;
+                if (!slotGo) continue;
+
+                var _ = SlotOverlays.EnsureInvalidOverlay(slotGo);
+
+                if (!dragging)
+                {
+                    SlotOverlays.SetInvalidVisible(slotGo, false);
+                    continue;
+                }
+
+                // We skip plain inventory tiles to avoid fighting vanilla stacking logic.
+                bool isLogicalSlot = (slot.IsQuickSlot || slot is EquipmentSlot);
+                if (!isLogicalSlot)
+                {
+                    SlotOverlays.SetInvalidVisible(slotGo, false);
+                    continue;
+                }
+
+                bool allowed = SlotAcceptRules.CanItemGoToSlot(slot, dragItem);
+                SlotOverlays.SetInvalidVisible(slotGo, !allowed);
+            }
+        }
+
+        internal static class SlotAcceptRules
+        {
+            public static bool QuickslotAccepts(ItemDrop.ItemData item) => true; // TODO: Currently accepts anything, maybe later restrict to usable items or by api option?
+
+            public static bool CanItemGoToSlot(Slot slot, ItemDrop.ItemData item)
+            {
+                if (slot is EquipmentSlot { IsAPIAdded: true } es)
+                    return es.Valid(item);
+                if (slot is EquipmentSlot es2)
+                    return es2.Valid(item);
+
+                if (slot.IsQuickSlot)
+                    return QuickslotAccepts(item);
+                return true;
+            }
+        }
+
+        internal static class SlotOverlays
+        {
+            // Cache to avoid repeated GetComponent lookups
+            private static readonly Dictionary<GameObject, GameObject> _invalidByGo = new();
+
+            public static GameObject EnsureInvalidOverlay(GameObject slotGo)
+            {
+                if (_invalidByGo.TryGetValue(slotGo, out var overlay) && overlay)
+                    return overlay;
+                var rt = slotGo.GetComponent<RectTransform>();
+                var ovBkg = new GameObject("EPI_InvalidOverlay", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                var ovBkgRT = (RectTransform)ovBkg.transform;
+                ovBkgRT.SetParent(rt, false);
+                ovBkgRT.anchorMin = Vector2.zero;
+                ovBkgRT.anchorMax = Vector2.one;
+                ovBkgRT.offsetMin = Vector2.zero;
+                ovBkgRT.offsetMax = Vector2.zero;
+                ovBkgRT.pivot = new Vector2(0.5f, 0.5f);
+                var imgBkg = ovBkg.GetComponent<Image>();
+                imgBkg.raycastTarget = false;
+                imgBkg.color = new Color(0f, 0f, 0f, 0.95f);
+
+                var ov = new GameObject("EPI_InvalidOverlayCheck", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                var ovRT = (RectTransform)ov.transform;
+                ovRT.SetParent(ovBkgRT, false);
+                ovRT.anchorMin = Vector2.zero;
+                ovRT.anchorMax = Vector2.one;
+                ovRT.offsetMin = Vector2.zero;
+                ovRT.offsetMax = Vector2.zero;
+                ovRT.pivot = new Vector2(0.5f, 0.5f);
+
+                var img = ov.GetComponent<Image>();
+                img.raycastTarget = false;
+                img.sprite = Resources.FindObjectsOfTypeAll<Sprite>().FirstOrDefault(x => x.name == "mapicon_checked");
+
+                ovBkg.SetActive(false);
+                _invalidByGo[slotGo] = ovBkg;
+                return ovBkg;
+            }
+
+            public static void SetInvalidVisible(GameObject slotGo, bool visible)
+            {
+                if (!_invalidByGo.TryGetValue(slotGo, out var ov) || !ov)
+                    ov = EnsureInvalidOverlay(slotGo);
+
+                if (ov.activeSelf != visible)
+                    ov.SetActive(visible);
+            }
         }
     }
 
@@ -284,6 +399,7 @@ public class InventoryGuiPatches
         public string Name = null!;
         public Vector2 Position;
         public bool IsQuickSlot = false;
+        public bool IsAPIAdded = false;
         public bool Occupied = false;
         public EquipmentSlot? EquipmentSlot => this as EquipmentSlot;
     }
@@ -382,7 +498,7 @@ public class InventoryGuiPatches
 
         private static void Postfix(InventoryGrid ___m_playerGrid)
         {
-            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off)
+            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.isOff())
                 return;
 
             try
@@ -405,7 +521,7 @@ public class InventoryGuiPatches
                     // if .m_used assume it's occupied
                     slots[i].Occupied = currentElement.m_used;
                     ExtendedPlayerInventory.SetSlotText(slots[i]?.Name, currentChild.transform);
-                    if (AzuExtendedPlayerInventoryPlugin.DisplayEquipmentRowSeparate.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On)
+                    if (AzuExtendedPlayerInventoryPlugin.DisplayEquipmentRowSeparate.Value.isOn())
                     {
                         if (InventoryGui.instance)
                             currentChild.GetComponent<RectTransform>().SetParent(InventoryGui.instance.m_crafting);

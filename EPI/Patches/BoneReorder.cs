@@ -7,8 +7,7 @@ namespace AzuEPI.EPI.Patches;
 // Big thank you to Jotunn and GoldenJude for this, it fixes issues with AdventureBackpacks backpacks having incorrectly ordered bones
 internal static class BoneReorder
 {
-    [HarmonyPostfix]
-    [HarmonyPatch(typeof(VisEquipment), nameof(VisEquipment.SetLegEquipped))]
+    [HarmonyPatch(typeof(VisEquipment), nameof(VisEquipment.SetLegEquipped)), HarmonyPostfix]
     private static void VisEquipmentOnSetLegEquiped(VisEquipment __instance, int hash, ref bool __result)
     {
         if (!__result || __instance.m_legItemInstances == null)
@@ -16,8 +15,7 @@ internal static class BoneReorder
         ReorderBones(__instance, hash, __instance.m_legItemInstances);
     }
 
-    [HarmonyPatch(typeof(VisEquipment), nameof(VisEquipment.SetHelmetEquipped))]
-    [HarmonyPostfix]
+    [HarmonyPatch(typeof(VisEquipment), nameof(VisEquipment.SetHelmetEquipped)), HarmonyPostfix]
     private static void VisEquipmentOnSetHelmetEquiped(VisEquipment __instance, int hash, int hairHash, ref bool __result)
     {
         if (!__result || !(__instance.m_helmetItemInstance != null))
@@ -25,8 +23,7 @@ internal static class BoneReorder
         ReorderBones(__instance, hash, new List<GameObject> { __instance.m_helmetItemInstance });
     }
 
-    [HarmonyPatch(typeof(VisEquipment), nameof(VisEquipment.SetChestEquipped))]
-    [HarmonyPostfix]
+    [HarmonyPatch(typeof(VisEquipment), nameof(VisEquipment.SetChestEquipped)), HarmonyPostfix]
     private static void VisEquipmentOnSetChestEquiped(VisEquipment __instance, int hash, ref bool __result)
     {
         if (!__result || __instance.m_chestItemInstances == null)
@@ -34,8 +31,7 @@ internal static class BoneReorder
         ReorderBones(__instance, hash, __instance.m_chestItemInstances);
     }
 
-    [HarmonyPostfix]
-    [HarmonyPatch(typeof(VisEquipment), nameof(VisEquipment.SetShoulderEquipped))]
+    [HarmonyPatch(typeof(VisEquipment), nameof(VisEquipment.SetShoulderEquipped)), HarmonyPostfix]
     private static void VisEquipmentOnSetShoulderEquiped(VisEquipment __instance, int hash, int variant, ref bool __result)
     {
         if (!__result || __instance.m_shoulderItemInstances == null)
@@ -43,8 +39,7 @@ internal static class BoneReorder
         ReorderBones(__instance, hash, __instance.m_shoulderItemInstances);
     }
 
-    [HarmonyPatch(typeof(VisEquipment), nameof(VisEquipment.SetUtilityEquipped))]
-    [HarmonyPostfix]
+    [HarmonyPatch(typeof(VisEquipment), nameof(VisEquipment.SetUtilityEquipped)), HarmonyPostfix]
     private static void VisEquipmentOnSetUtilityEquiped(VisEquipment __instance, int hash, ref bool __result)
     {
         if (!__result || __instance.m_utilityItemInstances == null)
@@ -72,18 +67,16 @@ internal static class BoneReorder
                 for (int index2 = 0; index2 < childCount; ++index2)
                 {
                     Transform child = itemPrefab.transform.GetChild(index2);
-                    if (child.name.StartsWith("attach_skin"))
+                    if (!child.name.StartsWith("attach_skin")) continue;
+                    int index3 = 0;
+                    SkinnedMeshRenderer[] componentsInChildren = instancesToFix[index1].GetComponentsInChildren<SkinnedMeshRenderer>(true);
+                    foreach (SkinnedMeshRenderer componentsInChild in child.GetComponentsInChildren<SkinnedMeshRenderer>(true))
                     {
-                        int index3 = 0;
-                        SkinnedMeshRenderer[] componentsInChildren = instancesToFix[index1].GetComponentsInChildren<SkinnedMeshRenderer>(true);
-                        foreach (SkinnedMeshRenderer componentsInChild in child.GetComponentsInChildren<SkinnedMeshRenderer>(true))
-                        {
-                            componentsInChildren[index3].SetBones(componentsInChild.GetBoneNames(), skeletonRoot);
-                            ++index3;
-                        }
-
-                        ++index1;
+                        componentsInChildren[index3].SetBones(componentsInChild.GetBoneNames(), skeletonRoot);
+                        ++index3;
                     }
+
+                    ++index1;
                 }
             }
         }

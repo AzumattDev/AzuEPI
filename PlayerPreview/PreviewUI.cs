@@ -1,5 +1,7 @@
-﻿using AzuEPI.EPI.Utilities;
+﻿using AzuEPI.EPI.Patches;
+using AzuEPI.EPI.Utilities;
 using AzuEPI.Loadout;
+using AzuExtendedPlayerInventory;
 
 namespace AzuEPI.PlayerPreview;
 
@@ -370,7 +372,7 @@ public class PlayerPreviewManager
         dst.m_visEquipment.SetHairColor(localPlayer.m_hairColor);
         dst.m_visEquipment.SetSkinColor(localPlayer.m_skinColor);
         dst.m_visEquipment.SetModel(localPlayer.m_visEquipment.m_currentModelIndex);
-
+        dst.m_visEquipment.m_isPlayer = true;
         try
         {
             dst.m_visEquipment.UpdateVisuals();

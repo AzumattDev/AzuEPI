@@ -25,7 +25,7 @@ internal static class QuickAccessBar
     {
         if (__instance.name != ExtendedPlayerInventory.QABName) return true;
 
-        if (AzuExtendedPlayerInventoryPlugin.ShowQuickSlots.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off)
+        if (AzuExtendedPlayerInventoryPlugin.ShowQuickSlots.Value.isOff())
         {
             ClearElements(__instance);
         }
@@ -229,14 +229,14 @@ public static class HotkeyBarController
             {
                 if (ZInput.GetButtonDown("JoyDPadLeft"))
                 {
-                    if (hotkeyBar.m_selected == 0 && AzuExtendedPlayerInventoryPlugin.ShowQuickSlots.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On)
+                    if (hotkeyBar.m_selected == 0 && AzuExtendedPlayerInventoryPlugin.ShowQuickSlots.Value.isOn())
                         GotoHotkeyBar(ExtendedPlayerInventory.SelectedHotkeyBarIndex - 1);
                     else
                         hotkeyBar.m_selected = Mathf.Max(0, hotkeyBar.m_selected - 1);
                 }
                 else if (ZInput.GetButtonDown("JoyDPadRight"))
                 {
-                    if (hotkeyBar.m_selected == hotkeyBar.m_elements.Count - 1 && AzuExtendedPlayerInventoryPlugin.ShowQuickSlots.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On)
+                    if (hotkeyBar.m_selected == hotkeyBar.m_elements.Count - 1 && AzuExtendedPlayerInventoryPlugin.ShowQuickSlots.Value.isOn())
                         GotoHotkeyBar(ExtendedPlayerInventory.SelectedHotkeyBarIndex + 1);
                     else
                         hotkeyBar.m_selected = Mathf.Min(hotkeyBar.m_elements.Count - 1, hotkeyBar.m_selected + 1);
@@ -244,7 +244,7 @@ public static class HotkeyBarController
 
                 if (ZInput.GetButtonDown("JoyDPadUp"))
                 {
-                    if (hotkeyBar.name == "QuickAccessBar" && AzuExtendedPlayerInventoryPlugin.ShowQuickSlots.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On)
+                    if (hotkeyBar.name == "QuickAccessBar" && AzuExtendedPlayerInventoryPlugin.ShowQuickSlots.Value.isOn())
                     {
                         var quickSlotInventory = player.m_inventory;
                         int width = quickSlotInventory.GetWidth();

@@ -178,7 +178,9 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="API\API.cs"/>
-        <Compile Include="GamepadCompatibility.cs" />
+        <Compile Include="Compatibility\AdvBackpacks.cs" />
+        <Compile Include="Compatibility\GamepadCompatibility.cs" />
+        <Compile Include="Compatibility\JudesEquipment.cs" />
 
         <Compile Include="GlobalUsings.cs"/>
 

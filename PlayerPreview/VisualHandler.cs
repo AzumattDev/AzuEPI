@@ -31,14 +31,14 @@ public class CustomEquipVisuals
         return string.IsNullOrEmpty(name) ? "" : GetSlotOf(name);
     }
 
-    private static bool IsManaged(ItemDrop.ItemData item) => item?.m_dropPrefab != null && _managed.ContainsKey(item.m_dropPrefab.name);
+    internal static bool IsManaged(ItemDrop.ItemData item) => item?.m_dropPrefab != null && _managed.ContainsKey(item.m_dropPrefab.name);
 
     private static readonly HashSet<string> _registered = new(StringComparer.Ordinal);
-    private static readonly Dictionary<VisEquipment, State> _states = new();
+    internal static readonly Dictionary<VisEquipment, State> _states = new();
 
     private const string ZdoKeyPrefix = "AzuEPICEV_";
 
-    private sealed class State
+    internal sealed class State
     {
         public readonly VisEquipment Vis;
 
@@ -149,7 +149,7 @@ public class CustomEquipVisuals
         }
     }
 
-    private sealed class EquippedEntry
+    internal sealed class EquippedEntry
     {
         public readonly string PrefabName;
         public ItemDrop.ItemData Item;
@@ -160,7 +160,7 @@ public class CustomEquipVisuals
         public EquippedEntry(string prefabName) => PrefabName = prefabName;
     }
 
-    private static string ZdoKeyFor(string prefabName) => ZdoKeyPrefix + prefabName;
+    internal static string ZdoKeyFor(string prefabName) => ZdoKeyPrefix + prefabName;
 
     [HarmonyPatch(typeof(Player), nameof(Player.Awake))]
     private static class PlayerAwake
@@ -221,6 +221,30 @@ public class CustomEquipVisuals
             if (!__instance.m_isPlayer) return;
             if (_states.TryGetValue(__instance, out var st))
                 st.UpdateAllVisuals();
+        }
+    }
+
+    [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.GetSetCount))]
+    static class HumanoidGetSetCountPatch
+    {
+        static void Postfix(Humanoid __instance, string setName, ref int __result)
+        {
+            if (__instance is not Player p) return;
+            var ve = p.m_visEquipment;
+            if (!ve) return;
+            if (!_states.TryGetValue(ve, out var st)) return;
+
+            int count = 0;
+            foreach (var entry in st.Equipped.Values)
+            {
+                var item = entry.Item;
+                if (item != null && item.m_shared.m_setName == setName)
+                {
+                    ++count;
+                }
+            }
+
+            __result += count;
         }
     }
 
@@ -431,46 +455,6 @@ public class CustomEquipVisuals
             st.SetDisplayName(prefab, visualKey);
         }
 
-        private static bool IsReservedItemType(ItemDrop.ItemData.ItemType type)
-        {
-            return type is ItemDrop.ItemData.ItemType.Helmet
-                or ItemDrop.ItemData.ItemType.Chest or ItemDrop.ItemData.ItemType.Shoulder
-                or ItemDrop.ItemData.ItemType.Legs or ItemDrop.ItemData.ItemType.Utility or ItemDrop.ItemData.ItemType.Trinket;
-        }
-
-        /*
-        private static bool PlayerNotAlreadyEquippedWith(Player p, ItemDrop.ItemData.ItemType type)
-        {
-        }
-
-        private static void Prefix(Humanoid __instance, ItemDrop.ItemData item, ref Dictionary<string, ItemDrop.ItemData.ItemType> __state)
-        {
-            if (__instance is not Player p) return;
-            if (item == null || item.m_dropPrefab == null) return;
-
-            var itemType = item.m_shared.m_itemType;
-            if (IsReservedItemType(itemType) && PlayerNotAlreadyEquippedWith(p, itemType) && item.m_equipped == false)
-            {
-                __state = new Dictionary<string, ItemDrop.ItemData.ItemType>(StringComparer.Ordinal) { { item.m_dropPrefab.name, itemType } };
-                item.m_shared.m_itemType = (ItemDrop.ItemData.ItemType)("AzuEPI_".GetStableHashCode() + item.m_dropPrefab.name.GetStableHashCode());
-                if (__instance.m_visEquipment && __instance.m_visEquipment.m_isPlayer)
-                    item.m_shared.m_equipEffect.Create(__instance.transform.position + Vector3.up, __instance.transform.rotation);
-            }
-        }
-
-        [HarmonyPriority(Priority.First)]
-        private static void Postfix(Humanoid __instance, ItemDrop.ItemData item, bool triggerEquipEffects, Dictionary<string, ItemDrop.ItemData.ItemType> __state, ref bool __result)
-        {
-            if (__instance is not Player p) return;
-            if (item == null || item.m_dropPrefab == null || item.m_shared.m_itemType != (ItemDrop.ItemData.ItemType)("AzuEPI_".GetStableHashCode() + item.m_dropPrefab.name.GetStableHashCode()))
-                return;
-            if (__state != null && __state.TryGetValue(item.m_dropPrefab.name, out var originalType))
-            {
-                item.m_shared.m_itemType = originalType;
-            }
-        }
-        */
-
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructionsEnumerable)
         {
             var instructions = instructionsEnumerable.ToList();
@@ -515,7 +499,7 @@ public class CustomEquipVisuals
                 entry.DisplayName = "";
                 st.SetDisplayName(name, "");
             }
-            
+
             /*PlayerPreviewManager.DestroyPlayerPreview();
             PlayerPreviewManager.CreatePlayerPreviewShow();*/
         }

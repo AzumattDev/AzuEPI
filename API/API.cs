@@ -53,7 +53,8 @@ public class API
         {
             Name = slotName.StartsWith("$") && Localization.instance != null ? Localization.instance.Localize(slotName) : slotName,
             Get = getItem,
-            Valid = isValid
+            Valid = isValid,
+            IsAPIAdded = true
         };
 
         if (index < 0 || index > InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length)

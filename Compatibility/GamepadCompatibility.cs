@@ -1,8 +1,7 @@
-﻿using AzuEPI.EPI.Patches;
-using AzuExtendedPlayerInventory;
+﻿using AzuExtendedPlayerInventory;
 using AzuExtendedPlayerInventory.EPI.Patches;
 
-namespace AzuEPI;
+namespace AzuEPI.Compatibility;
 
 internal static class GamepadCompatibility
 {
@@ -83,7 +82,7 @@ internal static class GamepadCompatibility
         int reqRows = API.GetAddedRows(L.Width);
         L.RequiredRowsAdded = reqRows;
         L.HeightPlayer = 4 + AzuExtendedPlayerInventoryPlugin.ExtraRows.Value
-                           + (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.On ? reqRows : 0);
+                           + (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.isOn() ? reqRows : 0);
 
         L.EquipCount = CountEquipmentSlots();
         L.QuickCount = AzuExtendedPlayerInventoryPlugin.Hotkeys.Length;
