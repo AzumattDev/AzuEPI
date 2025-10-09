@@ -22,6 +22,9 @@ public class API
     public static event Action<Hud>? OnHudAwakeComplete;
     public static event Action<Hud>? OnHudUpdate;
     public static event Action<Hud>? OnHudUpdateComplete;
+    
+    public static event Action? OnBeforeQuickSlotsAdded;
+    public static event Action? OnQuickSlotsAdded;
 
     public static event SlotAddedHandler? SlotAdded;
     public static event SlotRemovedHandler? SlotRemoved;
@@ -166,17 +169,17 @@ public class API
 
     public static SlotInfo GetQuickSlots()
     {
-#if ! API
-        string[] fixedSlotNames = AzuExtendedPlayerInventoryPlugin.Hotkeys.Select(hk => hk.Value.ToString()).ToArray();
-
-        InventoryGuiPatches.Slot?[] quickSlots = InventoryGuiPatches.UpdateInventory_Patch.slots.Where(slot => fixedSlotNames.Contains(slot.Name)).ToArray();
+#if !API
+        var quickSlots = InventoryGuiPatches.UpdateInventory_Patch.slots
+            .Where(s => s is { IsQuickSlot: true })
+            .ToArray();
 
         return new SlotInfo
         {
-            SlotNames = quickSlots.Select(s => s.Name).ToArray(),
-            SlotPositions = quickSlots.Select(s => s.Position).ToArray(),
-            GetItemFuncs = quickSlots.Select(s => s.EquipmentSlot?.Get).ToArray(),
-            IsValidFuncs = quickSlots.Select(s => s.EquipmentSlot?.Valid).ToArray()
+            SlotNames = quickSlots.Select(s => s!.Name).ToArray(),
+            SlotPositions = quickSlots.Select(s => s!.Position).ToArray(),
+            GetItemFuncs = quickSlots.Select(s => s!.EquipmentSlot?.Get).ToArray(),
+            IsValidFuncs = quickSlots.Select(s => s!.EquipmentSlot?.Valid).ToArray()
         };
 #else
     return new SlotInfo();
@@ -185,18 +188,25 @@ public class API
 
     public static List<ItemDrop.ItemData> GetQuickSlotsItems()
     {
-#if ! API
+#if !API
         List<ItemDrop.ItemData> quickSlotItems = new();
         if (Player.m_localPlayer == null) return quickSlotItems;
-        Inventory inventory = Player.m_localPlayer.GetInventory();
-        int width = inventory.GetWidth();
-        int adjustedHeight = inventory.GetHeight() - GetAddedRows(width);
-        int firstHotkeyIndex = adjustedHeight * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length;
 
-        for (int i = 0; i < AzuExtendedPlayerInventoryPlugin.Hotkeys.Length; ++i)
+        var inv = Player.m_localPlayer.GetInventory();
+        int w = inv.GetWidth();
+        int rows = GetAddedRows(w);
+        int baseIndex = w * (inv.GetHeight() - rows);
+
+        for (int i = 0; i < InventoryGuiPatches.UpdateInventory_Patch.slots.Count; ++i)
         {
-            int index = firstHotkeyIndex + i;
-            if (inventory.GetItemAt(index % width, index / width) is { } item) quickSlotItems.Add(item);
+            var slot = InventoryGuiPatches.UpdateInventory_Patch.slots[i];
+            if (slot is not { IsQuickSlot: true }) continue;
+
+            int idx = baseIndex + i;
+            int x = idx % w;
+            int y = idx / w;
+            var item = inv.GetItemAt(x, y);
+            if (item != null) quickSlotItems.Add(item);
         }
 
         return quickSlotItems;
@@ -331,6 +341,15 @@ public class API
     public static void HudUpdateComplete(Hud __instance)
     {
         OnHudUpdateComplete?.Invoke(__instance);
+    }
+
+    public static void BeforeQuickSlotsAdded()
+    {
+        OnBeforeQuickSlotsAdded?.Invoke();
+    }
+    public static void QuickSlotsAdded()
+    {
+        OnQuickSlotsAdded?.Invoke();
     }
 #endif
 

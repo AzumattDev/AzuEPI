@@ -450,6 +450,7 @@ public class InventoryGuiPatches
 
         static UpdateInventory_Patch()
         {
+            API.BeforeQuickSlotsAdded();
             for (int i = 0; i < AzuExtendedPlayerInventoryPlugin.Hotkeys.Length; ++i)
                 slots.Add(new Slot
                 {
@@ -458,6 +459,7 @@ public class InventoryGuiPatches
                         : AzuExtendedPlayerInventoryPlugin.HotkeyTexts[i].Value,
                     IsQuickSlot = true,
                 });
+            API.QuickSlotsAdded();
         }
 
         internal static void ResizeSlots()
@@ -543,167 +545,6 @@ public class InventoryGuiPatches
             {
                 AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug($"Exception in EPI Update Inventory: {ex}");
             }
-        }
-    }
-
-    [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.DoCrafting))]
-    internal static class UpgradeInPlace_Patch
-    {
-        public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator il)
-        {
-            var list = new List<CodeInstruction>(instructions);
-
-            var f_mCraftUpgradeItem = AccessTools.Field(typeof(InventoryGui), nameof(InventoryGui.m_craftUpgradeItem));
-
-            var m_GetMaxDurability = AccessTools.Method(typeof(ItemDrop.ItemData), nameof(ItemDrop.ItemData.GetMaxDurability));
-            var m_NoCostCheat = AccessTools.Method(typeof(Player), nameof(Player.NoCostCheat));
-            var m_GetInventory = AccessTools.Method(typeof(Humanoid), nameof(Humanoid.GetInventory));
-            var m_RemoveItem_byName = AccessTools.Method(typeof(Inventory), nameof(Inventory.RemoveItem), new[] { typeof(string), typeof(int), typeof(int), typeof(bool) });
-            var m_UpdateCraftingPanel = AccessTools.Method(typeof(InventoryGui), nameof(InventoryGui.UpdateCraftingPanel), new[] { typeof(bool) });
-            var m_ConsumeResources = AccessTools.Method(typeof(Player), nameof(Player.ConsumeResources), new[] { typeof(Piece.Requirement[]), typeof(int), typeof(int), typeof(int) });
-
-            var m_GetGlobalKey_Enum = AccessTools.Method(typeof(ZoneSystem), nameof(ZoneSystem.GetGlobalKey), new[] { typeof(GlobalKeys) });
-            var m_get_instance = AccessTools.PropertyGetter(typeof(ZoneSystem), nameof(ZoneSystem.instance));
-
-            var obj_opImplicit = AccessTools.Method(typeof(UnityEngine.Object), "op_Implicit", new[] { typeof(UnityEngine.Object) });
-
-            int guardIdx = -1, afterIfIdx = -1;
-            for (int i = 0; i < list.Count - 2; ++i)
-            {
-                if (list[i].opcode == OpCodes.Ldarg_0 &&
-                    list[i + 1].LoadsField(f_mCraftUpgradeItem) &&
-                    (list[i + 2].opcode == OpCodes.Brfalse_S || list[i + 2].opcode == OpCodes.Brfalse))
-                {
-                    guardIdx = i;
-                    var target = (Label)list[i + 2].operand;
-                    afterIfIdx = IndexOfLabel(list, target);
-                    break;
-                }
-            }
-
-            if (guardIdx < 0 || afterIfIdx < 0)
-            {
-                Debug.LogError("[EPI] Transpiler: couldn’t find upgrade guard; leaving IL unchanged.");
-                return list;
-            }
-
-            int effectsIdx = -1;
-            for (int i = afterIfIdx; i < list.Count - 1; ++i)
-            {
-                if ((list[i].opcode == OpCodes.Ldloc_S || list[i].opcode == OpCodes.Ldloc) &&
-                    list[i + 1].opcode == OpCodes.Call &&
-                    Equals(list[i + 1].operand, obj_opImplicit))
-                {
-                    effectsIdx = i;
-                    break;
-                }
-            }
-
-            if (effectsIdx < 0)
-            {
-                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogError("UpgradeInPlace_Patch Transpiler: couldn’t find EFFECTS anchor; leaving IL unchanged.");
-                return list;
-            }
-
-            var effectsLbl = il.DefineLabel();
-            list[effectsIdx].labels ??= new List<Label>();
-            list[effectsIdx].labels.Add(effectsLbl);
-
-            int trueBlockStart = guardIdx + 3;
-            int trueBlockEnd = afterIfIdx;
-
-            var IL = new List<CodeInstruction>();
-
-            // upgradeItem.m_quality = num1;
-            IL.Add(new CodeInstruction(OpCodes.Ldarg_0));
-            IL.Add(CodeInstruction.LoadField(typeof(InventoryGui), nameof(InventoryGui.m_craftUpgradeItem)));
-            IL.Add(new CodeInstruction(OpCodes.Ldloc_0));
-            IL.Add(CodeInstruction.StoreField(typeof(ItemDrop.ItemData), nameof(ItemDrop.ItemData.m_quality)));
-
-            // upgradeItem.m_durability = upgradeItem.GetMaxDurability();
-            IL.Add(new CodeInstruction(OpCodes.Ldarg_0));
-            IL.Add(CodeInstruction.LoadField(typeof(InventoryGui), nameof(InventoryGui.m_craftUpgradeItem)));
-            IL.Add(new CodeInstruction(OpCodes.Dup));
-            IL.Add(new CodeInstruction(OpCodes.Callvirt, m_GetMaxDurability));
-            IL.Add(CodeInstruction.StoreField(typeof(ItemDrop.ItemData), nameof(ItemDrop.ItemData.m_durability)));
-
-            // if (!player.NoCostCheat() && !ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoCraftCost)) { consume … }
-            var costDoneLbl = il.DefineLabel();
-            var haveSingleLbl = il.DefineLabel();
-            var afterCostLbl = il.DefineLabel();
-
-            // if (player.NoCostCheat()) goto costDone;
-            IL.Add(new CodeInstruction(OpCodes.Ldarg_1));
-            IL.Add(new CodeInstruction(OpCodes.Callvirt, m_NoCostCheat));
-            IL.Add(new CodeInstruction(OpCodes.Brtrue_S, costDoneLbl));
-
-            // if (ZoneSystem.instance.GetGlobalKey(GlobalKeys.NoCraftCost)) goto costDone;
-            IL.Add(new CodeInstruction(OpCodes.Call, m_get_instance));
-            IL.Add(new CodeInstruction(OpCodes.Ldc_I4, (int)GlobalKeys.NoCraftCost));
-            IL.Add(new CodeInstruction(OpCodes.Callvirt, m_GetGlobalKey_Enum));
-            IL.Add(new CodeInstruction(OpCodes.Brtrue_S, costDoneLbl));
-
-            // if (singleReqItem != null) RemoveItem(singleReqItem.m_shared.m_name, need, singleReqItem.m_quality, true);
-            IL.Add(new CodeInstruction(OpCodes.Ldloc_S, (byte)4));
-            IL.Add(new CodeInstruction(OpCodes.Brfalse_S, haveSingleLbl));
-
-            // player.GetInventory().RemoveItem(name, need, quality, true);
-            IL.Add(new CodeInstruction(OpCodes.Ldarg_1));
-            IL.Add(new CodeInstruction(OpCodes.Callvirt, m_GetInventory));
-            IL.Add(new CodeInstruction(OpCodes.Ldloc_S, (byte)4));
-            IL.Add(CodeInstruction.LoadField(typeof(ItemDrop.ItemData), nameof(ItemDrop.ItemData.m_shared)));
-            IL.Add(CodeInstruction.LoadField(typeof(ItemDrop.ItemData.SharedData), nameof(ItemDrop.ItemData.SharedData.m_name)));
-            IL.Add(new CodeInstruction(OpCodes.Ldloc_3));
-            IL.Add(new CodeInstruction(OpCodes.Ldloc_S, (byte)4));
-            IL.Add(CodeInstruction.LoadField(typeof(ItemDrop.ItemData), nameof(ItemDrop.ItemData.m_quality)));
-            IL.Add(new CodeInstruction(OpCodes.Ldc_I4_1));
-            IL.Add(new CodeInstruction(OpCodes.Callvirt, m_RemoveItem_byName));
-            IL.Add(new CodeInstruction(OpCodes.Br_S, afterCostLbl));
-
-            IL.Add(MarkLabel(new CodeInstruction(OpCodes.Nop), haveSingleLbl));
-            IL.Add(new CodeInstruction(OpCodes.Ldarg_1));
-            IL.Add(new CodeInstruction(OpCodes.Ldarg_0));
-            IL.Add(CodeInstruction.LoadField(typeof(InventoryGui), nameof(InventoryGui.m_craftRecipe)));
-            IL.Add(CodeInstruction.LoadField(typeof(Recipe), nameof(Recipe.m_resources)));
-            IL.Add(new CodeInstruction(OpCodes.Ldloc_0));
-            IL.Add(new CodeInstruction(OpCodes.Ldc_I4_M1));
-            IL.Add(new CodeInstruction(OpCodes.Ldc_I4_1));
-            IL.Add(new CodeInstruction(OpCodes.Callvirt, m_ConsumeResources));
-            IL.Add(MarkLabel(new CodeInstruction(OpCodes.Nop), afterCostLbl));
-
-            IL.Add(MarkLabel(new CodeInstruction(OpCodes.Nop), costDoneLbl));
-
-            // UpdateCraftingPanel(false);
-            IL.Add(new CodeInstruction(OpCodes.Ldarg_0));
-            IL.Add(new CodeInstruction(OpCodes.Ldc_I4_0));
-            IL.Add(new CodeInstruction(OpCodes.Call, m_UpdateCraftingPanel));
-
-            // jump to vanilla EFFECTS/STATS tail
-            IL.Add(new CodeInstruction(OpCodes.Br, effectsLbl));
-
-            list.RemoveRange(trueBlockStart, trueBlockEnd - trueBlockStart);
-            list.InsertRange(trueBlockStart, IL);
-
-            return list;
-        }
-
-        private static int IndexOfLabel(List<CodeInstruction> list, Label target)
-        {
-            for (int i = 0; i < list.Count; ++i)
-            {
-                var labels = list[i].labels;
-                if (labels != null && labels.Contains(target))
-                    return i;
-            }
-
-            return -1;
-        }
-
-        private static CodeInstruction MarkLabel(CodeInstruction ci, Label label)
-        {
-            ci.labels ??= new List<Label>();
-            ci.labels.Add(label);
-            return ci;
         }
     }
 }

@@ -316,18 +316,25 @@ public class PlayerPreviewManager
         clone.SetActive(false);
         clone.transform.SetPositionAndRotation(AzuEPICharacterPanel.instance.basePosition - Vector3.up, Quaternion.identity);
 
-        void DisableBehaviour<T>() where T : Behaviour
+        void DisableBehaviour<T>(string child = "") where T : Behaviour
         {
-            var c = clone.GetComponent<T>();
+            var cloneChild = string.IsNullOrEmpty(child) ? clone : clone.transform.Find(child)?.gameObject;
+            if (cloneChild == null) return;
+            var c = cloneChild.GetComponent<T>();
             if (c) c.enabled = false;
         }
 
         DisableBehaviour<Player>();
         DisableBehaviour<PlayerController>();
+        DisableBehaviour<ZNetView>();
         DisableBehaviour<ZSyncTransform>();
         DisableBehaviour<ZSyncAnimation>();
         DisableBehaviour<FootStep>();
-        DisableBehaviour<ZNetView>();
+        DisableBehaviour<Talker>();
+        DisableBehaviour<Skills>();
+        DisableBehaviour<FootStep>();
+        DisableBehaviour<Container>();
+        DisableBehaviour<CharacterAnimEvent>("Visual");
         ZNetView.m_forceDisableInit = false;
         var rb = clone.GetComponent<Rigidbody>();
         if (rb) rb.isKinematic = true;
