@@ -143,17 +143,48 @@
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)|$(Platform)' != 'API|AnyCPU'">
         <Compile Include="EPI\EPI.cs"/>
-        <Compile Include="EPI\Patches\InventoryGuiPatches.cs"/>
-        <Compile Include="EPI\Patches\InventoryPatches.cs"/>
-        <Compile Include="EPI\Patches\PlayerPatches.cs"/>
-        <Compile Include="EPI\Patches\TombstonePatches.cs"/>
-        <Compile Include="EPI\Utilities\VersionHandshake.cs"/>
-        <Compile Include="Managers\ItemDataManager.cs"/>
-        <Compile Include="Managers\LocalizationManager.cs"/>
-        <Compile Include="Managers\Patcher.cs"/>
-        <Compile Include="Moveable\DragControl.cs"/>
-        <Compile Include="Moveable\MoveableChestInventory.cs"/>
         <Compile Include="Plugin.cs"/>
+        <Compile Include="Core\Input\GamepadCompatibility.cs"/>
+        <Compile Include="Core\Input\KeyboardExtensions.cs"/>
+        <Compile Include="Core\InventoryHandlers\Capacity.cs"/>
+        <Compile Include="Core\InventoryHandlers\InventoryExtensions.cs"/>
+        <Compile Include="Core\InventoryHandlers\InventoryHealth.cs"/>
+        <Compile Include="Core\InventoryHandlers\Layout.cs"/>
+        <Compile Include="Core\Slots\Model.cs"/>
+        <Compile Include="Core\Slots\Rules.cs"/>
+        <Compile Include="Core\Slots\SlotHelpers.cs"/>
+        <Compile Include="Core\Slots\SlotOverlays.cs"/>
+        <Compile Include="Core\Text\Formatting.cs"/>
+        <Compile Include="Core\Text\SlotText.cs"/>
+        <Compile Include="Core\Utilities\VersionHandshake.cs"/>
+        <Compile Include="Game\CLI\TerminalCommands.cs"/>
+        <Compile Include="Game\Compatibility\AdvBackpacks\AdvBackpacks.cs"/>
+        <Compile Include="Game\Compatibility\AdvBackpacks\BoneReorder.cs"/>
+        <Compile Include="Game\Compatibility\JudesEquipment.cs"/>
+        <Compile Include="Game\Loadout\LoadoutPatches.cs"/>
+        <Compile Include="Game\Loadout\PersonalLoadoutGui.cs"/>
+        <Compile Include="Game\Loadout\PersonalLoadoutGuiDetails.cs"/>
+        <Compile Include="Game\Loadout\UIDragger.cs"/>
+        <Compile Include="Game\Managers\ItemDataManager.cs"/>
+        <Compile Include="Game\Managers\LocalizationManager.cs"/>
+        <Compile Include="Game\Managers\Patcher.cs"/>
+        <Compile Include="Game\Moveable\DragControl.cs"/>
+        <Compile Include="Game\Moveable\MoveableChestInventory.cs"/>
+        <Compile Include="Game\Patches\InventoryGuiPatches.cs"/>
+        <Compile Include="Game\Patches\InventoryPatches.cs"/>
+        <Compile Include="Game\Patches\PlayerPatches.cs"/>
+        <Compile Include="Game\Patches\TombstonePatches.cs"/>
+        <Compile Include="Game\PlayerPreview\PlayerRotationController.cs"/>
+        <Compile Include="Game\PlayerPreview\PreviewUI.cs"/>
+        <Compile Include="Game\PlayerPreview\Stats\Stats.cs"/>
+        <Compile Include="Game\PlayerPreview\VisualHandler.cs"/>
+        <Compile Include="Game\Slots\QAB\HudPatches.cs"/>
+        <Compile Include="Game\Slots\QAB\QAB.cs"/>
+        <Compile Include="Game\Vanity\VanityAPI.cs"/>
+        <Compile Include="Game\Vanity\VanityPanelController.cs"/>
+        <Compile Include="Game\Vanity\VanityPatches.cs"/>
+
+        <Compile Include="GlobalUsings.cs"/>
         <Compile Include="Properties\AssemblyInfo.cs"/>
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)|$(Platform)' != 'API|AnyCPU'">
@@ -173,71 +204,21 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="API\API.cs"/>
-        <Compile Include="CLI\TerminalCommands.cs" />
-        <Compile Include="Compatibility\AdvBackpacks\AdvBackpacks.cs" />
-        <Compile Include="Compatibility\AdvBackpacks\BoneReorder.cs" />
-        <Compile Include="Compatibility\JudesEquipment.cs" />
-
-        <Compile Include="GlobalUsings.cs" />
-
-        <Compile Include="Input\GamepadCompatibility.cs" />
-
-        <Compile Include="Input\KeyboardExtensions.cs" />
-
-        <Compile Include="InventoryHandlers\Capacity.cs" />
-
-        <Compile Include="InventoryHandlers\InventoryExtensions.cs" />
-
-        <Compile Include="InventoryHandlers\InventoryHealth.cs" />
-
-        <Compile Include="InventoryHandlers\Layout.cs" />
-
-        <Compile Include="InventoryHandlers\Placement.cs" />
-
-        <Compile Include="Loadout\LoadoutPatches.cs" />
-
-        <Compile Include="Loadout\PersonalLoadoutGui.cs" />
-
-        <Compile Include="Loadout\PersonalLoadoutGuiDetails.cs" />
-
-        <Compile Include="Loadout\UIDragger.cs" />
-
-        <Compile Include="PlayerPreview\PlayerRotationController.cs" />
-
-        <Compile Include="PlayerPreview\PreviewUI.cs" />
-
-        <Compile Include="PlayerPreview\Stats\Stats.cs" />
-
-        <Compile Include="PlayerPreview\VisualHandler.cs" />
-
-        <Compile Include="Slots\Model.cs" />
-
-        <Compile Include="Slots\QAB\HudPatches.cs" />
-
-        <Compile Include="Slots\QAB\QAB.cs" />
-
-        <Compile Include="Slots\Rules.cs" />
-
-        <Compile Include="Text\Formatting.cs" />
-
-        <Compile Include="Text\RegexHelpers.cs" />
-
-        <Compile Include="Vanity\VanityAPI.cs" />
-
-        <Compile Include="Vanity\VanityPanelController.cs" />
-
-        <Compile Include="Vanity\VanityPatches.cs" />
-        <None Include="App.config" />
+        <None Include="App.config"/>
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.43">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="YamlDotNet" Version="16.3.0" />
+        <PackageReference Include="YamlDotNet" Version="16.3.0"/>
     </ItemGroup>
     <ItemGroup>
-        <Content Include=".github\workflows\publish-mod.yml" />
+        <Content Include=".github\workflows\publish-mod.yml"/>
+    </ItemGroup>
+    <ItemGroup Condition="'$(Configuration)|$(Platform)' != 'API|AnyCPU'">
+        <Folder Include="Core\"/>
+        <Folder Include="Game\Slots\"/>
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -1,18 +1,18 @@
 ﻿using APIManager;
-using AzuEPI.Compatibility;
-using AzuEPI.Compatibility.AdvBackpacks;
-using AzuEPI.EPI.Utilities;
-using AzuEPI.InventoryHandlers;
-using AzuEPI.Moveable;
+using AzuEPI.Core.InventoryHandlers;
+using AzuEPI.Core.Slots;
+using AzuEPI.Game.Compatibility;
+using AzuEPI.Game.Compatibility.AdvBackpacks;
+using AzuEPI.Game.Moveable;
+using AzuEPI.Game.Patches;
 using AzuEPI.Slots;
 using AzuEPI.Slots.QAB;
 using AzuExtendedPlayerInventory;
-using AzuExtendedPlayerInventory.EPI.Patches;
 using BepInEx.Logging;
 using LocalizationManager;
 using ServerSync;
 
-namespace AzuExtendedPlayerInventory;
+namespace AzuEPI;
 
 [BepInPlugin(ModGUID, ModName, ModVersion)]
 [BepInDependency("vapok.mods.adventurebackpacks", BepInDependency.DependencyFlags.SoftDependency)]
@@ -150,7 +150,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         _harmony.PatchAll();
         SetupWatcher();
-        
+
         if (WishboneSlot.Value == Toggle.On)
         {
             API.AddSlot("$item_wishbone", "Wishbone", 5);
@@ -164,7 +164,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         var index = InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length;
         API.UpdateSlots(index, 1);
         InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(index, new Model.EquipmentSlot { Name = TrinketText.Value, IsQuickSlot = false, Get = player => player.m_trinketItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Trinket });
-        InventoryGuiPatches.UpdateInventory_Patch.ResizeSlots();
+        SlotHelpers.ResizeSlots();
     }
 
     private void Start()
@@ -179,7 +179,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             API.AddSlot("Finger", new[] { "Andvaranaut", "GoldRubyRing", "SilverRing" });
         }
 
-        InventoryGuiPatches.UpdateInventory_Patch.ResizeSlots();
+        SlotHelpers.ResizeSlots();
     }
 
     private void OnDestroy()

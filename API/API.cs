@@ -1,9 +1,13 @@
-﻿using System.Collections.Generic;
-using BepInEx.Bootstrap;
-#if ! API
-using AzuExtendedPlayerInventory.EPI.Patches;
+﻿#if !API
 using AzuEPI.PlayerPreview;
-using AzuEPI.Slots;
+using AzuEPI.Core.Slots;
+using AzuEPI.Game.Patches;
+
+# else
+using JetBrains.Annotations;
+using UnityEngine;
+using System;
+using System.Collections.Generic;
 #endif
 
 namespace AzuExtendedPlayerInventory;
@@ -34,7 +38,7 @@ public class API
     public static bool IsLoaded()
     {
 #if API
-		return false;
+        return false;
 #else
         return true;
 #endif
@@ -67,14 +71,14 @@ public class API
         UpdateSlots(index, 1);
         InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(index, slot);
         CustomSlots.Add(slot);
-        InventoryGuiPatches.UpdateInventory_Patch.ResizeSlots();
+        SlotHelpers.ResizeSlots();
 
         AzuExtendedPlayerInventoryLogger.LogDebug($"Added slot {slotName}");
         SlotAdded?.Invoke(slotName);
 
         return true;
 #else
-    return false;
+        return false;
 #endif
     }
 
@@ -92,7 +96,7 @@ public class API
         if (ok) RegisterVisualsForSlot(slotName, prefabName);
         return ok;
 #else
-    return false;
+        return false;
 #endif
     }
 
@@ -113,7 +117,7 @@ public class API
         if (ok) RegisterVisualsForSlot(slotName, set.ToArray());
         return ok;
 #else
-    return false;
+        return false;
 #endif
     }
 
@@ -129,7 +133,7 @@ public class API
         if (ok && prefabNamesForVisuals != null) RegisterVisualsForSlot(slotName, prefabNamesForVisuals.ToArray());
         return ok;
 #else
-    return false;
+        return false;
 #endif
     }
 
@@ -144,7 +148,7 @@ public class API
 
             InventoryGuiPatches.UpdateInventory_Patch.slots.RemoveAt(slotIndex);
 
-            InventoryGuiPatches.UpdateInventory_Patch.ResizeSlots();
+            SlotHelpers.ResizeSlots();
             SlotRemoved?.Invoke(slotName);
 
             return true;
@@ -164,7 +168,7 @@ public class API
             IsValidFuncs = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.EquipmentSlot?.Valid).ToArray()
         };
 #else
-    return new SlotInfo();
+        return new SlotInfo();
 #endif
     }
 
@@ -183,7 +187,7 @@ public class API
             IsValidFuncs = quickSlots.Select(s => s!.EquipmentSlot?.Valid).ToArray()
         };
 #else
-    return new SlotInfo();
+        return new SlotInfo();
 #endif
     }
 
@@ -212,7 +216,7 @@ public class API
 
         return quickSlotItems;
 #else
-    return new List<ItemDrop.ItemData>();
+        return new List<ItemDrop.ItemData>();
 #endif
     }
 
@@ -223,7 +227,7 @@ public class API
         int requiredRows = Mathf.CeilToInt((float)slotsCount / width);
         return requiredRows;
 #else
-		return 0;
+        return 0;
 #endif
     }
 
