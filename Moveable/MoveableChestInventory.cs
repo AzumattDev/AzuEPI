@@ -12,7 +12,7 @@ internal class MoveableChestInventory
     {
         private static void Postfix(InventoryGui __instance)
         {
-            Vector3 mousePos = Input.mousePosition;
+            Vector3 mousePos = UnityEngine.Input.mousePosition;
             if (!__instance.m_container.gameObject.activeSelf)
             {
                 lastMousePos = mousePos;
@@ -35,7 +35,7 @@ internal class MoveableChestInventory
                 position = lastMousePos
             };
 
-            if (!RectTransformUtility.RectangleContainsScreenPoint(__instance.m_containerGrid.m_gridRoot, Input.mousePosition) && ChestDragKeys.Value.IsPressed())
+            if (!RectTransformUtility.RectangleContainsScreenPoint(__instance.m_containerGrid.m_gridRoot, UnityEngine.Input.mousePosition) && ChestDragKeys.Value.IsPressed())
             {
                 List<RaycastResult> raycastResults = new();
                 EventSystem.current.RaycastAll(eventData, raycastResults);

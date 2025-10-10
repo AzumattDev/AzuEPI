@@ -13,12 +13,12 @@ public class UIDragger : EventTrigger
     public void Update()
     {
         if (!_isDragging) return;
-        transform.position = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
+        transform.position = new Vector2(UnityEngine.Input.mousePosition.x, UnityEngine.Input.mousePosition.y);
     }
 
     public override void OnPointerDown(PointerEventData eventData)
     {
-        if (eventData.button != PointerEventData.InputButton.Right || !Input.GetKey(KeyCode.LeftControl)) return;
+        if (eventData.button != PointerEventData.InputButton.Right || !UnityEngine.Input.GetKey(KeyCode.LeftControl)) return;
         _isDragging = true;
     }
 

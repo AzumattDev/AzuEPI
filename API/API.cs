@@ -3,6 +3,7 @@ using BepInEx.Bootstrap;
 #if ! API
 using AzuExtendedPlayerInventory.EPI.Patches;
 using AzuEPI.PlayerPreview;
+using AzuEPI.Slots;
 #endif
 
 namespace AzuExtendedPlayerInventory;
@@ -15,14 +16,14 @@ public class API
     public delegate void SlotRemovedHandler(string slotName);
 
 #if !API
-    internal static HashSet<InventoryGuiPatches.EquipmentSlot?> CustomSlots { get; } = new();
+    internal static HashSet<Model.EquipmentSlot?> CustomSlots { get; } = new();
 #endif
 
     public static event Action<Hud>? OnHudAwake;
     public static event Action<Hud>? OnHudAwakeComplete;
     public static event Action<Hud>? OnHudUpdate;
     public static event Action<Hud>? OnHudUpdateComplete;
-    
+
     public static event Action? OnBeforeQuickSlotsAdded;
     public static event Action? OnQuickSlotsAdded;
 
@@ -45,14 +46,14 @@ public class API
         if (string.IsNullOrWhiteSpace(slotName) || (getItem == null && isValid == null)) return false;
 
         int existingIdx = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s.Name == slotName);
-        if (existingIdx >= 0 && InventoryGuiPatches.UpdateInventory_Patch.slots[existingIdx] is InventoryGuiPatches.EquipmentSlot existing)
+        if (existingIdx >= 0 && InventoryGuiPatches.UpdateInventory_Patch.slots[existingIdx] is Model.EquipmentSlot existing)
         {
             ComposeOntoSlot(existing, isValid, getItem);
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug($"Extended slot {slotName}");
+            AzuExtendedPlayerInventoryLogger.LogDebug($"Extended slot {slotName}");
             return true;
         }
 
-        var slot = new InventoryGuiPatches.EquipmentSlot
+        var slot = new Model.EquipmentSlot
         {
             Name = slotName.StartsWith("$") && Localization.instance != null ? Localization.instance.Localize(slotName) : slotName,
             Get = getItem,
@@ -60,15 +61,15 @@ public class API
             IsAPIAdded = true
         };
 
-        if (index < 0 || index > InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length)
-            index = InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length;
+        if (index < 0 || index > InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length)
+            index = InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length;
 
         UpdateSlots(index, 1);
         InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(index, slot);
         CustomSlots.Add(slot);
         InventoryGuiPatches.UpdateInventory_Patch.ResizeSlots();
 
-        AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug($"Added slot {slotName}");
+        AzuExtendedPlayerInventoryLogger.LogDebug($"Added slot {slotName}");
         SlotAdded?.Invoke(slotName);
 
         return true;
@@ -135,7 +136,7 @@ public class API
     public static bool RemoveSlot(string slotName)
     {
 #if ! API
-        if (InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s.Name == slotName) is { } slotIndex and >= 0 && InventoryGuiPatches.UpdateInventory_Patch.slots[slotIndex] is InventoryGuiPatches.EquipmentSlot slot)
+        if (InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s.Name == slotName) is { } slotIndex and >= 0 && InventoryGuiPatches.UpdateInventory_Patch.slots[slotIndex] is Model.EquipmentSlot slot)
         {
             if (Player.m_localPlayer && slot.Get(Player.m_localPlayer) is { } item) Player.m_localPlayer.UnequipItem(item);
 
@@ -266,7 +267,7 @@ public class API
         }
     }
 
-    private static void ComposeOntoSlot(InventoryGuiPatches.EquipmentSlot slot, Func<ItemDrop.ItemData, bool> isValid, Func<Player, ItemDrop.ItemData?> getItem)
+    private static void ComposeOntoSlot(Model.EquipmentSlot slot, Func<ItemDrop.ItemData, bool> isValid, Func<Player, ItemDrop.ItemData?> getItem)
     {
         var originalValid = slot.Valid;
         var originalGet = slot.Get;
@@ -315,7 +316,7 @@ public class API
         };
     }
 
-    internal static bool IsCustomSlot(InventoryGuiPatches.EquipmentSlot? slot)
+    internal static bool IsCustomSlot(Model.EquipmentSlot? slot)
     {
         return CustomSlots.Contains(slot);
     }
@@ -347,6 +348,7 @@ public class API
     {
         OnBeforeQuickSlotsAdded?.Invoke();
     }
+
     public static void QuickSlotsAdded()
     {
         OnQuickSlotsAdded?.Invoke();
@@ -360,7 +362,7 @@ public class API
         {
             Inventory inv = Player.m_localPlayer.m_inventory;
             int width = inv.GetWidth();
-            int baseRows = 4 + AzuExtendedPlayerInventoryPlugin.ExtraRows.Value;
+            int baseRows = 4 + ExtraRows.Value;
             foreach (ItemDrop.ItemData item in inv.m_inventory)
                 if ((item.m_gridPos.y - baseRows) * width + item.m_gridPos.x >= index)
                 {

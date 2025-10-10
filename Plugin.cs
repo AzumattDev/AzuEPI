@@ -1,9 +1,11 @@
 ﻿using APIManager;
 using AzuEPI.Compatibility;
-using AzuEPI.EPI.Patches;
-using AzuEPI.EPI.QAB;
+using AzuEPI.Compatibility.AdvBackpacks;
 using AzuEPI.EPI.Utilities;
+using AzuEPI.InventoryHandlers;
 using AzuEPI.Moveable;
+using AzuEPI.Slots;
+using AzuEPI.Slots.QAB;
 using AzuExtendedPlayerInventory;
 using AzuExtendedPlayerInventory.EPI.Patches;
 using BepInEx.Logging;
@@ -161,7 +163,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         var index = InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length;
         API.UpdateSlots(index, 1);
-        InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(index, new InventoryGuiPatches.EquipmentSlot { Name = TrinketText.Value, IsQuickSlot = false, Get = player => player.m_trinketItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Trinket });
+        InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(index, new Model.EquipmentSlot { Name = TrinketText.Value, IsQuickSlot = false, Get = player => player.m_trinketItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Trinket });
         InventoryGuiPatches.UpdateInventory_Patch.ResizeSlots();
     }
 
@@ -220,7 +222,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         Player.m_localPlayer.m_tombstone.GetComponent<Container>().m_height = height;
 
         Player.m_localPlayer.m_inventory.Changed();
-        Utilities.InventoryFix();
+        InventoryHealth.InventoryFix();
     }
 
     private static void CheckRandy()

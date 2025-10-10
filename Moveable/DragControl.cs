@@ -9,7 +9,7 @@ public class DragControl : MonoBehaviour, IDragHandler, IEndDragHandler
     private void Start()
     {
         dragRectTransform = GetComponent<RectTransform>();
-        dragRectTransform.anchoredPosition = AzuExtendedPlayerInventoryPlugin.UIAnchor.Value;
+        dragRectTransform.anchoredPosition = UIAnchor.Value;
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -19,6 +19,6 @@ public class DragControl : MonoBehaviour, IDragHandler, IEndDragHandler
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        AzuExtendedPlayerInventoryPlugin.UIAnchor.Value = dragRectTransform.anchoredPosition;
+        UIAnchor.Value = dragRectTransform.anchoredPosition;
     }
 }

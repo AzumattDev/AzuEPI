@@ -86,7 +86,7 @@ public class PersonalLoadoutGuiDetails : MonoBehaviour
         Player localPlayer = Player.m_localPlayer;
         bool isUIBlocking = (Chat.instance != null && Chat.instance.HasFocus()) || Console.IsVisible() || Menu.IsVisible() || (TextViewer.instance != null && TextViewer.instance.IsVisible()) || localPlayer.InCutscene();
 
-        if (isUIBlocking && (ZInput.GetButtonDown("JoyButtonB") || Input.GetKeyDown(KeyCode.Escape) || ZInput.GetButtonDown("Use")))
+        if (isUIBlocking && (ZInput.GetButtonDown("JoyButtonB") || UnityEngine.Input.GetKeyDown(KeyCode.Escape) || ZInput.GetButtonDown("Use")))
         {
             ZInput.ResetButtonStatus("JoyButtonB");
             return true;
@@ -164,7 +164,7 @@ public class PersonalLoadoutGuiDetails : MonoBehaviour
         var src = gui.m_takeAllButton?.transform ?? gui.m_craftButton?.transform;
         if (!src) return;
 
-        var clone = UnityEngine.Object.Instantiate(src, gui.m_crafting);
+        var clone = Instantiate(src, gui.m_crafting);
         clone.name = "AzuEPILoadoutsToggleButton";
         clone.SetAsLastSibling();
 
@@ -179,7 +179,7 @@ public class PersonalLoadoutGuiDetails : MonoBehaviour
         btn.onClick.RemoveAllListeners();
         btn.onClick.AddListener(() => { ToggleUI(); });
 
-        var label = clone.GetComponentInChildren<TMPro.TMP_Text>();
+        var label = clone.GetComponentInChildren<TMP_Text>();
         if (label) label.text = "Loadouts";
 
         _toggleBtn = btn;
@@ -221,15 +221,15 @@ public class PersonalLoadoutGuiDetails : MonoBehaviour
 
         string key = $"{LoadoutKey}{loadoutName}";
         List<ItemDrop.ItemData> equippedItems = player.GetInventory().GetEquippedItems();
-        AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo($"SaveLoadout: Saving loadout '{loadoutName}' with {equippedItems.Count} items.");
+        AzuExtendedPlayerInventoryLogger.LogInfo($"SaveLoadout: Saving loadout '{loadoutName}' with {equippedItems.Count} items.");
         foreach (var item in equippedItems)
         {
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo($" - {item.m_shared.m_name} x{item.m_stack}");
+            AzuExtendedPlayerInventoryLogger.LogInfo($" - {item.m_shared.m_name} x{item.m_stack}");
         }
 
         PersonalLoadoutDetails loadout = new(loadoutName, equippedItems);
         player.m_customData[key] = loadout.Serialize();
-        AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo($"SaveLoadout: Key '{key}' created successfully.");
+        AzuExtendedPlayerInventoryLogger.LogInfo($"SaveLoadout: Key '{key}' created successfully.");
         return true;
     }
 
@@ -280,12 +280,12 @@ public class PersonalLoadoutGuiDetails : MonoBehaviour
 
             if (freeSlots > 0)
             {
-                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning("Attempting to add item: " + item.m_shared.m_name);
+                AzuExtendedPlayerInventoryLogger.LogWarning("Attempting to add item: " + item.m_shared.m_name);
                 bool moved = player.GetInventory().AddItem(item);
-                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning("Move result: " + moved);
+                AzuExtendedPlayerInventoryLogger.LogWarning("Move result: " + moved);
                 if (moved)
                 {
-                    AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning("Equipping item: " + item.m_shared.m_name);
+                    AzuExtendedPlayerInventoryLogger.LogWarning("Equipping item: " + item.m_shared.m_name);
                     player.EquipItem(item);
                 }
 
@@ -314,7 +314,7 @@ public class PersonalLoadoutGuiDetails : MonoBehaviour
             if (!player.GetInventory().AddItem(it))
             {
                 player.EquipItem(it);
-                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning($"No space to unequip {it.m_shared.m_name}");
+                AzuExtendedPlayerInventoryLogger.LogWarning($"No space to unequip {it.m_shared.m_name}");
             }
         }
     }

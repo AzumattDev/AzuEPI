@@ -20,16 +20,16 @@ public class PlayerRotationController : MonoBehaviour, IDragHandler, IEndDragHan
         {
             if (!dragging)
             {
-                lastMousePosition = Input.mousePosition;
+                lastMousePosition = UnityEngine.Input.mousePosition;
                 dragging = true;
             }
 
-            pitch = Mathf.Clamp(pitch + (lastMousePosition - Input.mousePosition).y, -80, 80);
-            yaw -= (lastMousePosition - Input.mousePosition).x;
+            pitch = Mathf.Clamp(pitch + (lastMousePosition - UnityEngine.Input.mousePosition).y, -80, 80);
+            yaw -= (lastMousePosition - UnityEngine.Input.mousePosition).x;
             AzuEPICharacterPanel.instance.cam.transform.rotation = Quaternion.AngleAxis(yaw, Vector3.up) * Quaternion.AngleAxis(pitch, Vector3.right);
             AzuEPICharacterPanel.instance.cam.transform.eulerAngles = new Vector3(AzuEPICharacterPanel.instance.cam.transform.eulerAngles.x, AzuEPICharacterPanel.instance.cam.transform.eulerAngles.y, 0);
             AzuEPICharacterPanel.instance.cam.transform.position = AzuEPICharacterPanel.instance.basePosition + AzuEPICharacterPanel.instance.cam.transform.forward * zoom;
-            lastMousePosition = Input.mousePosition;
+            lastMousePosition = UnityEngine.Input.mousePosition;
         }
     }
 
@@ -42,7 +42,7 @@ public class PlayerRotationController : MonoBehaviour, IDragHandler, IEndDragHan
     {
         if (AzuEPICharacterPanel.instance.render.rect.Contains((Vector2)transform.InverseTransformPoint(ZInput.mousePosition)))
         {
-            float scroll = Input.GetAxis("Mouse ScrollWheel");
+            float scroll = UnityEngine.Input.GetAxis("Mouse ScrollWheel");
 
             if (scroll != 0)
             {

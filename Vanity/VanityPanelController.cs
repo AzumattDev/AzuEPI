@@ -233,7 +233,7 @@ internal static class VanityPanelController
         var srcBkg = crafting.Find("Bkg");
         if (!srcBkg) return;
 
-        var vanity = UnityEngine.Object.Instantiate(srcBkg, crafting);
+        var vanity = Object.Instantiate(srcBkg, crafting);
         vanity.name = VanityPanelName;
 
         _panel = vanity.GetComponent<RectTransform>();
@@ -255,7 +255,7 @@ internal static class VanityPanelController
         if (store && store.GetComponentInChildren<ScrollRect>())
         {
             var src = store.GetComponentInChildren<ScrollRect>().gameObject;
-            scrollRoot = UnityEngine.Object.Instantiate(src, _panel);
+            scrollRoot = Object.Instantiate(src, _panel);
         }
         else
         {
@@ -334,7 +334,7 @@ internal static class VanityPanelController
         GameObject barGO;
         if (InventoryGui.instance.m_recipeListScroll)
         {
-            barGO = UnityEngine.Object.Instantiate(InventoryGui.instance.m_recipeListScroll.gameObject, panelParent);
+            barGO = Object.Instantiate(InventoryGui.instance.m_recipeListScroll.gameObject, panelParent);
             barGO.name = VanityScrollbarName;
         }
         else
@@ -487,7 +487,7 @@ internal static class VanityPanelController
 
     private static void CreateNoneCell(GameObject slotPrefab, GridLayoutGroup grid, VisSlot slot)
     {
-        var go = UnityEngine.Object.Instantiate(slotPrefab, grid.transform);
+        var go = Object.Instantiate(slotPrefab, grid.transform);
         var rt = (RectTransform)go.transform;
         rt.localScale = Vector3.one;
 
@@ -560,7 +560,7 @@ internal static class VanityPanelController
 
     private static void CreateCell(GameObject slotPrefab, GridLayoutGroup grid, ItemDrop.ItemData data, VisSlot slot)
     {
-        var go = UnityEngine.Object.Instantiate(slotPrefab, grid.transform);
+        var go = Object.Instantiate(slotPrefab, grid.transform);
         var rt = (RectTransform)go.transform;
         rt.localScale = Vector3.one;
 
@@ -670,7 +670,7 @@ internal static class VanityPanelController
     private static void ClearChildren(Transform t)
     {
         for (int i = t.childCount - 1; i >= 0; --i)
-            UnityEngine.Object.Destroy(t.GetChild(i).gameObject);
+            Object.Destroy(t.GetChild(i).gameObject);
     }
 
     private static List<VanityCell> GetOrCreateSlotList(VisSlot slot)

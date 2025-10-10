@@ -1,5 +1,4 @@
-﻿using AzuEPI.EPI.Patches;
-using AzuEPI.EPI.Utilities;
+﻿using AzuEPI.EPI.Utilities;
 using AzuEPI.Loadout;
 using AzuExtendedPlayerInventory;
 
@@ -186,7 +185,7 @@ static class VECloneSync
             RightBack = string.IsNullOrEmpty(src.m_rightBackItem) ? 0 : src.m_rightBackItem.GetStableHashCode();
         }
 
-        int stamp = Utilities.CombineHash(
+        int stamp = CombineHash(
             src.m_modelIndex,
             src.m_skinColor.GetHashCode(), src.m_hairColor.GetHashCode(),
             LeftItem, LeftVar, RightItem,
@@ -228,6 +227,17 @@ static class VECloneSync
         }
 
         dst.enabled = false;
+    }
+
+    internal static int CombineHash(params int[] hashes)
+    {
+        unchecked
+        {
+            int h = 17;
+            foreach (var x in hashes)
+                h = h * 31 + x;
+            return h;
+        }
     }
 }
 

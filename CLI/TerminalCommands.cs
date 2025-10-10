@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using AzuEPI.InventoryHandlers;
 using AzuExtendedPlayerInventory;
 
-namespace AzuEPI.EPI.Utilities;
+namespace AzuEPI.CLI;
 
 [HarmonyPatch(typeof(Terminal), nameof(Terminal.InitTerminal))]
 internal static class TerminalInitTerminalPatch
@@ -29,7 +29,7 @@ internal static class TerminalInitTerminalPatch
                     return;
                 }
 
-                Utilities.InventoryFix();
+                InventoryHealth.InventoryFix();
             });
 
         Terminal.ConsoleCommand BreakEquipment = new("azuepi.breakall", "Break all the equipment in your inventory",
@@ -73,14 +73,14 @@ internal static class TerminalInitTerminalPatch
                 }
 
                 Inventory inventory = Player.m_localPlayer.GetInventory();
-                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning($"inv: {inventory.m_name}, ({inventory.m_width}, {inventory.m_height})");
+                AzuExtendedPlayerInventoryLogger.LogWarning($"inv: {inventory.m_name}, ({inventory.m_width}, {inventory.m_height})");
                 args.Context.AddString($"inv: {inventory.m_name}, ({inventory.m_width}, {inventory.m_height})");
                 foreach (ItemDrop.ItemData? itemData in inventory.m_inventory)
                 {
                     string prefabName = itemData.m_dropPrefab != null ? itemData.m_dropPrefab.name : "";
                     args.Context.AddString($"{prefabName} [{itemData.m_shared.m_name}] ({itemData.m_gridPos.x}, {itemData.m_gridPos.y})");
 
-                    AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning($"- {prefabName} [{itemData.m_shared.m_name}] ({itemData.m_gridPos.x}, {itemData.m_gridPos.y})");
+                    AzuExtendedPlayerInventoryLogger.LogWarning($"- {prefabName} [{itemData.m_shared.m_name}] ({itemData.m_gridPos.x}, {itemData.m_gridPos.y})");
                 }
             });
 
@@ -141,7 +141,7 @@ internal static class TerminalInitTerminalPatch
                     Player.m_localPlayer.Message(MessageHud.MessageType.Center, "No more items to repair");
                 }
             }, true);
-        
+
         Terminal.ConsoleCommand SlotFree = new("azuepi.slotsfree", "List",
             args =>
             {
@@ -157,7 +157,7 @@ internal static class TerminalInitTerminalPatch
                     return;
                 }
 
-                if (ExtendedPlayerInventory.IsEquipmentSlotFree(Player.m_localPlayer.GetInventory(), out int whichEq))
+                if (Player.m_localPlayer.GetInventory().IsEquipmentSlotFree(out int whichEq))
                 {
                     args.Context.AddString($"You have a free equipment slot at index {whichEq}");
                 }
@@ -165,9 +165,10 @@ internal static class TerminalInitTerminalPatch
                 {
                     args.Context.AddString("You don't have any free equipment slots");
                 }
+
                 {
                 }
-                if (ExtendedPlayerInventory.IsQuickSlotFree(Player.m_localPlayer.GetInventory(), out int which))
+                if (Player.m_localPlayer.GetInventory().IsQuickSlotFree(out int which))
                 {
                     args.Context.AddString($"You have a free quickslot at index {which}");
                 }

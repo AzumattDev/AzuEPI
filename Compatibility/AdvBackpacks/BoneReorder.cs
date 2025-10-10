@@ -1,8 +1,7 @@
 ﻿#nullable disable
-using System.Collections.Generic;
 using AzuExtendedPlayerInventory;
 
-namespace AzuEPI.EPI.Patches;
+namespace AzuEPI.Compatibility.AdvBackpacks;
 
 // Big thank you to Jotunn and GoldenJude for this, it fixes issues with AdventureBackpacks backpacks having incorrectly ordered bones
 internal static class BoneReorder
@@ -57,11 +56,11 @@ internal static class BoneReorder
             GameObject itemPrefab = ObjectDB.instance.GetItemPrefab(itemPrefabHash);
             if (!skeletonRoot || !itemPrefab)
             {
-                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug($"Prefab missing components. Skipping {itemPrefab} {skeletonRoot}");
+                AzuExtendedPlayerInventoryLogger.LogDebug($"Prefab missing components. Skipping {itemPrefab} {skeletonRoot}");
             }
             else
             {
-                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug("Reordering bones");
+                AzuExtendedPlayerInventoryLogger.LogDebug("Reordering bones");
                 int childCount = itemPrefab.transform.childCount;
                 int index1 = 0;
                 for (int index2 = 0; index2 < childCount; ++index2)
@@ -82,7 +81,7 @@ internal static class BoneReorder
         }
         catch (Exception ex)
         {
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning($"Exception caught while reordering bones: {ex}");
+            AzuExtendedPlayerInventoryLogger.LogWarning($"Exception caught while reordering bones: {ex}");
         }
     }
 

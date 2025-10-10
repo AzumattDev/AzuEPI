@@ -1,8 +1,7 @@
-﻿using AzuEPI;
-using AzuEPI.EPI.Utilities;
+﻿using AzuEPI.InventoryHandlers;
 using AzuExtendedPlayerInventory;
 
-namespace AzuExtendedPlayerInventory.EPI.Patches;
+namespace AzuEPI.EPI.Patches;
 
 public class TombstonePatches
 {
@@ -11,9 +10,9 @@ public class TombstonePatches
     {
         private static void Prefix(TombStone __instance)
         {
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug("TombStone_Awake");
+            AzuExtendedPlayerInventoryLogger.LogDebug("TombStone_Awake");
 
-            int height = 4 + AzuExtendedPlayerInventoryPlugin.ExtraRows.Value + (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.isOn() ? API.GetAddedRows(__instance.GetComponent<Container>().m_width) : 0);
+            int height = 4 + ExtraRows.Value + (AddEquipmentRow.Value.isOn() ? API.GetAddedRows(__instance.GetComponent<Container>().m_width) : 0);
 
             __instance.GetComponent<Container>().m_height = height;
         }
@@ -24,8 +23,8 @@ public class TombstonePatches
     {
         private static void Prefix(TombStone __instance, Container ___m_container)
         {
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug("TombStone_Interact");
-            int num = 4 + AzuExtendedPlayerInventoryPlugin.ExtraRows.Value + (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.isOn() ? API.GetAddedRows(__instance.GetComponent<Container>().m_width) : 0);
+            AzuExtendedPlayerInventoryLogger.LogDebug("TombStone_Interact");
+            int num = 4 + ExtraRows.Value + (AddEquipmentRow.Value.isOn() ? API.GetAddedRows(__instance.GetComponent<Container>().m_width) : 0);
             __instance.GetComponent<Container>().m_height = num;
             string base64String = ___m_container.m_nview.GetZDO().GetString(ZDOVars.s_items);
             if (string.IsNullOrEmpty(base64String))
@@ -48,14 +47,14 @@ public class TombstonePatches
         {
             _playerCurrentPickupState = Player.m_enableAutoPickup;
             Player.m_enableAutoPickup = false; // Temporarily disable auto pickup to prevent NRE
-            __state = AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.isOn() ? API.GetAddedRows(Player.m_localPlayer.m_inventory.m_width) : 0;
+            __state = AddEquipmentRow.Value.isOn() ? API.GetAddedRows(Player.m_localPlayer.m_inventory.m_width) : 0;
             Player.m_localPlayer.m_maxCarryWeight += 150f;
             Player.m_localPlayer.m_inventory.m_height += __state;
         }
 
         private static void Postfix()
         {
-            Utilities.InventoryFix();
+            InventoryHealth.InventoryFix();
         }
 
         private static void Finalizer(int __state)

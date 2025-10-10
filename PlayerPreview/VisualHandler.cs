@@ -1,5 +1,5 @@
 ﻿using System.Reflection.Emit;
-using AzuEPI.EPI.Patches;
+using AzuEPI.Compatibility.AdvBackpacks;
 
 namespace AzuEPI.PlayerPreview;
 
@@ -58,7 +58,7 @@ public class CustomEquipVisuals
             {
                 foreach (var go in entry.Instances)
                     if (go)
-                        UnityEngine.Object.Destroy(go);
+                        Object.Destroy(go);
                 entry.Instances.Clear();
             }
 

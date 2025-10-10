@@ -1,7 +1,9 @@
-﻿using AzuExtendedPlayerInventory;
+﻿using AzuEPI.EPI;
+using AzuEPI.Text;
+using AzuExtendedPlayerInventory;
 using AzuExtendedPlayerInventory.EPI.Patches;
 
-namespace AzuEPI.EPI.QAB;
+namespace AzuEPI.Slots.QAB;
 
 [HarmonyPatch]
 internal static class SettingsMenuClosedRecentlyPatchs
@@ -25,7 +27,7 @@ internal static class QuickAccessBar
     {
         if (__instance.name != ExtendedPlayerInventory.QABName) return true;
 
-        if (AzuExtendedPlayerInventoryPlugin.ShowQuickSlots.Value.isOff())
+        if (ShowQuickSlots.Value.isOff())
         {
             ClearElements(__instance);
         }
@@ -47,9 +49,9 @@ internal static class QuickAccessBar
                 Inventory inventory = player.GetInventory();
                 int width = inventory.GetWidth();
                 int adjustedHeight = inventory.GetHeight() - API.GetAddedRows(width);
-                int firstHotkeyIndex = adjustedHeight * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length;
+                int firstHotkeyIndex = adjustedHeight * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length;
 
-                for (int i = 0; i < AzuExtendedPlayerInventoryPlugin.Hotkeys.Length; ++i)
+                for (int i = 0; i < Hotkeys.Length; ++i)
                 {
                     int index = firstHotkeyIndex + i;
                     if (inventory.GetItemAt(index % width, index / width) is { } item) __instance.m_items.Add(item);
@@ -70,10 +72,10 @@ internal static class QuickAccessBar
                             m_go = Object.Instantiate(__instance.m_elementPrefab, __instance.transform)
                         };
                         elementData.m_go.transform.localPosition = new Vector3(index * __instance.m_elementSpace, 0.0f, 0.0f);
-                        if (index < AzuExtendedPlayerInventoryPlugin.HotkeyTexts.Length && index < AzuExtendedPlayerInventoryPlugin.Hotkeys.Length)
-                            ExtendedPlayerInventory.SetSlotText(AzuExtendedPlayerInventoryPlugin.HotkeyTexts[index].Value.IsNullOrWhiteSpace()
-                                ? AzuExtendedPlayerInventoryPlugin.Hotkeys[index].Value.ToString()
-                                : AzuExtendedPlayerInventoryPlugin.HotkeyTexts[index].Value, elementData.m_go.transform, false);
+                        if (index < HotkeyTexts.Length && index < Hotkeys.Length)
+                            ExtendedPlayerInventory.SetSlotText(HotkeyTexts[index].Value.IsNullOrWhiteSpace()
+                                ? Hotkeys[index].Value.ToString()
+                                : HotkeyTexts[index].Value, elementData.m_go.transform, false);
 
                         elementData.m_icon = elementData.m_go.transform.transform.Find("icon").GetComponent<Image>();
                         elementData.m_durability = elementData.m_go.transform.Find("durability").GetComponent<GuiBar>();
@@ -120,7 +122,7 @@ internal static class QuickAccessBar
                             element.m_amount.gameObject.SetActive(true);
                             if (element.m_stackText != itemData.m_stack)
                             {
-                                element.m_amount.text = AzuExtendedPlayerInventoryPlugin.WbInstalled ? Utilities.Utilities.FormatNumberSimpleNoDecimal(itemData.m_stack) : $"{itemData.m_stack} / {itemData.m_shared.m_maxStackSize}";
+                                element.m_amount.text = WbInstalled ? Formatting.FormatNumberSimpleNoDecimal(itemData.m_stack) : $"{itemData.m_stack} / {itemData.m_shared.m_maxStackSize}";
 
                                 element.m_stackText = itemData.m_stack;
                             }
@@ -186,7 +188,7 @@ public static class HotkeyBarController
                 }
                 catch
                 {
-                    AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogError($"Failed to get hotkey bars from Hud. The parent transform may have changed. {__instance.transform.parent.name}");
+                    AzuExtendedPlayerInventoryLogger.LogError($"Failed to get hotkey bars from Hud. The parent transform may have changed. {__instance.transform.parent.name}");
                     return;
                 }
 
@@ -229,14 +231,14 @@ public static class HotkeyBarController
             {
                 if (ZInput.GetButtonDown("JoyDPadLeft"))
                 {
-                    if (hotkeyBar.m_selected == 0 && AzuExtendedPlayerInventoryPlugin.ShowQuickSlots.Value.isOn())
+                    if (hotkeyBar.m_selected == 0 && ShowQuickSlots.Value.isOn())
                         GotoHotkeyBar(ExtendedPlayerInventory.SelectedHotkeyBarIndex - 1);
                     else
                         hotkeyBar.m_selected = Mathf.Max(0, hotkeyBar.m_selected - 1);
                 }
                 else if (ZInput.GetButtonDown("JoyDPadRight"))
                 {
-                    if (hotkeyBar.m_selected == hotkeyBar.m_elements.Count - 1 && AzuExtendedPlayerInventoryPlugin.ShowQuickSlots.Value.isOn())
+                    if (hotkeyBar.m_selected == hotkeyBar.m_elements.Count - 1 && ShowQuickSlots.Value.isOn())
                         GotoHotkeyBar(ExtendedPlayerInventory.SelectedHotkeyBarIndex + 1);
                     else
                         hotkeyBar.m_selected = Mathf.Min(hotkeyBar.m_elements.Count - 1, hotkeyBar.m_selected + 1);
@@ -244,17 +246,17 @@ public static class HotkeyBarController
 
                 if (ZInput.GetButtonDown("JoyDPadUp"))
                 {
-                    if (hotkeyBar.name == "QuickAccessBar" && AzuExtendedPlayerInventoryPlugin.ShowQuickSlots.Value.isOn())
+                    if (hotkeyBar.name == "QuickAccessBar" && ShowQuickSlots.Value.isOn())
                     {
                         var quickSlotInventory = player.m_inventory;
                         int width = quickSlotInventory.GetWidth();
                         int adjustedHeight = quickSlotInventory.GetHeight() - API.GetAddedRows(width);
-                        int index = adjustedHeight * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length + hotkeyBar.m_selected;
+                        int index = adjustedHeight * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length + hotkeyBar.m_selected;
 
                         var item = quickSlotInventory.GetItemAt(index % width, index / width);
                         if (item != null)
                         {
-                            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogInfo($"QuickAccessBar item {item.m_shared.m_name}");
+                            AzuExtendedPlayerInventoryLogger.LogInfo($"QuickAccessBar item {item.m_shared.m_name}");
                             player.UseItem(null, item, false);
                         }
                     }

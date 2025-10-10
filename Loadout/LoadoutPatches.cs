@@ -17,7 +17,7 @@ static class PlayerSpawnedPatch
 
             if (rootPanel == null)
             {
-                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogError("StoreGui.instance is null");
+                AzuExtendedPlayerInventoryLogger.LogError("StoreGui.instance is null");
                 return;
             }
 
@@ -28,7 +28,7 @@ static class PlayerSpawnedPatch
 
             if (newRootPanel == null || itemsetGui == null)
             {
-                AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogError("Failed to create main panel, second panel not created");
+                AzuExtendedPlayerInventoryLogger.LogError("Failed to create main panel, second panel not created");
                 return;
             }
 
@@ -52,7 +52,7 @@ static class PlayerSpawnedPatch
         }
         catch (Exception ex)
         {
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogError("Exception: " + ex);
+            AzuExtendedPlayerInventoryLogger.LogError("Exception: " + ex);
         }
     }
 
@@ -155,7 +155,7 @@ static class PlayerSpawnedPatch
         PersonalLoadoutGuiDetails personalLoadoutGui = newRootPanel.AddComponent<PersonalLoadoutGuiDetails>();
         if (personalLoadoutGui == null)
         {
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning("PurchasableLoadoutGui component not found on newRootPanel");
+            AzuExtendedPlayerInventoryLogger.LogWarning("PurchasableLoadoutGui component not found on newRootPanel");
             return;
         }
 
@@ -177,9 +177,9 @@ static class PlayerSpawnedPatch
         RectTransform secondPanelRT = secondPanel.GetComponent<RectTransform>();
         secondPanelRT.localPosition = new Vector3(250, 0, 0);
 
-        UnityEngine.Object.Destroy(Utils.FindChild(secondPanel.transform, "SellPanel").gameObject);
-        UnityEngine.Object.Destroy(Utils.FindChild(secondPanel.transform, "border (1)").gameObject);
-        UnityEngine.Object.Destroy(Utils.FindChild(secondPanel.transform, "bkg").gameObject);
+        Object.Destroy(Utils.FindChild(secondPanel.transform, "SellPanel").gameObject);
+        Object.Destroy(Utils.FindChild(secondPanel.transform, "border (1)").gameObject);
+        Object.Destroy(Utils.FindChild(secondPanel.transform, "bkg").gameObject);
 
         PersonalLoadoutGui.m_listRoot = Utils.FindChild(secondPanel.transform, "ListRoot").GetComponent<RectTransform>();
         PersonalLoadoutGui.m_listElement = Utils.FindChild(secondPanel.transform, "ItemElement").gameObject;

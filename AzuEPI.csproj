@@ -143,13 +143,10 @@
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)|$(Platform)' != 'API|AnyCPU'">
         <Compile Include="EPI\EPI.cs"/>
-        <Compile Include="EPI\Patches\HudPatches.cs"/>
         <Compile Include="EPI\Patches\InventoryGuiPatches.cs"/>
         <Compile Include="EPI\Patches\InventoryPatches.cs"/>
         <Compile Include="EPI\Patches\PlayerPatches.cs"/>
         <Compile Include="EPI\Patches\TombstonePatches.cs"/>
-        <Compile Include="EPI\QAB\QAB.cs"/>
-        <Compile Include="EPI\Utilities\Utilities.cs"/>
         <Compile Include="EPI\Utilities\VersionHandshake.cs"/>
         <Compile Include="Managers\ItemDataManager.cs"/>
         <Compile Include="Managers\LocalizationManager.cs"/>
@@ -158,8 +155,6 @@
         <Compile Include="Moveable\MoveableChestInventory.cs"/>
         <Compile Include="Plugin.cs"/>
         <Compile Include="Properties\AssemblyInfo.cs"/>
-        <Compile Include="EPI\Utilities\TerminalCommands.cs"/>
-        <Compile Include="EPI\Patches\BoneReorder.cs"/>
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)|$(Platform)' != 'API|AnyCPU'">
         <Content Include=".gitignore"/>
@@ -178,11 +173,26 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="API\API.cs"/>
-        <Compile Include="Compatibility\AdvBackpacks.cs" />
-        <Compile Include="Compatibility\GamepadCompatibility.cs" />
+        <Compile Include="CLI\TerminalCommands.cs" />
+        <Compile Include="Compatibility\AdvBackpacks\AdvBackpacks.cs" />
+        <Compile Include="Compatibility\AdvBackpacks\BoneReorder.cs" />
         <Compile Include="Compatibility\JudesEquipment.cs" />
 
-        <Compile Include="GlobalUsings.cs"/>
+        <Compile Include="GlobalUsings.cs" />
+
+        <Compile Include="Input\GamepadCompatibility.cs" />
+
+        <Compile Include="Input\KeyboardExtensions.cs" />
+
+        <Compile Include="InventoryHandlers\Capacity.cs" />
+
+        <Compile Include="InventoryHandlers\InventoryExtensions.cs" />
+
+        <Compile Include="InventoryHandlers\InventoryHealth.cs" />
+
+        <Compile Include="InventoryHandlers\Layout.cs" />
+
+        <Compile Include="InventoryHandlers\Placement.cs" />
 
         <Compile Include="Loadout\LoadoutPatches.cs" />
 
@@ -200,22 +210,34 @@
 
         <Compile Include="PlayerPreview\VisualHandler.cs" />
 
+        <Compile Include="Slots\Model.cs" />
+
+        <Compile Include="Slots\QAB\HudPatches.cs" />
+
+        <Compile Include="Slots\QAB\QAB.cs" />
+
+        <Compile Include="Slots\Rules.cs" />
+
+        <Compile Include="Text\Formatting.cs" />
+
+        <Compile Include="Text\RegexHelpers.cs" />
+
         <Compile Include="Vanity\VanityAPI.cs" />
 
         <Compile Include="Vanity\VanityPanelController.cs" />
 
         <Compile Include="Vanity\VanityPatches.cs" />
-        <None Include="App.config"/>
+        <None Include="App.config" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.43">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="YamlDotNet" Version="16.3.0"/>
+        <PackageReference Include="YamlDotNet" Version="16.3.0" />
     </ItemGroup>
     <ItemGroup>
-        <Content Include=".github\workflows\publish-mod.yml"/>
+        <Content Include=".github\workflows\publish-mod.yml" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

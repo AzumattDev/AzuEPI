@@ -1,7 +1,7 @@
-﻿using AzuEPI;
-using AzuEPI.EPI;
+﻿using AzuEPI.EPI;
+using AzuExtendedPlayerInventory;
 
-namespace AzuExtendedPlayerInventory.EPI.Patches;
+namespace AzuEPI.Slots.QAB;
 
 public class HudPatches
 {
@@ -10,7 +10,7 @@ public class HudPatches
     {
         private static void Postfix(Hud __instance)
         {
-            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.isOff())
+            if (AddEquipmentRow.Value.isOff())
                 return;
 
             API.HudAwake(__instance);
@@ -28,13 +28,13 @@ public class HudPatches
     {
         private static void Postfix(Hud __instance)
         {
-            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.isOff() || Player.m_localPlayer == null)
+            if (AddEquipmentRow.Value.isOff() || Player.m_localPlayer == null)
                 return;
 
             API.HudUpdate(__instance);
 
             float scaleFactor = GuiScaler.m_largeGuiScale;
-            Vector3 mousePosition = Input.mousePosition;
+            Vector3 mousePosition = UnityEngine.Input.mousePosition;
 
             ExtendedPlayerInventory.SetElementPositions();
             if (ExtendedPlayerInventory.lastMousePos == Vector3.zero)
@@ -43,12 +43,12 @@ public class HudPatches
             Transform hudrootTransform = Hud.instance.transform.Find("hudroot");
             Transform quickAccessBarTransform = hudrootTransform.Find(ExtendedPlayerInventory.QABName);
 
-            if (AzuExtendedPlayerInventoryPlugin.QuickslotDragKeys.Value.IsPressed() && quickAccessBarTransform != null)
+            if (QuickslotDragKeys.Value.IsPressed() && quickAccessBarTransform != null)
             {
                 RectTransform quickAccessBarRect = quickAccessBarTransform.GetComponent<RectTransform>();
                 Vector2 anchoredPosition = quickAccessBarRect.anchoredPosition;
                 Vector2 sizeDelta = quickAccessBarRect.sizeDelta;
-                float quickAccessScale = AzuExtendedPlayerInventoryPlugin.QuickAccessScale.Value;
+                float quickAccessScale = QuickAccessScale.Value;
 
                 Rect rect = new(anchoredPosition.x * scaleFactor, anchoredPosition.y * scaleFactor + Screen.height - sizeDelta.y * scaleFactor * quickAccessScale, (float)(sizeDelta.x * scaleFactor * quickAccessScale * 0.375), sizeDelta.y * scaleFactor * quickAccessScale);
 
@@ -57,8 +57,8 @@ public class HudPatches
                     float deltaX = (mousePosition.x - ExtendedPlayerInventory.lastMousePos.x) / scaleFactor;
                     float deltaY = (mousePosition.y - ExtendedPlayerInventory.lastMousePos.y) / scaleFactor;
 
-                    AzuExtendedPlayerInventoryPlugin.QuickAccessX.Value += deltaX;
-                    AzuExtendedPlayerInventoryPlugin.QuickAccessY.Value += deltaY;
+                    QuickAccessX.Value += deltaX;
+                    QuickAccessY.Value += deltaY;
                     ExtendedPlayerInventory.currentlyDragging = ExtendedPlayerInventory.QABName;
                 }
                 else

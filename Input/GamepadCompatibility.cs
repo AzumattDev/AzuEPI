@@ -1,7 +1,8 @@
-﻿using AzuExtendedPlayerInventory;
+﻿using AzuEPI.Slots;
+using AzuExtendedPlayerInventory;
 using AzuExtendedPlayerInventory.EPI.Patches;
 
-namespace AzuEPI.Compatibility;
+namespace AzuEPI.Input;
 
 internal static class GamepadCompatibility
 {
@@ -81,11 +82,11 @@ internal static class GamepadCompatibility
 
         int reqRows = API.GetAddedRows(L.Width);
         L.RequiredRowsAdded = reqRows;
-        L.HeightPlayer = 4 + AzuExtendedPlayerInventoryPlugin.ExtraRows.Value
-                           + (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.isOn() ? reqRows : 0);
+        L.HeightPlayer = 4 + ExtraRows.Value
+                           + (AddEquipmentRow.Value.isOn() ? reqRows : 0);
 
         L.EquipCount = CountEquipmentSlots();
-        L.QuickCount = AzuExtendedPlayerInventoryPlugin.Hotkeys.Length;
+        L.QuickCount = Hotkeys.Length;
         L.BaseIndex = L.Width * (L.HeightPlayer - reqRows);
 
         L.Equipment = new List<SlotCell>(L.EquipCount);
@@ -120,7 +121,7 @@ internal static class GamepadCompatibility
     {
         int n = 0;
         var list = InventoryGuiPatches.UpdateInventory_Patch.slots;
-        while (n < list.Count && list[n] is InventoryGuiPatches.EquipmentSlot) ++n;
+        while (n < list.Count && list[n] is Model.EquipmentSlot) ++n;
         return n;
     }
 
@@ -368,7 +369,7 @@ internal static class GamepadCompatibility
                 Debug.Log($"[EPI/Gamepad] {cur} -> {next}");
 
             __instance.m_selected = next;
-            return false; 
+            return false;
         }
     }
 
@@ -380,7 +381,7 @@ internal static class GamepadCompatibility
             if (__instance != InventoryGui.instance?.m_playerGrid) return;
 
             var L = BuildLayout(__instance);
-            var clamped = new Vector2i(Mathf.Clamp(pos.x, 0, L.Width - 1),Mathf.Clamp(pos.y, 0, L.HeightPlayer - 1));
+            var clamped = new Vector2i(Mathf.Clamp(pos.x, 0, L.Width - 1), Mathf.Clamp(pos.y, 0, L.HeightPlayer - 1));
 
             if (clamped != pos)
             {

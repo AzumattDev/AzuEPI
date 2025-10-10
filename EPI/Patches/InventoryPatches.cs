@@ -1,5 +1,6 @@
 ﻿using AzuEPI.EPI;
-using AzuEPI.EPI.Patches;
+using AzuEPI.InventoryHandlers;
+using AzuEPI.Slots;
 
 namespace AzuExtendedPlayerInventory.EPI.Patches;
 
@@ -10,41 +11,8 @@ public class InventoryPatches
     {
         private static bool Prefix(Inventory __instance, ref Vector2i __result, bool topFirst)
         {
-            if (!ExtendedPlayerInventory.ShouldGuard(__instance)) return true;
-
-            int width = __instance.GetWidth();
-            int height = __instance.GetHeight();
-            int addedRows = API.GetAddedRows(width);
-            int adjustedHeight = height - addedRows;
-
-            if (topFirst)
-            {
-                for (int y = 0; y < adjustedHeight; ++y)
-                for (int x = 0; x < width; ++x)
-                    if (__instance.GetItemAt(x, y) == null)
-                    {
-                        __result = new Vector2i(x, y);
-                        return false;
-                    }
-            }
-            else
-            {
-                for (int y = adjustedHeight - 1; y >= 0; --y)
-                for (int x = 0; x < width; ++x)
-                    if (__instance.GetItemAt(x, y) == null)
-                    {
-                        __result = new Vector2i(x, y);
-                        return false;
-                    }
-            }
-
-            if (ExtendedPlayerInventory.TryFindEmptyQuickCell(__instance, out var q))
-            {
-                __result = q;
-                return false;
-            }
-
-            __result = new Vector2i(-1, -1);
+            if (!Placement.ShouldGuard(__instance)) return true;
+            __result = Placement.FindEmptyQuickAware(__instance, topFirst);
             return false;
         }
     }
@@ -54,20 +22,8 @@ public class InventoryPatches
     {
         private static bool Prefix(Inventory __instance, ref int __result, List<ItemDrop.ItemData> ___m_inventory, int ___m_width, int ___m_height)
         {
-            if (!ExtendedPlayerInventory.ShouldGuard(__instance)) return true;
-
-            int addedRows = API.GetAddedRows(___m_width);
-            int adjustedHeight = ___m_height - addedRows;
-
-            int normalUsed = ___m_inventory.Count(i => i.m_gridPos.y < adjustedHeight);
-            int normalFree = (adjustedHeight * ___m_width) - normalUsed;
-
-            int quickFree = 0;
-            foreach (var p in ExtendedPlayerInventory.EnumerateQuickCells(__instance))
-                if (__instance.GetItemAt(p.x, p.y) == null)
-                    quickFree++;
-
-            __result = normalFree + quickFree;
+            if (!Placement.ShouldGuard(__instance)) return true;
+            __result = Capacity.FreeNormalCells(__instance) + Capacity.FreeQuickCells(__instance);
             return false;
         }
     }
@@ -77,13 +33,12 @@ public class InventoryPatches
     {
         private static bool Prefix(Inventory __instance, ref bool __result, List<ItemDrop.ItemData> ___m_inventory, int ___m_width, int ___m_height)
         {
-            if (!ExtendedPlayerInventory.ShouldGuard(__instance)) return true;
+            if (!Placement.ShouldGuard(__instance)) return true;
 
-            int addedRows = API.GetAddedRows(___m_width);
-            int adjustedHeight = ___m_height - addedRows;
+            int normalRows = Layout.NormalRows(__instance);
 
-            int normalUsed = ___m_inventory.Count(i => i.m_gridPos.y < adjustedHeight);
-            bool normalHas = normalUsed < (adjustedHeight * ___m_width);
+            int normalUsed = ___m_inventory.Count(i => i.m_gridPos.y < normalRows);
+            bool normalHas = normalUsed < (normalRows * ___m_width);
 
             if (normalHas)
             {
@@ -91,7 +46,7 @@ public class InventoryPatches
                 return false;
             }
 
-            __result = ExtendedPlayerInventory.TryFindEmptyQuickCell(__instance, out _);
+            __result = __instance.TryFindEmptyQuickCell(out _);
             return false;
         }
     }
@@ -102,17 +57,15 @@ public class InventoryPatches
         private static bool Prefix(Inventory __instance, ref bool __result, List<ItemDrop.ItemData> ___m_inventory, ItemDrop.ItemData item)
         {
             if (Player.m_localPlayer == null) return true;
-            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value.isOff() || !Player.m_localPlayer || __instance != Player.m_localPlayer.GetInventory())
+            if (AddEquipmentRow.Value.isOff() || !Player.m_localPlayer || __instance != Player.m_localPlayer.GetInventory())
                 return true;
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug("AddItem");
-            if (!ExtendedPlayerInventory.IsEquipmentSlotFree(__instance, item, out int which))
+            AzuExtendedPlayerInventoryLogger.LogDebug("AddItem");
+            if (!__instance.IsEquipmentSlotFree(item, out int which))
                 return true;
 
-            int addedRows = API.GetAddedRows(__instance.GetWidth());
+            int normalRows = Layout.NormalRows(__instance);
 
-            int adjustedHeight = __instance.GetHeight() - addedRows;
-
-            __instance.AddItem(item, item.m_stack, which % __instance.GetWidth(), adjustedHeight + which / __instance.GetWidth());
+            __instance.AddItem(item, item.m_stack, which % __instance.GetWidth(), normalRows + which / __instance.GetWidth());
             Player.m_localPlayer.EquipItem(item, false);
             __instance.Changed();
             __result = true;
@@ -125,9 +78,9 @@ public class InventoryPatches
     {
         private static bool Prefix(Inventory __instance, ref bool __result, ItemDrop.ItemData item, int amount, int x, int y)
         {
-            if (!ExtendedPlayerInventory.ShouldGuard(__instance)) return true;
+            if (!Placement.ShouldGuard(__instance)) return true;
 
-            if (ExtendedPlayerInventory.IsHiddenCell(__instance, x, y))
+            if (__instance.IsHiddenCell(x, y))
             {
                 __result = __instance.AddItem(item, amount, /*x*/ Mathf.Clamp(item.m_gridPos.x, 0, __instance.GetWidth() - 1), /*y*/ Mathf.Clamp(item.m_gridPos.y, 0, __instance.GetHeight() - 1))
                            || __instance.AddItem(item);
@@ -135,9 +88,9 @@ public class InventoryPatches
             }
 
             // Equipment cells must validate
-            if (ExtendedPlayerInventory.IsEquipmentCell(__instance, x, y, out int which))
+            if (__instance.IsEquipmentCell(x, y, out int which))
             {
-                var slot = InventoryGuiPatches.UpdateInventory_Patch.slots[which] as InventoryGuiPatches.EquipmentSlot;
+                var slot = InventoryGuiPatches.UpdateInventory_Patch.slots[which] as Model.EquipmentSlot;
                 if (slot == null || slot.Valid == null || !slot.Valid(item))
                 {
                     __result = false;
@@ -155,17 +108,17 @@ public class InventoryPatches
     {
         private static bool Prefix(Inventory __instance, ref bool __result, ItemDrop.ItemData item, Vector2i pos)
         {
-            if (!ExtendedPlayerInventory.ShouldGuard(__instance)) return true;
+            if (!Placement.ShouldGuard(__instance)) return true;
 
-            if (ExtendedPlayerInventory.IsHiddenCell(__instance, pos.x, pos.y))
+            if (__instance.IsHiddenCell(pos.x, pos.y))
             {
                 __result = __instance.AddItem(item);
                 return false;
             }
 
-            if (ExtendedPlayerInventory.IsEquipmentCell(__instance, pos.x, pos.y, out int which))
+            if (__instance.IsEquipmentCell(pos.x, pos.y, out int which))
             {
-                var slot = InventoryGuiPatches.UpdateInventory_Patch.slots[which] as InventoryGuiPatches.EquipmentSlot;
+                var slot = InventoryGuiPatches.UpdateInventory_Patch.slots[which] as Model.EquipmentSlot;
                 if (slot == null || slot.Valid == null || !slot.Valid(item))
                 {
                     __result = false;
@@ -182,35 +135,17 @@ public class InventoryPatches
     {
         private static bool Prefix(Inventory __instance, ItemDrop.ItemData item, int stack, ref bool __result)
         {
-            if (!ExtendedPlayerInventory.ShouldGuard(__instance)) return true;
+            if (!Placement.ShouldGuard(__instance)) return true;
 
             if (stack <= 0) stack = item.m_stack;
 
-            int width = __instance.GetWidth();
-            int height = __instance.GetHeight();
-            int addedRows = API.GetAddedRows(width);
-            int normalRows = height - addedRows;
-
             int maxStack = Mathf.Max(1, item.m_shared.m_maxStackSize);
 
-            int freeStackSpace = 0;
-            foreach (var it in __instance.m_inventory)
-            {
-                if (it.m_shared.m_name != item.m_shared.m_name) continue;
-                if (it.m_worldLevel != item.m_worldLevel) continue;
-                if (item.m_shared.m_maxQuality > 1 && it.m_quality != item.m_quality) continue;
-                if (it.m_stack < it.m_shared.m_maxStackSize)
-                    freeStackSpace += (it.m_shared.m_maxStackSize - it.m_stack);
-            }
+            int freeStackSpace = Capacity.FreeStackSpace(__instance, item);
 
-            // 2) count *empty* normal cells only in vanilla area
-            int normalUsed = __instance.m_inventory.Count(i => i.m_gridPos.y < normalRows);
-            int normalFreeCells = (normalRows * width) - normalUsed;
+            int normalFreeCells = Capacity.FreeNormalCells(__instance);
 
-            int quickFreeCells = 0;
-            foreach (var p in ExtendedPlayerInventory.EnumerateQuickCells(__instance))
-                if (__instance.GetItemAt(p.x, p.y) == null)
-                    quickFreeCells++;
+            int quickFreeCells = Capacity.FreeQuickCells(__instance);
 
             long capacity = freeStackSpace + (long)(normalFreeCells + quickFreeCells) * maxStack;
             __result = capacity >= stack;
@@ -223,12 +158,12 @@ public class InventoryPatches
     {
         private static void Postfix(Inventory __instance)
         {
-            if (!ExtendedPlayerInventory.ShouldGuard(__instance)) return;
+            if (!Placement.ShouldGuard(__instance)) return;
 
             var stuck = new List<ItemDrop.ItemData>();
             foreach (var it in __instance.GetAllItems())
             {
-                if (ExtendedPlayerInventory.IsHiddenCell(__instance, it.m_gridPos.x, it.m_gridPos.y))
+                if (__instance.IsHiddenCell(it.m_gridPos.x, it.m_gridPos.y))
                     stuck.Add(it);
             }
 
@@ -256,9 +191,9 @@ public class InventoryPatches
     {
         private static bool Prefix(Inventory __instance, ref bool __result, Inventory fromInventory, ItemDrop.ItemData item, int amount, int x, int y)
         {
-            if (!ExtendedPlayerInventory.ShouldGuard(__instance)) return true;
+            if (!Placement.ShouldGuard(__instance)) return true;
 
-            if (ExtendedPlayerInventory.IsHiddenCell(__instance, x, y))
+            if (__instance.IsHiddenCell(x, y))
             {
                 bool ok = __instance.AddItem(item, amount, Mathf.Clamp(item.m_gridPos.x, 0, __instance.GetWidth() - 1), Mathf.Clamp(item.m_gridPos.y, 0, __instance.GetHeight() - 1));
                 if (!ok)
@@ -274,9 +209,9 @@ public class InventoryPatches
             }
 
             // Equipment target must validate
-            if (ExtendedPlayerInventory.IsEquipmentCell(__instance, x, y, out int which))
+            if (__instance.IsEquipmentCell(x, y, out int which))
             {
-                var slot = InventoryGuiPatches.UpdateInventory_Patch.slots[which] as InventoryGuiPatches.EquipmentSlot;
+                var slot = InventoryGuiPatches.UpdateInventory_Patch.slots[which] as Model.EquipmentSlot;
                 if (slot == null || slot.Valid == null || !slot.Valid(item))
                 {
                     __result = false;
@@ -294,9 +229,9 @@ public class InventoryPatches
     {
         private static void Postfix(Inventory __instance, Inventory original)
         {
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug("MoveInventoryToGrave");
+            AzuExtendedPlayerInventoryLogger.LogDebug("MoveInventoryToGrave");
 
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug($"inv: {__instance.GetHeight()} orig: {original.GetHeight()}");
+            AzuExtendedPlayerInventoryLogger.LogDebug($"inv: {__instance.GetHeight()} orig: {original.GetHeight()}");
         }
     }
 }
