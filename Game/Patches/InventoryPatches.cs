@@ -89,8 +89,7 @@ public class InventoryPatches
             // Equipment cells must validate
             if (__instance.IsEquipmentCell(x, y, out int which))
             {
-                var slot = InventoryGuiPatches.UpdateInventory_Patch.slots[which] as Model.EquipmentSlot;
-                if (slot == null || slot.Valid == null || !slot.Valid(item))
+                if (InventoryGuiPatches.UpdateInventory_Patch.slots[which] is not Model.EquipmentSlot slot || slot is { Valid: null, IsQuickSlot: false } || slot is { Valid: null } && !slot.Valid(item))
                 {
                     __result = false;
                     return false;

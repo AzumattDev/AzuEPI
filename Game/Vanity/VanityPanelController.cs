@@ -9,7 +9,7 @@ internal static class VanityPanelController
     public const string VanityViewportName = "Viewport";
     public const string VanityContentName = "Content";
     public const string VanityScrollbarName = "Scrollbar";
-    public const string VanityToggleButtonName = "VanityToggleButton";
+    public const string VanityToggleButtonName = "AzuEPIVanityToggleButton";
     public const string ResetAllVanityButtonName = "ResetAllVanityButton";
 
     private static readonly Vector2 CellSize = new(70, 70);
@@ -20,6 +20,7 @@ internal static class VanityPanelController
     private static readonly Vector2 ScrollRootOffsetMin = new(10f, 10f);
     private static readonly Vector2 ScrollRootOffsetMax = new(-24f, -50f);
 
+    internal static RectTransform ToggleButtonParentHlg = null!;
     private static readonly Vector2 ToggleBtnAnchorMin = new(0f, 1f);
     private static readonly Vector2 ToggleBtnAnchorMax = new(0f, 1f);
     private static readonly Vector2 ToggleBtnPivot = new(0f, 1f);
@@ -64,7 +65,7 @@ internal static class VanityPanelController
 
         if (!_panel) BuildPanel(gui);
         if (!_scroll) BuildScrollTree();
-        if (!_toggleBtn) BuildToggleButton(gui);
+        if (!_toggleBtn) BuildVanityToggleButton(gui);
         if (!_resetVanitiesBtn) BuildResetButton(gui);
 
         _fontSample = gui.m_craftButton?.GetComponentInChildren<TMP_Text>();
@@ -371,12 +372,12 @@ internal static class VanityPanelController
         return bar;
     }
 
-    private static void BuildToggleButton(InventoryGui gui)
+    private static void BuildVanityToggleButton(InventoryGui gui)
     {
         var src = gui.m_takeAllButton?.transform ?? gui.m_craftButton?.transform;
         if (!src) return;
 
-        var clone = CloneButton(src, gui.m_crafting, VanityToggleButtonName, ToggleBtnAnchorMin, ToggleBtnAnchorMax, ToggleBtnPivot, ToggleBtnPos, ToggleBtnSize);
+        var clone = CloneButton(src, ToggleButtonParentHlg, VanityToggleButtonName, ToggleBtnAnchorMin, ToggleBtnAnchorMax, ToggleBtnPivot, ToggleBtnPos, ToggleBtnSize);
         var btn = clone.GetComponent<Button>();
         btn.onClick.RemoveAllListeners();
         btn.onClick.AddListener(() =>
@@ -511,7 +512,7 @@ internal static class VanityPanelController
         DisableChild(go.transform, "binding");
         DisableChildrenContaining(go.transform, "JC_");
 
-        var labelGo = new GameObject("NoneLabel", typeof(RectTransform), typeof(TMP_Text));
+        var labelGo = new GameObject("NoneLabel", typeof(RectTransform));
         var labelRT = (RectTransform)labelGo.transform;
         labelRT.SetParent(go.transform, false);
         labelRT.anchorMin = new Vector2(0.5f, 0.5f);

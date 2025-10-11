@@ -1,4 +1,6 @@
-﻿using AzuExtendedPlayerInventory;
+﻿using AzuEPI.Game.Loadout;
+using AzuEPI.Vanity;
+using AzuExtendedPlayerInventory;
 
 namespace AzuEPI.Core.InventoryHandlers;
 
@@ -41,5 +43,23 @@ public class Layout
     public static Vector2i ClampToVisible(Inventory inv, Vector2i p)
     {
         return new(Mathf.Clamp(p.x, 0, inv.GetWidth() - 1), Mathf.Clamp(p.y, 0, inv.GetHeight() - 1));
+    }
+
+    public static void BuildToggleButtonHlg(InventoryGui invGui)
+    {
+        var hlgGo = new GameObject("AzuEPI_ToggleButtonsHlg", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        var hlgRt = (RectTransform)hlgGo.transform;
+        hlgRt.SetParent(invGui.m_crafting.transform, false);
+        hlgRt.anchorMin = new Vector2(0f, 1f);
+        hlgRt.anchorMax = new Vector2(0f, 1f);
+        hlgRt.pivot = new Vector2(0.5f, 1f);
+        hlgRt.anchoredPosition = new Vector2(-222.5f, -30f);
+        hlgRt.sizeDelta = new Vector2(270f, 32f);
+        var hlg = hlgGo.GetComponent<HorizontalLayoutGroup>();
+        hlg.childAlignment = TextAnchor.MiddleCenter;
+        hlg.spacing = 35f;
+
+        VanityPanelController.ToggleButtonParentHlg = hlgRt;
+        PersonalLoadoutGui.ToggleButtonParentHlg = hlgRt;
     }
 }

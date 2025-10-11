@@ -49,6 +49,7 @@ public class PersonalLoadoutGui : MonoBehaviour
     public const string LoadoutKey = "AzuEPILoadout_";
     private static Button _toggleBtn;
     internal static int tempInventorySize = 0;
+    internal static RectTransform ToggleButtonParentHlg = null!;
 
     public void Awake()
     {
@@ -100,7 +101,7 @@ public class PersonalLoadoutGui : MonoBehaviour
         Player localPlayer = Player.m_localPlayer;
         bool isUIBlocking = (Chat.instance != null && Chat.instance.HasFocus()) || Console.IsVisible() || Menu.IsVisible() || (TextViewer.instance != null && TextViewer.instance.IsVisible()) || localPlayer.InCutscene();
 
-        if (isUIBlocking && (ZInput.GetButtonDown("JoyButtonB") || UnityEngine.Input.GetKeyDown(KeyCode.Escape) || ZInput.GetButtonDown("Use")))
+        if (isUIBlocking && (ZInput.GetButtonDown("JoyButtonB") || Input.GetKeyDown(KeyCode.Escape) || ZInput.GetButtonDown("Use")))
         {
             ZInput.ResetButtonStatus("JoyButtonB");
             return true;
@@ -173,12 +174,12 @@ public class PersonalLoadoutGui : MonoBehaviour
         FillList();
     }
 
-    internal static void BuildToggleButton(InventoryGui gui)
+    internal static void BuildLoadoutToggleButton(InventoryGui gui)
     {
         var src = gui.m_takeAllButton?.transform ?? gui.m_craftButton?.transform;
         if (!src) return;
 
-        var clone = Instantiate(src, gui.m_crafting);
+        var clone = Instantiate(src, ToggleButtonParentHlg);
         clone.name = "AzuEPILoadoutsToggleButton";
         clone.SetAsLastSibling();
 

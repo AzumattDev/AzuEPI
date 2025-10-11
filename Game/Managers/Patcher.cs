@@ -88,7 +88,7 @@ public static class Patcher
 				if (attributeType.Namespace == "APIManager" && attributeType.Name == "PatchedAttribute")
 				{
 					string guid = (string)customAttribute.ConstructorArguments[0].Value;
-					if (guid == "" ? (string)customAttribute.ConstructorArguments[1].Value != originalAssembly.MainModule.Mvid.ToString() : !BepInEx.Bootstrap.Chainloader.PluginInfos.ContainsKey(guid))
+					if (guid == "" ? (string)customAttribute.ConstructorArguments[1].Value != originalAssembly.MainModule.Mvid.ToString() : !Chainloader.PluginInfos.ContainsKey(guid))
 					{
 						originalAssembly.Dispose();
 						assembly.Dispose();
@@ -634,7 +634,7 @@ public static class Patcher
 		{
 			types = e.Types.Where(t => t != null).Select(t => t.GetTypeInfo());
 		}
-		BaseUnityPlugin plugin = (BaseUnityPlugin)BepInEx.Bootstrap.Chainloader.ManagerObject.GetComponent(types.First(t => t.IsClass && typeof(BaseUnityPlugin).IsAssignableFrom(t)));
+		BaseUnityPlugin plugin = (BaseUnityPlugin)Chainloader.ManagerObject.GetComponent(types.First(t => t.IsClass && typeof(BaseUnityPlugin).IsAssignableFrom(t)));
 		redirectedNamespaces = new HashSet<string>(extraNamespaces ?? Array.Empty<string>())
 		{
 			plugin.GetType().Namespace!,

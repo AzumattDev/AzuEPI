@@ -1,7 +1,8 @@
 ﻿#if !API
-using AzuEPI.PlayerPreview;
+using AzuEPI.Core.InventoryHandlers;
 using AzuEPI.Core.Slots;
 using AzuEPI.Game.Patches;
+using AzuEPI.PlayerPreview;
 
 # else
 using JetBrains.Annotations;
@@ -137,12 +138,48 @@ public class API
 #endif
     }
 
+    public static bool AddQuickSlot(string slotName, bool showName = false, int index = -1)
+    {
+#if !API
+        if (string.IsNullOrWhiteSpace(slotName)) return false;
+
+        int existingIdx = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s?.Name == slotName);
+        if (existingIdx >= 0 && InventoryGuiPatches.UpdateInventory_Patch.slots[existingIdx] is Model.EquipmentSlot existing)
+        {
+            return true;
+        }
+
+        var slot = new Model.EquipmentSlot
+        {
+            Name = showName ? slotName.StartsWith("$") && Localization.instance != null ? Localization.instance.Localize(slotName) : slotName : "",
+            Valid = item => true,
+            IsAPIAdded = true,
+            IsQuickSlot = true
+        };
+
+        if (index < 0 || index > InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length)
+            index = InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length;
+
+        UpdateSlots(index, 1);
+        InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(index, slot);
+        CustomSlots.Add(slot);
+        SlotHelpers.ResizeSlots();
+
+        AzuExtendedPlayerInventoryLogger.LogDebug($"Added slot {slotName}");
+        SlotAdded?.Invoke(slotName);
+
+        return true;
+#else
+        return false;
+#endif
+    }
+
     public static bool RemoveSlot(string slotName)
     {
 #if ! API
         if (InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s.Name == slotName) is { } slotIndex and >= 0 && InventoryGuiPatches.UpdateInventory_Patch.slots[slotIndex] is Model.EquipmentSlot slot)
         {
-            if (Player.m_localPlayer && slot.Get(Player.m_localPlayer) is { } item) Player.m_localPlayer.UnequipItem(item);
+            if (Player.m_localPlayer && slot.Get?.Invoke(Player.m_localPlayer) is { } item) Player.m_localPlayer.UnequipItem(item);
 
             UpdateSlots(slotIndex, -1);
 
@@ -199,8 +236,7 @@ public class API
 
         var inv = Player.m_localPlayer.GetInventory();
         int w = inv.GetWidth();
-        int rows = GetAddedRows(w);
-        int baseIndex = w * (inv.GetHeight() - rows);
+        int baseIndex = Layout.BaseIndex(inv);
 
         for (int i = 0; i < InventoryGuiPatches.UpdateInventory_Patch.slots.Count; ++i)
         {

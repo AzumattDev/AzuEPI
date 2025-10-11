@@ -179,6 +179,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             API.AddSlot("Finger", new[] { "Andvaranaut", "GoldRubyRing", "SilverRing" });
         }
 
+        API.AddQuickSlot("Quick1");
+        API.AddQuickSlot("Quick2");
         SlotHelpers.ResizeSlots();
     }
 

@@ -70,10 +70,12 @@ public class InventoryGuiPatches
 
             _epiPreviewRect = rt;
 
+            Layout.BuildToggleButtonHlg(__instance);
+            
             VanityPanelController.EnsureBuilt(__instance);
             VanityPanelController.SetVisible(false);
 
-            PersonalLoadoutGui.BuildToggleButton(__instance);
+            PersonalLoadoutGui.BuildLoadoutToggleButton(__instance);
 
             var charName = Object.Instantiate(__instance.m_info.transform.Find("TitlePanel"), previewParentRT);
             charName.name = "AzuEPI_CharacterName";
@@ -137,7 +139,7 @@ public class InventoryGuiPatches
                     Model.Slot? slot = UpdateInventory_Patch.slots[i];
                     if (slot is Model.EquipmentSlot equipmentSlot)
                     {
-                        if (equipmentSlot.Get(player) is { } item)
+                        if (equipmentSlot.Get?.Invoke(player) is { } item)
                         {
                             item.m_gridPos = new Vector2i(num % width, num / width);
                             equippedItems[i] = item;
@@ -153,7 +155,9 @@ public class InventoryGuiPatches
 
                     if (inventory.IsAtEquipmentSlot(t, out int which) &&
                         (which <= -1 || t != equippedItems[which]) &&
-                        (which <= -1 || UpdateInventory_Patch.slots[which] is not Model.EquipmentSlot slot || !slot.Valid(t) || ExtendedPlayerInventory.equipItems[which] == t || (AutoEquip.Value.isOn() && !player.EquipItem(t, false))))
+                        (which <= -1 || UpdateInventory_Patch.slots[which] is not Model.EquipmentSlot slot 
+                                     || (slot.Valid != null && !slot.Valid(t)) || ExtendedPlayerInventory.equipItems[which] == t 
+                                     || (AutoEquip.Value.isOn() && !slot.IsQuickSlot && !player.EquipItem(t, false))))
                     {
                         Vector2i vector2I = inventory.FindEmptySlot(true);
                         if (vector2I.x < 0 || vector2I.y < 0 || vector2I.y >= height - requiredRows)
@@ -285,10 +289,7 @@ public class InventoryGuiPatches
             var dragGo = ig.m_dragGo;
             var dragItem = ig.m_dragItem;
             bool dragging = dragGo && dragItem != null;
-            var inv = player.GetInventory();
-            int width = inv.GetWidth();
-            int requiredRows = API.GetAddedRows(width);
-            int baseIndex = width * (inv.GetHeight() - requiredRows);
+            int baseIndex = Layout.BaseIndex(player.GetInventory());
 
             for (int i = 0; i < UpdateInventory_Patch.slots.Count; ++i)
             {
@@ -377,9 +378,7 @@ public class InventoryGuiPatches
                 Player? player = Player.m_localPlayer;
                 Inventory inventory = player.GetInventory();
 
-                int requiredRows = API.GetAddedRows(inventory.GetWidth());
-
-                int baseIndex = inventory.GetWidth() * (inventory.GetHeight() - requiredRows);
+                int baseIndex = Layout.BaseIndex(inventory);
 
                 Vector2 baseGridPos = new((___m_playerGrid.GetComponent<RectTransform>().rect.width - ___m_playerGrid.GetWidgetSize().x) / 2f, 0.0f);
 

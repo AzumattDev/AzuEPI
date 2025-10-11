@@ -1,5 +1,4 @@
 ﻿using AzuEPI.Game.Loadout;
-using AzuExtendedPlayerInventory;
 
 namespace AzuEPI.PlayerPreview;
 

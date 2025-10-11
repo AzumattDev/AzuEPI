@@ -14,7 +14,7 @@ public class Model
 
     internal class EquipmentSlot : Slot
     {
-        public Func<Player, ItemDrop.ItemData?> Get = null!;
-        public Func<ItemDrop.ItemData, bool> Valid = null!;
+        public Func<Player, ItemDrop.ItemData?>? Get = null!;
+        public Func<ItemDrop.ItemData, bool>? Valid = null!;
     }
 }

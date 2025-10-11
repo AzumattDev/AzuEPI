@@ -34,7 +34,7 @@ public class HudPatches
             API.HudUpdate(__instance);
 
             float scaleFactor = GuiScaler.m_largeGuiScale;
-            Vector3 mousePosition = UnityEngine.Input.mousePosition;
+            Vector3 mousePosition = Input.mousePosition;
 
             QuickAccessBar.SetElementPositions();
             if (ExtendedPlayerInventory.lastMousePos == Vector3.zero)

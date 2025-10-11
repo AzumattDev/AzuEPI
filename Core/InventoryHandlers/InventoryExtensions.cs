@@ -11,7 +11,7 @@ public static class InventoryExtensions
     {
         return inv != null && Player.m_localPlayer && inv == Player.m_localPlayer.GetInventory();
     }
-    
+
     public static void TryAddItemToInventory(this Inventory inventory, ItemDrop.ItemData itemData)
     {
         if (inventory.CanAddItem(itemData))
@@ -29,7 +29,7 @@ public static class InventoryExtensions
     internal static bool IsEquipmentSlotFree(this Inventory inventory, ItemDrop.ItemData item, out int which)
     {
         var addedRows = API.GetAddedRows(inventory.GetWidth());
-        which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is Model.EquipmentSlot slot && slot.Valid(item) && !slot.Occupied);
+        which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is Model.EquipmentSlot { Valid: not null } slot && slot.Valid(item) && !slot.Occupied);
         return which >= 0 && inventory.GetItemAt(which, inventory.GetHeight() - addedRows) == null;
     }
 
@@ -49,27 +49,27 @@ public static class InventoryExtensions
 
     internal static bool IsAtEquipmentSlot(this Inventory inventory, ItemDrop.ItemData item, out int which)
     {
-        var inventoryRows = inventory.GetHeight() - API.GetAddedRows(inventory.GetWidth());
-        if (AddEquipmentRow.Value.isOff() || item.m_gridPos.y < inventoryRows || (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x >= InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length)
+        var normalRows = Layout.NormalRows(inventory);
+        if (AddEquipmentRow.Value.isOff() || item.m_gridPos.y < normalRows || (item.m_gridPos.y - normalRows) * inventory.GetWidth() + item.m_gridPos.x >= InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length)
         {
             which = -1;
             return false;
         }
 
-        which = (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x;
+        which = (item.m_gridPos.y - normalRows) * inventory.GetWidth() + item.m_gridPos.x;
         return true;
     }
 
     internal static bool IsAtQuickSlot(this Inventory inventory, ItemDrop.ItemData item, out int which)
     {
-        var inventoryRows = inventory.GetHeight() - API.GetAddedRows(inventory.GetWidth());
-        if (AddEquipmentRow.Value.isOff() || item.m_gridPos.y < inventoryRows || (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x < InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length)
+        var normalRows = Layout.NormalRows(inventory);
+        if (AddEquipmentRow.Value.isOff() || item.m_gridPos.y < normalRows || (item.m_gridPos.y - normalRows) * inventory.GetWidth() + item.m_gridPos.x < InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length)
         {
             which = -1;
             return false;
         }
 
-        which = (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x;
+        which = (item.m_gridPos.y - normalRows) * inventory.GetWidth() + item.m_gridPos.x;
         return true;
     }
 
@@ -79,7 +79,7 @@ public static class InventoryExtensions
         int li = inv.LinearIndexIntoEpiBlock(x, y);
         if (li < 0) return false;
         if (li >= InventoryGuiPatches.UpdateInventory_Patch.slots.Count) return false;
-        if (InventoryGuiPatches.UpdateInventory_Patch.slots[li] is not Model.EquipmentSlot) return false;
+        if (InventoryGuiPatches.UpdateInventory_Patch.slots[li] is not Model.EquipmentSlot { IsQuickSlot: false }) return false;
         whichSlot = li;
         return true;
     }
@@ -90,7 +90,7 @@ public static class InventoryExtensions
         if (li < 0) return false;
         if (li >= InventoryGuiPatches.UpdateInventory_Patch.slots.Count) return false;
         Model.Slot? s = InventoryGuiPatches.UpdateInventory_Patch.slots[li];
-        return s is not Model.EquipmentSlot && s.IsQuickSlot;
+        return s is not Model.EquipmentSlot && s is { IsQuickSlot: true };
     }
 
     internal static bool IsHiddenCell(this Inventory inv, int x, int y)
@@ -139,12 +139,12 @@ public static class InventoryExtensions
         pos = new Vector2i(-1, -1);
         return false;
     }
-    
+
     internal static bool ShouldGuard(this Inventory inv)
     {
         return Player.m_localPlayer && inv == Player.m_localPlayer.GetInventory() && AddEquipmentRow.Value.isOn();
     }
-    
+
     public static Vector2i FindEmptyQuickAware(this Inventory inv, bool topFirst)
     {
         int width = inv.GetWidth();
@@ -154,13 +154,15 @@ public static class InventoryExtensions
         {
             for (int y = 0; y < normalRows; ++y)
             for (int x = 0; x < width; ++x)
-                if (inv.GetItemAt(x, y) == null) return new Vector2i(x, y);
+                if (inv.GetItemAt(x, y) == null)
+                    return new Vector2i(x, y);
         }
         else
         {
             for (int y = normalRows - 1; y >= 0; --y)
             for (int x = 0; x < width; ++x)
-                if (inv.GetItemAt(x, y) == null) return new Vector2i(x, y);
+                if (inv.GetItemAt(x, y) == null)
+                    return new Vector2i(x, y);
         }
 
         return inv.TryFindEmptyQuickCell(out var q) ? q : new Vector2i(-1, -1);

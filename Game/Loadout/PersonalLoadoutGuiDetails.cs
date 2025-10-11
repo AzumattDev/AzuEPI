@@ -84,7 +84,7 @@ public class PersonalLoadoutGuiDetails : MonoBehaviour
         Player localPlayer = Player.m_localPlayer;
         bool isUIBlocking = (Chat.instance != null && Chat.instance.HasFocus()) || Console.IsVisible() || Menu.IsVisible() || (TextViewer.instance != null && TextViewer.instance.IsVisible()) || localPlayer.InCutscene();
 
-        if (isUIBlocking && (ZInput.GetButtonDown("JoyButtonB") || UnityEngine.Input.GetKeyDown(KeyCode.Escape) || ZInput.GetButtonDown("Use")))
+        if (isUIBlocking && (ZInput.GetButtonDown("JoyButtonB") || Input.GetKeyDown(KeyCode.Escape) || ZInput.GetButtonDown("Use")))
         {
             ZInput.ResetButtonStatus("JoyButtonB");
             return true;

@@ -9,7 +9,7 @@ internal class ExtendedPlayerInventory
 
     internal static readonly GameObject _elementPrefab = null!;
 
-    internal static ItemDrop.ItemData?[] equipItems = new ItemDrop.ItemData[5];
+    internal static ItemDrop.ItemData?[] equipItems = new ItemDrop.ItemData[15];
 
     public static Vector3 lastMousePos;
     public static string currentlyDragging = null!;
