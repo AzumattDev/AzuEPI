@@ -144,7 +144,7 @@
     <ItemGroup Condition="'$(Configuration)|$(Platform)' != 'API|AnyCPU'">
         <Compile Include="EPI\EPI.cs"/>
         <Compile Include="Plugin.cs"/>
-        <Compile Include="Core\Input\GamepadCompatibility.cs"/>
+        <Compile Include="Core\Input\GamepadCompatibility.cs" />
         <Compile Include="Core\Input\KeyboardExtensions.cs"/>
         <Compile Include="Core\InventoryHandlers\Capacity.cs"/>
         <Compile Include="Core\InventoryHandlers\InventoryExtensions.cs"/>

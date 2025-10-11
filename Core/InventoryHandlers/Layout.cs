@@ -6,22 +6,25 @@ namespace AzuEPI.Core.InventoryHandlers;
 
 public class Layout
 {
+    public const int BaseInventoryHeight = 4;
+    public const int BaseInventoryWidth = 8;
+
     internal const float tileSize = 70f;
 
     internal static float equipOriginX = -430f;
     internal static float equipOriginY = -75f;
     internal static float columnGapTiles = 4f;
-    
+
     internal static readonly Vector2 PlayerBkgAnchorMin = new(-0.80f, 0f);
-    
+
     internal static readonly Vector2 RepairMovement = new Vector2(-460f, 0f);
-    
+
     internal static readonly Vector2 PreviewAnchorMin = new(0f, 0.14f);
     internal static readonly Vector2 PreviewAnchorMax = new(1f, 0.885f);
     internal static readonly Vector2 PreviewSizeDelta = new(-300f, 0f);
     internal static readonly Vector2 PreviewAnchoredPos = new(-507f, 0f);
     internal static readonly Vector2 PlayerPreviewImageSize = new(500f, 630f);
-    
+
     internal static readonly Vector2 DropAllSize = new(100f, 30f);
     internal static readonly Vector2 DropAllAnchorMin = new(0.0f, 1.0f);
     internal static readonly Vector2 DropAllAnchorMax = new(0.0f, 1.0f);

@@ -13,7 +13,7 @@ public class PlayerPatches
         {
             AzuExtendedPlayerInventoryLogger.LogDebug("Player_Awake");
 
-            int height = 4 + ExtraRows.Value + (AddEquipmentRow.Value.isOn() ? API.GetAddedRows(__instance.m_inventory.GetWidth()) : 0);
+            int height = Layout.BaseInventoryHeight + ExtraRows.Value + (AddEquipmentRow.Value.isOn() ? API.GetAddedRows(__instance.m_inventory.GetWidth()) : 0);
             __instance.m_inventory.m_height = height;
             __instance.m_tombstone.GetComponent<Container>().m_height = height;
         }
@@ -146,7 +146,7 @@ public class PlayerPatches
         private static void Postfix(Player __instance, ref Inventory ___m_inventory)
         {
             int width = ___m_inventory.GetWidth();
-            int height = 4 + ExtraRows.Value + (AddEquipmentRow.Value.isOn() ? API.GetAddedRows(width) : 0);
+            int height = Layout.BaseInventoryHeight + ExtraRows.Value + (AddEquipmentRow.Value.isOn() ? API.GetAddedRows(width) : 0);
             ___m_inventory.m_height = height;
             __instance.m_tombstone.GetComponent<Container>().m_height = height;
             if (InventoryHealth.IgnoreKeyPresses(true) || AddEquipmentRow.Value.isOff())
@@ -157,7 +157,7 @@ public class PlayerPatches
                 if (++hotkey == Hotkeys.Length)
                     return;
 
-            int index = (4 + ExtraRows.Value) * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length + hotkey;
+            int index = (Layout.BaseInventoryHeight + ExtraRows.Value) * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length + hotkey;
             ItemDrop.ItemData itemAt = ___m_inventory.GetItemAt(index % width, index / width);
             if (itemAt == null)
                 return;

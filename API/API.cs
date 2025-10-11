@@ -398,30 +398,28 @@ public class API
 #if ! API
     internal static void UpdateSlots(int index, int shift)
     {
-        if (Player.m_localPlayer)
-        {
-            Inventory inv = Player.m_localPlayer.m_inventory;
-            int width = inv.GetWidth();
-            int baseRows = 4 + ExtraRows.Value;
-            foreach (ItemDrop.ItemData item in inv.m_inventory)
-                if ((item.m_gridPos.y - baseRows) * width + item.m_gridPos.x >= index)
+        if (!Player.m_localPlayer) return;
+        Inventory inv = Player.m_localPlayer.m_inventory;
+        int width = inv.GetWidth();
+        int baseRows = Layout.BaseInventoryHeight + ExtraRows.Value;
+        foreach (ItemDrop.ItemData item in inv.m_inventory)
+            if ((item.m_gridPos.y - baseRows) * width + item.m_gridPos.x >= index)
+            {
+                item.m_gridPos.x += shift;
+                if (item.m_gridPos.x < 0)
                 {
-                    item.m_gridPos.x += shift;
-                    if (item.m_gridPos.x < 0)
-                    {
-                        item.m_gridPos.x = width - 1;
-                        --item.m_gridPos.y;
-                    }
-
-                    if (item.m_gridPos.x >= width)
-                    {
-                        item.m_gridPos.x = 0;
-                        ++item.m_gridPos.y;
-                    }
+                    item.m_gridPos.x = width - 1;
+                    --item.m_gridPos.y;
                 }
 
-            inv.m_height = baseRows + Mathf.CeilToInt((float)(InventoryGuiPatches.UpdateInventory_Patch.slots.Count + shift) / width);
-        }
+                if (item.m_gridPos.x >= width)
+                {
+                    item.m_gridPos.x = 0;
+                    ++item.m_gridPos.y;
+                }
+            }
+
+        inv.m_height = baseRows + Mathf.CeilToInt((float)(InventoryGuiPatches.UpdateInventory_Patch.slots.Count + shift) / width);
     }
 #endif
 }

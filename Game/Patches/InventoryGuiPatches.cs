@@ -27,10 +27,10 @@ public class InventoryGuiPatches
             bkg.SetSiblingIndex(index + 2);
             bkg.name = "AzuPlayerBkg";
             bkg.GetComponent<RectTransform>().anchorMin = Layout.PlayerBkgAnchorMin;
-            
+
             __instance.m_crafting.Find("RepairSimple").GetComponent<RectTransform>().anchoredPosition += Layout.RepairMovement;
             __instance.m_crafting.Find("RepairButton").GetComponent<RectTransform>().anchoredPosition += Layout.RepairMovement;
-            
+
             __instance.m_crafting.SetSiblingIndex(1);
 
             if (AzuEPICharacterPanel.instance == null)
@@ -52,7 +52,7 @@ public class InventoryGuiPatches
             var go = new GameObject("PlayerPreview", typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage));
             var rt = (RectTransform)go.transform;
             rt.SetParent(previewParentRT, false);
-            
+
             rt.sizeDelta = Layout.PlayerPreviewImageSize;
             rt.anchoredPosition = Vector2.zero;
 
@@ -71,7 +71,7 @@ public class InventoryGuiPatches
             _epiPreviewRect = rt;
 
             Layout.BuildToggleButtonHlg(__instance);
-            
+
             VanityPanelController.EnsureBuilt(__instance);
             VanityPanelController.SetVisible(false);
 
@@ -155,8 +155,8 @@ public class InventoryGuiPatches
 
                     if (inventory.IsAtEquipmentSlot(t, out int which) &&
                         (which <= -1 || t != equippedItems[which]) &&
-                        (which <= -1 || UpdateInventory_Patch.slots[which] is not Model.EquipmentSlot slot 
-                                     || (slot.Valid != null && !slot.Valid(t)) || ExtendedPlayerInventory.equipItems[which] == t 
+                        (which <= -1 || UpdateInventory_Patch.slots[which] is not Model.EquipmentSlot slot
+                                     || (slot.Valid != null && !slot.Valid(t)) || ExtendedPlayerInventory.equipItems[which] == t
                                      || (AutoEquip.Value.isOn() && !slot.IsQuickSlot && !player.EquipItem(t, false))))
                     {
                         Vector2i vector2I = inventory.FindEmptySlot(true);

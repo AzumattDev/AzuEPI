@@ -12,7 +12,7 @@ public class TombstonePatches
         {
             AzuExtendedPlayerInventoryLogger.LogDebug("TombStone_Awake");
 
-            int height = 4 + ExtraRows.Value + (AddEquipmentRow.Value.isOn() ? API.GetAddedRows(__instance.GetComponent<Container>().m_width) : 0);
+            int height = Layout.BaseInventoryHeight + ExtraRows.Value + (AddEquipmentRow.Value.isOn() ? API.GetAddedRows(__instance.GetComponent<Container>().m_width) : 0);
 
             __instance.GetComponent<Container>().m_height = height;
         }
@@ -24,7 +24,7 @@ public class TombstonePatches
         private static void Prefix(TombStone __instance, Container ___m_container)
         {
             AzuExtendedPlayerInventoryLogger.LogDebug("TombStone_Interact");
-            int num = 4 + ExtraRows.Value + (AddEquipmentRow.Value.isOn() ? API.GetAddedRows(__instance.GetComponent<Container>().m_width) : 0);
+            int num = Layout.BaseInventoryHeight + ExtraRows.Value + (AddEquipmentRow.Value.isOn() ? API.GetAddedRows(__instance.GetComponent<Container>().m_width) : 0);
             __instance.GetComponent<Container>().m_height = num;
             string base64String = ___m_container.m_nview.GetZDO().GetString(ZDOVars.s_items);
             if (string.IsNullOrEmpty(base64String))

@@ -5,23 +5,26 @@ namespace AzuEPI.Core.Slots;
 
 public class SlotHelpers
 {
+    internal const int EquipRowsPerColumn = 8;
+    
     internal static void ResizeSlots()
     {
-        const int rowsPerCol = 8;
         float leftX = Layout.equipOriginX;
         float rightX = Layout.equipOriginX + Layout.tileSize * (1f + Layout.columnGapTiles);
         float yBase = Layout.equipOriginY;
 
         int equipCount = 0;
-        while (equipCount < InventoryGuiPatches.UpdateInventory_Patch.slots.Count && InventoryGuiPatches.UpdateInventory_Patch.slots[equipCount] is Model.EquipmentSlot) equipCount++;
+        while (equipCount < InventoryGuiPatches.UpdateInventory_Patch.slots.Count
+               && InventoryGuiPatches.UpdateInventory_Patch.slots[equipCount] is Model.EquipmentSlot)
+            equipCount++;
 
-        int leftUsed = Math.Min(rowsPerCol, equipCount);
-        int rightUsed = Math.Max(0, Math.Min(rowsPerCol, equipCount - rowsPerCol));
+        int leftUsed = Math.Min(EquipRowsPerColumn, equipCount);
+        int rightUsed = Math.Max(0, Math.Min(EquipRowsPerColumn, equipCount - EquipRowsPerColumn));
 
         for (int i = 0; i < equipCount; ++i)
         {
-            bool leftCol = i < rowsPerCol;
-            int row = leftCol ? i : (i - rowsPerCol);
+            bool leftCol = i < EquipRowsPerColumn;
+            int row = leftCol ? i : (i - EquipRowsPerColumn);
             float x = leftCol ? leftX : rightX;
             float y = yBase - row * Layout.tileSize;
             InventoryGuiPatches.UpdateInventory_Patch.slots[i]!.Position = new Vector2(x, y);

@@ -219,7 +219,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     {
         if (InventoryGui.instance == null) return;
         if (Player.m_localPlayer == null) return;
-        int height = 4 + ExtraRows.Value + (AddEquipmentRow.Value == Toggle.On ? API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()) : 0);
+        int height = Layout.BaseInventoryHeight + ExtraRows.Value + (AddEquipmentRow.Value == Toggle.On ? API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()) : 0);
         Player.m_localPlayer.m_inventory.m_height = height;
         Player.m_localPlayer.m_tombstone.GetComponent<Container>().m_height = height;
 
