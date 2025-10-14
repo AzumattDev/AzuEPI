@@ -1,4 +1,4 @@
-﻿namespace AzuEPI.Vanity;
+﻿namespace AzuEPI.Game.Vanity;
 
 internal static class VanityZdoKeys
 {

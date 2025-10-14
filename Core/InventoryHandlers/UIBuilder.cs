@@ -1,7 +1,7 @@
 ﻿using AzuEPI.Game.Loadout;
 using AzuEPI.Game.Patches;
-using AzuEPI.PlayerPreview;
-using AzuEPI.Vanity;
+using AzuEPI.Game.PlayerPreview;
+using AzuEPI.Game.Vanity;
 
 namespace AzuEPI.Core.InventoryHandlers;
 

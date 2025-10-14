@@ -1,4 +1,4 @@
-﻿namespace AzuEPI.PlayerPreview.Stats;
+﻿namespace AzuEPI.Game.PlayerPreview.Stats;
 
 public class StatsUI
 {

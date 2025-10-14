@@ -1,4 +1,4 @@
-﻿namespace AzuEPI.Vanity;
+﻿namespace AzuEPI.Game.Vanity;
 
 [HarmonyPatch(typeof(VisEquipment), nameof(VisEquipment.SetHelmetEquipped))]
 internal static class Vanity_Helmet

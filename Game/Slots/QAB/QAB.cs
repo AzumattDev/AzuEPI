@@ -1,10 +1,8 @@
-﻿using AzuEPI.Core.InventoryHandlers;
-using AzuEPI.Core.Text;
+﻿using AzuEPI.Core.Text;
 using AzuEPI.EPI;
 using AzuEPI.Game.Patches;
-using AzuExtendedPlayerInventory;
 
-namespace AzuEPI.Slots.QAB;
+namespace AzuEPI.Game.Slots.QAB;
 
 [HarmonyPatch]
 internal static class SettingsMenuClosedRecentlyPatchs
@@ -49,7 +47,7 @@ internal static class QuickAccessBar
                 __instance.m_items.Clear();
                 Inventory inventory = player.GetInventory();
                 int width = inventory.GetWidth();
-                int adjustedHeight = inventory.GetHeight() - API.GetAddedRows(width);
+                int adjustedHeight = inventory.GetHeight() - API.API.GetAddedRows(width);
                 int firstHotkeyIndex = adjustedHeight * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length;
 
                 for (int i = 0; i < Hotkeys.Length; ++i)
@@ -264,7 +262,7 @@ public static class HotkeyBarController
                     {
                         var quickSlotInventory = player.m_inventory;
                         int width = quickSlotInventory.GetWidth();
-                        int adjustedHeight = quickSlotInventory.GetHeight() - API.GetAddedRows(width);
+                        int adjustedHeight = quickSlotInventory.GetHeight() - API.API.GetAddedRows(width);
                         int index = adjustedHeight * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length + hotkeyBar.m_selected;
 
                         var item = quickSlotInventory.GetItemAt(index % width, index / width);

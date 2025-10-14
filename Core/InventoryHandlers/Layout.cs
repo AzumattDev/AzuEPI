@@ -1,6 +1,5 @@
 ﻿using AzuEPI.Game.Loadout;
 using AzuEPI.Game.Patches;
-using AzuEPI.Vanity;
 
 namespace AzuEPI.Core.InventoryHandlers;
 

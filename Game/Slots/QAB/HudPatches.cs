@@ -1,7 +1,6 @@
-﻿using AzuEPI.Core.InventoryHandlers;
-using AzuEPI.EPI;
+﻿using AzuEPI.EPI;
 
-namespace AzuEPI.Slots.QAB;
+namespace AzuEPI.Game.Slots.QAB;
 
 public class HudPatches
 {

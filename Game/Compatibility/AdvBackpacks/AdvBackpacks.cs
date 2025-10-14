@@ -1,6 +1,4 @@
-﻿using AzuExtendedPlayerInventory;
-
-namespace AzuEPI.Game.Compatibility.AdvBackpacks;
+﻿namespace AzuEPI.Game.Compatibility.AdvBackpacks;
 
 public class AdvBackpacksCompat
 {
@@ -13,7 +11,7 @@ public class AdvBackpacksCompat
     {
         if (!Chainloader.PluginInfos.TryGetValue("vapok.mods.adventurebackpacks", out PluginInfo advbackpackinfo)) return;
         if (advbackpackinfo == null || advbackpackinfo.Instance == null) return;
-        API.AddSlot("$bp_backpack_slot_name", new AdvBackpacksCompat().Backpacks.ToArray());
+        API.API.AddSlot("$bp_backpack_slot_name", new AdvBackpacksCompat().Backpacks.ToArray());
         context._harmony.PatchAll(typeof(AdvBackpacksCompat));
     }
 

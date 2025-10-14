@@ -1,6 +1,6 @@
-﻿using AzuEPI.PlayerPreview;
+﻿using AzuEPI.Game.PlayerPreview;
 
-namespace AzuEPI.Vanity;
+namespace AzuEPI.Game.Vanity;
 
 internal static class VanityPanelController
 {

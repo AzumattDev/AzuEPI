@@ -144,12 +144,13 @@
     <ItemGroup Condition="'$(Configuration)|$(Platform)' != 'API|AnyCPU'">
         <Compile Include="EPI\EPI.cs"/>
         <Compile Include="Plugin.cs"/>
-        <Compile Include="Core\Input\GamepadCompatibility.cs" />
+        <Compile Include="Core\Input\GamepadCompatibility.cs"/>
         <Compile Include="Core\Input\KeyboardExtensions.cs"/>
         <Compile Include="Core\InventoryHandlers\Capacity.cs"/>
         <Compile Include="Core\InventoryHandlers\InventoryExtensions.cs"/>
         <Compile Include="Core\InventoryHandlers\InventoryHealth.cs"/>
         <Compile Include="Core\InventoryHandlers\Layout.cs"/>
+        <Compile Include="Core\InventoryHandlers\UIBuilder.cs"/>
         <Compile Include="Core\Slots\Model.cs"/>
         <Compile Include="Core\Slots\Rules.cs"/>
         <Compile Include="Core\Slots\SlotHelpers.cs"/>
@@ -161,6 +162,7 @@
         <Compile Include="Game\Compatibility\AdvBackpacks\AdvBackpacks.cs"/>
         <Compile Include="Game\Compatibility\AdvBackpacks\BoneReorder.cs"/>
         <Compile Include="Game\Compatibility\JudesEquipment.cs"/>
+        <Compile Include="Game\Compatibility\RustBags.cs"/>
         <Compile Include="Game\Loadout\LoadoutPatches.cs"/>
         <Compile Include="Game\Loadout\PersonalLoadoutGui.cs"/>
         <Compile Include="Game\Loadout\PersonalLoadoutGuiDetails.cs"/>
@@ -177,8 +179,8 @@
         <Compile Include="Game\PlayerPreview\PlayerRotationController.cs"/>
         <Compile Include="Game\PlayerPreview\PreviewUI.cs"/>
         <Compile Include="Game\PlayerPreview\Stats\Stats.cs"/>
-        <Compile Include="Game\PlayerPreview\RealPlayer\PlayerRotationController.cs" />
-        <Compile Include="Game\PlayerPreview\RealPlayer\PreviewUITEST.cs" />
+        <Compile Include="Game\PlayerPreview\RealPlayer\PlayerRotationController.cs"/>
+        <Compile Include="Game\PlayerPreview\RealPlayer\PreviewUITEST.cs"/>
         <Compile Include="Game\PlayerPreview\VisualHandler.cs"/>
         <Compile Include="Game\Slots\QAB\HudPatches.cs"/>
         <Compile Include="Game\Slots\QAB\QAB.cs"/>
@@ -206,8 +208,6 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="API\API.cs"/>
-        <Compile Include="Core\InventoryHandlers\UIBuilder.cs" />
-        <Compile Include="Game\Compatibility\RustBags.cs" />
         <None Include="App.config"/>
     </ItemGroup>
     <ItemGroup>

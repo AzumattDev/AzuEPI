@@ -1,6 +1,4 @@
-﻿using AzuExtendedPlayerInventory;
-
-namespace AzuEPI.Game.Compatibility;
+﻿namespace AzuEPI.Game.Compatibility;
 
 public class RustyBagsCompat
 {
@@ -18,7 +16,7 @@ public class RustyBagsCompat
     {
         if (!Chainloader.PluginInfos.TryGetValue("RustyMods.RustyBags", out PluginInfo rustyBagInfo)) return;
         if (rustyBagInfo == null || rustyBagInfo.Instance == null) return;
-        API.AddSlot("$bp_backpack_slot_name", new RustyBagsCompat().Backpacks.ToArray().Concat(new RustyBagsCompat().Quivers.ToArray()));
+        API.API.AddSlot("$bp_backpack_slot_name", new RustyBagsCompat().Backpacks.ToArray().Concat(new RustyBagsCompat().Quivers.ToArray()));
         context._harmony.PatchAll(typeof(RustyBagsCompat));
     }
 
@@ -31,7 +29,7 @@ public class RustyBagsCompat
         if (equippedItems == null) return;
         if (equippedItems.Exists(item => item != null
                                          && item.m_dropPrefab != null
-                                         && (new RustyBagsCompat().Backpacks.Contains(item.m_dropPrefab.name) 
+                                         && (new RustyBagsCompat().Backpacks.Contains(item.m_dropPrefab.name)
                                              || new RustyBagsCompat().Quivers.Contains(item.m_dropPrefab.name))))
         {
             __result = true;

@@ -2,7 +2,7 @@
 using AzuEPI.Core.InventoryHandlers;
 using AzuEPI.Core.Slots;
 using AzuEPI.Game.Patches;
-using AzuEPI.PlayerPreview;
+using AzuEPI.Game.PlayerPreview;
 
 # else
 using JetBrains.Annotations;

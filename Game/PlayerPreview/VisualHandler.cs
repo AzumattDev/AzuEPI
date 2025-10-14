@@ -1,8 +1,7 @@
 ﻿using System.Reflection.Emit;
 using AzuEPI.Game.Compatibility.AdvBackpacks;
-using AzuExtendedPlayerInventory;
 
-namespace AzuEPI.PlayerPreview;
+namespace AzuEPI.Game.PlayerPreview;
 
 public class CustomEquipVisuals
 {
@@ -345,7 +344,7 @@ public class CustomEquipVisuals
     internal static class HideTypeWhileEquipping
     {
         // Single fake value is fine; it just must not match any vanilla enum case
-        private static readonly ItemDrop.ItemData.ItemType FakeType = API.GetFakeItemType();
+        private static readonly ItemDrop.ItemData.ItemType FakeType = API.API.GetFakeItemType();
 
         private static bool IsReserved(ItemDrop.ItemData.ItemType t) =>
             t is ItemDrop.ItemData.ItemType.Helmet

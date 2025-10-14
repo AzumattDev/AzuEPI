@@ -1,4 +1,4 @@
-﻿namespace AzuEPI.PlayerPreview;
+﻿namespace AzuEPI.Game.PlayerPreview;
 
 public class PlayerRotationController : MonoBehaviour, IDragHandler, IEndDragHandler, IScrollHandler
 {

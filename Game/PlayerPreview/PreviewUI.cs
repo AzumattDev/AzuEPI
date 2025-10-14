@@ -1,6 +1,6 @@
 ﻿using AzuEPI.Game.Loadout;
 
-namespace AzuEPI.PlayerPreview;
+namespace AzuEPI.Game.PlayerPreview;
 
 [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Show))]
 static class CreatePlayerPreveiwInventoryGuiShowPatch

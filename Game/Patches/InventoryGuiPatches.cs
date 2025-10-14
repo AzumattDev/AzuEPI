@@ -3,8 +3,8 @@ using AzuEPI.Core.Slots;
 using AzuEPI.Core.Text;
 using AzuEPI.EPI;
 using AzuEPI.Game.Loadout;
-using AzuEPI.PlayerPreview;
-using AzuEPI.Vanity;
+using AzuEPI.Game.PlayerPreview;
+using AzuEPI.Game.Vanity;
 
 namespace AzuEPI.Game.Patches;
 
