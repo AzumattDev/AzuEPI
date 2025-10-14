@@ -5,7 +5,6 @@ using AzuEPI.EPI;
 using AzuEPI.Game.Loadout;
 using AzuEPI.PlayerPreview;
 using AzuEPI.Vanity;
-using AzuExtendedPlayerInventory;
 
 namespace AzuEPI.Game.Patches;
 
@@ -15,75 +14,40 @@ public class InventoryGuiPatches
     [HarmonyPriority(Priority.Last)]
     static class ReparentPlayerGridInventoryGuiAwakePatch
     {
-        internal static RectTransform _epiPreviewRect;
-
         static void Postfix(InventoryGui __instance)
         {
             var selectedFrame = __instance.m_crafting.Find("selected_frame").GetComponent<RectTransform>();
-            selectedFrame.anchorMin = Layout.PlayerBkgAnchorMin;
+            var repairSimple = __instance.m_crafting.Find("RepairSimple").GetComponent<RectTransform>();
+            var repairButton = __instance.m_crafting.Find("RepairButton").GetComponent<RectTransform>();
+            Layout.SelectedFrameOrigAnchMin = selectedFrame.anchorMin;
+            Layout.RepairSimpleOrigAnchoredPos = repairSimple.anchoredPosition;
+            Layout.RepairButtonOrigAnchoredPos = repairButton.anchoredPosition;
+            if (OldLayout.Value.isOff())
+            {
+                selectedFrame.anchorMin = Layout.PlayerBkgAnchorMin;
+                repairSimple.anchoredPosition += Layout.RepairMovement;
+                repairButton.anchoredPosition += Layout.RepairMovement;
+            }
 
-            Transform bkg = Object.Instantiate(__instance.m_crafting.Find("Bkg"), __instance.m_crafting);
-            var index = selectedFrame.GetSiblingIndex();
-            bkg.SetSiblingIndex(index + 2);
-            bkg.name = "AzuPlayerBkg";
-            bkg.GetComponent<RectTransform>().anchorMin = Layout.PlayerBkgAnchorMin;
+            CreateExtendedCraftingPanel(__instance, selectedFrame);
 
-            __instance.m_crafting.Find("RepairSimple").GetComponent<RectTransform>().anchoredPosition += Layout.RepairMovement;
-            __instance.m_crafting.Find("RepairButton").GetComponent<RectTransform>().anchoredPosition += Layout.RepairMovement;
+            //__instance.m_crafting.SetSiblingIndex(1);
 
-            __instance.m_crafting.SetSiblingIndex(1);
+            CreateRuntimePanel();
+            CreateAzuEpiPreview(__instance, out var previewParentRT);
 
-            if (AzuEPICharacterPanel.instance == null)
-                new GameObject("AzuEPI_RuntimePanel").AddComponent<AzuEPICharacterPanel>();
+            CreatePlayerPreviewImage(previewParentRT);
+            SetupPreviewPanel();
 
-            var panel = AzuEPICharacterPanel.instance;
+            BuildToggleButtonHlg(__instance);
 
-            var previewParent = new GameObject("AzuEPI_PlayerPreview", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(RectMask2D), typeof(PlayerRotationController));
-            var previewParentRT = (RectTransform)previewParent.transform;
-            previewParentRT.SetParent(__instance.m_crafting, false);
-
-            var img = previewParent.GetComponent<Image>();
-            img.color = new Color(0f, 0f, 0f, 0.565f);
-            previewParentRT.anchorMin = Layout.PreviewAnchorMin;
-            previewParentRT.anchorMax = Layout.PreviewAnchorMax;
-            previewParentRT.sizeDelta = Layout.PreviewSizeDelta;
-            previewParentRT.anchoredPosition = Layout.PreviewAnchoredPos;
-
-            var go = new GameObject("PlayerPreview", typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage));
-            var rt = (RectTransform)go.transform;
-            rt.SetParent(previewParentRT, false);
-
-            rt.sizeDelta = Layout.PlayerPreviewImageSize;
-            rt.anchoredPosition = Vector2.zero;
-
-            var raw = go.GetComponent<RawImage>();
-            raw.raycastTarget = false;
-            raw.color = Color.white;
-
-            panel.render = rt;
-            panel.renderRawImage = raw;
-
-            PlayerPreviewManager.Initialize();
-            PlayerPreviewManager.Instance.CreatePreviewCamera();
-            PlayerPreviewManager.Instance.CreatePreviewLights();
-            PlayerPreviewManager.Instance.UpdateRenderTexture();
-
-            _epiPreviewRect = rt;
-
-            Layout.BuildToggleButtonHlg(__instance);
-
-            VanityPanelController.EnsureBuilt(__instance);
+            EnsureVanityPanelBuilt(__instance);
             VanityPanelController.SetVisible(false);
 
-            PersonalLoadoutGui.BuildLoadoutToggleButton(__instance);
+            BuildLoadoutToggles(__instance);
 
-            var charName = Object.Instantiate(__instance.m_info.transform.Find("TitlePanel"), previewParentRT);
-            charName.name = "AzuEPI_CharacterName";
-            charName.GetComponentsInChildren<TextMeshProUGUI>().FirstOrDefault()!.text = global::Game.instance.GetPlayerProfile().GetName();
-            foreach (Transform child in charName)
-                if (child.name.Contains("BraidLine"))
-                    Object.Destroy(child.gameObject);
-            __instance.m_crafting.Find("Bkg").GetComponent<Image>().enabled = false;
+            CreateCharacterName(__instance, previewParentRT);
+            __instance.m_crafting.Find("Bkg").GetComponent<Image>().enabled = OldLayout.Value.isOn();
         }
     }
 
@@ -130,7 +94,7 @@ public class InventoryGuiPatches
 
                 int width = inventory.GetWidth();
                 int height = inventory.GetHeight();
-                int requiredRows = API.GetAddedRows(width);
+                int requiredRows = API.API.GetAddedRows(width);
 
                 int num = width * (height - requiredRows);
                 ItemDrop.ItemData?[] equippedItems = new ItemDrop.ItemData[UpdateInventory_Patch.slots.Count];
@@ -185,48 +149,39 @@ public class InventoryGuiPatches
 
             if (!___m_animator.GetBool(ExtendedPlayerInventory.Visible))
                 return;
+            RectTransform bkgRect = __instance.m_player.Find("Bkg").GetComponent<RectTransform>();
             if (__instance.m_player.transform.Find("PlayerScroll") == null) // If ValheimPlus didn't add a scrollbar
             {
-                RectTransform bkgRect = __instance.m_player.Find("Bkg").GetComponent<RectTransform>();
-
                 bkgRect.anchorMin = new Vector2(0.0f, (ExtraRows.Value
                                                        + (AddEquipmentRow.Value.isOff()
                                                           || DisplayEquipmentRowSeparate.Value.isOn()
                                                            ? 0
-                                                           : API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()))) * -0.25f);
+                                                           : API.API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()))) * -0.25f);
+            }
+            else
+            {
+                bkgRect.anchorMin = new Vector2(0.0f, (ExtraRows.Value + (AddEquipmentRow.Value.isOff() || DisplayEquipmentRowSeparate.Value.isOn() ? 0 : API.API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()))) * -0.25f);
             }
 
             if (AddEquipmentRow.Value.isOff())
                 return;
 
-            var equipmentBkgTransform = __instance.m_player.Find(ExtendedPlayerInventory.AzuBkgName);
-            var dropallButton = __instance.m_player.Find(ExtendedPlayerInventory.DropAllButtonName);
+            var equipmentBkgTransform = __instance.m_player.Find(AzuEquipmentBkgName);
+            var dropallButton = __instance.m_player.Find(DropAllButtonName);
 
             switch (DisplayEquipmentRowSeparate.Value)
             {
-                /*case AzuExtendedPlayerInventoryPlugin.Toggle.On when equipmentBkgTransform == null:
+                case AzuExtendedPlayerInventoryPlugin.Toggle.On when equipmentBkgTransform == null && OldLayout.Value.isOn():
                 {
-                    Transform transform = Object.Instantiate(bkgRect.transform, __instance.m_player);
-                    transform.SetAsFirstSibling();
-                    transform.name = ExtendedPlayerInventory.AzuBkgName;
-                    RectTransform rectTransform = transform.GetComponent<RectTransform>();
-                    rectTransform.anchorMin = new Vector2(1f, 0.0f);
-                    Vector2 maxAnchor = new(1.13f + Math.Max(AzuExtendedPlayerInventoryPlugin.Hotkeys.Length, (UpdateInventory_Patch.slots.Count - 1) / 3) * UpdateInventory_Patch.tileSize / 570, 1f);
-                    if (Chainloader.PluginInfos.TryGetValue(ExtendedPlayerInventory.MinimalUiguid, out var pluginInfo) && pluginInfo is not null) maxAnchor.x += 0.03f;
-
-                    rectTransform.anchorMax = maxAnchor;
-                    InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<RectTransform>().anchorMax = maxAnchor;
-                    InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<Image>().raycastTarget = false;
-
+                    BuildEquipmentBkg(__instance, bkgRect);
                     break;
-                }*/
-                case AzuExtendedPlayerInventoryPlugin.Toggle.On when equipmentBkgTransform == null:
+                }
+                case AzuExtendedPlayerInventoryPlugin.Toggle.On when OldLayout.Value.isOff():
                 {
-                    /*Transform transform = Object.Instantiate(bkgRect.transform, __instance.m_player);
-                    transform.SetAsFirstSibling();
-                    transform.name = ExtendedPlayerInventory.AzuBkgName;
-                    RectTransform rectTransform = transform.GetComponent<RectTransform>();
-                    rectTransform.anchorMin = new Vector2(1f, 0f);*/
+                    if (equipmentBkgTransform == null)
+                    {
+                        BuildEquipmentBkg(__instance, bkgRect);
+                    }
 
                     float columns = 2f;
                     float gapTiles = 4f;
@@ -236,7 +191,7 @@ public class InventoryGuiPatches
                     float extraX = (extraTiles * Layout.tileSize) / 570f;
 
                     Vector2 maxAnchor = new(1f + extraX, 1f);
-                    if (Chainloader.PluginInfos.TryGetValue(ExtendedPlayerInventory.MinimalUiguid, out var pi) && pi != null)
+                    if (Chainloader.PluginInfos.TryGetValue(MinimalUiguid, out var pi) && pi != null)
                         maxAnchor.x += 0.03f;
 
                     //rectTransform.anchorMax = maxAnchor;
@@ -246,7 +201,7 @@ public class InventoryGuiPatches
                 }
 
                 case AzuExtendedPlayerInventoryPlugin.Toggle.Off when equipmentBkgTransform:
-                    Object.DestroyImmediate(equipmentBkgTransform.gameObject);
+                    equipmentBkgTransform.gameObject.SetActive(false);
                     break;
             }
 
@@ -258,7 +213,7 @@ public class InventoryGuiPatches
                 {
                     Transform dropAllButtonPrefab = __instance.m_takeAllButton.transform;
                     dropAllButtonTransform = Object.Instantiate(dropAllButtonPrefab, __instance.m_player).GetComponent<RectTransform>();
-                    dropAllButtonTransform.name = ExtendedPlayerInventory.DropAllButtonName;
+                    dropAllButtonTransform.name = DropAllButtonName;
                     dropAllButtonTransform.GetComponentInChildren<TMP_Text>().text = "Drop All";
                     var buttonComp = dropAllButtonTransform.GetComponent<Button>();
                     buttonComp.onClick.RemoveAllListeners();
@@ -356,7 +311,7 @@ public class InventoryGuiPatches
 
         static UpdateInventory_Patch()
         {
-            API.BeforeQuickSlotsAdded();
+            API.API.BeforeQuickSlotsAdded();
             for (int i = 0; i < Hotkeys.Length; ++i)
                 slots.Add(new Model.Slot
                 {
@@ -365,7 +320,7 @@ public class InventoryGuiPatches
                         : HotkeyTexts[i].Value,
                     IsQuickSlot = true,
                 });
-            API.QuickSlotsAdded();
+            API.API.QuickSlotsAdded();
         }
 
         private static void Postfix(InventoryGrid ___m_playerGrid)
@@ -395,6 +350,7 @@ public class InventoryGuiPatches
                     {
                         if (InventoryGui.instance)
                             currentChild.GetComponent<RectTransform>().SetParent(InventoryGui.instance.m_crafting);
+
                         currentChild.GetComponent<RectTransform>().anchoredPosition = slots[i].Position;
                     }
                     else

@@ -1,6 +1,5 @@
 ﻿using AzuEPI.Core.Slots;
 using AzuEPI.Game.Patches;
-using AzuExtendedPlayerInventory;
 
 namespace AzuEPI.Core.Input;
 
@@ -35,7 +34,7 @@ internal static class GamepadCompatibility
             {
                 case EpiGridMap.CellKind.Equipment:
                 {
-                    EpiGridMap.EquipIndexToRowCol(equipIdx, out int row, out int col);
+                    EpiGridMap.EquipIndexToRowCol(s, equipIdx, out int row, out int col);
 
                     if (left)
                     {
@@ -60,7 +59,7 @@ internal static class GamepadCompatibility
                     }
                     else if (down)
                     {
-                        if (++row < SlotHelpers.EquipRowsPerColumn && EpiGridMap.TryEquipIndexFromRowCol(s, row, col, out int e2))
+                        if (++row < s.EquipRowsPerColumn && EpiGridMap.TryEquipIndexFromRowCol(s, row, col, out int e2))
                         {
                             next = EpiGridMap.EquipIndexToGrid(s, e2);
                         }
@@ -95,10 +94,10 @@ internal static class GamepadCompatibility
                     else if (up)
                     {
                         int col = Mathf.Clamp(quickIdx, 0, s.EquipCols - 1);
-                        int row = Math.Min(SlotHelpers.EquipRowsPerColumn - 1, s.EquipCount - 1);
+                        int row = Math.Min(s.EquipRowsPerColumn - 1, s.EquipCount - 1);
                         while (row >= 0 && !EpiGridMap.TryEquipIndexFromRowCol(s, row, col, out _)) row--;
                         next = (row >= 0)
-                            ? EpiGridMap.EquipIndexToGrid(s, col * SlotHelpers.EquipRowsPerColumn + row)
+                            ? EpiGridMap.EquipIndexToGrid(s, col * s.EquipRowsPerColumn + row)
                             : new Vector2i(cur.x, Mathf.Max(0, s.PlayerHeight - 2));
                     }
                     else if (down)
@@ -127,7 +126,7 @@ internal static class GamepadCompatibility
                         }
                         else
                         {
-                            if (cur.y <= SlotHelpers.EquipRowsPerColumn - 1 && s.EquipCount > 0 &&
+                            if (cur.y <= s.EquipRowsPerColumn - 1 && s.EquipCount > 0 &&
                                 EpiGridMap.TryEquipIndexFromRowCol(s, cur.y, 0, out int e0))
                                 next = EpiGridMap.EquipIndexToGrid(s, e0);
                             else
@@ -190,20 +189,22 @@ internal static class EpiGridMap
     internal readonly struct Snapshot
     {
         public readonly int Width;
-        public readonly int PlayerHeight; // vanilla + extraRows + epiRows(if enabled)
+        public readonly int PlayerHeight;
         public readonly int BaseIndex;
         public readonly int EquipCount;
         public readonly int QuickCount;
         public readonly int EquipCols;
+        public readonly int EquipRowsPerColumn;
 
-        public Snapshot(int width, int playerHeight, int baseIndex, int equipCount, int quickCount)
+        public Snapshot(int width, int playerHeight, int baseIndex, int equipCount, int quickCount, int equipCols, int equipRowsPerColumn)
         {
             Width = width;
             PlayerHeight = playerHeight;
             BaseIndex = baseIndex;
             EquipCount = equipCount;
             QuickCount = quickCount;
-            EquipCols = (equipCount + SlotHelpers.EquipRowsPerColumn - 1) / SlotHelpers.EquipRowsPerColumn;
+            EquipCols = equipCols;
+            EquipRowsPerColumn = equipRowsPerColumn;
         }
     }
 
@@ -220,25 +221,46 @@ internal static class EpiGridMap
     {
         Player? p = Player.m_localPlayer;
         Inventory? inv = p?.GetInventory();
+
         int width = inv?.GetWidth() ?? InventoryHandlers.Layout.BaseInventoryWidth;
-
-        int epiRows = (AddEquipmentRow.Value.isOn()) ? API.GetAddedRows(width) : 0;
-
-        int playerHeight = InventoryHandlers.Layout.BaseInventoryHeight
-                           + ExtraRows.Value
-                           + epiRows;
+        int baseInvHeight = InventoryHandlers.Layout.BaseInventoryHeight;
+        int extraRows = ExtraRows.Value;
 
         int equipCount = CountEquipmentSlots();
         int quickCount = Hotkeys.Length;
-        int baseIndex = InventoryHandlers.Layout.BaseIndex(inv);
 
-        return new Snapshot(width, playerHeight, baseIndex, equipCount, quickCount);
+        if (OldLayout.Value.isOn())
+        {
+            int equipRowsPerCol = 3;
+            int equipCols = Mathf.CeilToInt(equipCount / (float)equipRowsPerCol);
+
+            int usedEquipRows = Math.Min(equipRowsPerCol, Math.Max(1, equipCount));
+            int quickRows = quickCount > 0 ? 1 : 0;
+            int bandHeight = (equipCount > 0 ? usedEquipRows : 0) + quickRows;
+
+            int playerHeight = baseInvHeight + extraRows + bandHeight;
+            int baseIndex = width * (playerHeight - bandHeight);
+
+            return new Snapshot(width, playerHeight, baseIndex, equipCount, quickCount, equipCols, equipRowsPerCol);
+        }
+        else
+        {
+            int epiRows = (AddEquipmentRow.Value.isOn()) ? API.API.GetAddedRows(width) : 0;
+            int playerHeight = baseInvHeight + extraRows + epiRows;
+
+            int equipRowsPerCol = SlotHelpers.EquipRowsPerColumn;
+            int equipCols = (equipCount + equipRowsPerCol - 1) / equipRowsPerCol;
+
+            int baseIndex = InventoryHandlers.Layout.BaseIndex(inv);
+
+            return new Snapshot(width, playerHeight, baseIndex, equipCount, quickCount, equipCols, equipRowsPerCol);
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool TryEquipIndexFromRowCol(in Snapshot s, int row, int col, out int equipIndex)
     {
-        equipIndex = col * SlotHelpers.EquipRowsPerColumn + row;
+        equipIndex = col * s.EquipRowsPerColumn + row;
         return (equipIndex >= 0 && equipIndex < s.EquipCount);
     }
 
@@ -261,10 +283,10 @@ internal static class EpiGridMap
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static void EquipIndexToRowCol(int equipIndex, out int row, out int col)
+    internal static void EquipIndexToRowCol(in Snapshot s, int equipIndex, out int row, out int col)
     {
-        row = equipIndex % SlotHelpers.EquipRowsPerColumn;
-        col = equipIndex / SlotHelpers.EquipRowsPerColumn;
+        row = equipIndex % s.EquipRowsPerColumn;
+        col = equipIndex / s.EquipRowsPerColumn;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

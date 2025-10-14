@@ -177,6 +177,8 @@
         <Compile Include="Game\PlayerPreview\PlayerRotationController.cs"/>
         <Compile Include="Game\PlayerPreview\PreviewUI.cs"/>
         <Compile Include="Game\PlayerPreview\Stats\Stats.cs"/>
+        <Compile Include="Game\PlayerPreview\RealPlayer\PlayerRotationController.cs" />
+        <Compile Include="Game\PlayerPreview\RealPlayer\PreviewUITEST.cs" />
         <Compile Include="Game\PlayerPreview\VisualHandler.cs"/>
         <Compile Include="Game\Slots\QAB\HudPatches.cs"/>
         <Compile Include="Game\Slots\QAB\QAB.cs"/>
@@ -204,6 +206,8 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="API\API.cs"/>
+        <Compile Include="Core\InventoryHandlers\UIBuilder.cs" />
+        <Compile Include="Game\Compatibility\RustBags.cs" />
         <None Include="App.config"/>
     </ItemGroup>
     <ItemGroup>

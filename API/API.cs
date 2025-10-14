@@ -11,7 +11,7 @@ using System;
 using System.Collections.Generic;
 #endif
 
-namespace AzuExtendedPlayerInventory;
+namespace AzuEPI.API;
 
 [PublicAPI]
 public class API
@@ -42,6 +42,15 @@ public class API
         return false;
 #else
         return true;
+#endif
+    }
+
+    public static ItemDrop.ItemData.ItemType GetFakeItemType()
+    {
+#if !API
+        return (ItemDrop.ItemData.ItemType)FakeType;
+#else
+        return ItemDrop.ItemData.ItemType.None;
 #endif
     }
 

@@ -47,6 +47,7 @@ public class PersonalLoadoutGui : MonoBehaviour
     public static bool PanelActive;
     public static PersonalLoadoutGui? instance => m_instance;
     public const string LoadoutKey = "AzuEPILoadout_";
+    public static Transform LoadoutsToggleButton = null!;
     private static Button _toggleBtn;
     internal static int tempInventorySize = 0;
     internal static RectTransform ToggleButtonParentHlg = null!;
@@ -125,7 +126,7 @@ public class PersonalLoadoutGui : MonoBehaviour
             return;
         m_LocalPlayerRef = Player.m_localPlayer;
         InventoryGui.instance.m_dropButton.gameObject.SetActive(false);
-        
+
         m_rootPanel.transform.parent.gameObject.SetActive(true);
         m_rootPanel.SetActive(true);
         m_storeRootPanel.SetActive(true);
@@ -179,25 +180,26 @@ public class PersonalLoadoutGui : MonoBehaviour
         var src = gui.m_takeAllButton?.transform ?? gui.m_craftButton?.transform;
         if (!src) return;
 
-        var clone = Instantiate(src, ToggleButtonParentHlg);
-        clone.name = "AzuEPILoadoutsToggleButton";
-        clone.SetAsLastSibling();
+        LoadoutsToggleButton = Instantiate(src, ToggleButtonParentHlg);
+        LoadoutsToggleButton.name = "AzuEPILoadoutsToggleButton";
+        LoadoutsToggleButton.SetAsLastSibling();
 
-        var rt = (RectTransform)clone;
+        var rt = (RectTransform)LoadoutsToggleButton;
         rt.anchorMin = new Vector2(0f, 1f);
         rt.anchorMax = new Vector2(0f, 1f);
         rt.pivot = new Vector2(0f, 1f);
         rt.anchoredPosition = new Vector2(-205f, -30f);
         rt.sizeDelta = new Vector2(120f, 32f);
 
-        var btn = clone.GetComponent<Button>();
+        var btn = LoadoutsToggleButton.GetComponent<Button>();
         btn.onClick.RemoveAllListeners();
         btn.onClick.AddListener(() => { ToggleUI(); });
 
-        var label = clone.GetComponentInChildren<TMP_Text>();
+        var label = LoadoutsToggleButton.GetComponentInChildren<TMP_Text>();
         if (label) label.text = "Loadouts";
 
         _toggleBtn = btn;
+        LoadoutsToggleButton.gameObject.SetActive(LoadoutOption.Value.isOn());
     }
 
     public static int GetNumberOfLoadouts()

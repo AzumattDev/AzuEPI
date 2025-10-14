@@ -2,11 +2,6 @@
 
 internal class ExtendedPlayerInventory
 {
-    public const string QABName = "QuickAccessBar";
-    public const string AzuBkgName = "AzuEquipmentBkg";
-    public const string DropAllButtonName = "AzuDropAllButton";
-    public const string MinimalUiguid = "Azumatt.MinimalUI";
-
     internal static readonly GameObject _elementPrefab = null!;
 
     internal static ItemDrop.ItemData?[] equipItems = new ItemDrop.ItemData[15];

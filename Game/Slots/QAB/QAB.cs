@@ -1,4 +1,5 @@
-﻿using AzuEPI.Core.Text;
+﻿using AzuEPI.Core.InventoryHandlers;
+using AzuEPI.Core.Text;
 using AzuEPI.EPI;
 using AzuEPI.Game.Patches;
 using AzuExtendedPlayerInventory;
@@ -25,7 +26,7 @@ internal static class QuickAccessBar
     [HarmonyPriority(Priority.Last)]
     internal static bool Prefix(HotkeyBar __instance, Player player)
     {
-        if (__instance.name != ExtendedPlayerInventory.QABName) return true;
+        if (__instance.name != QabName) return true;
 
         if (ShowQuickSlots.Value.isOff())
         {
@@ -171,18 +172,18 @@ internal static class QuickAccessBar
 
         __instance.m_elements.Clear();
     }
-    
+
     public static void SetElementPositions()
     {
         Transform transform = Hud.instance.transform.Find("hudroot");
-        if (!(transform.Find(ExtendedPlayerInventory.QABName)?.GetComponent<RectTransform>() != null))
+        if (!(transform.Find(QabName)?.GetComponent<RectTransform>() != null))
             return;
         if (QuickAccessX.Value == 9999.0)
             QuickAccessX.Value = transform.Find("healthpanel").GetComponent<RectTransform>().anchoredPosition.x - 32f;
         if (QuickAccessY.Value == 9999.0)
             QuickAccessY.Value = transform.Find("healthpanel").GetComponent<RectTransform>().anchoredPosition.y - 870f;
-        transform.Find(ExtendedPlayerInventory.QABName).GetComponent<RectTransform>().anchoredPosition = new Vector2(QuickAccessX.Value, QuickAccessY.Value);
-        transform.Find(ExtendedPlayerInventory.QABName).GetComponent<RectTransform>().localScale = new Vector3(QuickAccessScale.Value, QuickAccessScale.Value, 1f);
+        transform.Find(QabName).GetComponent<RectTransform>().anchoredPosition = new Vector2(QuickAccessX.Value, QuickAccessY.Value);
+        transform.Find(QabName).GetComponent<RectTransform>().localScale = new Vector3(QuickAccessScale.Value, QuickAccessScale.Value, 1f);
     }
 }
 

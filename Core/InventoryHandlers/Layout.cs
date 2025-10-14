@@ -1,6 +1,6 @@
 ﻿using AzuEPI.Game.Loadout;
+using AzuEPI.Game.Patches;
 using AzuEPI.Vanity;
-using AzuExtendedPlayerInventory;
 
 namespace AzuEPI.Core.InventoryHandlers;
 
@@ -15,6 +15,7 @@ public class Layout
     internal static float equipOriginY = -75f;
     internal static float columnGapTiles = 4f;
 
+    internal static Transform AzuPlayerBkg = null!;
     internal static readonly Vector2 PlayerBkgAnchorMin = new(-0.80f, 0f);
 
     internal static readonly Vector2 RepairMovement = new Vector2(-460f, 0f);
@@ -24,17 +25,23 @@ public class Layout
     internal static readonly Vector2 PreviewSizeDelta = new(-300f, 0f);
     internal static readonly Vector2 PreviewAnchoredPos = new(-507f, 0f);
     internal static readonly Vector2 PlayerPreviewImageSize = new(500f, 630f);
+    internal static readonly Vector2 ToggleButtonsHlgAnchoredPos = new(-222.5f, -30f);
+    internal static readonly Vector2 ToggleButtonsHlgAnchoredPosOld = new(-552.5f, -145f);
 
     internal static readonly Vector2 DropAllSize = new(100f, 30f);
     internal static readonly Vector2 DropAllAnchorMin = new(0.0f, 1.0f);
     internal static readonly Vector2 DropAllAnchorMax = new(0.0f, 1.0f);
     internal static readonly Vector2 DropAllPivot = new(0.0f, 1.0f);
 
+    public static Vector2 SelectedFrameOrigAnchMin;
+    public static Vector2 RepairSimpleOrigAnchoredPos;
+    public static Vector2 RepairButtonOrigAnchoredPos;
+
     public static int NormalRows(Inventory inv)
     {
         int width = inv.GetWidth();
         int height = inv.GetHeight();
-        int addedRows = API.GetAddedRows(width);
+        int addedRows = API.API.GetAddedRows(width);
         return height - addedRows;
     }
 
@@ -48,21 +55,35 @@ public class Layout
         return new(Mathf.Clamp(p.x, 0, inv.GetWidth() - 1), Mathf.Clamp(p.y, 0, inv.GetHeight() - 1));
     }
 
-    public static void BuildToggleButtonHlg(InventoryGui invGui)
+    public static Vector2 GetEquipmentBackAnchorMax()
     {
-        var hlgGo = new GameObject("AzuEPI_ToggleButtonsHlg", typeof(RectTransform), typeof(HorizontalLayoutGroup));
-        var hlgRt = (RectTransform)hlgGo.transform;
-        hlgRt.SetParent(invGui.m_crafting.transform, false);
-        hlgRt.anchorMin = new Vector2(0f, 1f);
-        hlgRt.anchorMax = new Vector2(0f, 1f);
-        hlgRt.pivot = new Vector2(0.5f, 1f);
-        hlgRt.anchoredPosition = new Vector2(-222.5f, -30f);
-        hlgRt.sizeDelta = new Vector2(270f, 32f);
-        var hlg = hlgGo.GetComponent<HorizontalLayoutGroup>();
-        hlg.childAlignment = TextAnchor.MiddleCenter;
-        hlg.spacing = 35f;
+        return new(1.13f + Math.Max(Hotkeys.Length, (InventoryGuiPatches.UpdateInventory_Patch.slots.Count - 1) / 3) * Layout.tileSize / 570, 1f);
+    }
 
-        VanityPanelController.ToggleButtonParentHlg = hlgRt;
-        PersonalLoadoutGui.ToggleButtonParentHlg = hlgRt;
+    public static void FixLayout()
+    {
+        if (!InventoryGui.instance) return;
+        var instance = InventoryGui.instance;
+        var selectedFrame = instance.m_crafting.Find("selected_frame").GetComponent<RectTransform>();
+        var repairSimple = instance.m_crafting.Find("RepairSimple").GetComponent<RectTransform>();
+        var repairButton = instance.m_crafting.Find("RepairButton").GetComponent<RectTransform>();
+        var craftingBkg = instance.m_crafting.Find("Bkg").GetComponent<Image>();
+
+        if (OldLayout.Value.isOn())
+        {
+            selectedFrame.anchorMin = SelectedFrameOrigAnchMin;
+            repairSimple.anchoredPosition = RepairSimpleOrigAnchoredPos;
+            repairButton.anchoredPosition = RepairButtonOrigAnchoredPos;
+            if (!craftingBkg.isActiveAndEnabled) craftingBkg.enabled = true;
+            if (HlgGo) HlgRt.anchoredPosition = ToggleButtonsHlgAnchoredPosOld;
+        }
+        else
+        {
+            selectedFrame.anchorMin = PlayerBkgAnchorMin;
+            repairSimple.anchoredPosition += RepairMovement;
+            repairButton.anchoredPosition += RepairMovement;
+            if (craftingBkg.isActiveAndEnabled) craftingBkg.enabled = false;
+            if (HlgGo) HlgRt.anchoredPosition = ToggleButtonsHlgAnchoredPos;
+        }
     }
 }

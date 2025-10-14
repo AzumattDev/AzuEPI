@@ -3,11 +3,12 @@ using AzuEPI.Core.InventoryHandlers;
 using AzuEPI.Core.Slots;
 using AzuEPI.Game.Compatibility;
 using AzuEPI.Game.Compatibility.AdvBackpacks;
+using AzuEPI.Game.Loadout;
 using AzuEPI.Game.Moveable;
 using AzuEPI.Game.Patches;
 using AzuEPI.Slots;
 using AzuEPI.Slots.QAB;
-using AzuExtendedPlayerInventory;
+using AzuEPI.Vanity;
 using BepInEx.Logging;
 using LocalizationManager;
 using ServerSync;
@@ -39,6 +40,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     internal static bool WbInstalled;
     internal readonly Harmony _harmony = new(ModGUID);
 
+    public static readonly int FakeType = "AzuEPIFakeType".GetStableHashCode();
+
     private void Awake()
     {
         Localizer.Load();
@@ -55,13 +58,13 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         {
             if (WishboneSlot.Value == Toggle.On)
             {
-                API.AddSlot("$item_wishbone", "Wishbone", 5);
+                API.API.AddSlot("$item_wishbone", "Wishbone", 5);
             }
             else
             {
-                API.RemoveSlot("$item_wishbone");
+                API.API.RemoveSlot("$item_wishbone");
                 if (Localization.instance != null)
-                    API.RemoveSlot(Localization.instance.Localize("$item_wishbone"));
+                    API.API.RemoveSlot(Localization.instance.Localize("$item_wishbone"));
             }
         };
 
@@ -69,19 +72,19 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         {
             if (WispLightSlot.Value == Toggle.On)
             {
-                API.AddSlot("$item_demister", "Demister", WishboneSlot.Value == Toggle.On ? 6 : 5);
+                API.API.AddSlot("$item_demister", "Demister", WishboneSlot.Value == Toggle.On ? 6 : 5);
             }
             else
             {
-                API.RemoveSlot("$item_demister");
+                API.API.RemoveSlot("$item_demister");
                 if (Localization.instance != null)
-                    API.RemoveSlot(Localization.instance.Localize("$item_demister"));
+                    API.API.RemoveSlot(Localization.instance.Localize("$item_demister"));
             }
         };
 
         /* Extended Player Inventory Config options */
         AutoEquip = config("2 - Extended Inventory", "Auto Equip", Toggle.On, "Automatically equip items that go into the gear slots. Applies when picking up items, transferring between containers, or picking up your tombstone.");
-        ShowQuickSlots = config("2 - Extended Inventory", "Show Quickslots", Toggle.On, "Should the quickslots be shown?");
+        ShowQuickSlots = config("2 - Extended Inventory", "Show Quickslots", Toggle.On, "Should the quickslots in the main hud be shown? (not the inventory quickslots)");
         ShowQuickSlots.SettingChanged += (sender, args) => { HotkeyBarController.Hud_Update_Patch.DeselectHotkeyBar(); };
         ExtraRows = config("2 - Extended Inventory", "Extra Inventory Rows", 0, "Number of extra ordinary rows. (This can cause overlap with chest GUI, make sure you hold CTRL (the default key) and drag to desired position)");
         ExtraRows.SettingChanged += (sender, args) => { UpdateInventorySize(); };
@@ -133,6 +136,34 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             HotKey3Text
         };
 
+        VanityOption = config("4 - UI", "Vanity Option", Toggle.On, "If on, the vanity button will be shown in the inventory.");
+        LoadoutOption = config("4 - UI", "Loadout Option", Toggle.On, "If on, the loadout button will be shown in the inventory.");
+        OldLayout = config("4 - UI", "Old Layout", Toggle.Off, "If on, the old layout will be used.");
+
+        VanityOption.SettingChanged += (sender, args) =>
+        {
+            if (VanityPanelController.VanityButtonGo)
+            {
+                VanityPanelController.VanityButtonGo.gameObject.SetActive(VanityOption.Value.isOn());
+            }
+        };
+
+        LoadoutOption.SettingChanged += (sender, args) =>
+        {
+            if (PersonalLoadoutGui.LoadoutsToggleButton)
+            {
+                PersonalLoadoutGui.LoadoutsToggleButton.gameObject.SetActive(LoadoutOption.Value.isOn());
+            }
+        };
+
+        OldLayout.SettingChanged += (sender, args) =>
+        {
+            SlotHelpers.ResizeSlots();
+            UpdateInventorySize();
+            Layout.FixLayout();
+            RebuildUI();
+        };
+
         if (Chainloader.PluginInfos.TryGetValue("ishid4.mods.betterarchery", out var BetterArchery))
         {
             // Force disable the configuration for BetterArchery. Turn off the quiver
@@ -153,16 +184,16 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         if (WishboneSlot.Value == Toggle.On)
         {
-            API.AddSlot("$item_wishbone", "Wishbone", 5);
+            API.API.AddSlot("$item_wishbone", "Wishbone", 5);
         }
 
         if (WispLightSlot.Value == Toggle.On)
         {
-            API.AddSlot("$item_demister", "Demister", WishboneSlot.Value == Toggle.On ? 6 : 5);
+            API.API.AddSlot("$item_demister", "Demister", WishboneSlot.Value == Toggle.On ? 6 : 5);
         }
 
         var index = InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length;
-        API.UpdateSlots(index, 1);
+        API.API.UpdateSlots(index, 1);
         InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(index, new Model.EquipmentSlot { Name = TrinketText.Value, IsQuickSlot = false, Get = player => player.m_trinketItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Trinket });
         SlotHelpers.ResizeSlots();
     }
@@ -173,15 +204,14 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         CheckWeightBase();
         AdvBackpacksCompat.Init();
         JudesEquipmentCompat.Init();
+        RustyBagsCompat.Init();
 
         if (Chainloader.PluginInfos.TryGetValue("randyknapp.mods.epicloot", out var RandyEL) && RandyEL is not null)
         {
-            API.AddSlot("Finger", new[] { "Andvaranaut", "GoldRubyRing", "SilverRing" });
+            API.API.AddSlot("Finger", new[] { "Andvaranaut", "GoldRubyRing", "SilverRing" });
         }
 
-        API.AddQuickSlot("Quick1");
-        API.AddQuickSlot("Quick2");
-        SlotHelpers.ResizeSlots();
+        API.API.AddSlot("ArmorQuickSlot", new[] { "ArmorIronChest" });
     }
 
     private void OnDestroy()
@@ -219,7 +249,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     {
         if (InventoryGui.instance == null) return;
         if (Player.m_localPlayer == null) return;
-        int height = Layout.BaseInventoryHeight + ExtraRows.Value + (AddEquipmentRow.Value == Toggle.On ? API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()) : 0);
+        int height = Layout.BaseInventoryHeight + ExtraRows.Value + (AddEquipmentRow.Value == Toggle.On ? API.API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()) : 0);
         Player.m_localPlayer.m_inventory.m_height = height;
         Player.m_localPlayer.m_tombstone.GetComponent<Container>().m_height = height;
 
@@ -282,6 +312,10 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     public static ConfigEntry<Vector2> UIAnchor = null!;
     public static ConfigEntry<Vector3> LocalScale = null!;
+
+    public static ConfigEntry<Toggle> VanityOption = null!;
+    public static ConfigEntry<Toggle> LoadoutOption = null!;
+    public static ConfigEntry<Toggle> OldLayout = null!;
 
     private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description, bool synchronizedSetting = true)
     {

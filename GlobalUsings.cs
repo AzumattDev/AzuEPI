@@ -15,3 +15,4 @@ global using UnityEngine.EventSystems;
 global using UnityEngine.UI;
 global using Object = UnityEngine.Object;
 global using static AzuEPI.AzuExtendedPlayerInventoryPlugin;
+global using static AzuEPI.Core.InventoryHandlers.UIBuilder;

@@ -13,7 +13,7 @@ public class AdvBackpacksCompat
     {
         if (!Chainloader.PluginInfos.TryGetValue("vapok.mods.adventurebackpacks", out PluginInfo advbackpackinfo)) return;
         if (advbackpackinfo == null || advbackpackinfo.Instance == null) return;
-        API.AddSlot(Localization.instance.Localize("$bp_backpack_slot_name"), new AdvBackpacksCompat().Backpacks.ToArray());
+        API.AddSlot("$bp_backpack_slot_name", new AdvBackpacksCompat().Backpacks.ToArray());
         context._harmony.PatchAll(typeof(AdvBackpacksCompat));
     }
 

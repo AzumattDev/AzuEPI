@@ -12,6 +12,8 @@ internal static class VanityPanelController
     public const string VanityToggleButtonName = "AzuEPIVanityToggleButton";
     public const string ResetAllVanityButtonName = "ResetAllVanityButton";
 
+    public static Transform VanityButtonGo = null!;
+
     private static readonly Vector2 CellSize = new(70, 70);
     private static readonly Vector2 Spacing = new(6, 6);
     private static readonly Vector2 Padding = new(12, 12);
@@ -377,8 +379,8 @@ internal static class VanityPanelController
         var src = gui.m_takeAllButton?.transform ?? gui.m_craftButton?.transform;
         if (!src) return;
 
-        var clone = CloneButton(src, ToggleButtonParentHlg, VanityToggleButtonName, ToggleBtnAnchorMin, ToggleBtnAnchorMax, ToggleBtnPivot, ToggleBtnPos, ToggleBtnSize);
-        var btn = clone.GetComponent<Button>();
+        VanityButtonGo = CloneButton(src, ToggleButtonParentHlg, VanityToggleButtonName, ToggleBtnAnchorMin, ToggleBtnAnchorMax, ToggleBtnPivot, ToggleBtnPos, ToggleBtnSize);
+        var btn = VanityButtonGo.GetComponent<Button>();
         btn.onClick.RemoveAllListeners();
         btn.onClick.AddListener(() =>
         {
@@ -386,10 +388,11 @@ internal static class VanityPanelController
             SetVisible(_visible);
         });
 
-        var label = clone.GetComponentInChildren<TMP_Text>();
+        var label = VanityButtonGo.GetComponentInChildren<TMP_Text>();
         if (label) label.text = Localization.instance.Localize("$azuepi_vanity");
 
         _toggleBtn = btn;
+        VanityButtonGo.gameObject.SetActive(VanityOption.Value.isOn());
     }
 
     private static void BuildResetButton(InventoryGui gui)

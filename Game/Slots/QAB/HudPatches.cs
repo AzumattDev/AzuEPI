@@ -1,5 +1,5 @@
-﻿using AzuEPI.EPI;
-using AzuExtendedPlayerInventory;
+﻿using AzuEPI.Core.InventoryHandlers;
+using AzuEPI.EPI;
 
 namespace AzuEPI.Slots.QAB;
 
@@ -13,13 +13,13 @@ public class HudPatches
             if (AddEquipmentRow.Value.isOff())
                 return;
 
-            API.HudAwake(__instance);
+            API.API.HudAwake(__instance);
 
             Transform transform = Object.Instantiate(__instance.m_rootObject.transform.Find("HotKeyBar"), __instance.m_rootObject.transform, true);
-            transform.name = ExtendedPlayerInventory.QABName;
+            transform.name = QabName;
             transform.GetComponent<RectTransform>().localPosition = Vector3.zero;
 
-            API.HudAwakeComplete(__instance);
+            API.API.HudAwakeComplete(__instance);
         }
     }
 
@@ -31,7 +31,7 @@ public class HudPatches
             if (AddEquipmentRow.Value.isOff() || Player.m_localPlayer == null)
                 return;
 
-            API.HudUpdate(__instance);
+            API.API.HudUpdate(__instance);
 
             float scaleFactor = GuiScaler.m_largeGuiScale;
             Vector3 mousePosition = Input.mousePosition;
@@ -41,7 +41,7 @@ public class HudPatches
                 ExtendedPlayerInventory.lastMousePos = mousePosition;
 
             Transform hudrootTransform = Hud.instance.transform.Find("hudroot");
-            Transform quickAccessBarTransform = hudrootTransform.Find(ExtendedPlayerInventory.QABName);
+            Transform quickAccessBarTransform = hudrootTransform.Find(QabName);
 
             if (QuickslotDragKeys.Value.IsPressed() && quickAccessBarTransform != null)
             {
@@ -52,14 +52,14 @@ public class HudPatches
 
                 Rect rect = new(anchoredPosition.x * scaleFactor, anchoredPosition.y * scaleFactor + Screen.height - sizeDelta.y * scaleFactor * quickAccessScale, (float)(sizeDelta.x * scaleFactor * quickAccessScale * 0.375), sizeDelta.y * scaleFactor * quickAccessScale);
 
-                if (rect.Contains(ExtendedPlayerInventory.lastMousePos) && ExtendedPlayerInventory.currentlyDragging is "" or ExtendedPlayerInventory.QABName)
+                if (rect.Contains(ExtendedPlayerInventory.lastMousePos) && ExtendedPlayerInventory.currentlyDragging is "" or QabName)
                 {
                     float deltaX = (mousePosition.x - ExtendedPlayerInventory.lastMousePos.x) / scaleFactor;
                     float deltaY = (mousePosition.y - ExtendedPlayerInventory.lastMousePos.y) / scaleFactor;
 
                     QuickAccessX.Value += deltaX;
                     QuickAccessY.Value += deltaY;
-                    ExtendedPlayerInventory.currentlyDragging = ExtendedPlayerInventory.QABName;
+                    ExtendedPlayerInventory.currentlyDragging = QabName;
                 }
                 else
                 {
@@ -73,7 +73,7 @@ public class HudPatches
 
             ExtendedPlayerInventory.lastMousePos = mousePosition;
 
-            API.HudUpdateComplete(__instance);
+            API.API.HudUpdateComplete(__instance);
         }
     }
 }
