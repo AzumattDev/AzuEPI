@@ -10,7 +10,7 @@ public class InventoryPatches
     {
         private static bool Prefix(Inventory __instance, ref Vector2i __result, bool topFirst)
         {
-            if (!__instance.ShouldGuard()) return true;
+            if (!__instance.ShouldProtectInventorySlots()) return true;
             __result = __instance.FindEmptyQuickAware(topFirst);
             return false;
         }
@@ -21,7 +21,7 @@ public class InventoryPatches
     {
         private static bool Prefix(Inventory __instance, ref int __result, List<ItemDrop.ItemData> ___m_inventory, int ___m_width, int ___m_height)
         {
-            if (!__instance.ShouldGuard()) return true;
+            if (!__instance.ShouldProtectInventorySlots()) return true;
             __result = Capacity.FreeNormalCells(__instance) + Capacity.FreeQuickCells(__instance);
             return false;
         }
@@ -32,7 +32,7 @@ public class InventoryPatches
     {
         private static bool Prefix(Inventory __instance, ref bool __result, List<ItemDrop.ItemData> ___m_inventory, int ___m_width, int ___m_height)
         {
-            if (!__instance.ShouldGuard()) return true;
+            if (!__instance.ShouldProtectInventorySlots()) return true;
 
             int normalRows = Layout.NormalRows(__instance);
 
@@ -77,7 +77,7 @@ public class InventoryPatches
     {
         private static bool Prefix(Inventory __instance, ref bool __result, ItemDrop.ItemData item, int amount, int x, int y)
         {
-            if (!__instance.ShouldGuard()) return true;
+            if (!__instance.ShouldProtectInventorySlots()) return true;
 
             if (__instance.IsHiddenCell(x, y))
             {
@@ -106,7 +106,7 @@ public class InventoryPatches
     {
         private static bool Prefix(Inventory __instance, ref bool __result, ItemDrop.ItemData item, Vector2i pos)
         {
-            if (!__instance.ShouldGuard()) return true;
+            if (!__instance.ShouldProtectInventorySlots()) return true;
 
             if (__instance.IsHiddenCell(pos.x, pos.y))
             {
@@ -133,7 +133,7 @@ public class InventoryPatches
     {
         private static bool Prefix(Inventory __instance, ItemDrop.ItemData item, int stack, ref bool __result)
         {
-            if (!__instance.ShouldGuard()) return true;
+            if (!__instance.ShouldProtectInventorySlots()) return true;
 
             if (stack <= 0) stack = item.m_stack;
 
@@ -156,7 +156,7 @@ public class InventoryPatches
     {
         private static void Postfix(Inventory __instance)
         {
-            if (!__instance.ShouldGuard()) return;
+            if (!__instance.ShouldProtectInventorySlots()) return;
 
             var stuck = new List<ItemDrop.ItemData>();
             foreach (var it in __instance.GetAllItems())
@@ -189,7 +189,7 @@ public class InventoryPatches
     {
         private static bool Prefix(Inventory __instance, ref bool __result, Inventory fromInventory, ItemDrop.ItemData item, int amount, int x, int y)
         {
-            if (!__instance.ShouldGuard()) return true;
+            if (!__instance.ShouldProtectInventorySlots()) return true;
 
             if (__instance.IsHiddenCell(x, y))
             {

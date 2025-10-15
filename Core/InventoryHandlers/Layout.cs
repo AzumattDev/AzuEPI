@@ -44,7 +44,7 @@ public class Layout
         return height - addedRows;
     }
 
-    public static int BaseIndex(Inventory inv)
+    public static int GetBaseSlotIndex(Inventory inv)
     {
         return inv.GetWidth() * NormalRows(inv);
     }
@@ -59,7 +59,7 @@ public class Layout
         return new(1.13f + Math.Max(Hotkeys.Length, (InventoryGuiPatches.UpdateInventory_Patch.slots.Count - 1) / 3) * Layout.tileSize / 570, 1f);
     }
 
-    public static void FixLayout()
+    public static void ApplyLayoutCorrections()
     {
         if (!InventoryGui.instance) return;
         var instance = InventoryGui.instance;

@@ -245,7 +245,7 @@ public class API
 
         var inv = Player.m_localPlayer.GetInventory();
         int w = inv.GetWidth();
-        int baseIndex = Layout.BaseIndex(inv);
+        int baseIndex = Layout.GetBaseSlotIndex(inv);
 
         for (int i = 0; i < InventoryGuiPatches.UpdateInventory_Patch.slots.Count; ++i)
         {

@@ -251,7 +251,7 @@ internal static class EpiGridMap
             int equipRowsPerCol = SlotHelpers.EquipRowsPerColumn;
             int equipCols = (equipCount + equipRowsPerCol - 1) / equipRowsPerCol;
 
-            int baseIndex = InventoryHandlers.Layout.BaseIndex(inv);
+            int baseIndex = InventoryHandlers.Layout.GetBaseSlotIndex(inv);
 
             return new Snapshot(width, playerHeight, baseIndex, equipCount, quickCount, equipCols, equipRowsPerCol);
         }

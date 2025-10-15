@@ -244,7 +244,7 @@ public class InventoryGuiPatches
             var dragGo = ig.m_dragGo;
             var dragItem = ig.m_dragItem;
             bool dragging = dragGo && dragItem != null;
-            int baseIndex = Layout.BaseIndex(player.GetInventory());
+            int baseIndex = Layout.GetBaseSlotIndex(player.GetInventory());
 
             for (int i = 0; i < UpdateInventory_Patch.slots.Count; ++i)
             {
@@ -333,7 +333,7 @@ public class InventoryGuiPatches
                 Player? player = Player.m_localPlayer;
                 Inventory inventory = player.GetInventory();
 
-                int baseIndex = Layout.BaseIndex(inventory);
+                int baseIndex = Layout.GetBaseSlotIndex(inventory);
 
                 Vector2 baseGridPos = new((___m_playerGrid.GetComponent<RectTransform>().rect.width - ___m_playerGrid.GetWidgetSize().x) / 2f, 0.0f);
 

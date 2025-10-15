@@ -138,7 +138,7 @@ public static class InventoryExtensions
         return false;
     }
 
-    internal static bool ShouldGuard(this Inventory inv)
+    internal static bool ShouldProtectInventorySlots(this Inventory inv)
     {
         return Player.m_localPlayer && inv == Player.m_localPlayer.GetInventory() && AddEquipmentRow.Value.isOn();
     }

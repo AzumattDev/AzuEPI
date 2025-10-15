@@ -38,6 +38,9 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     internal static AzuExtendedPlayerInventoryPlugin context = null!;
     internal static bool WbInstalled;
     internal readonly Harmony _harmony = new(ModGUID);
+    
+    private FileSystemWatcher _cfgWatcher;
+    private System.Timers.Timer _debounce;
 
     public static readonly int FakeType = "AzuEPIFakeType".GetStableHashCode();
 
@@ -159,7 +162,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         {
             SlotHelpers.ResizeSlots();
             UpdateInventorySize();
-            Layout.FixLayout();
+            Layout.ApplyLayoutCorrections();
             RebuildUI();
         };
 
@@ -179,7 +182,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         }
 
         _harmony.PatchAll();
-        SetupWatcher();
+        InitializeConfigWatcher();
 
         if (WishboneSlot.Value == Toggle.On)
         {
@@ -218,15 +221,21 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         Config.Save();
     }
 
-    private void SetupWatcher()
+    private void InitializeConfigWatcher()
     {
-        FileSystemWatcher watcher = new(Paths.ConfigPath, ConfigFileName);
-        watcher.Changed += ReadConfigValues;
-        watcher.Created += ReadConfigValues;
-        watcher.Renamed += ReadConfigValues;
-        watcher.IncludeSubdirectories = true;
-        watcher.SynchronizingObject = ThreadingHelper.SynchronizingObject;
-        watcher.EnableRaisingEvents = true;
+        _debounce = new System.Timers.Timer(150) { AutoReset = false };
+        _debounce.Elapsed += (_, __) => ReadConfigValues(null!, null!);
+
+        _cfgWatcher = new FileSystemWatcher(Paths.ConfigPath, ConfigFileName)
+        {
+            NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName,
+            IncludeSubdirectories = false,
+            SynchronizingObject = ThreadingHelper.SynchronizingObject,
+            EnableRaisingEvents = true
+        };
+        _cfgWatcher.Changed += (_, __) => _debounce?.Start();
+        _cfgWatcher.Created += (_, __) => _debounce?.Start();
+        _cfgWatcher.Renamed += (_, __) => _debounce?.Start();
     }
 
     private void ReadConfigValues(object sender, FileSystemEventArgs e)
@@ -237,10 +246,10 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             AzuExtendedPlayerInventoryLogger.LogDebug("ReadConfigValues called");
             Config.Reload();
         }
-        catch
+        catch(Exception ex)
         {
             AzuExtendedPlayerInventoryLogger.LogError($"There was an issue loading your {ConfigFileName}");
-            AzuExtendedPlayerInventoryLogger.LogError("Please check your config entries for spelling and format!");
+            AzuExtendedPlayerInventoryLogger.LogError($"Please check your config entries for spelling and format!{Environment.NewLine}{ex}");
         }
     }
 
