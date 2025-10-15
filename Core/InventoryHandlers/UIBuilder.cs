@@ -169,4 +169,29 @@ public class UIBuilder
             if (child.name.Contains("BraidLine"))
                 Object.Destroy(child.gameObject);
     }
+
+    public static void BuildDropAllButton(InventoryGui invGui)
+    {
+        Transform? dropallButton = invGui.m_player.Find(DropAllButtonName);
+
+        if (dropallButton == null)
+        {
+            Transform dropAllButtonPrefab = invGui.m_takeAllButton.transform;
+            RectTransform dropAllButtonTransform = Object.Instantiate(dropAllButtonPrefab, invGui.m_player).GetComponent<RectTransform>();
+            dropAllButtonTransform.name = DropAllButtonName;
+            dropAllButtonTransform.GetComponentInChildren<TMP_Text>().text = Localization.instance.Localize("$azuepi_dropall");
+            var buttonComp = dropAllButtonTransform.GetComponent<Button>();
+            buttonComp.onClick.RemoveAllListeners();
+            buttonComp.onClick.AddListener(() => Console.instance.TryRunCommand("azuepi.dropall"));
+
+            dropAllButtonTransform.SetAsFirstSibling();
+            dropAllButtonTransform.anchorMin = Layout.DropAllAnchorMin;
+            dropAllButtonTransform.anchorMax = Layout.DropAllAnchorMax;
+            dropAllButtonTransform.pivot = Layout.DropAllPivot;
+            dropAllButtonTransform.anchoredPosition = DropAllButtonPosition.Value;
+            dropAllButtonTransform.sizeDelta = Layout.DropAllSize;
+
+            dropAllButtonTransform.gameObject.SetActive(MakeDropAllButton.Value.isOn());
+        }
+    }
 }

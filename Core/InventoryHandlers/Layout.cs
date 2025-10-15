@@ -1,5 +1,8 @@
-﻿using AzuEPI.Game.Loadout;
+﻿using AzuEPI.Core.Slots;
+using AzuEPI.EPI;
+using AzuEPI.Game.Loadout;
 using AzuEPI.Game.Patches;
+using AzuEPI.Game.PlayerPreview;
 
 namespace AzuEPI.Core.InventoryHandlers;
 
@@ -84,5 +87,69 @@ public class Layout
             if (craftingBkg.isActiveAndEnabled) craftingBkg.enabled = false;
             if (HlgGo) HlgRt.anchoredPosition = ToggleButtonsHlgAnchoredPos;
         }
+    }
+
+    public static void ProjectEquippedIntoGridTail(Player player, InventoryGrid playerGrid, Animator animator)
+    {
+        Inventory inventory = player.GetInventory();
+        int width = inventory.GetWidth();
+        int height = inventory.GetHeight();
+        int requiredRows = API.API.GetAddedRows(width);
+        List<ItemDrop.ItemData> allItems = inventory.GetAllItems();
+        List<Model.Slot?> slots = InventoryGuiPatches.UpdateInventory_Patch.slots;
+
+        int slotBaseIndex = GetBaseSlotIndex(inventory);
+        ItemDrop.ItemData?[] equippedItems = new ItemDrop.ItemData[slots.Count];
+        for (int i = 0; i < slots.Count; ++i)
+        {
+            Model.Slot? slot = slots[i];
+            if (slot is not Model.EquipmentSlot equipmentSlot) continue;
+            if (equipmentSlot.Get?.Invoke(player) is { } item)
+            {
+                item.m_gridPos = new Vector2i(slotBaseIndex % width, slotBaseIndex / width);
+                equippedItems[i] = item;
+            }
+
+            ++slotBaseIndex;
+        }
+
+        for (int index = 0; index < allItems.Count; ++index)
+        {
+            ItemDrop.ItemData t = allItems[index];
+
+            if (inventory.IsAtEquipmentSlot(t, out int which) &&
+                (which <= -1 || t != equippedItems[which]) &&
+                (which <= -1 || slots[which] is not Model.EquipmentSlot slot
+                             || (slot.Valid != null && !slot.Valid(t)) || ExtendedPlayerInventory.equipItems[which] == t
+                             || (AutoEquip.Value.isOn() && !slot.IsQuickSlot && !player.EquipItem(t, false))))
+            {
+                Vector2i vector2I = inventory.FindEmptySlot(true);
+                if (vector2I.x < 0 || vector2I.y < 0 || vector2I.y >= height - requiredRows)
+                {
+                    // it will drop them simply because it cannot be added to the inventory and it's "outside" the normal inventory when it breaks.
+                    if (t.m_durability > 0 && !inventory.CanAddItem(t))
+                        player.DropItem(inventory, t, t.m_stack);
+                }
+                else
+                {
+                    t.m_gridPos = vector2I;
+                    playerGrid.UpdateInventory(inventory, player, null);
+                }
+            }
+        }
+
+        ExtendedPlayerInventory.equipItems = equippedItems;
+
+        if (!animator.GetBool(GUICache.Visible)) return;
+        if (AzuEPICharacterPanel.playerPreviewComp && Player.m_localPlayer)
+            VECloneSync.MirrorFrom(Player.m_localPlayer, AzuEPICharacterPanel.playerPreviewComp);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void ApplyRepairShift()
+    {
+        if (GUICache._selectedFrameRT) GUICache._selectedFrameRT.anchorMin = Layout.PlayerBkgAnchorMin;
+        if (GUICache._repairSimpleRT) GUICache._repairSimpleRT.anchoredPosition += Layout.RepairMovement;
+        if (GUICache._repairButtonRT) GUICache._repairButtonRT.anchoredPosition += Layout.RepairMovement;
     }
 }

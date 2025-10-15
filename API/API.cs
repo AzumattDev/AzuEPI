@@ -59,7 +59,7 @@ public class API
 #if !API
         if (string.IsNullOrWhiteSpace(slotName) || (getItem == null && isValid == null)) return false;
 
-        int existingIdx = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s.Name == slotName);
+        int existingIdx = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s.Name == slotName || (Localization.instance != null && s.Name == Localization.instance.Localize(slotName)));
         if (existingIdx >= 0 && InventoryGuiPatches.UpdateInventory_Patch.slots[existingIdx] is Model.EquipmentSlot existing)
         {
             ComposeOntoSlot(existing, isValid, getItem);
@@ -83,7 +83,7 @@ public class API
         CustomSlots.Add(slot);
         SlotHelpers.ResizeSlots();
 
-        AzuExtendedPlayerInventoryLogger.LogDebug($"Added slot {slotName}");
+        AzuExtendedPlayerInventoryLogger.LogDebug($"Added slot {slotName}, localized as '{slot.Name}'");
         SlotAdded?.Invoke(slotName);
 
         return true;

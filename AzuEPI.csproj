@@ -208,6 +208,7 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="API\API.cs"/>
+        <Compile Include="Core\InventoryHandlers\GUICache.cs" />
         <None Include="App.config"/>
     </ItemGroup>
     <ItemGroup>

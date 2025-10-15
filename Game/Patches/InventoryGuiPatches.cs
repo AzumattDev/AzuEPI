@@ -16,38 +16,37 @@ public class InventoryGuiPatches
     {
         static void Postfix(InventoryGui __instance)
         {
-            var selectedFrame = __instance.m_crafting.Find("selected_frame").GetComponent<RectTransform>();
-            var repairSimple = __instance.m_crafting.Find("RepairSimple").GetComponent<RectTransform>();
-            var repairButton = __instance.m_crafting.Find("RepairButton").GetComponent<RectTransform>();
-            Layout.SelectedFrameOrigAnchMin = selectedFrame.anchorMin;
-            Layout.RepairSimpleOrigAnchoredPos = repairSimple.anchoredPosition;
-            Layout.RepairButtonOrigAnchoredPos = repairButton.anchoredPosition;
+            GUICache._craftingBkgRT = __instance.m_crafting.Find("Bkg").GetComponent<RectTransform>();
+            GUICache._selectedFrameRT = __instance.m_crafting.Find("selected_frame").GetComponent<RectTransform>();
+            GUICache._repairSimpleRT = __instance.m_crafting.Find("RepairSimple").GetComponent<RectTransform>();
+            GUICache._repairButtonRT = __instance.m_crafting.Find("RepairButton").GetComponent<RectTransform>();
+            GUICache._playerBkgRT = __instance.m_player.Find("Bkg").GetComponent<RectTransform>();
+            GUICache._playerGridRootRT = __instance.m_playerGrid ? __instance.m_playerGrid.m_gridRoot?.GetComponent<RectTransform>() : null;
+
+            Layout.SelectedFrameOrigAnchMin = GUICache._selectedFrameRT.anchorMin;
+            Layout.RepairSimpleOrigAnchoredPos = GUICache._repairSimpleRT.anchoredPosition;
+            Layout.RepairButtonOrigAnchoredPos = GUICache._repairButtonRT.anchoredPosition;
+
             if (OldLayout.Value.isOff())
-            {
-                selectedFrame.anchorMin = Layout.PlayerBkgAnchorMin;
-                repairSimple.anchoredPosition += Layout.RepairMovement;
-                repairButton.anchoredPosition += Layout.RepairMovement;
-            }
+                Layout.ApplyRepairShift();
 
-            CreateExtendedCraftingPanel(__instance, selectedFrame);
-
-            //__instance.m_crafting.SetSiblingIndex(1);
-
+            CreateExtendedCraftingPanel(__instance, GUICache._selectedFrameRT);
             CreateRuntimePanel();
-            CreateAzuEpiPreview(__instance, out var previewParentRT);
 
+            CreateAzuEpiPreview(__instance, out var previewParentRT);
             CreatePlayerPreviewImage(previewParentRT);
             SetupPreviewPanel();
 
             BuildToggleButtonHlg(__instance);
-
             EnsureVanityPanelBuilt(__instance);
             VanityPanelController.SetVisible(false);
-
             BuildLoadoutToggles(__instance);
-
             CreateCharacterName(__instance, previewParentRT);
-            __instance.m_crafting.Find("Bkg").GetComponent<Image>().enabled = OldLayout.Value.isOn();
+
+            if (GUICache._craftingBkgRT)
+                GUICache._craftingBkgRT.GetComponent<Image>().enabled = OldLayout.Value.isOn();
+
+            BuildDropAllButton(__instance);
         }
     }
 
@@ -83,71 +82,16 @@ public class InventoryGuiPatches
     {
         private static void Postfix(InventoryGui __instance, InventoryGrid ___m_playerGrid, Animator ___m_animator)
         {
-            if (!Player.m_localPlayer || !InventoryGui.instance.m_playerGrid)
+            var player = Player.m_localPlayer;
+            if (!player || !InventoryGui.instance.m_playerGrid)
                 return;
 
             if (AddEquipmentRow.Value.isOn())
             {
-                var player = Player.m_localPlayer;
-                Inventory inventory = player.GetInventory();
-                List<ItemDrop.ItemData> allItems = inventory.GetAllItems();
-
-                int width = inventory.GetWidth();
-                int height = inventory.GetHeight();
-                int requiredRows = API.API.GetAddedRows(width);
-
-                int num = width * (height - requiredRows);
-                ItemDrop.ItemData?[] equippedItems = new ItemDrop.ItemData[UpdateInventory_Patch.slots.Count];
-                for (int i = 0; i < UpdateInventory_Patch.slots.Count; ++i)
-                {
-                    Model.Slot? slot = UpdateInventory_Patch.slots[i];
-                    if (slot is Model.EquipmentSlot equipmentSlot)
-                    {
-                        if (equipmentSlot.Get?.Invoke(player) is { } item)
-                        {
-                            item.m_gridPos = new Vector2i(num % width, num / width);
-                            equippedItems[i] = item;
-                        }
-
-                        ++num;
-                    }
-                }
-
-                for (int index = 0; index < allItems.Count; ++index)
-                {
-                    ItemDrop.ItemData t = allItems[index];
-
-                    if (inventory.IsAtEquipmentSlot(t, out int which) &&
-                        (which <= -1 || t != equippedItems[which]) &&
-                        (which <= -1 || UpdateInventory_Patch.slots[which] is not Model.EquipmentSlot slot
-                                     || (slot.Valid != null && !slot.Valid(t)) || ExtendedPlayerInventory.equipItems[which] == t
-                                     || (AutoEquip.Value.isOn() && !slot.IsQuickSlot && !player.EquipItem(t, false))))
-                    {
-                        Vector2i vector2I = inventory.FindEmptySlot(true);
-                        if (vector2I.x < 0 || vector2I.y < 0 || vector2I.y >= height - requiredRows)
-                        {
-                            // it will drop them simply because it cannot be added to the inventory and it's "outside" the normal inventory when it breaks.
-                            if (t.m_durability > 0 && !inventory.CanAddItem(t))
-                                player.DropItem(inventory, t, t.m_stack);
-                        }
-                        else
-                        {
-                            t.m_gridPos = vector2I;
-                            ___m_playerGrid.UpdateInventory(inventory, player, null);
-                        }
-                    }
-                }
-
-                ExtendedPlayerInventory.equipItems = equippedItems;
-
-                if (___m_animator.GetBool(ExtendedPlayerInventory.Visible))
-                {
-                    if (AzuEPICharacterPanel.playerPreviewComp && Player.m_localPlayer)
-                        VECloneSync.MirrorFrom(Player.m_localPlayer, AzuEPICharacterPanel.playerPreviewComp);
-                }
+                Layout.ProjectEquippedIntoGridTail(player, ___m_playerGrid, ___m_animator);
             }
 
-            if (!___m_animator.GetBool(ExtendedPlayerInventory.Visible))
+            if (!___m_animator.GetBool(GUICache.Visible))
                 return;
             RectTransform bkgRect = __instance.m_player.Find("Bkg").GetComponent<RectTransform>();
             if (__instance.m_player.transform.Find("PlayerScroll") == null) // If ValheimPlus didn't add a scrollbar
@@ -167,7 +111,6 @@ public class InventoryGuiPatches
                 return;
 
             var equipmentBkgTransform = __instance.m_player.Find(AzuEquipmentBkgName);
-            var dropallButton = __instance.m_player.Find(DropAllButtonName);
 
             switch (DisplayEquipmentRowSeparate.Value)
             {
@@ -203,37 +146,6 @@ public class InventoryGuiPatches
                 case AzuExtendedPlayerInventoryPlugin.Toggle.Off when equipmentBkgTransform:
                     equipmentBkgTransform.gameObject.SetActive(false);
                     break;
-            }
-
-            if (MakeDropAllButton.Value.isOn())
-            {
-                RectTransform dropAllButtonTransform = null!;
-
-                if (dropallButton == null)
-                {
-                    Transform dropAllButtonPrefab = __instance.m_takeAllButton.transform;
-                    dropAllButtonTransform = Object.Instantiate(dropAllButtonPrefab, __instance.m_player).GetComponent<RectTransform>();
-                    dropAllButtonTransform.name = DropAllButtonName;
-                    dropAllButtonTransform.GetComponentInChildren<TMP_Text>().text = "Drop All";
-                    var buttonComp = dropAllButtonTransform.GetComponent<Button>();
-                    buttonComp.onClick.RemoveAllListeners();
-                    buttonComp.onClick.AddListener(() => Console.instance.TryRunCommand("azuepi.dropall"));
-                }
-                else
-                {
-                    dropAllButtonTransform = dropallButton.GetComponent<RectTransform>();
-                }
-
-                dropAllButtonTransform.SetAsFirstSibling();
-                dropAllButtonTransform.anchorMin = Layout.DropAllAnchorMin;
-                dropAllButtonTransform.anchorMax = Layout.DropAllAnchorMax;
-                dropAllButtonTransform.pivot = Layout.DropAllPivot;
-                dropAllButtonTransform.anchoredPosition = DropAllButtonPosition.Value;
-                dropAllButtonTransform.sizeDelta = Layout.DropAllSize;
-            }
-            else
-            {
-                if (dropallButton != null) Object.DestroyImmediate(dropallButton.gameObject);
             }
 
             UpdateInvalidDropOverlays(__instance, ___m_playerGrid, Player.m_localPlayer);
@@ -328,46 +240,51 @@ public class InventoryGuiPatches
             if (AddEquipmentRow.Value.isOff())
                 return;
 
-            try
+            Player? player = Player.m_localPlayer;
+            if (!player) return;
+            Inventory inventory = player.GetInventory();
+
+            int baseIndex = Layout.GetBaseSlotIndex(inventory);
+
+            Vector2 baseGridPos = new((___m_playerGrid.GetComponent<RectTransform>().rect.width - ___m_playerGrid.GetWidgetSize().x) / 2f, 0.0f);
+
+            for (int i = 0; i < slots.Count; ++i)
             {
-                Player? player = Player.m_localPlayer;
-                Inventory inventory = player.GetInventory();
+                var currentElement = ___m_playerGrid.m_elements[baseIndex + i];
+                GameObject currentChild = currentElement.m_go;
+                if (!currentChild)
+                    continue;
+                currentChild.SetActive(true);
 
-                int baseIndex = Layout.GetBaseSlotIndex(inventory);
+                Model.Slot? slot = slots[i];
+                if (slot == null)
+                    continue;
 
-                Vector2 baseGridPos = new((___m_playerGrid.GetComponent<RectTransform>().rect.width - ___m_playerGrid.GetWidgetSize().x) / 2f, 0.0f);
+                currentChild.name = $"AzuEPI_Slot_{slots[i]?.Name}";
 
-                for (int i = 0; i < slots.Count; ++i)
+                // if .m_used assume it's occupied
+                slots[i].Occupied = currentElement.m_used;
+
+                SlotText.Set(slots[i]?.Name, currentChild.transform);
+                RectTransform childRT = currentChild.GetComponent<RectTransform>();
+                if (DisplayEquipmentRowSeparate.Value.isOn())
                 {
-                    var currentElement = ___m_playerGrid.m_elements[baseIndex + i];
-                    GameObject currentChild = currentElement.m_go;
-                    currentChild.SetActive(true);
-                    currentChild.name = $"AzuEPI_Slot_{slots[i]?.Name}";
-                    // if .m_used assume it's occupied
-                    slots[i].Occupied = currentElement.m_used;
-                    SlotText.Set(slots[i]?.Name, currentChild.transform);
-                    if (DisplayEquipmentRowSeparate.Value.isOn())
-                    {
-                        if (InventoryGui.instance)
-                            currentChild.GetComponent<RectTransform>().SetParent(InventoryGui.instance.m_crafting);
+                    if (InventoryGui.instance && childRT.parent != InventoryGui.instance.m_crafting)
+                        childRT.SetParent(InventoryGui.instance.m_crafting, false);
 
-                        currentChild.GetComponent<RectTransform>().anchoredPosition = slots[i].Position;
-                    }
-                    else
-                    {
-                        currentChild.GetComponent<RectTransform>().anchoredPosition = baseGridPos + new Vector2((baseIndex + i) % inventory.GetWidth() * ___m_playerGrid.m_elementSpace, (baseIndex + i) / inventory.GetWidth() * -___m_playerGrid.m_elementSpace);
-                    }
+                    childRT.anchoredPosition = slots[i].Position;
                 }
-
-                for (int i = baseIndex + slots.Count; i < ___m_playerGrid.m_elements.Count; ++i)
+                else
                 {
-                    ___m_playerGrid.m_elements[i].m_go.SetActive(false);
-                    ___m_playerGrid.m_elements[i].m_used = true;
+                    childRT.anchoredPosition = baseGridPos + new Vector2((baseIndex + i) % inventory.GetWidth() * ___m_playerGrid.m_elementSpace, (baseIndex + i) / inventory.GetWidth() * -___m_playerGrid.m_elementSpace);
                 }
             }
-            catch (Exception ex)
+
+            for (int i = baseIndex + slots.Count; i < ___m_playerGrid.m_elements.Count; ++i)
             {
-                AzuExtendedPlayerInventoryLogger.LogDebug($"Exception in EPI Update Inventory: {ex}");
+                InventoryGrid.Element? tailElement = ___m_playerGrid.m_elements[i];
+                tailElement.m_go.SetActive(false);
+                tailElement.m_used = true;
             }
         }
     }

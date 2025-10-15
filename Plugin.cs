@@ -38,7 +38,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     internal static AzuExtendedPlayerInventoryPlugin context = null!;
     internal static bool WbInstalled;
     internal readonly Harmony _harmony = new(ModGUID);
-    
+
     private FileSystemWatcher _cfgWatcher;
     private System.Timers.Timer _debounce;
 
@@ -204,20 +204,38 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     {
         CheckRandy();
         CheckWeightBase();
-        AdvBackpacksCompat.Init();
-        JudesEquipmentCompat.Init();
-        RustyBagsCompat.Init();
 
-        if (Chainloader.PluginInfos.TryGetValue("randyknapp.mods.epicloot", out var RandyEL) && RandyEL is not null)
+        Localizer.OnLocalizationComplete += () =>
         {
-            API.API.AddSlot("Finger", new[] { "Andvaranaut", "GoldRubyRing", "SilverRing" });
-        }
+            AdvBackpacksCompat.Init();
+            JudesEquipmentCompat.Init();
+            RustyBagsCompat.Init();
 
-        API.API.AddSlot("ArmorQuickSlot", new[] { "ArmorIronChest" });
+            if (Chainloader.PluginInfos.TryGetValue("randyknapp.mods.epicloot", out var RandyEL) && RandyEL is not null)
+            {
+                API.API.AddSlot("$azuepi_fingerslot", new[] { "Andvaranaut", "GoldRubyRing", "SilverRing" });
+            }
+        };
     }
 
     private void OnDestroy()
     {
+        _cfgWatcher.Changed -= (_, __) => _debounce?.Start();
+        _cfgWatcher.Created -= (_, __) => _debounce?.Start();
+        _cfgWatcher.Renamed -= (_, __) => _debounce?.Start();
+        _cfgWatcher.Dispose();
+        _debounce.Elapsed -= (_, __) => ReadConfigValues(null!, null!);
+        _debounce.Dispose();
+
+        WishboneSlot.SettingChanged -= (sender, args) => { };
+        WispLightSlot.SettingChanged -= (sender, args) => { };
+        ExtraRows.SettingChanged -= (sender, args) => { };
+        AddEquipmentRow.SettingChanged -= (sender, args) => { };
+        DisplayEquipmentRowSeparate.SettingChanged -= (sender, args) => { };
+        VanityOption.SettingChanged -= (sender, args) => { };
+        LoadoutOption.SettingChanged -= (sender, args) => { };
+        OldLayout.SettingChanged -= (sender, args) => { };
+
         Config.Save();
     }
 
@@ -246,7 +264,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             AzuExtendedPlayerInventoryLogger.LogDebug("ReadConfigValues called");
             Config.Reload();
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             AzuExtendedPlayerInventoryLogger.LogError($"There was an issue loading your {ConfigFileName}");
             AzuExtendedPlayerInventoryLogger.LogError($"Please check your config entries for spelling and format!{Environment.NewLine}{ex}");

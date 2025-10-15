@@ -8,7 +8,6 @@ internal class ExtendedPlayerInventory
 
     public static Vector3 lastMousePos;
     public static string currentlyDragging = null!;
-    internal static readonly int Visible = Animator.StringToHash("visible");
     public static List<HotkeyBar> HotkeyBars { get; set; } = null!;
 
     public static int SelectedHotkeyBarIndex { get; set; } = -1;
