@@ -5,13 +5,15 @@ using AzuEPI.Game.Patches;
 using AzuEPI.Game.PlayerPreview;
 
 # else
+using BepInEx.Bootstrap;
 using JetBrains.Annotations;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using AzuEPI.Core.Slots;
 #endif
 
-namespace AzuEPI.API;
+namespace AzuEPI;
 
 [PublicAPI]
 public class API
@@ -20,9 +22,7 @@ public class API
 
     public delegate void SlotRemovedHandler(string slotName);
 
-#if !API
     internal static HashSet<Model.EquipmentSlot?> CustomSlots { get; } = new();
-#endif
 
     public static event Action<Hud>? OnHudAwake;
     public static event Action<Hud>? OnHudAwakeComplete;
@@ -57,13 +57,16 @@ public class API
     public static bool AddSlot(string slotName, Func<Player, ItemDrop.ItemData?> getItem, Func<ItemDrop.ItemData, bool> isValid, int index = -1)
     {
 #if !API
+        AzuExtendedPlayerInventoryLogger.LogError("API.AddSlot called, asking to add slot " + slotName);
         if (string.IsNullOrWhiteSpace(slotName) || (getItem == null && isValid == null)) return false;
+
+        AzuExtendedPlayerInventoryLogger.LogError("API.AddSlot proceeding to add slot " + slotName);
 
         int existingIdx = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s.Name == slotName || (Localization.instance != null && s.Name == Localization.instance.Localize(slotName)));
         if (existingIdx >= 0 && InventoryGuiPatches.UpdateInventory_Patch.slots[existingIdx] is Model.EquipmentSlot existing)
         {
             ComposeOntoSlot(existing, isValid, getItem);
-            AzuExtendedPlayerInventoryLogger.LogDebug($"Extended slot {slotName}");
+            AzuExtendedPlayerInventoryLogger.LogError($"Extended slot {slotName}");
             return true;
         }
 

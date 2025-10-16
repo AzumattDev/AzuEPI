@@ -1,9 +1,6 @@
 ﻿using AzuEPI.Core.InventoryHandlers;
 using AzuEPI.Core.Slots;
 using AzuEPI.Core.Text;
-using AzuEPI.EPI;
-using AzuEPI.Game.Loadout;
-using AzuEPI.Game.PlayerPreview;
 using AzuEPI.Game.Vanity;
 
 namespace AzuEPI.Game.Patches;
@@ -100,11 +97,11 @@ public class InventoryGuiPatches
                                                        + (AddEquipmentRow.Value.isOff()
                                                           || DisplayEquipmentRowSeparate.Value.isOn()
                                                            ? 0
-                                                           : API.API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()))) * -0.25f);
+                                                           : API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()))) * -0.25f);
             }
             else
             {
-                bkgRect.anchorMin = new Vector2(0.0f, (ExtraRows.Value + (AddEquipmentRow.Value.isOff() || DisplayEquipmentRowSeparate.Value.isOn() ? 0 : API.API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()))) * -0.25f);
+                bkgRect.anchorMin = new Vector2(0.0f, (ExtraRows.Value + (AddEquipmentRow.Value.isOff() || DisplayEquipmentRowSeparate.Value.isOn() ? 0 : API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()))) * -0.25f);
             }
 
             if (AddEquipmentRow.Value.isOff())
@@ -126,12 +123,7 @@ public class InventoryGuiPatches
                         BuildEquipmentBkg(__instance, bkgRect);
                     }
 
-                    float columns = 2f;
-                    float gapTiles = 4f;
-                    float padding = 0.6f;
-
-                    float extraTiles = columns + gapTiles + padding;
-                    float extraX = (extraTiles * Layout.tileSize) / 570f;
+                    float extraX = (extraTiles * Layout.tileSize) / totalWidth;
 
                     Vector2 maxAnchor = new(1f + extraX, 1f);
                     if (Chainloader.PluginInfos.TryGetValue(MinimalUiguid, out var pi) && pi != null)
@@ -223,7 +215,7 @@ public class InventoryGuiPatches
 
         static UpdateInventory_Patch()
         {
-            API.API.BeforeQuickSlotsAdded();
+            API.BeforeQuickSlotsAdded();
             for (int i = 0; i < Hotkeys.Length; ++i)
                 slots.Add(new Model.Slot
                 {
@@ -232,7 +224,7 @@ public class InventoryGuiPatches
                         : HotkeyTexts[i].Value,
                     IsQuickSlot = true,
                 });
-            API.API.QuickSlotsAdded();
+            API.QuickSlotsAdded();
         }
 
         private static void Postfix(InventoryGrid ___m_playerGrid)

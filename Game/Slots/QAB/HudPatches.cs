@@ -12,13 +12,13 @@ public class HudPatches
             if (AddEquipmentRow.Value.isOff())
                 return;
 
-            API.API.HudAwake(__instance);
+            API.HudAwake(__instance);
 
             Transform transform = Object.Instantiate(__instance.m_rootObject.transform.Find("HotKeyBar"), __instance.m_rootObject.transform, true);
             transform.name = QabName;
             transform.GetComponent<RectTransform>().localPosition = Vector3.zero;
 
-            API.API.HudAwakeComplete(__instance);
+            API.HudAwakeComplete(__instance);
         }
     }
 
@@ -30,7 +30,7 @@ public class HudPatches
             if (AddEquipmentRow.Value.isOff() || Player.m_localPlayer == null)
                 return;
 
-            API.API.HudUpdate(__instance);
+            API.HudUpdate(__instance);
 
             float scaleFactor = GuiScaler.m_largeGuiScale;
             Vector3 mousePosition = Input.mousePosition;
@@ -72,7 +72,7 @@ public class HudPatches
 
             ExtendedPlayerInventory.lastMousePos = mousePosition;
 
-            API.API.HudUpdateComplete(__instance);
+            API.HudUpdateComplete(__instance);
         }
     }
 }

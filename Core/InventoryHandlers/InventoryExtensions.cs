@@ -26,21 +26,21 @@ public static class InventoryExtensions
 
     internal static bool IsEquipmentSlotFree(this Inventory inventory, ItemDrop.ItemData item, out int which)
     {
-        var addedRows = API.API.GetAddedRows(inventory.GetWidth());
+        var addedRows = API.GetAddedRows(inventory.GetWidth());
         which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is Model.EquipmentSlot { Valid: not null } slot && slot.Valid(item) && !slot.Occupied);
         return which >= 0 && inventory.GetItemAt(which, inventory.GetHeight() - addedRows) == null;
     }
 
     internal static bool IsEquipmentSlotFree(this Inventory inventory, out int which)
     {
-        var addedRows = API.API.GetAddedRows(inventory.GetWidth());
+        var addedRows = API.GetAddedRows(inventory.GetWidth());
         which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is Model.EquipmentSlot { EquipmentSlot: not null, Occupied: false });
         return which >= 0 && inventory.GetItemAt(which, inventory.GetHeight() - addedRows) == null;
     }
 
     internal static bool IsQuickSlotFree(this Inventory inventory, out int which)
     {
-        var addedRows = API.API.GetAddedRows(inventory.GetWidth());
+        var addedRows = API.GetAddedRows(inventory.GetWidth());
         which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is { IsQuickSlot: true, EquipmentSlot: null, Occupied: false });
         return which >= 0 && inventory.GetItemAt(which, inventory.GetHeight() - addedRows) == null;
     }

@@ -1,4 +1,9 @@
-﻿namespace AzuEPI.Core.Slots;
+﻿#if API
+using System;
+using UnityEngine;
+#endif
+
+namespace AzuEPI.Core.Slots;
 
 public class Model
 {

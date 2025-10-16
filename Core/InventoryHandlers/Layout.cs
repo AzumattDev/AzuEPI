@@ -1,6 +1,5 @@
 ﻿using AzuEPI.Core.Slots;
 using AzuEPI.EPI;
-using AzuEPI.Game.Loadout;
 using AzuEPI.Game.Patches;
 using AzuEPI.Game.PlayerPreview;
 
@@ -43,7 +42,7 @@ public class Layout
     {
         int width = inv.GetWidth();
         int height = inv.GetHeight();
-        int addedRows = API.API.GetAddedRows(width);
+        int addedRows = API.GetAddedRows(width);
         return height - addedRows;
     }
 
@@ -94,7 +93,7 @@ public class Layout
         Inventory inventory = player.GetInventory();
         int width = inventory.GetWidth();
         int height = inventory.GetHeight();
-        int requiredRows = API.API.GetAddedRows(width);
+        int requiredRows = API.GetAddedRows(width);
         List<ItemDrop.ItemData> allItems = inventory.GetAllItems();
         List<Model.Slot?> slots = InventoryGuiPatches.UpdateInventory_Patch.slots;
 

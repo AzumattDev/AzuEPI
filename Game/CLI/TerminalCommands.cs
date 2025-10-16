@@ -150,7 +150,7 @@ internal static class TerminalInitTerminalPatch
                     return;
                 }
 
-                if (API.API.GetAddedRows(Player.m_localPlayer.GetInventory().GetWidth()) == 0)
+                if (API.GetAddedRows(Player.m_localPlayer.GetInventory().GetWidth()) == 0)
                 {
                     args.Context.AddString("You don't have any extra rows added");
                     return;

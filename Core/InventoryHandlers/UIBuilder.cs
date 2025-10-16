@@ -1,5 +1,4 @@
 ﻿using AzuEPI.Game.Loadout;
-using AzuEPI.Game.Patches;
 using AzuEPI.Game.PlayerPreview;
 using AzuEPI.Game.Vanity;
 
@@ -26,6 +25,12 @@ public class UIBuilder
     public static Transform CharName = null!;
     public static GameObject HlgGo = null!;
     public static RectTransform HlgRt = null!;
+    
+    public const int columns = 2;
+    public const int gapTiles = 4;
+    public const float padding = 0.6f;
+    public const float extraTiles = columns + gapTiles + padding;
+    public const float totalWidth = 570f;
 
     public static void RebuildUI()
     {

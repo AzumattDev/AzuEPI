@@ -343,9 +343,6 @@ public class CustomEquipVisuals
     [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.EquipItem))]
     internal static class HideTypeWhileEquipping
     {
-        // Single fake value is fine; it just must not match any vanilla enum case
-        private static readonly ItemDrop.ItemData.ItemType FakeType = API.API.GetFakeItemType();
-
         private static bool IsReserved(ItemDrop.ItemData.ItemType t) =>
             t is ItemDrop.ItemData.ItemType.Helmet
                 or ItemDrop.ItemData.ItemType.Chest
@@ -364,7 +361,7 @@ public class CustomEquipVisuals
             if (__instance.IsItemEquiped(item)) return;
 
             __state = item.m_shared.m_itemType;
-            item.m_shared.m_itemType = FakeType; // hide from vanilla/other mods
+            item.m_shared.m_itemType = API.GetFakeItemType(); // hide from vanilla/other mods
             if (__instance.m_visEquipment && __instance.m_visEquipment.m_isPlayer)
                 item.m_shared.m_equipEffect.Create(__instance.transform.position + Vector3.up, __instance.transform.rotation);
         }
@@ -376,7 +373,7 @@ public class CustomEquipVisuals
             if (__instance is not Player p) return;
             if (__state is not { } original) return;
             if (item == null) return;
-            if (item.m_shared.m_itemType != FakeType) return;
+            if (item.m_shared.m_itemType != API.GetFakeItemType()) return;
 
             item.m_shared.m_itemType = original;
 

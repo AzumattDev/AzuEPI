@@ -151,7 +151,7 @@
         <Compile Include="Core\InventoryHandlers\InventoryHealth.cs"/>
         <Compile Include="Core\InventoryHandlers\Layout.cs"/>
         <Compile Include="Core\InventoryHandlers\UIBuilder.cs"/>
-        <Compile Include="Core\Slots\Model.cs"/>
+        <Compile Include="Core\InventoryHandlers\GUICache.cs"/>
         <Compile Include="Core\Slots\Rules.cs"/>
         <Compile Include="Core\Slots\SlotHelpers.cs"/>
         <Compile Include="Core\Slots\SlotOverlays.cs"/>
@@ -187,8 +187,6 @@
         <Compile Include="Game\Vanity\VanityAPI.cs"/>
         <Compile Include="Game\Vanity\VanityPanelController.cs"/>
         <Compile Include="Game\Vanity\VanityPatches.cs"/>
-
-        <Compile Include="GlobalUsings.cs"/>
         <Compile Include="Properties\AssemblyInfo.cs"/>
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)|$(Platform)' != 'API|AnyCPU'">
@@ -208,7 +206,9 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="API\API.cs"/>
-        <Compile Include="Core\InventoryHandlers\GUICache.cs" />
+        <Compile Include="API\APIBkCompat.cs" />
+        <Compile Include="Core\Slots\Model.cs"/>
+        <Compile Include="GlobalUsings.cs"/>
         <None Include="App.config"/>
     </ItemGroup>
     <ItemGroup>

@@ -28,7 +28,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     internal const string ModName = "AzuExtendedPlayerInventory";
     internal const string ModVersion = "1.4.12";
     internal const string Author = "Azumatt";
-    private const string ModGUID = Author + "." + ModName;
+    internal const string ModGUID = Author + "." + ModName;
     private static readonly string ConfigFileName = ModGUID + ".cfg";
     private static readonly string ConfigFileFullPath = Paths.ConfigPath + Path.DirectorySeparatorChar + ConfigFileName;
     internal static string ConnectionError = "";
@@ -44,10 +44,25 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     public static readonly int FakeType = "AzuEPIFakeType".GetStableHashCode();
 
+    static AzuExtendedPlayerInventoryPlugin()
+    {
+        AppDomain.CurrentDomain.AssemblyResolve += (s, e) =>
+        {
+            var req = new AssemblyName(e.Name);
+            if (req.Name == "AzuExtendedPlayerInventory")
+                return typeof(AzuExtendedPlayerInventoryPlugin).Assembly;
+            return null;
+        };
+    }
+
     private void Awake()
     {
         Localizer.Load();
-        Patcher.Patch();
+        APIManager.Patcher.Patch(new[]
+        {
+            "AzuExtendedPlayerInventory",
+            "AzuExtendedPlayerInventory.EPI.Patches"
+        });
 
         context = this;
         _serverConfigLocked = config("1 - General", "Lock Configuration", Toggle.On, "If on, the configuration is locked and can be changed by server admins only.");
@@ -60,13 +75,13 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         {
             if (WishboneSlot.Value == Toggle.On)
             {
-                API.API.AddSlot("$item_wishbone", "Wishbone", 5);
+                API.AddSlot("$item_wishbone", "Wishbone", 5);
             }
             else
             {
-                API.API.RemoveSlot("$item_wishbone");
+                API.RemoveSlot("$item_wishbone");
                 if (Localization.instance != null)
-                    API.API.RemoveSlot(Localization.instance.Localize("$item_wishbone"));
+                    API.RemoveSlot(Localization.instance.Localize("$item_wishbone"));
             }
         };
 
@@ -74,13 +89,13 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         {
             if (WispLightSlot.Value == Toggle.On)
             {
-                API.API.AddSlot("$item_demister", "Demister", WishboneSlot.Value == Toggle.On ? 6 : 5);
+                API.AddSlot("$item_demister", "Demister", WishboneSlot.Value == Toggle.On ? 6 : 5);
             }
             else
             {
-                API.API.RemoveSlot("$item_demister");
+                API.RemoveSlot("$item_demister");
                 if (Localization.instance != null)
-                    API.API.RemoveSlot(Localization.instance.Localize("$item_demister"));
+                    API.RemoveSlot(Localization.instance.Localize("$item_demister"));
             }
         };
 
@@ -186,16 +201,16 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         if (WishboneSlot.Value == Toggle.On)
         {
-            API.API.AddSlot("$item_wishbone", "Wishbone", 5);
+            API.AddSlot("$item_wishbone", "Wishbone", 5);
         }
 
         if (WispLightSlot.Value == Toggle.On)
         {
-            API.API.AddSlot("$item_demister", "Demister", WishboneSlot.Value == Toggle.On ? 6 : 5);
+            API.AddSlot("$item_demister", "Demister", WishboneSlot.Value == Toggle.On ? 6 : 5);
         }
 
         var index = InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length;
-        API.API.UpdateSlots(index, 1);
+        API.UpdateSlots(index, 1);
         InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(index, new Model.EquipmentSlot { Name = TrinketText.Value, IsQuickSlot = false, Get = player => player.m_trinketItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Trinket });
         SlotHelpers.ResizeSlots();
     }
@@ -211,9 +226,9 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             JudesEquipmentCompat.Init();
             RustyBagsCompat.Init();
 
-            if (Chainloader.PluginInfos.TryGetValue("randyknapp.mods.epicloot", out var RandyEL) && RandyEL is not null)
+            if (Chainloader.PluginInfos.TryGetValue("randyknapp.mods.epicloot", out PluginInfo? randyEl) && randyEl is not null)
             {
-                API.API.AddSlot("$azuepi_fingerslot", new[] { "Andvaranaut", "GoldRubyRing", "SilverRing" });
+                API.AddSlot("$azuepi_fingerslot", new[] { "Andvaranaut", "GoldRubyRing", "SilverRing" });
             }
         };
     }
@@ -275,7 +290,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     {
         if (InventoryGui.instance == null) return;
         if (Player.m_localPlayer == null) return;
-        int height = Layout.BaseInventoryHeight + ExtraRows.Value + (AddEquipmentRow.Value == Toggle.On ? API.API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()) : 0);
+        int height = Layout.BaseInventoryHeight + ExtraRows.Value + (AddEquipmentRow.Value == Toggle.On ? API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()) : 0);
         Player.m_localPlayer.m_inventory.m_height = height;
         Player.m_localPlayer.m_tombstone.GetComponent<Container>().m_height = height;
 

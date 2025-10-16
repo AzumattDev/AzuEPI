@@ -245,7 +245,7 @@ internal static class EpiGridMap
         }
         else
         {
-            int epiRows = (AddEquipmentRow.Value.isOn()) ? API.API.GetAddedRows(width) : 0;
+            int epiRows = (AddEquipmentRow.Value.isOn()) ? API.GetAddedRows(width) : 0;
             int playerHeight = baseInvHeight + extraRows + epiRows;
 
             int equipRowsPerCol = SlotHelpers.EquipRowsPerColumn;
