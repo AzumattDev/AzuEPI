@@ -23,6 +23,7 @@ public static class VanityAPI
         var zdo = ve.m_nview.GetZDO();
         if (zdo == null || !ve.m_nview.IsOwner()) return false;
         int hash = string.IsNullOrEmpty(prefabName) ? 0 : prefabName.GetStableHashCode();
+        AzuExtendedPlayerInventoryLogger.LogDebug($"Setting vanity {slot} to {prefabName} (hash {hash})");
         switch (slot)
         {
             case VisSlot.Chest: zdo.Set(VanityZdoKeys.Chest, hash); break;
