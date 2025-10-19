@@ -10,6 +10,7 @@ public class Model
     internal class Slot
     {
         public string Name = null!;
+        public string OriginalName = null!;
         public Vector2 Position;
         public bool IsQuickSlot = false;
         public bool IsAPIAdded = false;

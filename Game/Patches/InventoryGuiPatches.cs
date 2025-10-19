@@ -163,6 +163,8 @@ public class InventoryGuiPatches
                 if (!slotGo) continue;
 
                 var _ = SlotOverlays.EnsureInvalidOverlay(slotGo);
+                
+                var stateOverlay = SlotOverlays.EnsureVanityStateOverlay(slotGo);
 
                 if (!dragging)
                 {

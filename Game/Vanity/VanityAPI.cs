@@ -1,4 +1,6 @@
-﻿namespace AzuEPI.Game.Vanity;
+﻿using AzuEPI.Core.Slots;
+
+namespace AzuEPI.Game.Vanity;
 
 internal static class VanityZdoKeys
 {
@@ -20,7 +22,7 @@ public static class VanityAPI
     public static bool SetVanity(VisEquipment ve, VisSlot slot, string prefabName, int variant = 0)
     {
         if (!ve || ve.m_nview == null) return false;
-        var zdo = ve.m_nview.GetZDO();
+        ZDO? zdo = ve.m_nview.GetZDO();
         if (zdo == null || !ve.m_nview.IsOwner()) return false;
         int hash = string.IsNullOrEmpty(prefabName) ? 0 : prefabName.GetStableHashCode();
         AzuExtendedPlayerInventoryLogger.LogDebug($"Setting vanity {slot} to {prefabName} (hash {hash})");
@@ -44,7 +46,7 @@ public static class VanityAPI
     public static bool ClearVanity(VisEquipment ve, VisSlot slot)
     {
         if (!ve || ve.m_nview == null) return false;
-        var zdo = ve.m_nview.GetZDO();
+        ZDO? zdo = ve.m_nview.GetZDO();
         if (zdo == null || !ve.m_nview.IsOwner()) return false;
         switch (slot)
         {
@@ -66,7 +68,7 @@ public static class VanityAPI
     public static bool SetHidden(VisEquipment ve, VisSlot slot, bool hidden)
     {
         if (!ve || ve.m_nview == null) return false;
-        var zdo = ve.m_nview.GetZDO();
+        ZDO? zdo = ve.m_nview.GetZDO();
         if (zdo == null || !ve.m_nview.IsOwner()) return false;
         int v = hidden ? HIDE : 0;
         switch (slot)
@@ -102,13 +104,46 @@ public static class VanityAPI
 
     internal static int Get(VisEquipment ve, int key)
     {
-        var zdo = ve?.m_nview?.GetZDO();
+        ZDO? zdo = ve?.m_nview?.GetZDO();
         return zdo?.GetInt(key) ?? 0;
     }
 
     internal static int GetVariant(VisEquipment ve, int key)
     {
-        var zdo = ve?.m_nview?.GetZDO();
+        ZDO? zdo = ve?.m_nview?.GetZDO();
         return zdo?.GetInt(key) ?? 0;
+    }
+
+    public static VanityState GetAppliedVanity(Player player, VisSlot slot)
+    {
+        VisEquipment? ve = player ? player.m_visEquipment : null;
+        return VanitySlots.GetState(ve, slot);
+    }
+
+    public static VanityState GetAppliedVanityForItem(Player player, ItemDrop.ItemData item)
+    {
+        if (!player || item?.m_shared == null) return new VanityState(false, false, 0, 0);
+        if (!VanitySlots.TryMapItemTypeToVisSlot(item.m_shared.m_itemType, out VisSlot slot))
+            return new VanityState(false, false, 0, 0);
+
+        return GetAppliedVanity(player, slot);
+    }
+
+    public static bool TryGetEquippedVanityIcon(ItemDrop.ItemData item, out Sprite sprite)
+    {
+        sprite = null;
+
+        Player? player = Player.m_localPlayer;
+        if (!player || item == null || item.m_shared == null) return false;
+
+        if (!item.m_equipped) return false;
+
+        if (!VanitySlots.TryMapItemTypeToVisSlot(item.m_shared.m_itemType, out VisSlot slot))
+            return false;
+
+        VanityState vs = GetAppliedVanity(player, slot);
+        var slotObject = InventoryGui.instance.m_playerGrid.GetElement(item.m_gridPos.x, item.m_gridPos.y, player.GetInventory().GetWidth());
+        SlotOverlays.ToggleVanityStateOverlay(slotObject.m_go, vs);
+        return vs is { HasVanity: true, IsHidden: false } && VanityLookup.TryGetIcon(vs.Hash, vs.Variant, out sprite);
     }
 }

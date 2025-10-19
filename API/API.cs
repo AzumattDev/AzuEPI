@@ -57,22 +57,23 @@ public class API
     public static bool AddSlot(string slotName, Func<Player, ItemDrop.ItemData?> getItem, Func<ItemDrop.ItemData, bool> isValid, int index = -1)
     {
 #if !API
-        AzuExtendedPlayerInventoryLogger.LogError("API.AddSlot called, asking to add slot " + slotName);
+        AzuExtendedPlayerInventoryLogger.LogInfo("API.AddSlot called, asking to add slot " + slotName);
         if (string.IsNullOrWhiteSpace(slotName) || (getItem == null && isValid == null)) return false;
 
-        AzuExtendedPlayerInventoryLogger.LogError("API.AddSlot proceeding to add slot " + slotName);
+        AzuExtendedPlayerInventoryLogger.LogInfo("API.AddSlot proceeding to add slot " + slotName);
 
         int existingIdx = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s.Name == slotName || (Localization.instance != null && s.Name == Localization.instance.Localize(slotName)));
         if (existingIdx >= 0 && InventoryGuiPatches.UpdateInventory_Patch.slots[existingIdx] is Model.EquipmentSlot existing)
         {
             ComposeOntoSlot(existing, isValid, getItem);
-            AzuExtendedPlayerInventoryLogger.LogError($"Extended slot {slotName}");
+            AzuExtendedPlayerInventoryLogger.LogInfo($"Extended slot {slotName}");
             return true;
         }
 
         var slot = new Model.EquipmentSlot
         {
             Name = slotName.StartsWith("$") && Localization.instance != null ? Localization.instance.Localize(slotName) : slotName,
+            OriginalName = slotName,
             Get = getItem,
             Valid = isValid,
             IsAPIAdded = true
@@ -212,6 +213,7 @@ public class API
         return new SlotInfo
         {
             SlotNames = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.Name).ToArray(),
+            OriginalSlotNames = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.OriginalName).ToArray(),
             SlotPositions = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.Position).ToArray(),
             GetItemFuncs = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.EquipmentSlot?.Get).ToArray(),
             IsValidFuncs = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.EquipmentSlot?.Valid).ToArray()
@@ -231,6 +233,7 @@ public class API
         return new SlotInfo
         {
             SlotNames = quickSlots.Select(s => s!.Name).ToArray(),
+            OriginalSlotNames = quickSlots.Select(s => s!.OriginalName).ToArray(),
             SlotPositions = quickSlots.Select(s => s!.Position).ToArray(),
             GetItemFuncs = quickSlots.Select(s => s!.EquipmentSlot?.Get).ToArray(),
             IsValidFuncs = quickSlots.Select(s => s!.EquipmentSlot?.Valid).ToArray()
@@ -433,6 +436,21 @@ public class API
 
         inv.m_height = baseRows + Mathf.CeilToInt((float)(InventoryGuiPatches.UpdateInventory_Patch.slots.Count + shift) / width);
     }
+
+    internal static void RelocalizeSlots()
+    {
+        if (Localization.instance == null) return;
+
+        foreach (Model.Slot? slot in InventoryGuiPatches.UpdateInventory_Patch.slots)
+        {
+            if (slot == null || string.IsNullOrWhiteSpace(slot.Name)) continue;
+            if (!slot.OriginalName.StartsWith("$")) continue;
+            string localized = Localization.instance.Localize(slot.Name);
+            if (slot.Name == localized) continue;
+            AzuExtendedPlayerInventoryLogger.LogDebug($"Relocalizing slot '{slot.Name}' to '{localized}' from key '{slot.OriginalName}'");
+            slot.Name = localized;
+        }
+    }
 #endif
 }
 
@@ -440,6 +458,7 @@ public class API
 public class SlotInfo
 {
     public string[] SlotNames { get; set; } = { };
+    public string[] OriginalSlotNames { get; set; } = { };
     public Vector2[] SlotPositions { get; set; } = { };
     public Func<Player, ItemDrop.ItemData?>?[] GetItemFuncs { get; set; } = { };
     public Func<ItemDrop.ItemData, bool>?[] IsValidFuncs { get; set; } = { };

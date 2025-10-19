@@ -213,6 +213,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         API.UpdateSlots(index, 1);
         InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(index, new Model.EquipmentSlot { Name = TrinketText.Value, IsQuickSlot = false, Get = player => player.m_trinketItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Trinket });
         SlotHelpers.ResizeSlots();
+
+        Localization.OnLanguageChange += new Action(API.RelocalizeSlots);
     }
 
     private void Start()
@@ -251,6 +253,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         LoadoutOption.SettingChanged -= (sender, args) => { };
         OldLayout.SettingChanged -= (sender, args) => { };
 
+        Localization.OnLanguageChange -= new Action(API.RelocalizeSlots);
         Config.Save();
     }
 

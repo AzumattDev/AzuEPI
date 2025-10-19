@@ -16,12 +16,9 @@ namespace AzuExtendedPlayerInventory
 
         public delegate void SlotRemovedHandler(string slotName);
 
-        // We must keep maps so -= works on the exact same wrapped delegate
-        private static readonly Dictionary<SlotAddedHandler, AzuEPI.API.SlotAddedHandler> _slotAddedMap
-            = new();
+        private static readonly Dictionary<SlotAddedHandler, AzuEPI.API.SlotAddedHandler> _slotAddedMap = new();
 
-        private static readonly Dictionary<SlotRemovedHandler, AzuEPI.API.SlotRemovedHandler> _slotRemovedMap
-            = new();
+        private static readonly Dictionary<SlotRemovedHandler, AzuEPI.API.SlotRemovedHandler> _slotRemovedMap = new();
 
         private static readonly Dictionary<Action<Hud>, Action<Hud>> _hudAwakeMap = new();
         private static readonly Dictionary<Action<Hud>, Action<Hud>> _hudAwakeCompleteMap = new();
@@ -191,11 +188,9 @@ namespace AzuExtendedPlayerInventory
             };
         }
 
-        public static List<ItemDrop.ItemData> GetQuickSlotsItems()
-            => AzuEPI.API.GetQuickSlotsItems();
+        public static List<ItemDrop.ItemData> GetQuickSlotsItems() => AzuEPI.API.GetQuickSlotsItems();
 
-        public static int GetAddedRows(int width)
-            => AzuEPI.API.GetAddedRows(width);
+        public static int GetAddedRows(int width) => AzuEPI.API.GetAddedRows(width);
 
         public static void HudAwake(Hud h)
         {
