@@ -241,16 +241,10 @@ public class API
         int w = inv.GetWidth();
         int baseIndex = Layout.GetBaseSlotIndex(inv);
 
-        for (int i = 0; i < InventoryGuiPatches.UpdateInventory_Patch.slots.Count; ++i)
+        foreach (var snap in GetQuickSlotSnapshots(inv))
         {
-            var slot = InventoryGuiPatches.UpdateInventory_Patch.slots[i];
-            if (slot is not { IsQuickSlot: true }) continue;
-
-            int idx = baseIndex + i;
-            int x = idx % w;
-            int y = idx / w;
-            var item = inv.GetItemAt(x, y);
-            if (item != null) quickSlotItems.Add(item);
+            var itemAt = inv.GetItemAt(snap.GridPos.x, snap.GridPos.y);
+            if (itemAt != null) quickSlotItems.Add(itemAt);
         }
 
         return quickSlotItems;
