@@ -17,6 +17,7 @@ namespace AzuEPI;
 [BepInPlugin(ModGUID, ModName, ModVersion)]
 [BepInDependency("vapok.mods.adventurebackpacks", BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency("ishid4.mods.betterarchery", BepInDependency.DependencyFlags.SoftDependency)]
+[BepInIncompatibility("shudnal.ExtraSlots")]
 public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 {
     public enum Toggle
@@ -58,22 +59,22 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     private void Awake()
     {
         Localizer.Load();
-        APIManager.Patcher.Patch(new[]
+        Patcher.Patch(new[]
         {
             "AzuExtendedPlayerInventory",
             "AzuExtendedPlayerInventory.EPI.Patches"
         });
 
         context = this;
-        _serverConfigLocked = config("1 - General", "Lock Configuration", Toggle.On, "If on, the configuration is locked and can be changed by server admins only.");
+        _serverConfigLocked = config("1 - General", "Lock Configuration", On, "If on, the configuration is locked and can be changed by server admins only.");
         _ = ConfigSync.AddLockingConfigEntry(_serverConfigLocked);
 
-        WishboneSlot = config("1.5 - Slots", "Wishbone Slot", Toggle.On, "If on, adds a wishbone slot to the equipment row.");
-        WispLightSlot = config("1.5 - Slots", "Demister (Wisplight) Slot", Toggle.On, "If on, adds a demister slot to the equipment row.");
+        WishboneSlot = config("1.5 - Slots", "Wishbone Slot", On, "If on, adds a wishbone slot to the equipment row.");
+        WispLightSlot = config("1.5 - Slots", "Demister (Wisplight) Slot", On, "If on, adds a demister slot to the equipment row.");
 
         WishboneSlot.SettingChanged += (sender, args) =>
         {
-            if (WishboneSlot.Value == Toggle.On)
+            if (WishboneSlot.Value.isOn())
             {
                 API.AddSlot("$item_wishbone", "Wishbone", 5);
             }
@@ -87,9 +88,9 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         WispLightSlot.SettingChanged += (sender, args) =>
         {
-            if (WispLightSlot.Value == Toggle.On)
+            if (WispLightSlot.Value.isOn())
             {
-                API.AddSlot("$item_demister", "Demister", WishboneSlot.Value == Toggle.On ? 6 : 5);
+                API.AddSlot("$item_demister", "Demister", WishboneSlot.Value.isOn() ? 6 : 5);
             }
             else
             {
@@ -100,16 +101,16 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         };
 
         /* Extended Player Inventory Config options */
-        AutoEquip = config("2 - Extended Inventory", "Auto Equip", Toggle.On, "Automatically equip items that go into the gear slots. Applies when picking up items, transferring between containers, or picking up your tombstone.");
-        ShowQuickSlots = config("2 - Extended Inventory", "Show Quickslots", Toggle.On, "Should the quickslots in the main hud be shown? (not the inventory quickslots)");
+        AutoEquip = config("2 - Extended Inventory", "Auto Equip", On, "Automatically equip items that go into the gear slots. Applies when picking up items, transferring between containers, or picking up your tombstone.");
+        ShowQuickSlots = config("2 - Extended Inventory", "Show Quickslots", On, "Should the quickslots in the main hud be shown? (not the inventory quickslots)");
         ShowQuickSlots.SettingChanged += (sender, args) => { HotkeyBarController.Hud_Update_Patch.DeselectHotkeyBar(); };
         ExtraRows = config("2 - Extended Inventory", "Extra Inventory Rows", 0, "Number of extra ordinary rows. (This can cause overlap with chest GUI, make sure you hold CTRL (the default key) and drag to desired position)");
         ExtraRows.SettingChanged += (sender, args) => { UpdateInventorySize(); };
-        AddEquipmentRow = config("2 - Extended Inventory", "Add Equipment Row", Toggle.On, "Add special row for equipped items and quick slots. (IF YOU ARE USING RANDY KNAPPS EAQs KEEP THIS VALUE OFF)");
-        AddEquipmentRow.SettingChanged += (sender, args) => { CheckRandy(); };
-        DisplayEquipmentRowSeparate = config("2 - Extended Inventory", "Display Equipment Row Separate", Toggle.On, "Display equipment and quickslots in their own area. (IF YOU ARE USING RANDY KNAPPS EAQs KEEP THIS VALUE OFF)");
+        AddEquipmentRow = config("2 - Extended Inventory", "Add Equipment Row", On, "Add special row for equipped items and quick slots. (IF YOU ARE USING RANDY KNAPPS EAQs KEEP THIS VALUE OFF)");
+        AddEquipmentRow.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
+        DisplayEquipmentRowSeparate = config("2 - Extended Inventory", "Display Equipment Row Separate", On, "Display equipment and quickslots in their own area. (IF YOU ARE USING RANDY KNAPPS EAQs KEEP THIS VALUE OFF)");
 
-        DisplayEquipmentRowSeparate.SettingChanged += (sender, args) => { CheckRandy(); };
+        DisplayEquipmentRowSeparate.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
 
         HelmetText = config("2 - Extended Inventory", "Helmet Text", "Head", "Text to show for helmet slot.", false);
         ChestText = config("2 - Extended Inventory", "Chest Text", "Chest", "Text to show for chest slot.", false);
@@ -138,7 +139,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         MoveableChestInventory.ChestInventoryY = config("3 - Chest Inventory", "Chest Inventory Y", -1f, "Current Y of chest", false);
         MoveableChestInventory.ChestDragKeys = config("3 - Chest Inventory", "Drag Keys (Chest Drag)", new KeyboardShortcut(KeyCode.Mouse0, KeyCode.LeftControl), "Key or keys (to move the container). It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
 
-        MakeDropAllButton = config("3 - Button", "Drop All Button", Toggle.Off, "Key or keys (to move the container). It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
+        MakeDropAllButton = config("3 - Button", "Drop All Button", Off, "Key or keys (to move the container). It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
         DropAllButtonPosition = config("3 - Button", "Button Position", new Vector2(880.00f, 10.00f), "Button position relative to the inventory background's top left corner", false);
         Hotkeys = new[]
         {
@@ -153,9 +154,9 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             HotKey3Text
         };
 
-        VanityOption = config("4 - UI", "Vanity Option", Toggle.On, "If on, the vanity button will be shown in the inventory.");
-        LoadoutOption = config("4 - UI", "Loadout Option", Toggle.On, "If on, the loadout button will be shown in the inventory.");
-        OldLayout = config("4 - UI", "Old Layout", Toggle.Off, "If on, the old layout will be used.");
+        VanityOption = config("4 - UI", "Vanity Option", On, "If on, the vanity button will be shown in the inventory.");
+        LoadoutOption = config("4 - UI", "Loadout Option", On, "If on, the loadout button will be shown in the inventory.");
+        OldLayout = config("4 - UI", "Old Layout", Off, "If on, the old layout will be used.");
 
         VanityOption.SettingChanged += (sender, args) =>
         {
@@ -181,32 +182,19 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             RebuildUI();
         };
 
-        if (Chainloader.PluginInfos.TryGetValue("ishid4.mods.betterarchery", out var BetterArchery))
-        {
-            // Force disable the configuration for BetterArchery. Turn off the quiver
-            var tryGetEntry = BetterArchery.Instance.Config.TryGetEntry<bool>("Quiver", "Enable Quiver", out var entry);
-            if (tryGetEntry && entry.Value)
-            {
-                entry.Value = false;
-                AzuExtendedPlayerInventoryLogger.LogWarning(
-                    $"{Environment.NewLine}BetterArchery's quiver feature has been forcibly disabled to prevent potential issues with your inventory. " +
-                    $"Logging into your world now may cause you to lose all arrows in your quiver. {Environment.NewLine}If you accept this risk, please proceed. " +
-                    $"{Environment.NewLine}If you prefer to avoid any potential issues, please disable/remove {ModName}, restart the game, empty your quiver, remove " +
-                    $"the BetterArchery mod, and then reinstall {ModName}.");
-            }
-        }
+        BetterArchery.CheckBetterArchery();
 
         _harmony.PatchAll();
         InitializeConfigWatcher();
 
-        if (WishboneSlot.Value == Toggle.On)
+        if (WishboneSlot.Value.isOn())
         {
             API.AddSlot("$item_wishbone", "Wishbone", 5);
         }
 
-        if (WispLightSlot.Value == Toggle.On)
+        if (WispLightSlot.Value.isOn())
         {
-            API.AddSlot("$item_demister", "Demister", WishboneSlot.Value == Toggle.On ? 6 : 5);
+            API.AddSlot("$item_demister", "Demister", WishboneSlot.Value.isOn() ? 6 : 5);
         }
 
         var index = InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length;
@@ -219,8 +207,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     private void Start()
     {
-        CheckRandy();
-        CheckWeightBase();
+        EAQ.CheckRandy();
+        WeightBase.CheckWeightBase();
 
         Localizer.OnLocalizationComplete += () =>
         {
@@ -293,28 +281,12 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     {
         if (InventoryGui.instance == null) return;
         if (Player.m_localPlayer == null) return;
-        int height = Layout.BaseInventoryHeight + ExtraRows.Value + (AddEquipmentRow.Value == Toggle.On ? API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()) : 0);
+        int height = API.GetFullHeight(Player.m_localPlayer.m_inventory.GetWidth());
         Player.m_localPlayer.m_inventory.m_height = height;
         Player.m_localPlayer.m_tombstone.GetComponent<Container>().m_height = height;
 
         Player.m_localPlayer.m_inventory.Changed();
         InventoryHealth.InventoryFix();
-    }
-
-    private static void CheckRandy()
-    {
-        if (DisplayEquipmentRowSeparate.Value == Toggle.Off && AddEquipmentRow.Value == Toggle.Off) return;
-        if (!Chainloader.PluginInfos.TryGetValue("randyknapp.mods.equipmentandquickslots", out var RandyEAQ)) return;
-        DisplayEquipmentRowSeparate.Value = Toggle.Off;
-        AddEquipmentRow.Value = Toggle.Off;
-        context.Config.Save();
-        AzuExtendedPlayerInventoryLogger.LogWarning($"{Environment.NewLine}RandyKnapp's Equipment and Quickslots mod has been detected. This mod is not fully compatible with his. As a result, the Display Equipment Row Separate and Add Equipment Row options for this mod have been disabled and the configuration saved.");
-    }
-
-    private static void CheckWeightBase()
-    {
-        if (!Chainloader.PluginInfos.TryGetValue("MadBuffoon.WeightBase", out var WbInfo)) return;
-        WbInstalled = true;
     }
 
     #region ConfigOptions
@@ -415,11 +387,42 @@ public static class ToggleExtensions
 {
     public static bool isOn(this AzuExtendedPlayerInventoryPlugin.Toggle toggle)
     {
-        return toggle == AzuExtendedPlayerInventoryPlugin.Toggle.On;
+        return toggle == On;
     }
 
     public static bool isOff(this AzuExtendedPlayerInventoryPlugin.Toggle toggle)
     {
-        return toggle == AzuExtendedPlayerInventoryPlugin.Toggle.Off;
+        return toggle == Off;
+    }
+}
+
+public static class LoggerExtensions
+{
+    public static void LogInfoDebug(this ManualLogSource logger, string message)
+    {
+#if DEBUG
+        logger.LogInfo(message);
+#endif
+    }
+
+    public static void LogWarningDebug(this ManualLogSource logger, string message)
+    {
+#if DEBUG
+        logger.LogWarning(message);
+#endif
+    }
+
+    public static void LogErrorDebug(this ManualLogSource logger, string message)
+    {
+#if DEBUG
+        logger.LogError(message);
+#endif
+    }
+
+    public static void LogDebugDebug(this ManualLogSource logger, string message)
+    {
+#if DEBUG
+        logger.LogDebug(message);
+#endif
     }
 }

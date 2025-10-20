@@ -264,6 +264,16 @@ public class API
 #endif
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int GetFullHeight(int width)
+    {
+#if !API
+        return Layout.BaseInventoryHeight + ExtraRows.Value + (AddEquipmentRow.Value.isOn() ? GetAddedRows(width) : 0);
+#else
+        return 0;
+#endif
+    }
+
     public static void RegisterVisualPrefabs(string slotName, params (string prefabName, string visualName)[] pairs)
     {
 #if !API

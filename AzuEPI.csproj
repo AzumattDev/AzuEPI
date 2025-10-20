@@ -132,7 +132,7 @@
             <HintPath>$(CorlibPath)\UnityEngine.PhysicsModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.ImageConversionModule">
-            <HintPath>$(CorlibPath)\UnityEngine.ImageConversionModule.dll</HintPath>
+            <HintPath>C:\Users\crypt\OneDrive\Desktop\Libs\UnityEngine.ImageConversionModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.TextRenderingModule">
             <HintPath>$(CorlibPath)\UnityEngine.TextRenderingModule.dll</HintPath>
@@ -161,6 +161,9 @@
         <Compile Include="Game\CLI\TerminalCommands.cs"/>
         <Compile Include="Game\Compatibility\AdvBackpacks\AdvBackpacks.cs"/>
         <Compile Include="Game\Compatibility\AdvBackpacks\BoneReorder.cs"/>
+        <Compile Include="Game\Compatibility\BetterArchery.cs" />
+        <Compile Include="Game\Compatibility\EAQ.cs" />
+        <Compile Include="Game\Compatibility\WeightBase.cs" />
         <Compile Include="Game\Compatibility\JudesEquipment.cs"/>
         <Compile Include="Game\Compatibility\RustBags.cs"/>
         <Compile Include="Game\Loadout\LoadoutPatches.cs"/>
@@ -225,7 +228,6 @@
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)|$(Platform)' != 'API|AnyCPU'">
         <Folder Include="Core\"/>
-        <Folder Include="Game\Slots\"/>
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

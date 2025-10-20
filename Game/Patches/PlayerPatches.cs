@@ -10,9 +10,9 @@ public class PlayerPatches
     {
         private static void Prefix(Player __instance, Inventory ___m_inventory)
         {
-            AzuExtendedPlayerInventoryLogger.LogDebug("Player_Awake");
+            AzuExtendedPlayerInventoryLogger.LogDebugDebug("Player_Awake");
 
-            int height = Layout.BaseInventoryHeight + ExtraRows.Value + (AddEquipmentRow.Value.isOn() ? API.GetAddedRows(__instance.m_inventory.GetWidth()) : 0);
+            int height = API.GetFullHeight(__instance.m_inventory.GetWidth());
             __instance.m_inventory.m_height = height;
             __instance.m_tombstone.GetComponent<Container>().m_height = height;
         }
@@ -145,7 +145,7 @@ public class PlayerPatches
         private static void Postfix(Player __instance, ref Inventory ___m_inventory)
         {
             int width = ___m_inventory.GetWidth();
-            int height = Layout.BaseInventoryHeight + ExtraRows.Value + (AddEquipmentRow.Value.isOn() ? API.GetAddedRows(width) : 0);
+            int height = API.GetFullHeight(width);
             ___m_inventory.m_height = height;
             __instance.m_tombstone.GetComponent<Container>().m_height = height;
             if (InventoryHealth.IgnoreKeyPresses(true) || AddEquipmentRow.Value.isOff())
@@ -165,15 +165,15 @@ public class PlayerPatches
 
         private static void CreateTombStone()
         {
-            AzuExtendedPlayerInventoryLogger.LogDebug($"Height {Player.m_localPlayer.m_tombstone.GetComponent<Container>().m_height}");
+            AzuExtendedPlayerInventoryLogger.LogDebugDebug($"Height {Player.m_localPlayer.m_tombstone.GetComponent<Container>().m_height}");
             GameObject gameObject = Object.Instantiate(Player.m_localPlayer.m_tombstone, Player.m_localPlayer.GetCenterPoint(), Player.m_localPlayer.transform.rotation);
             TombStone component = gameObject.GetComponent<TombStone>();
-            AzuExtendedPlayerInventoryLogger.LogDebug($"Height {gameObject.GetComponent<Container>().m_height}");
-            AzuExtendedPlayerInventoryLogger.LogDebug($"Inv height {gameObject.GetComponent<Container>().GetInventory().GetHeight()}");
-            AzuExtendedPlayerInventoryLogger.LogDebug($"Inv slots {gameObject.GetComponent<Container>().GetInventory().GetEmptySlots()}");
+            AzuExtendedPlayerInventoryLogger.LogDebugDebug($"Height {gameObject.GetComponent<Container>().m_height}");
+            AzuExtendedPlayerInventoryLogger.LogDebugDebug($"Inv height {gameObject.GetComponent<Container>().GetInventory().GetHeight()}");
+            AzuExtendedPlayerInventoryLogger.LogDebugDebug($"Inv slots {gameObject.GetComponent<Container>().GetInventory().GetEmptySlots()}");
             for (int index = 0; index < gameObject.GetComponent<Container>().GetInventory().GetEmptySlots(); ++index)
                 gameObject.GetComponent<Container>().GetInventory().AddItem("SwordBronze", 1, 1, 0, 0L, "");
-            AzuExtendedPlayerInventoryLogger.LogDebug($"No items: {gameObject.GetComponent<Container>().GetInventory().NrOfItems()}");
+            AzuExtendedPlayerInventoryLogger.LogDebugDebug($"No items: {gameObject.GetComponent<Container>().GetInventory().NrOfItems()}");
             PlayerProfile playerProfile = global::Game.instance.GetPlayerProfile();
             component.Setup(playerProfile.GetName(), playerProfile.GetPlayerID());
         }

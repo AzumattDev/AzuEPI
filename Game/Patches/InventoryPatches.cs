@@ -219,9 +219,13 @@ public class InventoryPatches
     {
         private static void Postfix(Inventory __instance, Inventory original)
         {
-            AzuExtendedPlayerInventoryLogger.LogDebug("MoveInventoryToGrave");
+            if (original.IsPlayerInventory())
+            {
+                original.m_height = API.GetFullHeight(original.GetWidth());
+            }
+            AzuExtendedPlayerInventoryLogger.LogDebugDebug("MoveInventoryToGrave");
 
-            AzuExtendedPlayerInventoryLogger.LogDebug($"inv: {__instance.GetHeight()} orig: {original.GetHeight()}");
+            AzuExtendedPlayerInventoryLogger.LogDebugDebug($"inv: {__instance.GetHeight()} orig: {original.GetHeight()}");
         }
     }
 

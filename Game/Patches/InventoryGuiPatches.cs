@@ -113,12 +113,12 @@ public class InventoryGuiPatches
 
             switch (DisplayEquipmentRowSeparate.Value)
             {
-                case AzuExtendedPlayerInventoryPlugin.Toggle.On when equipmentBkgTransform == null && OldLayout.Value.isOn():
+                case On when equipmentBkgTransform == null && OldLayout.Value.isOn():
                 {
                     BuildEquipmentBkg(__instance, bkgRect);
                     break;
                 }
-                case AzuExtendedPlayerInventoryPlugin.Toggle.On when OldLayout.Value.isOff():
+                case On when OldLayout.Value.isOff():
                 {
                     if (equipmentBkgTransform == null)
                     {
@@ -137,7 +137,7 @@ public class InventoryGuiPatches
                     break;
                 }
 
-                case AzuExtendedPlayerInventoryPlugin.Toggle.Off when equipmentBkgTransform:
+                case Off when equipmentBkgTransform:
                     equipmentBkgTransform.gameObject.SetActive(false);
                     break;
             }

@@ -17,4 +17,5 @@ global using Object = UnityEngine.Object;
 #if !API
 global using static AzuEPI.AzuExtendedPlayerInventoryPlugin;
 global using static AzuEPI.Core.InventoryHandlers.UIBuilder;
+global using static AzuEPI.AzuExtendedPlayerInventoryPlugin.Toggle;
 #endif

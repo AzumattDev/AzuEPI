@@ -58,7 +58,7 @@ public class Layout
 
     public static Vector2 GetEquipmentBackAnchorMax()
     {
-        return new(1.13f + Math.Max(Hotkeys.Length, (InventoryGuiPatches.UpdateInventory_Patch.slots.Count - 1) / 3) * Layout.tileSize / 570, 1f);
+        return new(1.13f + Math.Max(Hotkeys.Length, (InventoryGuiPatches.UpdateInventory_Patch.slots.Count - 1) / 3) * tileSize / 570, 1f);
     }
 
     public static void ApplyLayoutCorrections()
@@ -147,8 +147,8 @@ public class Layout
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void ApplyRepairShift()
     {
-        if (GUICache._selectedFrameRT) GUICache._selectedFrameRT.anchorMin = Layout.PlayerBkgAnchorMin;
-        if (GUICache._repairSimpleRT) GUICache._repairSimpleRT.anchoredPosition += Layout.RepairMovement;
-        if (GUICache._repairButtonRT) GUICache._repairButtonRT.anchoredPosition += Layout.RepairMovement;
+        if (GUICache._selectedFrameRT) GUICache._selectedFrameRT.anchorMin = PlayerBkgAnchorMin;
+        if (GUICache._repairSimpleRT) GUICache._repairSimpleRT.anchoredPosition += RepairMovement;
+        if (GUICache._repairButtonRT) GUICache._repairButtonRT.anchoredPosition += RepairMovement;
     }
 }
