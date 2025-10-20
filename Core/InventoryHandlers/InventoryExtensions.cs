@@ -71,26 +71,6 @@ public static class InventoryExtensions
         return true;
     }
 
-    internal static bool IsEquipmentCell(this Inventory inv, int x, int y, out int whichSlot)
-    {
-        whichSlot = -1;
-        int li = inv.LinearIndexIntoEpiBlock(x, y);
-        if (li < 0) return false;
-        if (li >= InventoryGuiPatches.UpdateInventory_Patch.slots.Count) return false;
-        if (InventoryGuiPatches.UpdateInventory_Patch.slots[li] is not Model.EquipmentSlot { IsQuickSlot: false }) return false;
-        whichSlot = li;
-        return true;
-    }
-
-    internal static bool IsQuickCell(this Inventory inv, int x, int y)
-    {
-        int li = inv.LinearIndexIntoEpiBlock(x, y);
-        if (li < 0) return false;
-        if (li >= InventoryGuiPatches.UpdateInventory_Patch.slots.Count) return false;
-        Model.Slot? s = InventoryGuiPatches.UpdateInventory_Patch.slots[li];
-        return s is not Model.EquipmentSlot && s is { IsQuickSlot: true };
-    }
-
     internal static bool IsHiddenCell(this Inventory inv, int x, int y)
     {
         int li = inv.LinearIndexIntoEpiBlock(x, y);

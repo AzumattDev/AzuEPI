@@ -589,27 +589,25 @@ public class API
 
             try
             {
-                if (isValid(item)) return true;
+                return isValid(item);
             }
             catch
             {
+                return false;
             }
-
-            return false;
         };
 
         slot.Get = player =>
         {
-            ItemDrop.ItemData? res = null;
             try
             {
-                res = originalGet?.Invoke(player);
+                var res = originalGet?.Invoke(player);
+                if (res != null) return res;
             }
             catch
             {
             }
 
-            if (res != null) return res;
             try
             {
                 return getItem(player);

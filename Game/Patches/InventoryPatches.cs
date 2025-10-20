@@ -86,7 +86,7 @@ public class InventoryPatches
             }
 
             // Equipment cells must validate
-            if (__instance.IsEquipmentCell(x, y, out int which))
+            if (API.IsEquipmentCell(__instance, x, y, out int which))
             {
                 if (InventoryGuiPatches.UpdateInventory_Patch.slots[which] is not Model.EquipmentSlot slot || slot is { Valid: null, IsQuickSlot: false } || slot is { Valid: null } && !slot.Valid(item))
                 {
@@ -113,7 +113,7 @@ public class InventoryPatches
                 return false;
             }
 
-            if (__instance.IsEquipmentCell(pos.x, pos.y, out int which))
+            if (API.IsEquipmentCell(__instance, pos.x, pos.y, out int which))
             {
                 var slot = InventoryGuiPatches.UpdateInventory_Patch.slots[which] as Model.EquipmentSlot;
                 if (slot == null || slot.Valid == null || !slot.Valid(item))
@@ -143,7 +143,7 @@ public class InventoryPatches
             int normalFreeCells = Capacity.FreeNormalCells(__instance);
 
             int quickFreeCells = Capacity.FreeQuickCells(__instance);
-            
+
             int equipmentFreeCells = Capacity.FreeValidEquipmentCells(__instance, item);
 
             long capacity = freeStackSpace + (long)(normalFreeCells + quickFreeCells + equipmentFreeCells) * maxStack;
@@ -208,7 +208,7 @@ public class InventoryPatches
             }
 
             // Equipment target must validate
-            if (__instance.IsEquipmentCell(x, y, out int which))
+            if (API.IsEquipmentCell(__instance, x, y, out int which))
             {
                 var slot = InventoryGuiPatches.UpdateInventory_Patch.slots[which] as Model.EquipmentSlot;
                 if (slot == null || slot.Valid == null || !slot.Valid(item))
@@ -233,7 +233,7 @@ public class InventoryPatches
             AzuExtendedPlayerInventoryLogger.LogDebug($"inv: {__instance.GetHeight()} orig: {original.GetHeight()}");
         }
     }
-    
+
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.MoveAll))]
     internal static class MoveAllToPatch
     {
@@ -242,7 +242,7 @@ public class InventoryPatches
             if (__instance.IsPlayerInventory()) InventoryHealth.InventoryFix();
         }
     }
-    
+
     [HarmonyPatch(typeof(Container), nameof(Container.RPC_TakeAllRespons))]
     internal static class ContainerRPCRequestTakeAllPatch
     {
