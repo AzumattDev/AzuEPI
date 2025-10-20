@@ -80,19 +80,18 @@ public class InventoryPatches
 
             if (__instance.IsHiddenCell(x, y))
             {
-                __result = __instance.AddItem(item, amount, /*x*/ Mathf.Clamp(item.m_gridPos.x, 0, __instance.GetWidth() - 1), /*y*/ Mathf.Clamp(item.m_gridPos.y, 0, __instance.GetHeight() - 1))
+                __result = __instance.AddItem(item, amount,
+                               Mathf.Clamp(item.m_gridPos.x, 0, __instance.GetWidth() - 1),
+                               Mathf.Clamp(item.m_gridPos.y, 0, __instance.GetHeight() - 1))
                            || __instance.AddItem(item);
                 return false;
             }
 
             // Equipment cells must validate
-            if (API.IsEquipmentCell(__instance, x, y, out int which))
+            if (API.TryGetSlotIndexAtGridPos(__instance, new Vector2i(x, y), out int slotIndex) && !API.SlotValidates(slotIndex, item))
             {
-                if (InventoryGuiPatches.UpdateInventory_Patch.slots[which] is not Model.EquipmentSlot slot || slot is { Valid: null, IsQuickSlot: false } || slot is { Valid: null } && !slot.Valid(item))
-                {
-                    __result = false;
-                    return false;
-                }
+                __result = false;
+                return false;
             }
 
             // Quick cells accept anything; let vanilla continue
@@ -113,14 +112,10 @@ public class InventoryPatches
                 return false;
             }
 
-            if (API.IsEquipmentCell(__instance, pos.x, pos.y, out int which))
+            if (API.TryGetSlotIndexAtGridPos(__instance, pos, out int slotIndex) && !API.SlotValidates(slotIndex, item))
             {
-                var slot = InventoryGuiPatches.UpdateInventory_Patch.slots[which] as Model.EquipmentSlot;
-                if (slot == null || slot.Valid == null || !slot.Valid(item))
-                {
-                    __result = false;
-                    return false;
-                }
+                __result = false;
+                return false;
             }
 
             return true;
@@ -208,14 +203,10 @@ public class InventoryPatches
             }
 
             // Equipment target must validate
-            if (API.IsEquipmentCell(__instance, x, y, out int which))
+            if (API.TryGetSlotIndexAtGridPos(__instance, new Vector2i(x, y), out int slotIndex) && !API.SlotValidates(slotIndex, item))
             {
-                var slot = InventoryGuiPatches.UpdateInventory_Patch.slots[which] as Model.EquipmentSlot;
-                if (slot == null || slot.Valid == null || !slot.Valid(item))
-                {
-                    __result = false;
-                    return false;
-                }
+                __result = false;
+                return false;
             }
 
             // Quick target allowed; vanilla handles the move
