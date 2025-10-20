@@ -187,6 +187,8 @@
         <Compile Include="Game\Vanity\VanityAPI.cs"/>
         <Compile Include="Game\Vanity\VanityPanelController.cs"/>
         <Compile Include="Game\Vanity\VanityPatches.cs"/>
+        <Compile Include="Game\Vanity\SlotIconChanges.cs" />
+        <Compile Include="Game\Vanity\VanityLookup.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)|$(Platform)' != 'API|AnyCPU'">
@@ -208,8 +210,6 @@
         <Compile Include="API\API.cs"/>
         <Compile Include="API\APIBkCompat.cs" />
         <Compile Include="Core\Slots\Model.cs"/>
-        <Compile Include="Game\Vanity\SlotIconChanges.cs" />
-        <Compile Include="Game\Vanity\VanityLookup.cs" />
         <Compile Include="GlobalUsings.cs"/>
         <None Include="App.config"/>
     </ItemGroup>

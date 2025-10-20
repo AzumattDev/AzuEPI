@@ -22,7 +22,7 @@ public class InventoryPatches
         private static bool Prefix(Inventory __instance, ref int __result, List<ItemDrop.ItemData> ___m_inventory, int ___m_width, int ___m_height)
         {
             if (!__instance.ShouldProtectInventorySlots()) return true;
-            __result = Capacity.FreeNormalCells(__instance) + Capacity.FreeQuickCells(__instance);
+            __result = Capacity.FreeNormalCells(__instance) + Capacity.FreeQuickCells(__instance) + Capacity.FreeEquipmentCells(__instance);
             return false;
         }
     }
@@ -58,8 +58,7 @@ public class InventoryPatches
             if (Player.m_localPlayer == null) return true;
             if (AddEquipmentRow.Value.isOff() || !Player.m_localPlayer || __instance != Player.m_localPlayer.GetInventory())
                 return true;
-            AzuExtendedPlayerInventoryLogger.LogDebug("AddItem");
-            if (!__instance.IsEquipmentSlotFree(item, out int which))
+            if (!__instance.IsEquipmentSlotFreeAndItemValid(item, out int which))
                 return true;
 
             int normalRows = Layout.NormalRows(__instance);
@@ -144,8 +143,10 @@ public class InventoryPatches
             int normalFreeCells = Capacity.FreeNormalCells(__instance);
 
             int quickFreeCells = Capacity.FreeQuickCells(__instance);
+            
+            int equipmentFreeCells = Capacity.FreeValidEquipmentCells(__instance, item);
 
-            long capacity = freeStackSpace + (long)(normalFreeCells + quickFreeCells) * maxStack;
+            long capacity = freeStackSpace + (long)(normalFreeCells + quickFreeCells + equipmentFreeCells) * maxStack;
             __result = capacity >= stack;
             return false;
         }

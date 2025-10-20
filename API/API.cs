@@ -189,7 +189,7 @@ public class API
 
     public static bool RemoveSlot(string slotName)
     {
-#if ! API
+#if !API
         if (InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s.Name == slotName) is { } slotIndex and >= 0 && InventoryGuiPatches.UpdateInventory_Patch.slots[slotIndex] is Model.EquipmentSlot slot)
         {
             if (Player.m_localPlayer && slot.Get?.Invoke(Player.m_localPlayer) is { } item) Player.m_localPlayer.UnequipItem(item);
@@ -207,40 +207,28 @@ public class API
         return false;
     }
 
-    public static SlotInfo GetSlots()
-    {
-#if ! API
-        return new SlotInfo
-        {
-            SlotNames = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.Name).ToArray(),
-            OriginalSlotNames = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.OriginalName).ToArray(),
-            SlotPositions = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.Position).ToArray(),
-            GetItemFuncs = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.EquipmentSlot?.Get).ToArray(),
-            IsValidFuncs = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.EquipmentSlot?.Valid).ToArray()
-        };
-#else
-        return new SlotInfo();
-#endif
-    }
+    public static SlotInfo GetSlots() => BuildSlotInfo(_ => true);
 
-    public static SlotInfo GetQuickSlots()
+    public static SlotInfo GetQuickSlots() => BuildSlotInfo(s => s.IsQuickSlot);
+
+    private static SlotInfo BuildSlotInfo(Func<Model.Slot, bool> filter)
     {
+        {
 #if !API
-        var quickSlots = InventoryGuiPatches.UpdateInventory_Patch.slots
-            .Where(s => s is { IsQuickSlot: true })
-            .ToArray();
+            var slots = InventoryGuiPatches.UpdateInventory_Patch.slots.Where(s => s != null && filter(s!)).ToArray();
 
-        return new SlotInfo
-        {
-            SlotNames = quickSlots.Select(s => s!.Name).ToArray(),
-            OriginalSlotNames = quickSlots.Select(s => s!.OriginalName).ToArray(),
-            SlotPositions = quickSlots.Select(s => s!.Position).ToArray(),
-            GetItemFuncs = quickSlots.Select(s => s!.EquipmentSlot?.Get).ToArray(),
-            IsValidFuncs = quickSlots.Select(s => s!.EquipmentSlot?.Valid).ToArray()
-        };
+            return new SlotInfo
+            {
+                SlotNames = slots.Select(s => s!.Name).ToArray(),
+                OriginalSlotNames = slots.Select(s => s!.OriginalName).ToArray(),
+                SlotPositions = slots.Select(s => s!.Position).ToArray(),
+                GetItemFuncs = slots.Select(s => s!.EquipmentSlot?.Get).ToArray(),
+                IsValidFuncs = slots.Select(s => s!.EquipmentSlot?.Valid).ToArray()
+            };
 #else
-        return new SlotInfo();
+            return new SlotInfo();
 #endif
+        }
     }
 
     public static List<ItemDrop.ItemData> GetQuickSlotsItems()
@@ -273,7 +261,7 @@ public class API
 
     public static int GetAddedRows(int width)
     {
-#if ! API
+#if !API
         int slotsCount = InventoryGuiPatches.UpdateInventory_Patch.slots.Count;
         int requiredRows = Mathf.CeilToInt((float)slotsCount / width);
         return requiredRows;
@@ -301,7 +289,275 @@ public class API
 #endif
     }
 
-#if ! API
+    public static int GetSlotCount()
+    {
+#if !API
+        return InventoryGuiPatches.UpdateInventory_Patch.slots.Count;
+#else
+        return 0;
+#endif
+    }
+
+    public static bool TryGetSlotIndexByName(string slotName, out int index, bool allowLocalized = true)
+    {
+#if !API
+        index = -1;
+        if (string.IsNullOrWhiteSpace(slotName)) return false;
+
+        var slots = InventoryGuiPatches.UpdateInventory_Patch.slots;
+
+        for (int i = 0; i < slots.Count; ++i)
+        {
+            var s = slots[i];
+            if (s == null) continue;
+            if (!string.Equals(s.OriginalName, slotName, StringComparison.Ordinal)
+                && (!allowLocalized || !string.Equals(s.Name, slotName, StringComparison.Ordinal))) continue;
+            index = i;
+            return true;
+        }
+
+        return false;
+#else
+        index = -1;
+        return false;
+#endif
+    }
+
+    public static bool TryGetSlotDescriptor(int index, out SlotDescriptor desc)
+    {
+#if API
+        desc = default;
+        return false;
+#else
+        desc = default;
+        var slots = InventoryGuiPatches.UpdateInventory_Patch.slots;
+        if ((uint)index >= (uint)slots.Count) return false;
+
+        var s = slots[index];
+        if (s == null) return false;
+
+        bool isEquip = s is Model.EquipmentSlot { IsQuickSlot: false };
+        bool isQuick = s is { IsQuickSlot: true };
+        bool isCustom = IsCustomSlot(s as Model.EquipmentSlot);
+
+        desc = new SlotDescriptor(
+            index,
+            s.Name ?? string.Empty,
+            s.OriginalName ?? string.Empty,
+            isQuick,
+            isEquip,
+            isCustom,
+            s.Position
+        );
+        return true;
+#endif
+    }
+
+    public static int GetSlotGridLinearIndex(Inventory inv, int slotIndex)
+    {
+#if API
+        return -1;
+#else
+        if (inv == null) return -1;
+        int total = GetSlotCount();
+        if ((uint)slotIndex >= (uint)total) return -1;
+
+        int baseIndex = Layout.GetBaseSlotIndex(inv);
+        return baseIndex + slotIndex;
+#endif
+    }
+
+    public static Vector2i GetSlotGridPos(Inventory inv, int slotIndex)
+    {
+#if API
+        return new Vector2i(-1, -1);
+#else
+        int linear = GetSlotGridLinearIndex(inv, slotIndex);
+        if (linear < 0) return new Vector2i(-1, -1);
+        int w = inv.GetWidth();
+        return new Vector2i(linear % w, linear / w);
+#endif
+    }
+
+    public static bool TryGetSlotIndexAtGridPos(Inventory inv, Vector2i gridPos, out int slotIndex)
+    {
+#if API
+        slotIndex = -1;
+        return false;
+#else
+        slotIndex = -1;
+        if (inv == null) return false;
+
+        int w = inv.GetWidth();
+        int normalRows = Layout.NormalRows(inv);
+        if (gridPos.y < normalRows) return false;
+
+        int linear = gridPos.y * w + gridPos.x;
+        int baseLinear = normalRows * w;
+        int epiLinear = linear - baseLinear;
+
+        int total = GetSlotCount();
+        if ((uint)epiLinear >= (uint)total) return false;
+
+        slotIndex = epiLinear;
+        return true;
+#endif
+    }
+
+    public static bool IsEquipmentCell(Inventory inv, int x, int y, out int slotIndex)
+    {
+#if API
+        slotIndex = -1;
+        return false;
+#else
+        if (!TryGetSlotIndexAtGridPos(inv, new Vector2i(x, y), out slotIndex)) return false;
+        return TryGetSlotDescriptor(slotIndex, out var d) && d.IsEquipmentSlot;
+#endif
+    }
+
+    public static bool IsQuickCell(Inventory inv, int x, int y, out int slotIndex)
+    {
+#if API
+        slotIndex = -1;
+        return false;
+#else
+        if (!TryGetSlotIndexAtGridPos(inv, new Vector2i(x, y), out slotIndex)) return false;
+        return TryGetSlotDescriptor(slotIndex, out var d) && d.IsQuickSlot;
+#endif
+    }
+
+    public static bool TryGetSlotSnapshot(Inventory inv, int slotIndex, out SlotSnapshot snapshot)
+    {
+#if API
+        snapshot = default;
+        return false;
+#else
+        snapshot = default;
+        if (inv == null) return false;
+        if (!TryGetSlotDescriptor(slotIndex, out var desc)) return false;
+
+        var slots = InventoryGuiPatches.UpdateInventory_Patch.slots;
+        var raw = slots[slotIndex];
+        bool occupied = raw?.Occupied ?? false;
+
+        var gp = GetSlotGridPos(inv, slotIndex);
+        int linear = GetSlotGridLinearIndex(inv, slotIndex);
+
+        snapshot = new SlotSnapshot(desc, occupied, gp, linear);
+        return true;
+#endif
+    }
+
+    public static IEnumerable<SlotDescriptor> EnumerateSlots()
+    {
+#if API
+        yield break;
+#else
+        int count = GetSlotCount();
+        for (int i = 0; i < count; ++i)
+            if (TryGetSlotDescriptor(i, out var d))
+                yield return d;
+#endif
+    }
+
+    public static IEnumerable<SlotSnapshot> GetAllSlotSnapshots(Inventory inv)
+    {
+#if API
+        yield break;
+#else
+        int count = GetSlotCount();
+        for (int i = 0; i < count; ++i)
+            if (TryGetSlotSnapshot(inv, i, out var s))
+                yield return s;
+#endif
+    }
+
+    public static IEnumerable<SlotSnapshot> GetQuickSlotSnapshots(Inventory inv)
+    {
+#if API
+        yield break;
+#else
+        foreach (var s in GetAllSlotSnapshots(inv))
+            if (s.Descriptor.IsQuickSlot)
+                yield return s;
+#endif
+    }
+
+    public static IEnumerable<SlotSnapshot> GetEquipmentSlotSnapshots(Inventory inv)
+    {
+#if API
+        yield break;
+#else
+        foreach (var s in GetAllSlotSnapshots(inv))
+            if (s.Descriptor.IsEquipmentSlot)
+                yield return s;
+#endif
+    }
+
+    public static bool SlotValidates(int slotIndex, ItemDrop.ItemData item)
+    {
+#if API
+        return false;
+#else
+        var slots = InventoryGuiPatches.UpdateInventory_Patch.slots;
+        if ((uint)slotIndex >= (uint)slots.Count) return false;
+
+        if (slots[slotIndex] is Model.EquipmentSlot es)
+        {
+            if (es.Valid == null) return false;
+            try
+            {
+                return es.Valid(item);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        if (slots[slotIndex] is { IsQuickSlot: true }) return true;
+        return false;
+#endif
+    }
+
+    public static bool TryGetEquippedItem(int slotIndex, out ItemDrop.ItemData? item)
+    {
+#if API
+        item = null;
+        return false;
+#else
+        item = null;
+        if (Player.m_localPlayer == null) return false;
+
+        var slots = InventoryGuiPatches.UpdateInventory_Patch.slots;
+        if ((uint)slotIndex >= (uint)slots.Count) return false;
+
+        if (slots[slotIndex] is Model.EquipmentSlot es)
+        {
+            try
+            {
+                item = es.Get?.Invoke(Player.m_localPlayer);
+                return item != null;
+            }
+            catch
+            {
+                item = null;
+                return false;
+            }
+        }
+
+        return false;
+#endif
+    }
+
+    public static bool TryGetSlotDescriptorByName(string slotName, out SlotDescriptor desc, bool allowLocalized = true)
+    {
+        desc = default;
+        if (!TryGetSlotIndexByName(slotName, out var idx, allowLocalized)) return false;
+        return TryGetSlotDescriptor(idx, out desc);
+    }
+
+#if !API
     private static void RegisterVisualsForSlot(string slotName, params string[] prefabNames)
     {
         if (string.IsNullOrWhiteSpace(slotName) || prefabNames == null) return;
@@ -376,9 +632,13 @@ public class API
         return CustomSlots.Contains(slot);
     }
 
+    public static bool IsCustomSlot(SlotDescriptor d) => d.IsCustom;
+    public static bool IsQuickSlot(SlotDescriptor d) => d.IsQuickSlot;
+    public static bool IsEquipmentSlot(SlotDescriptor d) => d.IsEquipmentSlot;
+
 #endif
 
-#if ! API
+#if !API
     public static void HudAwake(Hud __instance)
     {
         OnHudAwake?.Invoke(__instance);
@@ -410,7 +670,7 @@ public class API
     }
 #endif
 
-#if ! API
+#if !API
     internal static void UpdateSlots(int index, int shift)
     {
         if (!Player.m_localPlayer) return;
@@ -443,9 +703,9 @@ public class API
 
         foreach (Model.Slot? slot in InventoryGuiPatches.UpdateInventory_Patch.slots)
         {
-            if (slot == null || string.IsNullOrWhiteSpace(slot.Name)) continue;
-            if (!slot.OriginalName.StartsWith("$")) continue;
-            string localized = Localization.instance.Localize(slot.Name);
+            if (slot == null || string.IsNullOrWhiteSpace(slot.OriginalName)) continue;
+            if (!slot.OriginalName.StartsWith("$", StringComparison.Ordinal)) continue;
+            string localized = Localization.instance.Localize(slot.OriginalName);
             if (slot.Name == localized) continue;
             AzuExtendedPlayerInventoryLogger.LogDebug($"Relocalizing slot '{slot.Name}' to '{localized}' from key '{slot.OriginalName}'");
             slot.Name = localized;
@@ -462,4 +722,48 @@ public class SlotInfo
     public Vector2[] SlotPositions { get; set; } = { };
     public Func<Player, ItemDrop.ItemData?>?[] GetItemFuncs { get; set; } = { };
     public Func<ItemDrop.ItemData, bool>?[] IsValidFuncs { get; set; } = { };
+}
+
+[PublicAPI]
+public struct SlotDescriptor
+{
+    public int Index { get; }
+    public string Name { get; }
+    public string OriginalName { get; }
+    public bool IsQuickSlot { get; }
+    public bool IsEquipmentSlot { get; }
+    public bool IsCustom { get; }
+    public Vector2 UiPosition { get; }
+
+    public SlotDescriptor(int index, string name, string originalName, bool isQuickSlot, bool isEquipmentSlot, bool isCustom, Vector2 uiPosition)
+    {
+        Index = index;
+        Name = name ?? string.Empty;
+        OriginalName = originalName ?? string.Empty;
+        IsQuickSlot = isQuickSlot;
+        IsEquipmentSlot = isEquipmentSlot;
+        IsCustom = isCustom;
+        UiPosition = uiPosition;
+    }
+}
+
+[PublicAPI]
+public struct SlotSnapshot
+{
+    public SlotDescriptor Descriptor { get; }
+
+    public bool Occupied { get; }
+    public Vector2i GridPos { get; }
+    public int LinearGridIndex { get; }
+
+    public SlotSnapshot(SlotDescriptor descriptor, bool occupied, Vector2i gridPos, int linearGridIndex)
+    {
+        Descriptor = descriptor;
+        Occupied = occupied;
+        GridPos = gridPos;
+        LinearGridIndex = linearGridIndex;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool Validates(ItemDrop.ItemData item) => API.SlotValidates(Descriptor.Index, item);
 }

@@ -117,6 +117,7 @@ internal static class VanityPanelController
                         d.m_shared != null &&
                         d.m_shared.m_icons != null &&
                         d.m_shared.m_icons.Length > 0 &&
+                        (d.m_dropPrefab.HasChildWithNameThatContains("attach") || d.m_dropPrefab.HasChildWithNameThatContains("log")) &&
                         string.IsNullOrWhiteSpace(d.m_shared.m_dlc) &&
                         (d.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Helmet ||
                          d.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Chest ||

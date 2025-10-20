@@ -25,13 +25,32 @@ public class Capacity
         int normalFreeCells = (normalRows * inv.GetWidth()) - normalUsed;
         return normalFreeCells;
     }
-    
+
     public static int FreeQuickCells(Inventory inv)
     {
         int quickFreeCells = 0;
         foreach (var p in inv.EnumerateQuickCells())
             if (inv.GetItemAt(p.x, p.y) == null)
-                quickFreeCells++;
+                ++quickFreeCells;
         return quickFreeCells;
+    }
+
+    public static int FreeValidEquipmentCells(Inventory inv, ItemDrop.ItemData item)
+    {
+        int extendedFreeCells = 0;
+        if (inv.IsEquipmentSlotFreeAndItemValid(item, out int which))
+        {
+            ++extendedFreeCells;
+        }
+        return extendedFreeCells;
+    }
+
+    public static int FreeEquipmentCells(Inventory inv)
+    {
+        int extendedFreeCells = 0;
+        foreach (var p in inv.EnumerateEquipmentCells())
+            if (inv.GetItemAt(p.x, p.y) == null)
+                ++extendedFreeCells;
+        return extendedFreeCells;
     }
 }

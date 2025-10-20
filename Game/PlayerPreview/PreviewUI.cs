@@ -402,6 +402,7 @@ public class PlayerPreviewManager
         dst.m_animator.Update(0f);
 
         VECloneSync.MirrorFrom(localPlayer, dst);
+        UpdatePlayerPreview(localPlayer);
 
         AzuEPICharacterPanel.playerPreview.gameObject.SetLayerForEntireHierarchy(LayerMask.NameToLayer("UI"));
         AzuEPICharacterPanel.playerPreview.transform.rotation = Quaternion.LookRotation(-Vector3.forward, Vector3.up);
@@ -446,6 +447,27 @@ public class PlayerPreviewManager
         dst.transform.rotation = Quaternion.LookRotation(-Vector3.forward, Vector3.up);
 
         VECloneSync.MirrorFrom((Player)src, dst);
+
+        /*foreach (ItemDrop.ItemData itemData in dst.m_inventory.m_inventory)
+        {
+            if (itemData.m_equipped)
+                dst.UnequipItem(itemData);
+        }
+
+        dst.m_inventory.RemoveAll();
+        foreach (ItemDrop.ItemData itemData in src.m_inventory.m_inventory)
+        {
+            if (itemData.m_equipped)
+            {
+                dst.m_inventory.AddItem(itemData.Clone());
+            }
+        }
+
+        foreach (ItemDrop.ItemData itemData in dst.m_inventory.m_inventory)
+        {
+            dst.EquipItem(itemData);
+        }
+        */
 
         if (!AzuEPICharacterPanel.playerPreview.activeSelf)
             AzuEPICharacterPanel.playerPreview.SetActive(true);
@@ -532,5 +554,34 @@ public static class GameObjectExtensions
         {
             SetLayerForEntireHierarchy(child.gameObject, layer, depth + 1);
         }
+    }
+
+    public static bool HasChildWithNameThatContains(this GameObject gameObject, string name)
+    {
+        List<Transform> children = gameObject.GetAllChildTransforms();
+
+        return children.Any(child => child.name.Contains(name));
+    }
+
+    public static List<Transform> GetAllChildTransforms(this GameObject gameObject)
+    {
+        return _GetAllChildTransforms(gameObject, true);
+    }
+
+    private static List<Transform> _GetAllChildTransforms(GameObject gameObject, bool isRoot = false, List<Transform> transforms = null)
+    {
+        transforms = transforms ?? new List<Transform>();
+
+        if (!isRoot)
+        {
+            transforms.Add(gameObject.transform);
+        }
+
+        for (int i = 0; i < gameObject.transform.childCount; i++)
+        {
+            _GetAllChildTransforms(gameObject.transform.GetChild(i).gameObject, transforms: transforms);
+        }
+
+        return transforms;
     }
 }

@@ -62,6 +62,7 @@ public class InventoryGuiPatches
         private static void Prefix(InventoryGui __instance, InventoryGrid grid, ItemDrop.ItemData item, Vector2i pos, InventoryGrid.Modifier mod)
         {
             Player localPlayer = Player.m_localPlayer;
+            if (!localPlayer) return;
             if (localPlayer.IsTeleporting())
                 return;
             if (__instance.m_dragGo && localPlayer.IsItemEquiped(__instance.m_dragItem))
@@ -162,9 +163,9 @@ public class InventoryGuiPatches
                 var slotGo = elem.m_go;
                 if (!slotGo) continue;
 
-                var _ = SlotOverlays.EnsureInvalidOverlay(slotGo);
-                
-                var stateOverlay = SlotOverlays.EnsureVanityStateOverlay(slotGo);
+                _ = SlotOverlays.EnsureInvalidOverlay(slotGo);
+
+                _ = SlotOverlays.EnsureVanityStateOverlay(slotGo);
 
                 if (!dragging)
                 {

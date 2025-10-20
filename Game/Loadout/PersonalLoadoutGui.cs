@@ -459,7 +459,7 @@ public class PersonalLoadoutGui : MonoBehaviour
             PersonalLoadout selectedLoadout = PersonalLoadout.Deserialize(m_selectedItem, serializedData);
             bool isLoadoutEmpty = selectedLoadout.Items.Count == 0;
 
-            bool flag2 = player.GetInventory().HaveEmptySlot();
+            bool flag2 = player.GetInventory().HaveEmptySlot() || isLoadoutEmpty;
             m_chooseButton.interactable = flag2;
 
             string buttonText = isLoadoutEmpty ? "$azu_epi_emptyLoadout" : "$azu_epi_swapLoadout";

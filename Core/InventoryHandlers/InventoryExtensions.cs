@@ -24,7 +24,7 @@ public static class InventoryExtensions
         }
     }
 
-    internal static bool IsEquipmentSlotFree(this Inventory inventory, ItemDrop.ItemData item, out int which)
+    internal static bool IsEquipmentSlotFreeAndItemValid(this Inventory inventory, ItemDrop.ItemData item, out int which)
     {
         var addedRows = API.GetAddedRows(inventory.GetWidth());
         which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is Model.EquipmentSlot { Valid: not null } slot && slot.Valid(item) && !slot.Occupied);
@@ -34,7 +34,7 @@ public static class InventoryExtensions
     internal static bool IsEquipmentSlotFree(this Inventory inventory, out int which)
     {
         var addedRows = API.GetAddedRows(inventory.GetWidth());
-        which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is Model.EquipmentSlot { EquipmentSlot: not null, Occupied: false });
+        which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is Model.EquipmentSlot { IsQuickSlot: false, EquipmentSlot: not null, Occupied: false });
         return which >= 0 && inventory.GetItemAt(which, inventory.GetHeight() - addedRows) == null;
     }
 
@@ -119,6 +119,23 @@ public static class InventoryExtensions
         int quickCount = Hotkeys.Length;
         int quickStart = total - quickCount;
         for (int i = quickStart; i < total; ++i)
+        {
+            int li = firstLinear + i;
+            yield return new Vector2i(li % width, li / width);
+        }
+    }
+
+    internal static IEnumerable<Vector2i> EnumerateEquipmentCells(this Inventory inv)
+    {
+        int width = inv.GetWidth();
+        int normalRows = Layout.NormalRows(inv);
+
+        int firstLinear = normalRows * width;
+        int total = InventoryGuiPatches.UpdateInventory_Patch.slots.Count;
+        int quickCount = Hotkeys.Length;
+        int equipmentCount = total - quickCount;
+
+        for (int i = 0; i < equipmentCount; ++i)
         {
             int li = firstLinear + i;
             yield return new Vector2i(li % width, li / width);
