@@ -498,6 +498,68 @@ public class API
 #endif
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryGetSlotIndexByItem(Player player, ItemDrop.ItemData item, out int slotIndex)
+    {
+#if API
+    slotIndex = -1;
+    return false;
+#else
+        slotIndex = -1;
+        if (!player || item == null) return false;
+
+        int total = GetSlotCount();
+        for (int i = 0; i < total; ++i)
+        {
+            if (!TryGetSlotDescriptor(i, out var d) || !d.IsEquipmentSlot) continue;
+            if (TryGetEquippedItem(i, out var eq) && ReferenceEquals(eq, item))
+            {
+                slotIndex = i;
+                return true;
+            }
+        }
+
+        var inv = player.GetInventory();
+        if (inv == null) return false;
+
+        foreach (var snap in GetQuickSlotSnapshots(inv))
+        {
+            var at = inv.GetItemAt(snap.GridPos.x, snap.GridPos.y);
+            if (ReferenceEquals(at, item))
+            {
+                slotIndex = snap.Descriptor.Index;
+                return true;
+            }
+        }
+
+        return false;
+#endif
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryGetSlotIndexByItem(ItemDrop.ItemData item, out int slotIndex)
+    {
+#if API
+    slotIndex = -1;
+    return false;
+#else
+        return TryGetSlotIndexByItem(Player.m_localPlayer, item, out slotIndex);
+#endif
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryGetSlotDescriptorByItem(Player player, ItemDrop.ItemData item, out SlotDescriptor desc)
+    {
+#if API
+    desc = default;
+    return false;
+#else
+        desc = default;
+        if (!TryGetSlotIndexByItem(player, item, out var idx)) return false;
+        return TryGetSlotDescriptor(idx, out desc);
+#endif
+    }
+
     public static bool SlotValidates(int slotIndex, ItemDrop.ItemData item)
     {
 #if API
