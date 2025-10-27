@@ -673,6 +673,110 @@ public class API
 #endif
 
 #if !API
+
+    #region Model.Slot accessors (thin wrappers, no duplication)
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool TryGetModelSlot(int slotIndex, out Model.Slot? slot)
+    {
+#if API
+    slot = null;
+    return false;
+#else
+        slot = null;
+        var slots = InventoryGuiPatches.UpdateInventory_Patch.slots;
+        if ((uint)slotIndex >= (uint)slots.Count) return false;
+        slot = slots[slotIndex];
+        return slot != null;
+#endif
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool TryGetEquipmentModelSlot(int slotIndex, out Model.EquipmentSlot? equipmentSlot)
+    {
+#if API
+    equipmentSlot = null;
+    return false;
+#else
+        equipmentSlot = null;
+        if (!TryGetModelSlot(slotIndex, out var s)) return false;
+        equipmentSlot = s as Model.EquipmentSlot;
+        return equipmentSlot != null;
+#endif
+    }
+
+    internal static bool TryGetModelSlotByName(string slotName, out Model.Slot? slot, bool allowLocalized = true)
+    {
+#if API
+    slot = null;
+    return false;
+#else
+        slot = null;
+        if (!TryGetSlotIndexByName(slotName, out var idx, allowLocalized)) return false;
+        return TryGetModelSlot(idx, out slot);
+#endif
+    }
+
+    internal static bool TryGetModelSlotByItem(Player player, ItemDrop.ItemData item, out Model.Slot? slot)
+    {
+#if API
+    slot = null;
+    return false;
+#else
+        slot = null;
+        if (!TryGetSlotIndexByItem(player, item, out var idx)) return false;
+        return TryGetModelSlot(idx, out slot);
+#endif
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool TryGetModelSlotByItem(ItemDrop.ItemData item, out Model.Slot? slot)
+    {
+#if API
+    slot = null;
+    return false;
+#else
+        return TryGetModelSlotByItem(Player.m_localPlayer, item, out slot);
+#endif
+    }
+
+    internal static bool TryGetModelSlotAtGridPos(Inventory inv, Vector2i gridPos, out Model.Slot? slot)
+    {
+#if API
+    slot = null;
+    return false;
+#else
+        slot = null;
+        if (!TryGetSlotIndexAtGridPos(inv, gridPos, out var idx)) return false;
+        return TryGetModelSlot(idx, out slot);
+#endif
+    }
+
+    internal static Model.Slot?[] GetModelSlotsSnapshot()
+    {
+#if API
+    return Array.Empty<Model.Slot?>();
+#else
+        return InventoryGuiPatches
+            .UpdateInventory_Patch
+            .slots
+            .ToArray();
+#endif
+    }
+
+    internal static IEnumerable<Model.Slot?> EnumerateModelSlots()
+    {
+#if API
+    yield break;
+#else
+        var slots = InventoryGuiPatches.UpdateInventory_Patch.slots;
+        for (int i = 0; i < slots.Count; ++i)
+            yield return slots[i];
+#endif
+    }
+
+    #endregion
+
     internal static void UpdateSlots(int index, int shift)
     {
         if (!Player.m_localPlayer) return;
