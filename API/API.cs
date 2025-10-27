@@ -211,6 +211,8 @@ public class API
 
     public static SlotInfo GetQuickSlots() => BuildSlotInfo(s => s.IsQuickSlot);
 
+    public static SlotInfo GetEquipmentSlots() => BuildSlotInfo(s => !s.IsQuickSlot && s.EquipmentSlot != null);
+
     private static SlotInfo BuildSlotInfo(Func<Model.Slot, bool> filter)
     {
         {
