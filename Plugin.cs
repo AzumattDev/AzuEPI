@@ -105,7 +105,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         ShowQuickSlots = config("2 - Extended Inventory", "Show Quickslots", On, "Should the quickslots in the main hud be shown? (not the inventory quickslots)");
         ShowQuickSlots.SettingChanged += (sender, args) => { HotkeyBarController.Hud_Update_Patch.DeselectHotkeyBar(); };
         ExtraRows = config("2 - Extended Inventory", "Extra Inventory Rows", 0, "Number of extra ordinary rows. (This can cause overlap with chest GUI, make sure you hold CTRL (the default key) and drag to desired position)");
-        ExtraRows.SettingChanged += (sender, args) => { UpdateInventorySize(); };
+        ExtraRows.SettingChanged += (sender, args) => { Layout.UpdateInventorySize(); };
         AddEquipmentRow = config("2 - Extended Inventory", "Add Equipment Row", On, "Add special row for equipped items and quick slots. (IF YOU ARE USING RANDY KNAPPS EAQs KEEP THIS VALUE OFF)");
         AddEquipmentRow.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
         DisplayEquipmentRowSeparate = config("2 - Extended Inventory", "Display Equipment Row Separate", On, "Display equipment and quickslots in their own area. (IF YOU ARE USING RANDY KNAPPS EAQs KEEP THIS VALUE OFF)");
@@ -177,7 +177,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         OldLayout.SettingChanged += (sender, args) =>
         {
             SlotHelpers.ResizeSlots();
-            UpdateInventorySize();
+            Layout.UpdateInventorySize();
             Layout.ApplyLayoutCorrections();
             RebuildUI();
         };
@@ -275,18 +275,6 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             AzuExtendedPlayerInventoryLogger.LogError($"There was an issue loading your {ConfigFileName}");
             AzuExtendedPlayerInventoryLogger.LogError($"Please check your config entries for spelling and format!{Environment.NewLine}{ex}");
         }
-    }
-
-    public static void UpdateInventorySize()
-    {
-        if (InventoryGui.instance == null) return;
-        if (Player.m_localPlayer == null) return;
-        int height = API.GetFullHeight(Player.m_localPlayer.m_inventory.GetWidth());
-        Player.m_localPlayer.m_inventory.m_height = height;
-        Player.m_localPlayer.m_tombstone.GetComponent<Container>().m_height = height;
-
-        Player.m_localPlayer.m_inventory.Changed();
-        InventoryHealth.InventoryFix();
     }
 
     #region ConfigOptions

@@ -38,6 +38,18 @@ public class Layout
     public static Vector2 RepairSimpleOrigAnchoredPos;
     public static Vector2 RepairButtonOrigAnchoredPos;
 
+    public static void UpdateInventorySize()
+    {
+        if (InventoryGui.instance == null) return;
+        if (Player.m_localPlayer == null) return;
+        int height = API.GetFullHeight(Player.m_localPlayer.m_inventory.GetWidth());
+        Player.m_localPlayer.m_inventory.m_height = height;
+        Player.m_localPlayer.m_tombstone.GetComponent<Container>().m_height = height;
+
+        Player.m_localPlayer.m_inventory.Changed();
+        InventoryHealth.InventoryFix();
+    }
+
     public static int NormalRows(Inventory inv)
     {
         int width = inv.GetWidth();
@@ -90,54 +102,79 @@ public class Layout
 
     public static void ProjectEquippedIntoGridTail(Player player, InventoryGrid playerGrid, Animator animator)
     {
-        Inventory inventory = player.GetInventory();
-        int width = inventory.GetWidth();
-        int height = inventory.GetHeight();
-        int requiredRows = API.GetAddedRows(width);
-        List<ItemDrop.ItemData> allItems = inventory.GetAllItems();
-        List<Model.Slot?> slots = InventoryGuiPatches.UpdateInventory_Patch.slots;
+        Inventory playerInventory = player.GetInventory();
+        int inventoryWidth = playerInventory.GetWidth();
+        int inventoryHeight = playerInventory.GetHeight();
+        int reservedTailRows = API.GetAddedRows(inventoryWidth);
+        List<ItemDrop.ItemData> inventoryItems = playerInventory.GetAllItems();
+        List<Model.Slot?> allSlots = InventoryGuiPatches.UpdateInventory_Patch.slots;
 
-        int slotBaseIndex = GetBaseSlotIndex(inventory);
-        ItemDrop.ItemData?[] equippedItems = new ItemDrop.ItemData[slots.Count];
-        for (int i = 0; i < slots.Count; ++i)
+        int equipmentTailStartIndex = GetBaseSlotIndex(playerInventory);
+        ItemDrop.ItemData?[] projectedEquippedItemsBySlot = new ItemDrop.ItemData[allSlots.Count];
+
+        for (int i = 0; i < allSlots.Count; ++i)
         {
-            Model.Slot? slot = slots[i];
+            Model.Slot? slot = allSlots[i];
             if (slot is not Model.EquipmentSlot equipmentSlot) continue;
-            if (equipmentSlot.Get?.Invoke(player) is { } item)
+            if (equipmentSlot.Get?.Invoke(player) is { } equippedItem)
             {
-                item.m_gridPos = new Vector2i(slotBaseIndex % width, slotBaseIndex / width);
-                equippedItems[i] = item;
+                equippedItem.m_gridPos = new Vector2i(equipmentTailStartIndex % inventoryWidth, equipmentTailStartIndex / inventoryWidth);
+                projectedEquippedItemsBySlot[i] = equippedItem;
             }
 
-            ++slotBaseIndex;
+            ++equipmentTailStartIndex;
         }
 
-        for (int index = 0; index < allItems.Count; ++index)
+        for (int itemIndex = 0; itemIndex < inventoryItems.Count; ++itemIndex)
         {
-            ItemDrop.ItemData t = allItems[index];
+            ItemDrop.ItemData inventoryItem = inventoryItems[itemIndex];
 
-            if (inventory.IsAtEquipmentSlot(t, out int which) &&
-                (which <= -1 || t != equippedItems[which]) &&
-                (which <= -1 || slots[which] is not Model.EquipmentSlot slot
-                             || (slot.Valid != null && !slot.Valid(t)) || ExtendedPlayerInventory.equipItems[which] == t
-                             || (AutoEquip.Value.isOn() && !slot.IsQuickSlot && !player.EquipItem(t, false))))
+            if (!playerInventory.IsAtEquipmentSlot(inventoryItem, out int equipmentSlotIndex)) continue;
+
+            bool slotIndexInvalid = equipmentSlotIndex <= -1;
+            bool isSameAsProjected = !slotIndexInvalid && inventoryItem == projectedEquippedItemsBySlot[equipmentSlotIndex];
+            bool targetIsEquipmentSlot = !slotIndexInvalid && allSlots[equipmentSlotIndex] is Model.EquipmentSlot;
+
+            Model.EquipmentSlot? epiEquipmentSlot = targetIsEquipmentSlot ? (Model.EquipmentSlot)allSlots[equipmentSlotIndex]! : null;
+
+            bool invalidBySlotRules = epiEquipmentSlot?.Valid != null && !epiEquipmentSlot.Valid(inventoryItem);
+            bool alreadyEquippedHere = !slotIndexInvalid && ExtendedPlayerInventory.equipItems[equipmentSlotIndex] == inventoryItem;
+            bool slotOccupied = epiEquipmentSlot is { Occupied: true };
+
+            bool isBroken = inventoryItem.m_shared.m_useDurability && inventoryItem.m_durability <= 0f;
+            if (isBroken && alreadyEquippedHere) continue;
+
+            if (!isSameAsProjected && (slotIndexInvalid || !targetIsEquipmentSlot || invalidBySlotRules || alreadyEquippedHere || slotOccupied))
             {
-                Vector2i vector2I = inventory.FindEmptySlot(true);
-                if (vector2I.x < 0 || vector2I.y < 0 || vector2I.y >= height - requiredRows)
+                Vector2i firstFreeSlot = playerInventory.FindEmptySlot(true);
+                bool noFreeSlot = firstFreeSlot.x < 0 || firstFreeSlot.y < 0;
+                bool freeSlotIntrudesIntoReservedTail = !noFreeSlot && firstFreeSlot.y >= (inventoryHeight - reservedTailRows);
+                
+                AzuExtendedPlayerInventoryLogger.LogError("Item " + inventoryItem.m_dropPrefab.name + " moved or dropped");
+                AzuExtendedPlayerInventoryLogger.LogError("Reasons: ");
+                AzuExtendedPlayerInventoryLogger.LogError("slotIndexInvalid: " + slotIndexInvalid);
+                AzuExtendedPlayerInventoryLogger.LogError("isSameAsProjected: " + isSameAsProjected);
+                AzuExtendedPlayerInventoryLogger.LogError("targetIsEquipmentSlot: " + targetIsEquipmentSlot);
+                AzuExtendedPlayerInventoryLogger.LogError("invalidBySlotRules: " + invalidBySlotRules);
+                AzuExtendedPlayerInventoryLogger.LogError("alreadyEquippedHere: " + alreadyEquippedHere);
+                AzuExtendedPlayerInventoryLogger.LogError("slotOccupied: " + slotOccupied);
+                AzuExtendedPlayerInventoryLogger.LogError("isBroken: " + isBroken);
+                
+                if (noFreeSlot || freeSlotIntrudesIntoReservedTail)
                 {
                     // it will drop them simply because it cannot be added to the inventory and it's "outside" the normal inventory when it breaks.
-                    if (t.m_durability > 0 && !inventory.CanAddItem(t))
-                        player.DropItem(inventory, t, t.m_stack);
+                    if (inventoryItem.m_durability > 0 && !playerInventory.CanAddItem(inventoryItem))
+                        player.DropItem(playerInventory, inventoryItem, inventoryItem.m_stack);
                 }
                 else
                 {
-                    t.m_gridPos = vector2I;
-                    playerGrid.UpdateInventory(inventory, player, null);
+                    inventoryItem.m_gridPos = firstFreeSlot;
+                    playerGrid.UpdateInventory(playerInventory, player, null);
                 }
             }
         }
 
-        ExtendedPlayerInventory.equipItems = equippedItems;
+        ExtendedPlayerInventory.equipItems = projectedEquippedItemsBySlot;
 
         if (!animator.GetBool(GUICache.Visible)) return;
         if (AzuEPICharacterPanel.playerPreviewComp && Player.m_localPlayer)
