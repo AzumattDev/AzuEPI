@@ -66,7 +66,7 @@ public class InventoryGuiPatches
             if (localPlayer.IsTeleporting())
                 return true;
 
-            if (!__instance.m_dragGo) return true;
+            if (!__instance.m_dragGo || grid.m_inventory != localPlayer.GetInventory()) return true;
             bool wasDraggingItemEquipped = localPlayer.IsItemEquiped(__instance.m_dragItem);
             bool wasTargetItemEquipped = item != null && localPlayer.IsItemEquiped(item);
             Vector2i originalDragGridPos = __instance.m_dragItem.m_gridPos;
@@ -75,7 +75,7 @@ public class InventoryGuiPatches
             {
                 if (!API.SlotValidates(slotIndex, __instance.m_dragItem))
                 {
-                    PerformDrop(grid, __instance, originalDragGridPos);
+                    grid.DropItem(__instance.m_dragInventory, __instance.m_dragItem, __instance.m_dragAmount, originalDragGridPos);
                     return false;
                 }
 
@@ -94,11 +94,6 @@ public class InventoryGuiPatches
             }
 
             return true;
-        }
-
-        private static bool PerformDrop(InventoryGrid grid, InventoryGui ig, Vector2i pos)
-        {
-            return grid.DropItem(ig.m_dragInventory, ig.m_dragItem, ig.m_dragAmount, pos);
         }
 
         private static void AutoEquipAfterDraggingItemWasNotEquipped(Player localPlayer, InventoryGrid grid, Vector2i pos, InventoryGui ig)
