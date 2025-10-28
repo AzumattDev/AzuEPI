@@ -8,5 +8,4 @@ public class GUICache
     public static RectTransform _repairButtonRT;
     public static RectTransform _playerBkgRT;
     public static RectTransform _playerGridRootRT;
-    internal static readonly int Visible = Animator.StringToHash("visible");
 }

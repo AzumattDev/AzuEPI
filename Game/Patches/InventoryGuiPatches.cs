@@ -59,40 +59,138 @@ public class InventoryGuiPatches
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnSelectedItem))]
     private static class InventoryGuiOnSelectedItemPatch
     {
-        private static void Prefix(InventoryGui __instance, InventoryGrid grid, ItemDrop.ItemData item, Vector2i pos, InventoryGrid.Modifier mod)
+        private static bool Prefix(InventoryGui __instance, InventoryGrid grid, ItemDrop.ItemData item, Vector2i pos, InventoryGrid.Modifier mod)
         {
             Player localPlayer = Player.m_localPlayer;
-            if (!localPlayer) return;
+            if (!localPlayer) return true;
             if (localPlayer.IsTeleporting())
-                return;
-            if (__instance.m_dragGo && localPlayer.IsItemEquiped(__instance.m_dragItem))
+                return true;
+
+            if (!__instance.m_dragGo) return true;
+            bool wasDraggingItemEquipped = localPlayer.IsItemEquiped(__instance.m_dragItem);
+            bool wasTargetItemEquipped = item != null && localPlayer.IsItemEquiped(item);
+            Vector2i originalDragGridPos = __instance.m_dragItem.m_gridPos;
+
+            if (API.TryGetSlotIndexAtGridPos(grid.m_inventory, pos, out int slotIndex))
+            {
+                if (!API.SlotValidates(slotIndex, __instance.m_dragItem))
+                {
+                    PerformDrop(grid, __instance, originalDragGridPos);
+                    return false;
+                }
+
+                if (!wasDraggingItemEquipped)
+                    AutoEquipAfterDraggingItemWasNotEquipped(localPlayer, grid, pos, __instance);
+
+                if (wasTargetItemEquipped)
+                    UnequipAfterTargetItemWasEquipped(localPlayer, __instance, originalDragGridPos, item);
+            }
+            else if (wasDraggingItemEquipped)
             {
                 if (grid.m_inventory.IsAtEquipmentSlot(__instance.m_dragItem, out _))
                 {
                     localPlayer.UnequipItem(__instance.m_dragItem, false);
                 }
             }
+
+            return true;
+        }
+
+        private static bool PerformDrop(InventoryGrid grid, InventoryGui ig, Vector2i pos)
+        {
+            return grid.DropItem(ig.m_dragInventory, ig.m_dragItem, ig.m_dragAmount, pos);
+        }
+
+        private static void AutoEquipAfterDraggingItemWasNotEquipped(Player localPlayer, InventoryGrid grid, Vector2i pos, InventoryGui ig)
+        {
+            if (!AutoEquip.Value.isOn()) return;
+            ItemDrop.ItemData itemAtNewPos = grid.GetInventory().GetItemAt(pos.x, pos.y);
+            if (itemAtNewPos != null)
+                localPlayer.EquipItem(itemAtNewPos, false);
+
+            if (localPlayer.GetInventory().ContainsItem(ig.m_dragItem))
+                localPlayer.EquipItem(ig.m_dragItem, false);
+        }
+
+        private static void UnequipAfterTargetItemWasEquipped(Player localPlayer, InventoryGui ig, Vector2i originalDragGridPos, ItemDrop.ItemData item)
+        {
+            ItemDrop.ItemData itemAtOriginalPos = ig.m_dragInventory.GetItemAt(originalDragGridPos.x, originalDragGridPos.y);
+            if (itemAtOriginalPos != null)
+                localPlayer.UnequipItem(itemAtOriginalPos, false);
+
+            if (localPlayer.GetInventory().ContainsItem(item))
+                localPlayer.UnequipItem(item, false);
         }
     }
 
-    [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Update))]
-    private static class InventoryGuiUpdatePatch
+    [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnRightClickItem))]
+    private static class InventoryGuiOnRightClickItemPatch
     {
-        private static void Postfix(InventoryGui __instance, InventoryGrid ___m_playerGrid, Animator ___m_animator)
+        private static bool Prefix(InventoryGui __instance, InventoryGrid grid, ItemDrop.ItemData item, Vector2i pos)
         {
-            var player = Player.m_localPlayer;
-            if (!player || !InventoryGui.instance.m_playerGrid)
-                return;
+            if (item == null || !Player.m_localPlayer || grid.GetInventory() == null)
+                return true;
+            Player p = Player.m_localPlayer;
+            if (grid.m_inventory.IsPlayerInventory())
+                if (p.m_inventory.IsAtEquipmentSlot(item, out int which) && (item == p.m_helmetItem || item == p.m_chestItem || item == p.m_legItem || item == p.m_shoulderItem || item == p.m_utilityItem || item == p.m_trinketItem))
+                    if (!p.m_inventory.CanAddItem(item))
+                    {
+                        AzuExtendedPlayerInventoryLogger.LogInfo("Inventory full, blocking item unequip");
+                        Player.m_localPlayer.Message(MessageHud.MessageType.Center, "$inventory_full");
+                        return false;
+                    }
 
-            if (AddEquipmentRow.Value.isOn())
+            return true;
+        }
+    }
+
+    [HarmonyPatch(typeof(InventoryGrid), nameof(InventoryGrid.CreateItemTooltip), typeof(ItemDrop.ItemData), typeof(UITooltip))]
+    public static class ItemTooltipControllerFollowSelectionPatch
+    {
+        [HarmonyPriority(Priority.Last)]
+        public static bool Prefix(ItemDrop.ItemData item, UITooltip tooltip, out string __state)
+        {
+            __state = null;
+            if (ZInput.IsGamepadActive() && !ZInput.IsMouseActive())
             {
-                Layout.ProjectEquippedIntoGridTail(player, ___m_playerGrid, ___m_animator);
+                tooltip.Set(item.m_shared.m_name, item.GetTooltip());
+                return false;
             }
 
-            if (!___m_animator.GetBool(GUICache.Visible))
-                return;
+            return true;
+        }
+    }
+
+    [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.UpdateInventory))]
+    internal static class UpdateInventory_Patch
+    {
+        internal static readonly List<Model.Slot?> slots = new()
+        {
+            new Model.EquipmentSlot { Name = HelmetText.Value, IsQuickSlot = false, Get = player => player.m_helmetItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Helmet },
+            new Model.EquipmentSlot { Name = ChestText.Value, IsQuickSlot = false, Get = player => player.m_chestItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Chest },
+            new Model.EquipmentSlot { Name = LegsText.Value, IsQuickSlot = false, Get = player => player.m_legItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Legs },
+            new Model.EquipmentSlot { Name = BackText.Value, IsQuickSlot = false, Get = player => player.m_shoulderItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder },
+            new Model.EquipmentSlot { Name = UtilityText.Value, IsQuickSlot = false, Get = player => player.m_utilityItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility },
+        };
+
+        static UpdateInventory_Patch()
+        {
+            API.BeforeQuickSlotsAdded();
+            for (int i = 0; i < Hotkeys.Length; ++i)
+                slots.Add(new Model.Slot
+                {
+                    Name = HotkeyTexts[i].Value.IsNullOrWhiteSpace()
+                        ? Hotkeys[i].Value.ToString()
+                        : HotkeyTexts[i].Value,
+                    IsQuickSlot = true,
+                });
+            API.QuickSlotsAdded();
+        }
+
+        private static void Postfix(InventoryGui __instance, Player player, InventoryGrid ___m_playerGrid)
+        {
             RectTransform bkgRect = __instance.m_player.Find("Bkg").GetComponent<RectTransform>();
-            if (__instance.m_player.transform.Find("PlayerScroll") == null) // If ValheimPlus didn't add a scrollbar
+            if (!__instance.m_player.transform.Find("PlayerScroll")) // If ValheimPlus didn't add a scrollbar
             {
                 bkgRect.anchorMin = new Vector2(0.0f, (ExtraRows.Value
                                                        + (AddEquipmentRow.Value.isOff()
@@ -108,6 +206,57 @@ public class InventoryGuiPatches
 
             if (AddEquipmentRow.Value.isOff())
                 return;
+
+            if (!player) return;
+            Inventory inventory = player.GetInventory();
+
+            int baseIndex = Layout.GetBaseSlotIndex(inventory);
+
+            Vector2 baseGridPos = new((___m_playerGrid.GetComponent<RectTransform>().rect.width - ___m_playerGrid.GetWidgetSize().x) / 2f, 0.0f);
+
+            for (int i = 0; i < slots.Count; ++i)
+            {
+                var currentElement = ___m_playerGrid.m_elements[baseIndex + i];
+                GameObject currentChild = currentElement.m_go;
+                if (!currentChild)
+                    continue;
+                currentChild.SetActive(true);
+
+                Model.Slot? slot = slots[i];
+                if (slot == null)
+                    continue;
+
+                currentChild.name = $"AzuEPI_Slot_{slots[i]?.Name}";
+
+                // if .m_used assume it's occupied
+                slots[i].Occupied = currentElement.m_used;
+
+                SlotText.Set(slots[i]?.Name, currentChild.transform);
+                RectTransform childRT = currentChild.GetComponent<RectTransform>();
+                if (DisplayEquipmentRowSeparate.Value.isOn())
+                {
+                    if (InventoryGui.instance && childRT.parent != InventoryGui.instance.m_crafting)
+                        childRT.SetParent(InventoryGui.instance.m_crafting, false);
+
+                    childRT.anchoredPosition = slots[i].Position;
+                }
+                else
+                {
+                    childRT.anchoredPosition = baseGridPos + new Vector2((baseIndex + i) % inventory.GetWidth() * ___m_playerGrid.m_elementSpace, (baseIndex + i) / inventory.GetWidth() * -___m_playerGrid.m_elementSpace);
+                }
+            }
+
+            for (int i = baseIndex + slots.Count; i < ___m_playerGrid.m_elements.Count; ++i)
+            {
+                InventoryGrid.Element? tailElement = ___m_playerGrid.m_elements[i];
+                tailElement.m_go.SetActive(false);
+                tailElement.m_used = true;
+            }
+
+            if (!__instance.m_playerGrid)
+                return;
+
+            Layout.ProjectEquippedIntoGridTail(player, ___m_playerGrid);
 
             var equipmentBkgTransform = __instance.m_player.Find(AzuEquipmentBkgName);
 
@@ -184,103 +333,6 @@ public class InventoryGuiPatches
 
                 bool allowed = SlotAcceptRules.CanItemGoToSlot(slot, dragItem);
                 SlotOverlays.SetInvalidVisible(slotGo, !allowed);
-            }
-        }
-    }
-
-    [HarmonyPatch(typeof(InventoryGrid), nameof(InventoryGrid.CreateItemTooltip), typeof(ItemDrop.ItemData), typeof(UITooltip))]
-    public static class ItemTooltipControllerFollowSelectionPatch
-    {
-        [HarmonyPriority(Priority.Last)]
-        public static bool Prefix(ItemDrop.ItemData item, UITooltip tooltip, out string __state)
-        {
-            __state = null;
-            if (ZInput.IsGamepadActive() && !ZInput.IsMouseActive())
-            {
-                tooltip.Set(item.m_shared.m_name, item.GetTooltip());
-                return false;
-            }
-
-            return true;
-        }
-    }
-
-    [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.UpdateInventory))]
-    internal static class UpdateInventory_Patch
-    {
-        internal static readonly List<Model.Slot?> slots = new()
-        {
-            new Model.EquipmentSlot { Name = HelmetText.Value, IsQuickSlot = false, Get = player => player.m_helmetItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Helmet },
-            new Model.EquipmentSlot { Name = ChestText.Value, IsQuickSlot = false, Get = player => player.m_chestItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Chest },
-            new Model.EquipmentSlot { Name = LegsText.Value, IsQuickSlot = false, Get = player => player.m_legItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Legs },
-            new Model.EquipmentSlot { Name = BackText.Value, IsQuickSlot = false, Get = player => player.m_shoulderItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder },
-            new Model.EquipmentSlot { Name = UtilityText.Value, IsQuickSlot = false, Get = player => player.m_utilityItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility },
-        };
-
-        static UpdateInventory_Patch()
-        {
-            API.BeforeQuickSlotsAdded();
-            for (int i = 0; i < Hotkeys.Length; ++i)
-                slots.Add(new Model.Slot
-                {
-                    Name = HotkeyTexts[i].Value.IsNullOrWhiteSpace()
-                        ? Hotkeys[i].Value.ToString()
-                        : HotkeyTexts[i].Value,
-                    IsQuickSlot = true,
-                });
-            API.QuickSlotsAdded();
-        }
-
-        private static void Postfix(InventoryGrid ___m_playerGrid)
-        {
-            if (AddEquipmentRow.Value.isOff())
-                return;
-
-            Player? player = Player.m_localPlayer;
-            if (!player) return;
-            Inventory inventory = player.GetInventory();
-
-            int baseIndex = Layout.GetBaseSlotIndex(inventory);
-
-            Vector2 baseGridPos = new((___m_playerGrid.GetComponent<RectTransform>().rect.width - ___m_playerGrid.GetWidgetSize().x) / 2f, 0.0f);
-
-            for (int i = 0; i < slots.Count; ++i)
-            {
-                var currentElement = ___m_playerGrid.m_elements[baseIndex + i];
-                GameObject currentChild = currentElement.m_go;
-                if (!currentChild)
-                    continue;
-                currentChild.SetActive(true);
-
-                Model.Slot? slot = slots[i];
-                if (slot == null)
-                    continue;
-
-                currentChild.name = $"AzuEPI_Slot_{slots[i]?.Name}";
-
-                // if .m_used assume it's occupied
-                slots[i].Occupied = currentElement.m_used;
-
-                SlotText.Set(slots[i]?.Name, currentChild.transform);
-                RectTransform childRT = currentChild.GetComponent<RectTransform>();
-                if (DisplayEquipmentRowSeparate.Value.isOn())
-                {
-                    if (InventoryGui.instance && childRT.parent != InventoryGui.instance.m_crafting)
-                        childRT.SetParent(InventoryGui.instance.m_crafting, false);
-
-                    childRT.anchoredPosition = slots[i].Position;
-                }
-                else
-                {
-                    childRT.anchoredPosition = baseGridPos + new Vector2((baseIndex + i) % inventory.GetWidth() * ___m_playerGrid.m_elementSpace, (baseIndex + i) / inventory.GetWidth() * -___m_playerGrid.m_elementSpace);
-                }
-            }
-
-            for (int i = baseIndex + slots.Count; i < ___m_playerGrid.m_elements.Count; ++i)
-            {
-                InventoryGrid.Element? tailElement = ___m_playerGrid.m_elements[i];
-                tailElement.m_go.SetActive(false);
-                tailElement.m_used = true;
             }
         }
     }

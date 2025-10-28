@@ -178,25 +178,4 @@ public class PlayerPatches
             component.Setup(playerProfile.GetName(), playerProfile.GetPlayerID());
         }
     }
-
-    [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnRightClickItem))]
-    private static class InventoryGuiOnRightClickItemPatch
-    {
-        private static bool Prefix(InventoryGui __instance, InventoryGrid grid, ItemDrop.ItemData item, Vector2i pos)
-        {
-            if (item == null || !Player.m_localPlayer || grid.GetInventory() == null)
-                return true;
-            Player p = Player.m_localPlayer;
-            if (grid.m_inventory.IsPlayerInventory())
-                if (p.m_inventory.IsAtEquipmentSlot(item, out int which) && (item == p.m_helmetItem || item == p.m_chestItem || item == p.m_legItem || item == p.m_shoulderItem || item == p.m_utilityItem || item == p.m_trinketItem))
-                    if (!p.m_inventory.CanAddItem(item))
-                    {
-                        AzuExtendedPlayerInventoryLogger.LogInfo("Inventory full, blocking item unequip");
-                        Player.m_localPlayer.Message(MessageHud.MessageType.Center, "$inventory_full");
-                        return false;
-                    }
-
-            return true;
-        }
-    }
 }

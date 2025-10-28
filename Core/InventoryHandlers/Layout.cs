@@ -100,7 +100,7 @@ public class Layout
         }
     }
 
-    public static void ProjectEquippedIntoGridTail(Player player, InventoryGrid playerGrid, Animator animator)
+    public static void ProjectEquippedIntoGridTail(Player player, InventoryGrid playerGrid)
     {
         Inventory playerInventory = player.GetInventory();
         int inventoryWidth = playerInventory.GetWidth();
@@ -176,7 +176,6 @@ public class Layout
 
         ExtendedPlayerInventory.equipItems = projectedEquippedItemsBySlot;
 
-        if (!animator.GetBool(GUICache.Visible)) return;
         if (AzuEPICharacterPanel.playerPreviewComp && Player.m_localPlayer)
             VECloneSync.MirrorFrom(Player.m_localPlayer, AzuEPICharacterPanel.playerPreviewComp);
     }
