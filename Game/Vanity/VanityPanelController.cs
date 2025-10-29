@@ -1,4 +1,5 @@
-﻿using AzuEPI.Game.PlayerPreview;
+﻿using AzuEPI.Game.Loadout;
+using AzuEPI.Game.PlayerPreview;
 
 namespace AzuEPI.Game.Vanity;
 
@@ -387,6 +388,7 @@ internal static class VanityPanelController
         {
             _visible = !_visible;
             SetVisible(_visible);
+            if (PersonalLoadoutGui.IsVisible()) PersonalLoadoutGui.Hide();
         });
 
         var label = VanityButtonGo.GetComponentInChildren<TMP_Text>();

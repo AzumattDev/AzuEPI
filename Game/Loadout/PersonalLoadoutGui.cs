@@ -1,4 +1,6 @@
-﻿namespace AzuEPI.Game.Loadout;
+﻿using AzuEPI.Game.Vanity;
+
+namespace AzuEPI.Game.Loadout;
 
 internal static class EpiSwapContext
 {
@@ -153,6 +155,7 @@ public class PersonalLoadoutGui : MonoBehaviour
         else
         {
             Show();
+            VanityPanelController.SetVisible(false);
         }
     }
 
@@ -275,40 +278,56 @@ public class PersonalLoadoutGui : MonoBehaviour
             {
                 SaveLoadout(loadoutName);
                 UnequipAndRemoveCurrentItems(player);
-                EquipItemsFromLoadout(player, loadout);
+                if (!EquipItemsFromLoadout(player, loadout))
+                {
+                    if (player.m_customData.TryGetValue($"{LoadoutKey}{loadoutName}", out string serializedDataOldLoadout))
+                    {
+                        PersonalLoadout oldLoadout = PersonalLoadout.Deserialize(loadoutName, serializedDataOldLoadout);
+                        EquipItemsFromLoadout(player, oldLoadout);
+                        player.m_customData[$"{LoadoutKey}{loadoutName}"] = serializedData;
+                    }
+                }
 
                 player.m_visEquipment.UpdateVisuals();
             }
         }
     }
 
-    private static void EquipItemsFromLoadout(Player player, PersonalLoadout loadout)
+    private static bool EquipItemsFromLoadout(Player player, PersonalLoadout loadout)
     {
         List<ItemDrop.ItemData> items = loadout.Items;
         int freeSlots = player.GetInventory().GetEmptySlots();
-
-        for (int index = 0; index < items.Count; ++index)
+        var canDo = freeSlots >= items.Count;
+        if (canDo)
         {
-            ItemDrop.ItemData item = items[index];
-            if (item == null)
+            for (int index = 0; index < items.Count; ++index)
             {
-                continue;
-            }
-
-            if (freeSlots > 0)
-            {
-                AzuExtendedPlayerInventoryLogger.LogWarning("Attempting to add item: " + item.m_shared.m_name);
-                bool moved = player.GetInventory().AddItem(item);
-                AzuExtendedPlayerInventoryLogger.LogWarning("Move result: " + moved);
-                if (moved)
+                ItemDrop.ItemData item = items[index];
+                if (item == null)
                 {
-                    AzuExtendedPlayerInventoryLogger.LogWarning("Equipping item: " + item.m_shared.m_name);
-                    player.EquipItem(item);
+                    continue;
                 }
 
-                freeSlots--;
+                if (freeSlots > 0 && freeSlots >= items.Count)
+                {
+                    AzuExtendedPlayerInventoryLogger.LogWarning("Attempting to add item: " + item.m_shared.m_name);
+                    bool moved = player.GetInventory().AddItem(item);
+                    AzuExtendedPlayerInventoryLogger.LogWarning("Move result: " + moved);
+                    if (moved)
+                    {
+                        AzuExtendedPlayerInventoryLogger.LogWarning("Equipping item: " + item.m_shared.m_name);
+                        player.EquipItem(item);
+                    }
+
+                    freeSlots--;
+                }
             }
+
+            return true;
         }
+
+        player.Message(MessageHud.MessageType.Center, "Not enough room in inventory.");
+        return false;
     }
 
     private static void UnequipAndRemoveCurrentItems(Player player)
