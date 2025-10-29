@@ -59,62 +59,18 @@ public class InventoryGuiPatches
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnSelectedItem))]
     private static class InventoryGuiOnSelectedItemPatch
     {
-        private static bool Prefix(InventoryGui __instance, InventoryGrid grid, ItemDrop.ItemData item, Vector2i pos, InventoryGrid.Modifier mod)
+        private static void Prefix(InventoryGui __instance, InventoryGrid grid, ItemDrop.ItemData item, Vector2i pos, InventoryGrid.Modifier mod)
         {
             Player localPlayer = Player.m_localPlayer;
-            if (!localPlayer) return true;
             if (localPlayer.IsTeleporting())
-                return true;
-
-            if (!__instance.m_dragGo || grid.m_inventory != localPlayer.GetInventory()) return true;
-            bool wasDraggingItemEquipped = localPlayer.IsItemEquiped(__instance.m_dragItem);
-            bool wasTargetItemEquipped = item != null && localPlayer.IsItemEquiped(item);
-            Vector2i originalDragGridPos = __instance.m_dragItem.m_gridPos;
-
-            if (API.TryGetSlotIndexAtGridPos(grid.m_inventory, pos, out int slotIndex))
-            {
-                if (!API.SlotValidates(slotIndex, __instance.m_dragItem))
-                {
-                    grid.DropItem(__instance.m_dragInventory, __instance.m_dragItem, __instance.m_dragAmount, originalDragGridPos);
-                    return false;
-                }
-
-                if (!wasDraggingItemEquipped)
-                    AutoEquipAfterDraggingItemWasNotEquipped(localPlayer, grid, pos, __instance);
-
-                if (wasTargetItemEquipped)
-                    UnequipAfterTargetItemWasEquipped(localPlayer, __instance, originalDragGridPos, item);
-            }
-            else if (wasDraggingItemEquipped)
+                return;
+            if (__instance.m_dragGo && localPlayer.IsItemEquiped(__instance.m_dragItem))
             {
                 if (grid.m_inventory.IsAtEquipmentSlot(__instance.m_dragItem, out _))
                 {
                     localPlayer.UnequipItem(__instance.m_dragItem, false);
                 }
             }
-
-            return true;
-        }
-
-        private static void AutoEquipAfterDraggingItemWasNotEquipped(Player localPlayer, InventoryGrid grid, Vector2i pos, InventoryGui ig)
-        {
-            if (!AutoEquip.Value.isOn()) return;
-            ItemDrop.ItemData itemAtNewPos = grid.GetInventory().GetItemAt(pos.x, pos.y);
-            if (itemAtNewPos != null)
-                localPlayer.EquipItem(itemAtNewPos, false);
-
-            if (localPlayer.GetInventory().ContainsItem(ig.m_dragItem))
-                localPlayer.EquipItem(ig.m_dragItem, false);
-        }
-
-        private static void UnequipAfterTargetItemWasEquipped(Player localPlayer, InventoryGui ig, Vector2i originalDragGridPos, ItemDrop.ItemData item)
-        {
-            ItemDrop.ItemData itemAtOriginalPos = ig.m_dragInventory.GetItemAt(originalDragGridPos.x, originalDragGridPos.y);
-            if (itemAtOriginalPos != null)
-                localPlayer.UnequipItem(itemAtOriginalPos, false);
-
-            if (localPlayer.GetInventory().ContainsItem(item))
-                localPlayer.UnequipItem(item, false);
         }
     }
 
@@ -286,7 +242,7 @@ public class InventoryGuiPatches
                     break;
             }
 
-            UpdateInvalidDropOverlays(__instance, ___m_playerGrid, Player.m_localPlayer);
+            UpdateInvalidDropOverlays(__instance, ___m_playerGrid, player);
         }
 
         private static void UpdateInvalidDropOverlays(InventoryGui ig, InventoryGrid playerGrid, Player player)
@@ -296,9 +252,9 @@ public class InventoryGuiPatches
             bool dragging = dragGo && dragItem != null;
             int baseIndex = Layout.GetBaseSlotIndex(player.GetInventory());
 
-            for (int i = 0; i < UpdateInventory_Patch.slots.Count; ++i)
+            for (int i = 0; i < slots.Count; ++i)
             {
-                var slot = UpdateInventory_Patch.slots[i];
+                var slot = slots[i];
                 if (slot == null) continue;
 
                 var elemIdx = baseIndex + i;
