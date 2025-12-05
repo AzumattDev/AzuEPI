@@ -4,7 +4,7 @@ using AzuEPI.Core.Slots;
 using AzuEPI.Game.Compatibility;
 using AzuEPI.Game.Compatibility.AdvBackpacks;
 using AzuEPI.Game.Loadout;
-using AzuEPI.Game.Moveable;
+//using AzuEPI.Game.Moveable;
 using AzuEPI.Game.Patches;
 using AzuEPI.Game.Slots.QAB;
 using AzuEPI.Game.Vanity;
@@ -50,9 +50,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         AppDomain.CurrentDomain.AssemblyResolve += (s, e) =>
         {
             var req = new AssemblyName(e.Name);
-            if (req.Name == "AzuExtendedPlayerInventory")
-                return typeof(AzuExtendedPlayerInventoryPlugin).Assembly;
-            return null;
+            return req.Name == "AzuExtendedPlayerInventory" ? typeof(AzuExtendedPlayerInventoryPlugin).Assembly : null;
         };
     }
 
@@ -134,10 +132,12 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         QuickAccessX = config("2 - Extended Inventory", "Quickslot X", 9999f, "Current X of Quick Slots", false);
         QuickAccessY = config("2 - Extended Inventory", "Quickslot Y", 9999f, "Current Y of Quick Slots", false);
 
-        /* Moveable Chest Inventory */
+        /*
+        /* Moveable Chest Inventory #1#
         MoveableChestInventory.ChestInventoryX = config("3 - Chest Inventory", "Chest Inventory X", -1f, "Current X of chest", false);
         MoveableChestInventory.ChestInventoryY = config("3 - Chest Inventory", "Chest Inventory Y", -1f, "Current Y of chest", false);
         MoveableChestInventory.ChestDragKeys = config("3 - Chest Inventory", "Drag Keys (Chest Drag)", new KeyboardShortcut(KeyCode.Mouse0, KeyCode.LeftControl), "Key or keys (to move the container). It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
+        */
 
         MakeDropAllButton = config("3 - Button", "Drop All Button", Off, "Key or keys (to move the container). It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
         DropAllButtonPosition = config("3 - Button", "Button Position", new Vector2(880.00f, 10.00f), "Button position relative to the inventory background's top left corner", false);

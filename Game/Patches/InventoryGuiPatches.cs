@@ -130,9 +130,7 @@ public class InventoryGuiPatches
             for (int i = 0; i < Hotkeys.Length; ++i)
                 slots.Add(new Model.Slot
                 {
-                    Name = HotkeyTexts[i].Value.IsNullOrWhiteSpace()
-                        ? Hotkeys[i].Value.ToString()
-                        : HotkeyTexts[i].Value,
+                    Name = HotkeyTexts[i].Value.IsNullOrWhiteSpace() ? Hotkeys[i].Value.ToString() : HotkeyTexts[i].Value,
                     IsQuickSlot = true,
                 });
             API.QuickSlotsAdded();
@@ -213,14 +211,16 @@ public class InventoryGuiPatches
 
             switch (DisplayEquipmentRowSeparate.Value)
             {
-                case On when equipmentBkgTransform == null && OldLayout.Value.isOn():
+                case On when !equipmentBkgTransform && OldLayout.Value.isOn():
                 {
+                    Layout.UpdateContainerPosition();
                     BuildEquipmentBkg(__instance, bkgRect);
                     break;
                 }
                 case On when OldLayout.Value.isOff():
                 {
-                    if (equipmentBkgTransform == null)
+                    Layout.UpdateContainerPosition();
+                    if (!equipmentBkgTransform)
                     {
                         BuildEquipmentBkg(__instance, bkgRect);
                     }
@@ -238,6 +238,7 @@ public class InventoryGuiPatches
                 }
 
                 case Off when equipmentBkgTransform:
+                    Layout.UpdateContainerPosition(true);
                     equipmentBkgTransform.gameObject.SetActive(false);
                     break;
             }

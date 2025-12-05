@@ -256,7 +256,7 @@ public class PersonalLoadoutGui : MonoBehaviour
     private static void SaveEquippedItems(Player player, Inventory inventory)
     {
         List<ItemDrop.ItemData>? equippedItems = player.GetInventory().GetEquippedItems();
-        if (equippedItems != null && equippedItems.Count > 0)
+        if (equippedItems is { Count: > 0 })
         {
             for (int index = 0; index < equippedItems.Count; ++index)
             {
@@ -271,25 +271,26 @@ public class PersonalLoadoutGui : MonoBehaviour
         Player player = Player.m_localPlayer;
         if (player == null) return;
 
-        if (player.m_customData.TryGetValue($"{LoadoutKey}{loadoutName}", out string serializedData))
-        {
-            PersonalLoadout loadout = PersonalLoadout.Deserialize(loadoutName, serializedData);
-            using (EpiSwapContext.Begin())
-            {
-                SaveLoadout(loadoutName);
-                UnequipAndRemoveCurrentItems(player);
-                if (!EquipItemsFromLoadout(player, loadout))
-                {
-                    if (player.m_customData.TryGetValue($"{LoadoutKey}{loadoutName}", out string serializedDataOldLoadout))
-                    {
-                        PersonalLoadout oldLoadout = PersonalLoadout.Deserialize(loadoutName, serializedDataOldLoadout);
-                        EquipItemsFromLoadout(player, oldLoadout);
-                        player.m_customData[$"{LoadoutKey}{loadoutName}"] = serializedData;
-                    }
-                }
+        string key = $"{LoadoutKey}{loadoutName}";
+        if (!player.m_customData.TryGetValue(key, out string serializedData))
+            return;
 
-                player.m_visEquipment.UpdateVisuals();
+        string oldSerialized = serializedData;
+
+        PersonalLoadout loadout = PersonalLoadout.Deserialize(loadoutName, serializedData);
+        using (EpiSwapContext.Begin())
+        {
+            SaveLoadout(loadoutName);
+
+            UnequipAndRemoveCurrentItems(player);
+            if (!EquipItemsFromLoadout(player, loadout))
+            {
+                PersonalLoadout oldLoadout = PersonalLoadout.Deserialize(loadoutName, oldSerialized);
+                EquipItemsFromLoadout(player, oldLoadout);
+                player.m_customData[key] = oldSerialized;
             }
+
+            player.m_visEquipment.UpdateVisuals();
         }
     }
 

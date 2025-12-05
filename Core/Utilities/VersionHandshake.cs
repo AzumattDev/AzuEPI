@@ -65,9 +65,7 @@ public static class RpcHandlers
     public static void RPC_AzuEPI_Version(ZRpc rpc, ZPackage pkg)
     {
         string? version = pkg.ReadString();
-        AzuExtendedPlayerInventoryLogger.LogInfo("Version check, local: " +
-                                                 ModVersion +
-                                                 ",  remote: " + version);
+        AzuExtendedPlayerInventoryLogger.LogInfo($"Version check, local: {ModVersion},  remote: {version}");
         if (version != ModVersion)
         {
             ConnectionError = $"{ModName} Installed: {ModVersion}\n Needed: {version}";

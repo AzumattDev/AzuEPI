@@ -1,4 +1,4 @@
-﻿namespace AzuEPI.Game.Moveable;
+﻿/*namespace AzuEPI.Game.Moveable;
 
 public class DragControl : MonoBehaviour, IDragHandler, IEndDragHandler
 {
@@ -19,4 +19,4 @@ public class DragControl : MonoBehaviour, IDragHandler, IEndDragHandler
     {
         UIAnchor.Value = dragRectTransform.anchoredPosition;
     }
-}
+}*/

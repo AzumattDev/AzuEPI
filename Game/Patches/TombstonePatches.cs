@@ -49,10 +49,13 @@ public class TombstonePatches
             if (!localPlayer || localPlayer.GetInventory() == null)
                 return;
 
-            if (Player.m_enableAutoPickup && __instance.m_body.transform.root.gameObject != __instance.gameObject && __instance.TryGetComponent(out FloatingTerrain floatingTerrain))
+            if (__instance.m_body)
             {
-                floatingTerrain.m_lastHeightmap = null;
-                Object.Destroy(__instance.m_body?.gameObject);
+                if (Player.m_enableAutoPickup && __instance.m_body.transform.root.gameObject != __instance.gameObject && __instance.TryGetComponent(out FloatingTerrain floatingTerrain))
+                {
+                    floatingTerrain.m_lastHeightmap = null;
+                    Object.Destroy(__instance.m_body.gameObject);
+                }
             }
 
             if (!AutoEquip.Value.isOn()) return;

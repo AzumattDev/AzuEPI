@@ -62,7 +62,7 @@ static class InventoryGuiHidePatch
         PlayerRotationController.instance.yaw = 0;
         PlayerRotationController.instance.zoom = -3;
         PlayerRotationController.instance.dragging = false;
-        if (AzuEPICharacterPanel.instance.cam != null)
+        if (AzuEPICharacterPanel.instance.cam)
         {
             AzuEPICharacterPanel.instance.cam.transform.rotation = Quaternion.Euler(0, 0, 0);
             AzuEPICharacterPanel.instance.cam.transform.position = AzuEPICharacterPanel.instance.basePosition + AzuEPICharacterPanel.instance.cam.transform.forward * PlayerRotationController.instance.zoom;

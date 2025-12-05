@@ -1,4 +1,4 @@
-﻿namespace AzuEPI.Game.Moveable;
+﻿/*namespace AzuEPI.Game.Moveable;
 
 internal class MoveableChestInventory
 {
@@ -53,4 +53,4 @@ internal class MoveableChestInventory
             lastMousePos = mousePos;
         }
     }
-}
+}*/

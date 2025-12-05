@@ -53,17 +53,26 @@ public class InventoryPatches
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.AddItem), typeof(ItemDrop.ItemData))]
     private static class InventoryAddItemPatch1
     {
-        private static bool Prefix(Inventory __instance, ref bool __result, List<ItemDrop.ItemData> ___m_inventory, ItemDrop.ItemData item)
+        private static bool Prefix(Inventory __instance, ref bool __result, ItemDrop.ItemData item)
         {
-            if (Player.m_localPlayer == null) return true;
-            if (AddEquipmentRow.Value.isOff() || !Player.m_localPlayer || __instance != Player.m_localPlayer.GetInventory())
+            if (Player.m_localPlayer == null)
                 return true;
+
+            if (AddEquipmentRow.Value.isOff() || __instance != Player.m_localPlayer.GetInventory())
+                return true;
+
             if (!__instance.IsEquipmentSlotFreeAndItemValid(item, out int which))
                 return true;
 
-            int normalRows = Layout.NormalRows(__instance);
+            Vector2i pos = __instance.EpiIndexToGridPos(which);
 
-            __instance.AddItem(item, item.m_stack, which % __instance.GetWidth(), normalRows + which / __instance.GetWidth());
+            bool placed = __instance.AddItem(item, item.m_stack, pos.x, pos.y);
+            if (!placed)
+            {
+                __result = false;
+                return false;
+            }
+
             Player.m_localPlayer.EquipItem(item, false);
             __instance.Changed();
             __result = true;
@@ -190,13 +199,17 @@ public class InventoryPatches
             if (__instance.IsHiddenCell(x, y))
             {
                 bool ok = __instance.AddItem(item, amount, Mathf.Clamp(item.m_gridPos.x, 0, __instance.GetWidth() - 1), Mathf.Clamp(item.m_gridPos.y, 0, __instance.GetHeight() - 1));
-                if (!ok)
-                {
-                    ok = __instance.AddItem(item);
-                }
 
-                if (item.m_stack == 0) fromInventory.RemoveItem(item);
-                else fromInventory.Changed();
+                if (!ok)
+                    ok = __instance.AddItem(item);
+
+                if (ok)
+                {
+                    if (item.m_stack == 0)
+                        fromInventory.RemoveItem(item);
+                    else
+                        fromInventory.Changed();
+                }
 
                 __result = ok;
                 return false;
@@ -223,6 +236,7 @@ public class InventoryPatches
             {
                 original.m_height = API.GetFullHeight(original.GetWidth());
             }
+
             AzuExtendedPlayerInventoryLogger.LogDebugDebug("MoveInventoryToGrave");
 
             AzuExtendedPlayerInventoryLogger.LogDebugDebug($"inv: {__instance.GetHeight()} orig: {original.GetHeight()}");

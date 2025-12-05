@@ -1,4 +1,7 @@
-﻿namespace AzuEPI.Core.InventoryHandlers;
+﻿using AzuEPI.Core.Slots;
+using AzuEPI.Game.Patches;
+
+namespace AzuEPI.Core.InventoryHandlers;
 
 public class Capacity
 {
@@ -38,10 +41,24 @@ public class Capacity
     public static int FreeValidEquipmentCells(Inventory inv, ItemDrop.ItemData item)
     {
         int extendedFreeCells = 0;
-        if (inv.IsEquipmentSlotFreeAndItemValid(item, out int which))
+
+        int totalSlots = InventoryGuiPatches.UpdateInventory_Patch.slots.Count;
+        int quickCount = Hotkeys.Length;
+        int equipCount = totalSlots - quickCount;
+
+        for (int i = 0; i < equipCount; ++i)
         {
-            ++extendedFreeCells;
+            if (InventoryGuiPatches.UpdateInventory_Patch.slots[i] is not Model.EquipmentSlot es)
+                continue;
+
+            if (es.Valid == null || !es.Valid(item))
+                continue;
+
+            Vector2i pos = inv.EpiIndexToGridPos(i);
+            if (inv.GetItemAt(pos.x, pos.y) == null)
+                ++extendedFreeCells;
         }
+
         return extendedFreeCells;
     }
 

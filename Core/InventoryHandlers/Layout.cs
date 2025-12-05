@@ -50,6 +50,16 @@ public class Layout
         InventoryHealth.InventoryFix();
     }
 
+    public static void UpdateContainerPosition(bool addAPIRows = false)
+    {
+        InventoryGui? instance = InventoryGui.instance;
+        if (!instance) return;
+        InventoryGrid? playerGrid = instance.m_playerGrid;
+        if (!playerGrid) return;
+        float extraSpace = addAPIRows ? (ExtraRows.Value + API.GetAddedRows(instance.m_playerGrid.m_width)) : ExtraRows.Value;
+        instance.m_container.pivot = ExtraRows.Value > 0 ? new Vector2(0f, 1f + extraSpace * 0.2f) : new Vector2(0f, 1f);
+    }
+
     public static int NormalRows(Inventory inv)
     {
         int width = inv.GetWidth();
@@ -149,7 +159,7 @@ public class Layout
                 Vector2i firstFreeSlot = playerInventory.FindEmptySlot(true);
                 bool noFreeSlot = firstFreeSlot.x < 0 || firstFreeSlot.y < 0;
                 bool freeSlotIntrudesIntoReservedTail = !noFreeSlot && firstFreeSlot.y >= (inventoryHeight - reservedTailRows);
-                
+
                 AzuExtendedPlayerInventoryLogger.LogError("Item " + inventoryItem.m_dropPrefab.name + " moved or dropped");
                 AzuExtendedPlayerInventoryLogger.LogError("Reasons: ");
                 AzuExtendedPlayerInventoryLogger.LogError("slotIndexInvalid: " + slotIndexInvalid);
@@ -159,7 +169,7 @@ public class Layout
                 AzuExtendedPlayerInventoryLogger.LogError("alreadyEquippedHere: " + alreadyEquippedHere);
                 AzuExtendedPlayerInventoryLogger.LogError("slotOccupied: " + slotOccupied);
                 AzuExtendedPlayerInventoryLogger.LogError("isBroken: " + isBroken);
-                
+
                 if (noFreeSlot || freeSlotIntrudesIntoReservedTail)
                 {
                     // it will drop them simply because it cannot be added to the inventory and it's "outside" the normal inventory when it breaks.

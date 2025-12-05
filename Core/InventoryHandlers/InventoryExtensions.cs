@@ -24,25 +24,46 @@ public static class InventoryExtensions
         }
     }
 
+    internal static Vector2i EpiIndexToGridPos(this Inventory inv, int slotIndex)
+    {
+        int width = inv.GetWidth();
+        int normalRows = Layout.NormalRows(inv); // vanilla rows
+        int x = slotIndex % width;
+        int y = normalRows + slotIndex / width;
+        return new Vector2i(x, y);
+    }
+
     internal static bool IsEquipmentSlotFreeAndItemValid(this Inventory inventory, ItemDrop.ItemData item, out int which)
     {
-        var addedRows = API.GetAddedRows(inventory.GetWidth());
         which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is Model.EquipmentSlot { Valid: not null } slot && slot.Valid(item) && !slot.Occupied);
-        return which >= 0 && inventory.GetItemAt(which, inventory.GetHeight() - addedRows) == null;
+
+        if (which < 0)
+            return false;
+
+        Vector2i pos = inventory.EpiIndexToGridPos(which);
+        return inventory.GetItemAt(pos.x, pos.y) == null;
     }
 
     internal static bool IsEquipmentSlotFree(this Inventory inventory, out int which)
     {
-        var addedRows = API.GetAddedRows(inventory.GetWidth());
         which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is Model.EquipmentSlot { IsQuickSlot: false, EquipmentSlot: not null, Occupied: false });
-        return which >= 0 && inventory.GetItemAt(which, inventory.GetHeight() - addedRows) == null;
+
+        if (which < 0)
+            return false;
+
+        Vector2i pos = inventory.EpiIndexToGridPos(which);
+        return inventory.GetItemAt(pos.x, pos.y) == null;
     }
 
     internal static bool IsQuickSlotFree(this Inventory inventory, out int which)
     {
-        var addedRows = API.GetAddedRows(inventory.GetWidth());
         which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is { IsQuickSlot: true, EquipmentSlot: null, Occupied: false });
-        return which >= 0 && inventory.GetItemAt(which, inventory.GetHeight() - addedRows) == null;
+
+        if (which < 0)
+            return false;
+
+        Vector2i pos = inventory.EpiIndexToGridPos(which);
+        return inventory.GetItemAt(pos.x, pos.y) == null;
     }
 
     internal static bool IsAtEquipmentSlot(this Inventory inventory, ItemDrop.ItemData item, out int which)
