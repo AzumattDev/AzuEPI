@@ -74,24 +74,34 @@ public class InventoryGuiPatches
         }
     }
 
-    [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnRightClickItem))]
-    private static class InventoryGuiOnRightClickItemPatch
+    [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.OnSelectedItem))]
+    public static class InventoryGui_OnSelectedItem_EpiValidation
     {
-        private static bool Prefix(InventoryGui __instance, InventoryGrid grid, ItemDrop.ItemData item, Vector2i pos)
+        private static bool Prefix(InventoryGui __instance, InventoryGrid grid, ItemDrop.ItemData item, Vector2i pos, InventoryGrid.Modifier mod)
         {
-            if (item == null || !Player.m_localPlayer || grid.GetInventory() == null)
+            Player player = Player.m_localPlayer;
+            if (!player || player.IsTeleporting())
                 return true;
-            Player p = Player.m_localPlayer;
-            if (grid.m_inventory.IsPlayerInventory())
-                if (p.m_inventory.IsAtEquipmentSlot(item, out int which) && (item == p.m_helmetItem || item == p.m_chestItem || item == p.m_legItem || item == p.m_shoulderItem || item == p.m_utilityItem || item == p.m_trinketItem))
-                    if (!p.m_inventory.CanAddItem(item))
-                    {
-                        AzuExtendedPlayerInventoryLogger.LogInfo("Inventory full, blocking item unequip");
-                        Player.m_localPlayer.Message(MessageHud.MessageType.Center, "$inventory_full");
-                        return false;
-                    }
 
-            return true;
+            if (!__instance.m_dragGo || __instance.m_dragItem == null || __instance.m_dragInventory == null)
+                return true;
+
+            return EpiDropRouter.ValidatePlannedDrop(grid, __instance.m_dragInventory, __instance.m_dragItem, __instance.m_dragAmount, pos);
+        }
+    }
+
+    [HarmonyPatch(typeof(InventoryGrid), nameof(InventoryGrid.DropItem))]
+    public static class InventoryGrid_DropItem_EpiValidation
+    {
+        private static bool Prefix(InventoryGrid __instance, Inventory fromInventory, ItemDrop.ItemData item, int amount, Vector2i pos, ref bool __result)
+        {
+            Player player = Player.m_localPlayer;
+            if (!player || player.IsTeleporting())
+                return true;
+
+            if (EpiDropRouter.ValidatePlannedDrop(__instance, fromInventory, item, amount, pos)) return true;
+            __result = false;
+            return false;
         }
     }
 

@@ -21,7 +21,7 @@ public class Layout
 
     internal static readonly Vector2 RepairMovement = new Vector2(-460f, 0f);
 
-    internal static readonly Vector2 PreviewAnchorMin = new(0f, 0.14f);
+    internal static readonly Vector2 PreviewAnchorMin = new(0f, 0.24f);
     internal static readonly Vector2 PreviewAnchorMax = new(1f, 0.885f);
     internal static readonly Vector2 PreviewSizeDelta = new(-300f, 0f);
     internal static readonly Vector2 PreviewAnchoredPos = new(-507f, 0f);
@@ -115,8 +115,10 @@ public class Layout
         Inventory playerInventory = player.GetInventory();
         int inventoryWidth = playerInventory.GetWidth();
         int inventoryHeight = playerInventory.GetHeight();
+
         int reservedTailRows = API.GetAddedRows(inventoryWidth);
-        List<ItemDrop.ItemData> inventoryItems = playerInventory.GetAllItems();
+        int firstTailRow = inventoryHeight - reservedTailRows;
+
         List<Model.Slot?> allSlots = InventoryGuiPatches.UpdateInventory_Patch.slots;
 
         int equipmentTailStartIndex = GetBaseSlotIndex(playerInventory);
@@ -126,68 +128,71 @@ public class Layout
         {
             Model.Slot? slot = allSlots[i];
             if (slot is not Model.EquipmentSlot equipmentSlot) continue;
+
+            Vector2i destPos = new(equipmentTailStartIndex % inventoryWidth, equipmentTailStartIndex / inventoryWidth);
+
             if (equipmentSlot.Get?.Invoke(player) is { } equippedItem)
             {
-                equippedItem.m_gridPos = new Vector2i(equipmentTailStartIndex % inventoryWidth, equipmentTailStartIndex / inventoryWidth);
+                Vector2i srcPos = equippedItem.m_gridPos;
+
+                if (srcPos != destPos)
+                {
+                    ItemDrop.ItemData? occupant = playerInventory.GetItemAt(destPos.x, destPos.y);
+
+                    if (occupant != null && occupant != equippedItem)
+                    {
+                        bool srcInNormalRegion = srcPos.y < firstTailRow;
+
+                        if (srcInNormalRegion)
+                        {
+                            occupant.m_gridPos = srcPos;
+                        }
+                        else
+                        {
+                            Vector2i free = FindFirstFreeNonSlotCell(playerInventory, inventoryWidth, firstTailRow);
+                            if (free.x >= 0)
+                            {
+                                occupant.m_gridPos = free;
+                            }
+                            else
+                            {
+                                AzuExtendedPlayerInventoryLogger.LogDebug($"ProjectEquippedIntoGridTail: no free non-slot cell for '{occupant.m_shared.m_name}', leaving it in tail.");
+                            }
+                        }
+                    }
+
+                    equippedItem.m_gridPos = destPos;
+                }
+
                 projectedEquippedItemsBySlot[i] = equippedItem;
             }
 
             ++equipmentTailStartIndex;
         }
 
-        for (int itemIndex = 0; itemIndex < inventoryItems.Count; ++itemIndex)
-        {
-            ItemDrop.ItemData inventoryItem = inventoryItems[itemIndex];
-
-            if (!playerInventory.IsAtEquipmentSlot(inventoryItem, out int equipmentSlotIndex)) continue;
-
-            bool slotIndexInvalid = equipmentSlotIndex <= -1;
-            bool isSameAsProjected = !slotIndexInvalid && inventoryItem == projectedEquippedItemsBySlot[equipmentSlotIndex];
-            bool targetIsEquipmentSlot = !slotIndexInvalid && allSlots[equipmentSlotIndex] is Model.EquipmentSlot;
-
-            Model.EquipmentSlot? epiEquipmentSlot = targetIsEquipmentSlot ? (Model.EquipmentSlot)allSlots[equipmentSlotIndex]! : null;
-
-            bool invalidBySlotRules = epiEquipmentSlot?.Valid != null && !epiEquipmentSlot.Valid(inventoryItem);
-            bool alreadyEquippedHere = !slotIndexInvalid && ExtendedPlayerInventory.equipItems[equipmentSlotIndex] == inventoryItem;
-            bool slotOccupied = epiEquipmentSlot is { Occupied: true };
-
-            bool isBroken = inventoryItem.m_shared.m_useDurability && inventoryItem.m_durability <= 0f;
-            if (isBroken && alreadyEquippedHere) continue;
-
-            if (!isSameAsProjected && (slotIndexInvalid || !targetIsEquipmentSlot || invalidBySlotRules || alreadyEquippedHere || slotOccupied))
-            {
-                Vector2i firstFreeSlot = playerInventory.FindEmptySlot(true);
-                bool noFreeSlot = firstFreeSlot.x < 0 || firstFreeSlot.y < 0;
-                bool freeSlotIntrudesIntoReservedTail = !noFreeSlot && firstFreeSlot.y >= (inventoryHeight - reservedTailRows);
-
-                AzuExtendedPlayerInventoryLogger.LogError("Item " + inventoryItem.m_dropPrefab.name + " moved or dropped");
-                AzuExtendedPlayerInventoryLogger.LogError("Reasons: ");
-                AzuExtendedPlayerInventoryLogger.LogError("slotIndexInvalid: " + slotIndexInvalid);
-                AzuExtendedPlayerInventoryLogger.LogError("isSameAsProjected: " + isSameAsProjected);
-                AzuExtendedPlayerInventoryLogger.LogError("targetIsEquipmentSlot: " + targetIsEquipmentSlot);
-                AzuExtendedPlayerInventoryLogger.LogError("invalidBySlotRules: " + invalidBySlotRules);
-                AzuExtendedPlayerInventoryLogger.LogError("alreadyEquippedHere: " + alreadyEquippedHere);
-                AzuExtendedPlayerInventoryLogger.LogError("slotOccupied: " + slotOccupied);
-                AzuExtendedPlayerInventoryLogger.LogError("isBroken: " + isBroken);
-
-                if (noFreeSlot || freeSlotIntrudesIntoReservedTail)
-                {
-                    // it will drop them simply because it cannot be added to the inventory and it's "outside" the normal inventory when it breaks.
-                    if (inventoryItem.m_durability > 0 && !playerInventory.CanAddItem(inventoryItem))
-                        player.DropItem(playerInventory, inventoryItem, inventoryItem.m_stack);
-                }
-                else
-                {
-                    inventoryItem.m_gridPos = firstFreeSlot;
-                    playerGrid.UpdateInventory(playerInventory, player, null);
-                }
-            }
-        }
-
         ExtendedPlayerInventory.equipItems = projectedEquippedItemsBySlot;
 
         if (AzuEPICharacterPanel.playerPreviewComp && Player.m_localPlayer)
             VECloneSync.MirrorFrom(Player.m_localPlayer, AzuEPICharacterPanel.playerPreviewComp);
+    }
+
+    private static Vector2i FindFirstFreeNonSlotCell(Inventory inv, int width, int firstTailRow)
+    {
+        for (int y = 0; y < firstTailRow; ++y)
+        {
+            for (int x = 0; x < width; ++x)
+            {
+                Vector2i pos = new(x, y);
+
+                if (API.TryGetSlotIndexAtGridPos(inv, pos, out _))
+                    continue;
+
+                if (inv.GetItemAt(x, y) == null)
+                    return pos;
+            }
+        }
+
+        return new Vector2i(-1, -1);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
