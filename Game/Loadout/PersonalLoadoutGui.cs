@@ -309,18 +309,17 @@ public class PersonalLoadoutGui : MonoBehaviour
                     continue;
                 }
 
-                if (freeSlots > 0 && freeSlots >= items.Count)
+                AzuExtendedPlayerInventoryLogger.LogWarning("Attempting to add item: " + item.m_shared.m_name);
+                bool moved = player.GetInventory().AddItem(item);
+                AzuExtendedPlayerInventoryLogger.LogWarning("Move result: " + moved);
+                if (moved)
                 {
-                    AzuExtendedPlayerInventoryLogger.LogWarning("Attempting to add item: " + item.m_shared.m_name);
-                    bool moved = player.GetInventory().AddItem(item);
-                    AzuExtendedPlayerInventoryLogger.LogWarning("Move result: " + moved);
-                    if (moved)
-                    {
-                        AzuExtendedPlayerInventoryLogger.LogWarning("Equipping item: " + item.m_shared.m_name);
-                        player.EquipItem(item);
-                    }
-
-                    freeSlots--;
+                    AzuExtendedPlayerInventoryLogger.LogWarning("Equipping item: " + item.m_shared.m_name);
+                    player.EquipItem(item);
+                }
+                else
+                {
+                    AzuExtendedPlayerInventoryLogger.LogError($"Failed to add item {item.m_shared.m_name} to inventory during loadout restore!");
                 }
             }
 

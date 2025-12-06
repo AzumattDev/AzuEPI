@@ -35,7 +35,13 @@ public static class InventoryExtensions
 
     internal static bool IsEquipmentSlotFreeAndItemValid(this Inventory inventory, ItemDrop.ItemData item, out int which)
     {
-        which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is Model.EquipmentSlot { Valid: not null } slot && slot.Valid(item) && !slot.Occupied);
+        // Prioritize API-added slots over built-in slots to avoid placing items in generic slots when they have dedicated slots
+        which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is Model.EquipmentSlot { Valid: not null, IsAPIAdded: true } slot && slot.Valid(item) && !slot.Occupied);
+
+        if (which < 0)
+        {
+            which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is Model.EquipmentSlot { Valid: not null, IsAPIAdded: false } slot && slot.Valid(item) && !slot.Occupied);
+        }
 
         if (which < 0)
             return false;

@@ -216,7 +216,6 @@
         <Compile Include="Core\Slots\Model.cs"/>
         <Compile Include="Game\Compatibility\Backpacks.cs" />
         <Compile Include="GlobalUsings.cs"/>
-        <Compile Include="Patches to not upload yet.cs" />
         <None Include="App.config"/>
     </ItemGroup>
     <ItemGroup>
