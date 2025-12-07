@@ -214,7 +214,6 @@
         <Compile Include="API\APIBkCompat.cs" />
         <Compile Include="Core\Slots\EpiDropRouter.cs" />
         <Compile Include="Core\Slots\Model.cs"/>
-        <Compile Include="Game\Compatibility\Backpacks.cs" />
         <Compile Include="GlobalUsings.cs"/>
         <None Include="App.config"/>
     </ItemGroup>
