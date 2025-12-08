@@ -156,7 +156,7 @@ public class PlayerPatches
                 TombstoneContainerCache[__instance] = tombstoneContainer;
             }
             tombstoneContainer.m_height = height;
-            if (InventoryHealth.IgnoreKeyPresses(true) || AddEquipmentRow.Value.isOff())
+            if (InventoryHealth.IgnoreKeyPresses(true) || AddEquipmentRow.Value.isOff() || Hotkeys.Length == 0)
                 return;
 
             int hotkey = 0;

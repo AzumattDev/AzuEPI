@@ -199,6 +199,7 @@ public class API
             InventoryGuiPatches.UpdateInventory_Patch.slots.RemoveAt(slotIndex);
 
             SlotHelpers.ResizeSlots();
+            InventoryHealth.FixHiddenItems();
             SlotRemoved?.Invoke(slotName);
 
             return true;

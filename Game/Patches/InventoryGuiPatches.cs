@@ -151,6 +151,30 @@ public class InventoryGuiPatches
                 });
             API.QuickSlotsAdded();
         }
+        
+        internal static void RebuildQuickslots()
+        {
+            slots.RemoveAll(s => s is { IsQuickSlot: true });
+
+            API.BeforeQuickSlotsAdded();
+            for (int i = 0; i < Hotkeys.Length; ++i)
+            {
+                slots.Add(new Model.Slot
+                {
+                    Name = HotkeyTexts[i].Value.IsNullOrWhiteSpace() ? Hotkeys[i].Value.ToString() : HotkeyTexts[i].Value,
+                    IsQuickSlot = true,
+                });
+            }
+
+            API.QuickSlotsAdded();
+
+            if (PreviewParent)
+            {
+                Layout.PreviewAnchorMin = QuickSlotsAmount.Value > 3 ? new Vector2(0f, 0.24f) : QuickSlotsAmount.Value != 0 ? new Vector2(0f, 0.14f) : Vector2.zero;
+                var previewParentRT = (RectTransform)PreviewParent.transform;
+                previewParentRT.anchorMin = Layout.PreviewAnchorMin;
+            }
+        }
 
         private static void Postfix(InventoryGui __instance, Player player, InventoryGrid ___m_playerGrid)
         {

@@ -21,7 +21,7 @@ public class Layout
 
     internal static readonly Vector2 RepairMovement = new Vector2(-460f, 0f);
 
-    internal static readonly Vector2 PreviewAnchorMin = new(0f, 0.14f);
+    internal static Vector2 PreviewAnchorMin = new(0f, 0.14f);
     internal static readonly Vector2 PreviewAnchorMax = new(1f, 0.885f);
     internal static readonly Vector2 PreviewSizeDelta = new(-300f, 0f);
     internal static readonly Vector2 PreviewAnchoredPos = new(-507f, 0f);

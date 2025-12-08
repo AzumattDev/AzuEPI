@@ -45,18 +45,51 @@ public class SlotHelpers
                 InventoryGuiPatches.UpdateInventory_Patch.slots[i]!.Position = new Vector2(x, y);
             }
 
-            int quickCount = Hotkeys.Length;
+            int quickCount = QuickSlotsAmount.Value;
             int quickStart = equipCount;
 
-            float tallestRows = Mathf.Max(leftUsed, rightUsed);
-            float bottomY = yBase - (tallestRows - 1) * Layout.tileSize;
+            if (quickStart + quickCount > InventoryGuiPatches.UpdateInventory_Patch.slots.Count)
+            {
+                AzuExtendedPlayerInventoryLogger.LogWarning($"ResizeSlots: Not enough slots in list. Expected {quickStart + quickCount}, but have {InventoryGuiPatches.UpdateInventory_Patch.slots.Count}. Skipping quickslot positioning.");
+                return;
+            }
 
-            float spanWidth = (rightX - leftX) + Layout.tileSize;
-            float rowWidth = quickCount * Layout.tileSize;
-            float startX = leftX + (spanWidth - rowWidth) * 0.5f;
+            if (quickCount > 0)
+            {
+                float spanWidth = (rightX - leftX) + Layout.tileSize;
 
-            for (int i = 0; i < quickCount; ++i)
-                InventoryGuiPatches.UpdateInventory_Patch.slots[quickStart + i]!.Position = new Vector2(startX + i * Layout.tileSize, bottomY);
+                const int assumedMaxRows = 8;
+                float row7Y = yBase - (assumedMaxRows - 2) * Layout.tileSize;
+
+                if (quickCount <= 3)
+                {
+                    float rowWidth = quickCount * Layout.tileSize;
+                    float startX = leftX + (spanWidth - rowWidth) * 0.5f;
+                    float quickslotY = row7Y - Layout.tileSize;
+
+                    for (int i = 0; i < quickCount; ++i)
+                        InventoryGuiPatches.UpdateInventory_Patch.slots[quickStart + i]!.Position = new Vector2(startX + i * Layout.tileSize, quickslotY);
+                }
+                else
+                {
+                    int row1Count = 3;
+                    int row2Count = quickCount - 3;
+
+                    float row1Width = row1Count * Layout.tileSize;
+                    float row2Width = row2Count * Layout.tileSize;
+                    float row1StartX = leftX + (spanWidth - row1Width) * 0.5f;
+                    float row2StartX = leftX + (spanWidth - row2Width) * 0.5f;
+
+                    float bottomRowY = row7Y - Layout.tileSize;
+                    float topRowY = row7Y;
+
+                    for (int i = 0; i < row1Count; ++i)
+                        InventoryGuiPatches.UpdateInventory_Patch.slots[quickStart + i]!.Position = new Vector2(row1StartX + i * Layout.tileSize, topRowY);
+
+                    for (int i = 0; i < row2Count; ++i)
+                        InventoryGuiPatches.UpdateInventory_Patch.slots[quickStart + row1Count + i]!.Position = new Vector2(row2StartX + i * Layout.tileSize, bottomRowY);
+                }
+            }
         }
     }
 }

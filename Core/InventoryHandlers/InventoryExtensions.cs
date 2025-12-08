@@ -47,6 +47,14 @@ public static class InventoryExtensions
             return false;
 
         Vector2i pos = inventory.EpiIndexToGridPos(which);
+
+        if (pos.x < 0 || pos.x >= inventory.GetWidth() || pos.y < 0 || pos.y >= inventory.GetHeight())
+        {
+            AzuExtendedPlayerInventoryLogger.LogWarning($"Calculated equipment slot position ({pos.x}, {pos.y}) is out of inventory bounds ({inventory.GetWidth()}x{inventory.GetHeight()}). Skipping auto-equip.");
+            which = -1;
+            return false;
+        }
+
         return inventory.GetItemAt(pos.x, pos.y) == null;
     }
 

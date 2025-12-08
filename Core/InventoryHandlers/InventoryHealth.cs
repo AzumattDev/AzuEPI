@@ -34,6 +34,40 @@ public class InventoryHealth
         foreach (ItemDrop.ItemData brokenItem in itemsToFix) playerInventory!.TryAddItemToInventory(brokenItem);
     }
     
+    public static void FixHiddenItems()
+    {
+        if (Player.m_localPlayer == null) return;
+
+        Inventory? inventory = Player.m_localPlayer.GetInventory();
+        if (inventory == null || !inventory.ShouldProtectInventorySlots()) return;
+
+        var stuck = new List<ItemDrop.ItemData>();
+        foreach (var it in inventory.GetAllItems())
+        {
+            if (inventory.IsHiddenCell(it.m_gridPos.x, it.m_gridPos.y))
+                stuck.Add(it);
+        }
+
+        if (stuck.Count == 0) return;
+
+        AzuExtendedPlayerInventoryLogger.LogWarning($"Found {stuck.Count} items in hidden cells after slot configuration change. Relocating...");
+
+        foreach (var it in stuck)
+        {
+            if (inventory.RemoveItem(it))
+            {
+                // Vanilla AddItem(ItemData) now uses FindEmptySlot (quick-aware)
+                if (!inventory.AddItem(it))
+                {
+                    AzuExtendedPlayerInventoryLogger.LogWarning($"No room for {Localization.instance.Localize(it.m_shared.m_name)}, dropping item.");
+                    Player.m_localPlayer.DropItem(inventory, it, it.m_stack);
+                }
+            }
+        }
+
+        inventory.Changed();
+    }
+
     public static bool IgnoreKeyPresses(bool extra = false)
     {
         if (!extra)

@@ -89,13 +89,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         /* 4 - Quick Slots */
         ResetConfigOrder();
         QuickSlotsAmount = config("4 - Quick Slots", "Number of Quick Slots", 3, new ConfigDescription("Number of quick slots to add (0-6).", new AcceptableValueRange<int>(0, 6)), NextOrder, true);
-        ShowQuickSlots = config("4 - Quick Slots", "Show Quick Slots on HUD", On, "Shows the quick slots bar on screen during gameplay.", NextOrder);
-        HotKey1 = config("4 - Quick Slots", "Quick Slot 1 Hotkey", new KeyboardShortcut(KeyCode.Z), "Hotkey to use quick slot 1.", NextOrder, false);
-        HotKey1Text = config("4 - Quick Slots", "Quick Slot 1 Display Text", "", "Text shown on quick slot 1. Leave blank to display the hotkey.", NextOrder, false);
-        HotKey2 = config("4 - Quick Slots", "Quick Slot 2 Hotkey", new KeyboardShortcut(KeyCode.X), "Hotkey to use quick slot 2.", NextOrder, false);
-        HotKey2Text = config("4 - Quick Slots", "Quick Slot 2 Display Text", "", "Text shown on quick slot 2. Leave blank to display the hotkey.", NextOrder, false);
-        HotKey3 = config("4 - Quick Slots", "Quick Slot 3 Hotkey", new KeyboardShortcut(KeyCode.C), "Hotkey to use quick slot 3.", NextOrder, false);
-        HotKey3Text = config("4 - Quick Slots", "Quick Slot 3 Display Text", "", "Text shown on quick slot 3. Leave blank to display the hotkey.", NextOrder, false);
+        ShowQuickSlots = config("4 - Quick Slots", "Show Quick Slots on HUD", On, "Shows the quick slots bar on screen during gameplay.", NextOrder); 
         QuickAccessScale = config("4 - Quick Slots", "Quick Slots Size", 0.85f, "Size/scale of the quick slots bar.", NextOrder, false);
         QuickslotDragKeys = config("4 - Quick Slots", "Quick Slots Drag Keys", new KeyboardShortcut(KeyCode.Mouse0, KeyCode.LeftControl), "Key combination to drag and reposition the quick slots bar.", NextOrder, false);
         QuickAccessX = config("4 - Quick Slots", "Quick Slots Position X", 9999f, "Horizontal position of quick slots (9999 = automatic).", NextOrder, false);
@@ -116,20 +110,17 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         ResetConfigOrder();
         MakeDropAllButton = config("7 - Buttons", "Enable Drop All Button", Off, "Adds a button to drop all items from your inventory.", NextOrder, false);
         DropAllButtonPosition = config("7 - Buttons", "Drop All Button Position", new Vector2(880.00f, 10.00f), "Position of the Drop All button in the inventory window.", NextOrder, false);
-        
-        Hotkeys = new[]
-        {
-            HotKey1,
-            HotKey2,
-            HotKey3
-        };
-        HotkeyTexts = new[]
-        {
-            HotKey1Text,
-            HotKey2Text,
-            HotKey3Text
-        };
 
+        InitializeHotkeys();
+
+        QuickSlotsAmount.SettingChanged += (sender, args) =>
+        {
+            InitializeHotkeys();
+            InventoryGuiPatches.UpdateInventory_Patch.RebuildQuickslots();
+            SlotHelpers.ResizeSlots();
+            Layout.UpdateInventorySize();
+            InventoryHealth.FixHiddenItems();
+        };
         ExtraRows.SettingChanged += (sender, args) => { Layout.UpdateInventorySize(); };
         AddEquipmentRow.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
         DisplayEquipmentRowSeparate.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
@@ -146,6 +137,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
                 API.RemoveSlot("$item_wishbone");
                 if (Localization.instance != null)
                     API.RemoveSlot(Localization.instance.Localize("$item_wishbone"));
+                InventoryHealth.FixHiddenItems();
             }
         };
 
@@ -160,6 +152,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
                 API.RemoveSlot("$item_demister");
                 if (Localization.instance != null)
                     API.RemoveSlot(Localization.instance.Localize("$item_demister"));
+                InventoryHealth.FixHiddenItems();
             }
         };
 
@@ -250,6 +243,24 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         Config.Save();
     }
 
+    private void InitializeHotkeys()
+    {
+        int count = QuickSlotsAmount.Value;
+        var defaultKeys = new[] { KeyCode.Z, KeyCode.X, KeyCode.C, KeyCode.V, KeyCode.B, KeyCode.N };
+
+        Hotkeys = new ConfigEntry<KeyboardShortcut>[count];
+        HotkeyTexts = new ConfigEntry<string>[count];
+
+        for (int i = 0; i < count; i++)
+        {
+            var key = i < defaultKeys.Length ? defaultKeys[i] : KeyCode.None;
+            Hotkeys[i] = config("4 - Quick Slots", $"HotKey (Quickslot {i + 1})", new KeyboardShortcut(key),
+                $"Hotkey {i + 1} - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", false);
+            HotkeyTexts[i] = config("4 - Quick Slots", $"HotKey (Quickslot {i + 1}) Display Text", "",
+                $"Hotkey {i + 1} Display Text. Leave blank to use the hotkey itself.", false);
+        }
+    }
+
     private void InitializeConfigWatcher()
     {
         _debounce = new System.Timers.Timer(150) { AutoReset = false };
@@ -296,6 +307,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     public static ConfigEntry<Toggle> AddEquipmentRow = null!;
     public static ConfigEntry<Toggle> DisplayEquipmentRowSeparate = null!;
+    public static ConfigEntry<int> QuickSlotsAmount = null!;
     public static ConfigEntry<Toggle> ShowQuickSlots = null!;
     public static ConfigEntry<Toggle> MakeDropAllButton = null!;
     public static ConfigEntry<Vector2> DropAllButtonPosition = null!;
@@ -308,12 +320,6 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<string> UtilityText = null!;
     public static ConfigEntry<float> QuickAccessScale = null!;
 
-    public static ConfigEntry<KeyboardShortcut> HotKey1 = null!;
-    public static ConfigEntry<KeyboardShortcut> HotKey2 = null!;
-    public static ConfigEntry<KeyboardShortcut> HotKey3 = null!;
-    public static ConfigEntry<string> HotKey1Text = null!;
-    public static ConfigEntry<string> HotKey2Text = null!;
-    public static ConfigEntry<string> HotKey3Text = null!;
     public static ConfigEntry<KeyboardShortcut> QuickslotDragKeys = null!;
     public static ConfigEntry<KeyboardShortcut> ModKeyTwo = null!;
 
