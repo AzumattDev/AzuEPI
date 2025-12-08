@@ -64,11 +64,76 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         });
 
         context = this;
-        _serverConfigLocked = config("1 - General", "Lock Configuration", On, "If on, the configuration is locked and can be changed by server admins only.");
-        _ = ConfigSync.AddLockingConfigEntry(_serverConfigLocked);
 
-        WishboneSlot = config("1.5 - Slots", "Wishbone Slot", On, "If on, adds a wishbone slot to the equipment row.");
-        WispLightSlot = config("1.5 - Slots", "Demister (Wisplight) Slot", On, "If on, adds a demister slot to the equipment row.");
+        /* 1 - General Settings */
+        ResetConfigOrder();
+        _serverConfigLocked = config("1 - General Settings", "Lock Configuration", On, "If on, the configuration is locked and can be changed by server admins only.", NextOrder);
+        _ = ConfigSync.AddLockingConfigEntry(_serverConfigLocked);
+        AutoEquip = config("1 - General Settings", "Auto Equip Items", On, "Automatically equip items when picked up, transferred between containers, or recovered from tombstone.", NextOrder);
+
+        /* 2 - Inventory Settings */
+        ResetConfigOrder();
+        ExtraRows = config("2 - Inventory Settings", "Extra Inventory Rows", 0, "Number of extra inventory rows to add. Note: May overlap with chest windows. Use CTRL+drag to reposition if needed.", NextOrder);
+        AddEquipmentRow = config("2 - Inventory Settings", "Enable Equipment Row", On, "Adds a special row for equipped items and quick slots. Keep OFF if using Randy Knapp's Equipment and Quick Slots mod.", NextOrder);
+        DisplayEquipmentRowSeparate = config("2 - Inventory Settings", "Display Equipment Separately", On, "Shows equipment and quick slots in their own dedicated panel. Keep OFF if using Randy Knapp's Equipment and Quick Slots mod.", NextOrder);
+
+        /* 3 - Equipment Slot Labels */
+        ResetConfigOrder();
+        HelmetText = config("3 - Equipment Slot Labels", "Head Slot Label", "Head", "Text shown for the head/helmet equipment slot.", NextOrder, false);
+        ChestText = config("3 - Equipment Slot Labels", "Chest Slot Label", "Chest", "Text shown for the chest armor equipment slot.", NextOrder, false);
+        LegsText = config("3 - Equipment Slot Labels", "Legs Slot Label", "Legs", "Text shown for the legs armor equipment slot.", NextOrder, false);
+        BackText = config("3 - Equipment Slot Labels", "Back Slot Label", "Back", "Text shown for the back/cape equipment slot.", NextOrder, false);
+        UtilityText = config("3 - Equipment Slot Labels", "Utility Slot Label", "Utility", "Text shown for the utility equipment slot.", NextOrder, false);
+        TrinketText = config("3 - Equipment Slot Labels", "Trinket Slot Label", "Trinket", "Text shown for the trinket equipment slot.", NextOrder, false);
+
+        /* 4 - Quick Slots */
+        ResetConfigOrder();
+        QuickSlotsAmount = config("4 - Quick Slots", "Number of Quick Slots", 3, new ConfigDescription("Number of quick slots to add (0-6).", new AcceptableValueRange<int>(0, 6)), NextOrder, true);
+        ShowQuickSlots = config("4 - Quick Slots", "Show Quick Slots on HUD", On, "Shows the quick slots bar on screen during gameplay.", NextOrder);
+        HotKey1 = config("4 - Quick Slots", "Quick Slot 1 Hotkey", new KeyboardShortcut(KeyCode.Z), "Hotkey to use quick slot 1.", NextOrder, false);
+        HotKey1Text = config("4 - Quick Slots", "Quick Slot 1 Display Text", "", "Text shown on quick slot 1. Leave blank to display the hotkey.", NextOrder, false);
+        HotKey2 = config("4 - Quick Slots", "Quick Slot 2 Hotkey", new KeyboardShortcut(KeyCode.X), "Hotkey to use quick slot 2.", NextOrder, false);
+        HotKey2Text = config("4 - Quick Slots", "Quick Slot 2 Display Text", "", "Text shown on quick slot 2. Leave blank to display the hotkey.", NextOrder, false);
+        HotKey3 = config("4 - Quick Slots", "Quick Slot 3 Hotkey", new KeyboardShortcut(KeyCode.C), "Hotkey to use quick slot 3.", NextOrder, false);
+        HotKey3Text = config("4 - Quick Slots", "Quick Slot 3 Display Text", "", "Text shown on quick slot 3. Leave blank to display the hotkey.", NextOrder, false);
+        QuickAccessScale = config("4 - Quick Slots", "Quick Slots Size", 0.85f, "Size/scale of the quick slots bar.", NextOrder, false);
+        QuickslotDragKeys = config("4 - Quick Slots", "Quick Slots Drag Keys", new KeyboardShortcut(KeyCode.Mouse0, KeyCode.LeftControl), "Key combination to drag and reposition the quick slots bar.", NextOrder, false);
+        QuickAccessX = config("4 - Quick Slots", "Quick Slots Position X", 9999f, "Horizontal position of quick slots (9999 = automatic).", NextOrder, false);
+        QuickAccessY = config("4 - Quick Slots", "Quick Slots Position Y", 9999f, "Vertical position of quick slots (9999 = automatic).", NextOrder, false);
+
+        /* 5 - Additional Equipment Slots */
+        ResetConfigOrder();
+        WishboneSlot = config("5 - Additional Equipment Slots", "Enable Wishbone Slot", On, "Adds a dedicated equipment slot for the Wishbone item.", NextOrder);
+        WispLightSlot = config("5 - Additional Equipment Slots", "Enable Demister Slot", On, "Adds a dedicated equipment slot for the Demister/Wisplight item.", NextOrder);
+
+        /* 6 - UI Options */
+        ResetConfigOrder();
+        VanityOption = config("6 - UI Options", "Show Vanity Button", On, "Shows the vanity button in the inventory panel.", NextOrder);
+        LoadoutOption = config("6 - UI Options", "Show Loadout Button", On, "Shows the loadout button in the inventory panel.", NextOrder);
+        OldLayout = config("6 - UI Options", "Use Legacy Layout", Off, "Uses the old inventory layout instead of the new one.", NextOrder);
+
+        /* 7 - Buttons */
+        ResetConfigOrder();
+        MakeDropAllButton = config("7 - Buttons", "Enable Drop All Button", Off, "Adds a button to drop all items from your inventory.", NextOrder, false);
+        DropAllButtonPosition = config("7 - Buttons", "Drop All Button Position", new Vector2(880.00f, 10.00f), "Position of the Drop All button in the inventory window.", NextOrder, false);
+        
+        Hotkeys = new[]
+        {
+            HotKey1,
+            HotKey2,
+            HotKey3
+        };
+        HotkeyTexts = new[]
+        {
+            HotKey1Text,
+            HotKey2Text,
+            HotKey3Text
+        };
+
+        ExtraRows.SettingChanged += (sender, args) => { Layout.UpdateInventorySize(); };
+        AddEquipmentRow.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
+        DisplayEquipmentRowSeparate.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
+        ShowQuickSlots.SettingChanged += (sender, args) => { HotkeyBarController.Hud_Update_Patch.DeselectHotkeyBar(); };
 
         WishboneSlot.SettingChanged += (sender, args) =>
         {
@@ -97,66 +162,6 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
                     API.RemoveSlot(Localization.instance.Localize("$item_demister"));
             }
         };
-
-        /* Extended Player Inventory Config options */
-        AutoEquip = config("2 - Extended Inventory", "Auto Equip", On, "Automatically equip items that go into the gear slots. Applies when picking up items, transferring between containers, or picking up your tombstone.");
-        ShowQuickSlots = config("2 - Extended Inventory", "Show Quickslots", On, "Should the quickslots in the main hud be shown? (not the inventory quickslots)");
-        ShowQuickSlots.SettingChanged += (sender, args) => { HotkeyBarController.Hud_Update_Patch.DeselectHotkeyBar(); };
-        ExtraRows = config("2 - Extended Inventory", "Extra Inventory Rows", 0, "Number of extra ordinary rows. (This can cause overlap with chest GUI, make sure you hold CTRL (the default key) and drag to desired position)");
-        ExtraRows.SettingChanged += (sender, args) => { Layout.UpdateInventorySize(); };
-        AddEquipmentRow = config("2 - Extended Inventory", "Add Equipment Row", On, "Add special row for equipped items and quick slots. (IF YOU ARE USING RANDY KNAPPS EAQs KEEP THIS VALUE OFF)");
-        AddEquipmentRow.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
-        DisplayEquipmentRowSeparate = config("2 - Extended Inventory", "Display Equipment Row Separate", On, "Display equipment and quickslots in their own area. (IF YOU ARE USING RANDY KNAPPS EAQs KEEP THIS VALUE OFF)");
-
-        DisplayEquipmentRowSeparate.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
-
-        HelmetText = config("2 - Extended Inventory", "Helmet Text", "Head", "Text to show for helmet slot.", false);
-        ChestText = config("2 - Extended Inventory", "Chest Text", "Chest", "Text to show for chest slot.", false);
-        LegsText = config("2 - Extended Inventory", "Legs Text", "Legs", "Text to show for legs slot.", false);
-        BackText = config("2 - Extended Inventory", "Back Text", "Back", "Text to show for back slot.", false);
-        UtilityText = config("2 - Extended Inventory", "Utility Text", "Utility", "Text to show for utility slot.", false);
-        TrinketText = config("2 - Extended Inventory", "Trinket Text", "Trinket", "Text to show for trinket slot.", false);
-
-        QuickAccessScale = config("2 - Extended Inventory", "QuickAccess Scale", 0.85f, "Scale of quick access bar. ", false);
-
-        HotKey1 = config("2 - Extended Inventory", "HotKey (Quickslot 1)", new KeyboardShortcut(KeyCode.Z), "Hotkey 1 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", false);
-        HotKey2 = config("2 - Extended Inventory", "HotKey (Quickslot 2)", new KeyboardShortcut(KeyCode.X), "Hotkey 2 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", false);
-        HotKey3 = config("2 - Extended Inventory", "HotKey (Quickslot 3)", new KeyboardShortcut(KeyCode.C), "Hotkey 3 - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", false);
-
-        HotKey1Text = config("2 - Extended Inventory", "HotKey (Quickslot 1) Text", "", "Hotkey 1 Display Text. Leave blank to use the hotkey itself.", false);
-        HotKey2Text = config("2 - Extended Inventory", "HotKey (Quickslot 2) Text", "", "Hotkey 2 Display Text. Leave blank to use the hotkey itself.", false);
-        HotKey3Text = config("2 - Extended Inventory", "HotKey (Quickslot 3) Text", "", "Hotkey 3 Display Text. Leave blank to use the hotkey itself.", false);
-
-        QuickslotDragKeys = config("2 - Extended Inventory", "Drag Keys (Quickslot Drag)", new KeyboardShortcut(KeyCode.Mouse0, KeyCode.LeftControl), "Key or keys to move quick slots. It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
-
-        QuickAccessX = config("2 - Extended Inventory", "Quickslot X", 9999f, "Current X of Quick Slots", false);
-        QuickAccessY = config("2 - Extended Inventory", "Quickslot Y", 9999f, "Current Y of Quick Slots", false);
-
-        /*
-        /* Moveable Chest Inventory #1#
-        MoveableChestInventory.ChestInventoryX = config("3 - Chest Inventory", "Chest Inventory X", -1f, "Current X of chest", false);
-        MoveableChestInventory.ChestInventoryY = config("3 - Chest Inventory", "Chest Inventory Y", -1f, "Current Y of chest", false);
-        MoveableChestInventory.ChestDragKeys = config("3 - Chest Inventory", "Drag Keys (Chest Drag)", new KeyboardShortcut(KeyCode.Mouse0, KeyCode.LeftControl), "Key or keys (to move the container). It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
-        */
-
-        MakeDropAllButton = config("3 - Button", "Drop All Button", Off, "Key or keys (to move the container). It is recommended to use the BepInEx Configuration Manager to do this fast and easy. If you're doing it manually in the config file Use https://docs.unity3d.com/Manual/class-InputManager.html format.", false);
-        DropAllButtonPosition = config("3 - Button", "Button Position", new Vector2(880.00f, 10.00f), "Button position relative to the inventory background's top left corner", false);
-        Hotkeys = new[]
-        {
-            HotKey1,
-            HotKey2,
-            HotKey3
-        };
-        HotkeyTexts = new[]
-        {
-            HotKey1Text,
-            HotKey2Text,
-            HotKey3Text
-        };
-
-        VanityOption = config("4 - UI", "Vanity Option", On, "If on, the vanity button will be shown in the inventory.");
-        LoadoutOption = config("4 - UI", "Loadout Option", On, "If on, the loadout button will be shown in the inventory.");
-        OldLayout = config("4 - UI", "Old Layout", Off, "If on, the old layout will be used.");
 
         VanityOption.SettingChanged += (sender, args) =>
         {
@@ -279,6 +284,10 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     #region ConfigOptions
 
+    private int _configOrder = 100;
+    private void ResetConfigOrder(int order = 100) => _configOrder = order;
+    private int NextOrder => _configOrder--;
+
     private static ConfigEntry<Toggle> _serverConfigLocked = null!;
     public static ConfigEntry<Toggle> AutoEquip = null!;
 
@@ -336,6 +345,24 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     private ConfigEntry<T> config<T>(string group, string name, T value, string description, bool synchronizedSetting = true)
     {
         return config(group, name, value, new ConfigDescription(description), synchronizedSetting);
+    }
+
+    private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description, int order, bool synchronizedSetting = true)
+    {
+        var attributes = new ConfigurationManagerAttributes { Order = order };
+        var tags = description.Tags.Length > 0 ? description.Tags.Append(attributes).ToArray() : new object[] { attributes };
+        ConfigDescription extendedDescription = new(description.Description + (synchronizedSetting ? " [Synced with Server]" : " [Not Synced with Server]"), description.AcceptableValues, tags);
+        ConfigEntry<T> configEntry = Config.Bind(group, name, value, extendedDescription);
+
+        SyncedConfigEntry<T> syncedConfigEntry = ConfigSync.AddConfigEntry(configEntry);
+        syncedConfigEntry.SynchronizedConfig = synchronizedSetting;
+
+        return configEntry;
+    }
+
+    private ConfigEntry<T> config<T>(string group, string name, T value, string description, int order, bool synchronizedSetting = true)
+    {
+        return config(group, name, value, new ConfigDescription(description), order, synchronizedSetting);
     }
 
     private class ConfigurationManagerAttributes
