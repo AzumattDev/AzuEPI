@@ -54,15 +54,16 @@ public class InventoryHealth
 
         foreach (var it in stuck)
         {
+            /*// Try to pull it out and re-add via normal pipeline (stack → normal → quick)
             if (inventory.RemoveItem(it))
             {
                 // Vanilla AddItem(ItemData) now uses FindEmptySlot (quick-aware)
                 if (!inventory.AddItem(it))
-                {
+                {*/
                     AzuExtendedPlayerInventoryLogger.LogWarning($"No room for {Localization.instance.Localize(it.m_shared.m_name)}, dropping item.");
                     Player.m_localPlayer.DropItem(inventory, it, it.m_stack);
-                }
-            }
+                /*}
+            }*/
         }
 
         inventory.Changed();

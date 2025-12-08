@@ -89,11 +89,13 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         /* 4 - Quick Slots */
         ResetConfigOrder();
         QuickSlotsAmount = config("4 - Quick Slots", "Number of Quick Slots", 3, new ConfigDescription("Number of quick slots to add (0-6).", new AcceptableValueRange<int>(0, 6)), NextOrder, true);
-        ShowQuickSlots = config("4 - Quick Slots", "Show Quick Slots on HUD", On, "Shows the quick slots bar on screen during gameplay.", NextOrder); 
+        ShowQuickSlots = config("4 - Quick Slots", "Show Quick Slots on HUD", On, "Shows the quick slots bar on screen during gameplay.", NextOrder);
+        AlwaysShowQuickSlotsInUI = config("4 - Quick Slots", "Show All Available", On, "Shows all available quickslots in the hud, not just the ones up to the highest occupied slot. Turn off if you want to only show slots up to the highest occupied slot.", NextOrder);
         QuickAccessScale = config("4 - Quick Slots", "Quick Slots Size", 0.85f, "Size/scale of the quick slots bar.", NextOrder, false);
         QuickslotDragKeys = config("4 - Quick Slots", "Quick Slots Drag Keys", new KeyboardShortcut(KeyCode.Mouse0, KeyCode.LeftControl), "Key combination to drag and reposition the quick slots bar.", NextOrder, false);
         QuickAccessX = config("4 - Quick Slots", "Quick Slots Position X", 9999f, "Horizontal position of quick slots (9999 = automatic).", NextOrder, false);
         QuickAccessY = config("4 - Quick Slots", "Quick Slots Position Y", 9999f, "Vertical position of quick slots (9999 = automatic).", NextOrder, false);
+        QuickSlotsPerRow = config("4 - Quick Slots", "Quick Slots Per Row", 3, new ConfigDescription("Number of quick slots to display per row. Set to number of quickslots for a single horizontal row, or lower values to stack them vertically.", new AcceptableValueRange<int>(1, 6)), NextOrder, false);
 
         /* 5 - Additional Equipment Slots */
         ResetConfigOrder();
@@ -125,6 +127,18 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         AddEquipmentRow.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
         DisplayEquipmentRowSeparate.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
         ShowQuickSlots.SettingChanged += (sender, args) => { HotkeyBarController.Hud_Update_Patch.DeselectHotkeyBar(); };
+        QuickSlotsPerRow.SettingChanged += (sender, args) =>
+        {
+            if (!Hud.instance) return;
+            Transform hudroot = Hud.instance.transform.Find("hudroot");
+            if (!hudroot) return;
+            Transform qabTransform = hudroot.Find(QabName);
+            if (!qabTransform || !qabTransform.TryGetComponent<HotkeyBar>(out var qab)) return;
+            foreach (var element in qab.m_elements)
+                if (element.m_go)
+                    Destroy(element.m_go);
+            qab.m_elements.Clear();
+        };
 
         WishboneSlot.SettingChanged += (sender, args) =>
         {
@@ -328,6 +342,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     public static ConfigEntry<float> QuickAccessX = null!;
     public static ConfigEntry<float> QuickAccessY = null!;
+    public static ConfigEntry<int> QuickSlotsPerRow = null!;
+    public static ConfigEntry<Toggle> AlwaysShowQuickSlotsInUI = null!;
 
     public static ConfigEntry<Vector2> UIAnchor = null!;
     public static ConfigEntry<Vector3> LocalScale = null!;

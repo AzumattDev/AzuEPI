@@ -58,25 +58,37 @@ internal static class QuickAccessBar
 
                 __instance.m_items.Sort((x, y) => (x.m_gridPos.x + x.m_gridPos.y * width).CompareTo(y.m_gridPos.x + y.m_gridPos.y * width));
 
-                int num = 0;
-                for (int i = 0; i < __instance.m_items.Count; i++)
+                int amountToShow = 0;
+                if (AlwaysShowQuickSlotsInUI.Value.isOn())
                 {
-                    int value = __instance.m_items[i].m_gridPos.x + __instance.m_items[i].m_gridPos.y * width - firstHotkeyIndex + 1;
-                    if (value > num) num = value;
+                    amountToShow = Hotkeys.Length;
+                }
+                else
+                {
+                    for (int i = 0; i < __instance.m_items.Count; i++)
+                    {
+                        int value = __instance.m_items[i].m_gridPos.x + __instance.m_items[i].m_gridPos.y * width - firstHotkeyIndex + 1;
+                        if (value > amountToShow) amountToShow = value;
+                    }
                 }
 
-                if (__instance.m_elements.Count != num)
+                if (__instance.m_elements.Count != amountToShow)
                 {
                     foreach (HotkeyBar.ElementData element in __instance.m_elements)
                         Object.Destroy(element.m_go);
                     __instance.m_elements.Clear();
-                    for (int index = 0; index < num; ++index)
+                    for (int index = 0; index < amountToShow; ++index)
                     {
                         HotkeyBar.ElementData elementData = new()
                         {
                             m_go = Object.Instantiate(__instance.m_elementPrefab, __instance.transform)
                         };
-                        elementData.m_go.transform.localPosition = new Vector3(index * __instance.m_elementSpace, 0.0f, 0.0f);
+
+                        int slotsPerRow = Mathf.Max(1, QuickSlotsPerRow.Value);
+                        int column = index % slotsPerRow;
+                        int row = index / slotsPerRow;
+                        elementData.m_go.transform.localPosition = new Vector3(column * __instance.m_elementSpace, -row * __instance.m_elementSpace, 0.0f);
+
                         if (index < HotkeyTexts.Length && index < Hotkeys.Length)
                             SlotText.Set(HotkeyTexts[index].Value.IsNullOrWhiteSpace()
                                 ? Hotkeys[index].Value.ToString()
