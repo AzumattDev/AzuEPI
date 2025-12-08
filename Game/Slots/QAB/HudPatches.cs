@@ -25,6 +25,10 @@ public class HudPatches
     [HarmonyPatch(typeof(Hud), nameof(Hud.Update))]
     private static class HudUpdatePatch
     {
+        private static Transform _cachedHudrootTransform;
+        private static Transform _cachedQuickAccessBarTransform;
+        private static RectTransform _cachedQuickAccessBarRect;
+
         private static void Postfix(Hud __instance)
         {
             if (AddEquipmentRow.Value.isOff() || Player.m_localPlayer == null)
@@ -39,12 +43,17 @@ public class HudPatches
             if (ExtendedPlayerInventory.lastMousePos == Vector3.zero)
                 ExtendedPlayerInventory.lastMousePos = mousePosition;
 
-            Transform hudrootTransform = Hud.instance.transform.Find("hudroot");
-            Transform quickAccessBarTransform = hudrootTransform.Find(QabName);
+            // Cache transforms to avoid Find and GetComponent every frame
+            if (_cachedHudrootTransform == null)
+                _cachedHudrootTransform = Hud.instance.transform.Find("hudroot");
+            if (_cachedQuickAccessBarTransform == null)
+                _cachedQuickAccessBarTransform = _cachedHudrootTransform.Find(QabName);
+            if (_cachedQuickAccessBarRect == null && _cachedQuickAccessBarTransform != null)
+                _cachedQuickAccessBarRect = _cachedQuickAccessBarTransform.GetComponent<RectTransform>();
 
-            if (QuickslotDragKeys.Value.IsPressed() && quickAccessBarTransform != null)
+            if (QuickslotDragKeys.Value.IsPressed() && _cachedQuickAccessBarTransform != null)
             {
-                RectTransform quickAccessBarRect = quickAccessBarTransform.GetComponent<RectTransform>();
+                RectTransform quickAccessBarRect = _cachedQuickAccessBarRect;
                 Vector2 anchoredPosition = quickAccessBarRect.anchoredPosition;
                 Vector2 sizeDelta = quickAccessBarRect.sizeDelta;
                 float quickAccessScale = QuickAccessScale.Value;

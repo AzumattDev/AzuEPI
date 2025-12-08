@@ -13,7 +13,7 @@ public class UIDragger : EventTrigger
     public void Update()
     {
         if (!_isDragging) return;
-        transform.position = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
+        transform.position = Input.mousePosition;
     }
 
     public override void OnPointerDown(PointerEventData eventData)

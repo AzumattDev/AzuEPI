@@ -142,12 +142,20 @@ public class PlayerPatches
     [HarmonyPatch(typeof(Player), nameof(Player.Update))]
     private static class PlayerUpdatePatch
     {
+        private static readonly Dictionary<Player, Container> TombstoneContainerCache = new();
+
         private static void Postfix(Player __instance, ref Inventory ___m_inventory)
         {
             int width = ___m_inventory.GetWidth();
             int height = API.GetFullHeight(width);
             ___m_inventory.m_height = height;
-            __instance.m_tombstone.GetComponent<Container>().m_height = height;
+
+            if (!TombstoneContainerCache.TryGetValue(__instance, out Container tombstoneContainer))
+            {
+                tombstoneContainer = __instance.m_tombstone.GetComponent<Container>();
+                TombstoneContainerCache[__instance] = tombstoneContainer;
+            }
+            tombstoneContainer.m_height = height;
             if (InventoryHealth.IgnoreKeyPresses(true) || AddEquipmentRow.Value.isOff())
                 return;
 

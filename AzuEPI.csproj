@@ -226,6 +226,7 @@
     </ItemGroup>
     <ItemGroup>
         <Content Include=".github\workflows\publish-mod.yml"/>
+        <Content Include="NewFile1.txt" />
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)|$(Platform)' != 'API|AnyCPU'">
         <Folder Include="Core\"/>

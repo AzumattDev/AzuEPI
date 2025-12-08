@@ -57,7 +57,13 @@ internal static class QuickAccessBar
                 }
 
                 __instance.m_items.Sort((x, y) => (x.m_gridPos.x + x.m_gridPos.y * width).CompareTo(y.m_gridPos.x + y.m_gridPos.y * width));
-                int num = __instance.m_items.Select(itemData => itemData.m_gridPos.x + itemData.m_gridPos.y * width - firstHotkeyIndex + 1).Concat(new[] { 0 }).Max();
+
+                int num = 0;
+                for (int i = 0; i < __instance.m_items.Count; i++)
+                {
+                    int value = __instance.m_items[i].m_gridPos.x + __instance.m_items[i].m_gridPos.y * width - firstHotkeyIndex + 1;
+                    if (value > num) num = value;
+                }
 
                 if (__instance.m_elements.Count != num)
                 {

@@ -134,6 +134,12 @@ public class InventoryGuiPatches
             new Model.EquipmentSlot { Name = UtilityText.Value, IsQuickSlot = false, Get = player => player.m_utilityItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility && !SlotAcceptRules.HasDedicatedAPISlot(item) },
         };
 
+        private static RectTransform _cachedBkgRect;
+        private static Transform _cachedPlayerScrollCheck;
+        private static RectTransform _cachedPlayerGridRect;
+        private static Transform _cachedEquipmentBkg;
+        private static InventoryGui _lastInstance;
+
         static UpdateInventory_Patch()
         {
             API.BeforeQuickSlotsAdded();
@@ -148,8 +154,16 @@ public class InventoryGuiPatches
 
         private static void Postfix(InventoryGui __instance, Player player, InventoryGrid ___m_playerGrid)
         {
-            RectTransform bkgRect = __instance.m_player.Find("Bkg").GetComponent<RectTransform>();
-            if (!__instance.m_player.transform.Find("PlayerScroll")) // If ValheimPlus didn't add a scrollbar
+            if (_lastInstance != __instance || _cachedBkgRect == null)
+            {
+                _lastInstance = __instance;
+                _cachedBkgRect = __instance.m_player.Find("Bkg").GetComponent<RectTransform>();
+                _cachedPlayerScrollCheck = __instance.m_player.transform.Find("PlayerScroll");
+                _cachedPlayerGridRect = ___m_playerGrid?.GetComponent<RectTransform>();
+            }
+
+            RectTransform bkgRect = _cachedBkgRect;
+            if (_cachedPlayerScrollCheck == null) // If ValheimPlus didn't add a scrollbar
             {
                 bkgRect.anchorMin = new Vector2(0.0f, (ExtraRows.Value
                                                        + (AddEquipmentRow.Value.isOff()
@@ -171,7 +185,7 @@ public class InventoryGuiPatches
 
             int baseIndex = Layout.GetBaseSlotIndex(inventory);
 
-            Vector2 baseGridPos = new((___m_playerGrid.GetComponent<RectTransform>().rect.width - ___m_playerGrid.GetWidgetSize().x) / 2f, 0.0f);
+            Vector2 baseGridPos = new((_cachedPlayerGridRect.rect.width - ___m_playerGrid.GetWidgetSize().x) / 2f, 0.0f);
 
             for (int i = 0; i < slots.Count; ++i)
             {
@@ -185,12 +199,14 @@ public class InventoryGuiPatches
                 if (slot == null)
                     continue;
 
-                currentChild.name = $"AzuEPI_Slot_{slots[i]?.Name}";
+                if (!currentChild.name.StartsWith("AzuEPI_Slot_"))
+                    currentChild.name = $"AzuEPI_Slot_{slots[i]?.Name}";
 
                 // if .m_used assume it's occupied
                 slots[i].Occupied = currentElement.m_used;
 
                 SlotText.Set(slots[i]?.Name, currentChild.transform);
+
                 RectTransform childRT = currentChild.GetComponent<RectTransform>();
                 if (DisplayEquipmentRowSeparate.Value.isOn())
                 {
@@ -217,7 +233,10 @@ public class InventoryGuiPatches
 
             Layout.ProjectEquippedIntoGridTail(player, ___m_playerGrid);
 
-            var equipmentBkgTransform = __instance.m_player.Find(AzuEquipmentBkgName);
+            if (_cachedEquipmentBkg == null || _lastInstance != __instance)
+                _cachedEquipmentBkg = __instance.m_player.Find(AzuEquipmentBkgName);
+
+            var equipmentBkgTransform = _cachedEquipmentBkg;
 
             switch (DisplayEquipmentRowSeparate.Value)
             {
@@ -256,28 +275,57 @@ public class InventoryGuiPatches
             UpdateInvalidDropOverlays(__instance, ___m_playerGrid, player);
         }
 
+        private static ItemDrop.ItemData _lastDragItem;
+        private static bool _lastDraggingState;
+        private static bool _overlaysInitialized;
+
         private static void UpdateInvalidDropOverlays(InventoryGui ig, InventoryGrid playerGrid, Player player)
         {
             var dragGo = ig.m_dragGo;
             var dragItem = ig.m_dragItem;
             bool dragging = dragGo && dragItem != null;
-            int baseIndex = Layout.GetBaseSlotIndex(player.GetInventory());
+
+            if (!_overlaysInitialized)
+            {
+                int baseIndex = Layout.GetBaseSlotIndex(player.GetInventory());
+                for (int i = 0; i < slots.Count; ++i)
+                {
+                    var slot = slots[i];
+                    if (slot == null) continue;
+
+                    var elemIdx = baseIndex + i;
+                    if (elemIdx < 0 || elemIdx >= playerGrid.m_elements.Count) continue;
+
+                    var elem = playerGrid.m_elements[elemIdx];
+                    var slotGo = elem.m_go;
+                    if (!slotGo) continue;
+
+                    _ = SlotOverlays.EnsureInvalidOverlay(slotGo);
+                    _ = SlotOverlays.EnsureVanityStateOverlay(slotGo);
+                }
+                _overlaysInitialized = true;
+            }
+
+            bool stateChanged = dragging != _lastDraggingState || dragItem != _lastDragItem;
+            if (!stateChanged && !dragging)
+                return;
+
+            _lastDraggingState = dragging;
+            _lastDragItem = dragItem;
+
+            int baseIndex1 = Layout.GetBaseSlotIndex(player.GetInventory());
 
             for (int i = 0; i < slots.Count; ++i)
             {
                 var slot = slots[i];
                 if (slot == null) continue;
 
-                var elemIdx = baseIndex + i;
+                var elemIdx = baseIndex1 + i;
                 if (elemIdx < 0 || elemIdx >= playerGrid.m_elements.Count) continue;
 
                 var elem = playerGrid.m_elements[elemIdx];
                 var slotGo = elem.m_go;
                 if (!slotGo) continue;
-
-                _ = SlotOverlays.EnsureInvalidOverlay(slotGo);
-
-                _ = SlotOverlays.EnsureVanityStateOverlay(slotGo);
 
                 if (!dragging)
                 {

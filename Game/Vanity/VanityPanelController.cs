@@ -95,81 +95,99 @@ internal static class VanityPanelController
         _cellsBySlot.Clear();
         ClearChildren(_content);
 
-        var fromRecipes = odb.m_recipes
-            .Where(r => r && r.m_item)
-            .Select(r => r.m_item.gameObject)
-            .ToList();
-
-        var fromDB = odb.m_items?.Where(go => go).ToList() ?? new List<GameObject>();
-
-        static IEnumerable<ItemDrop> AllItemDrops(IEnumerable<GameObject> roots) =>
-            roots.SelectMany(go => go.GetComponentsInChildren<ItemDrop>(true))
-                .Where(id => id && id.m_itemData?.m_shared != null);
-
-        var drops = AllItemDrops(fromRecipes)
-            .Concat(AllItemDrops(fromDB))
-            .GroupBy(id => id.m_itemData.m_shared.m_name)
-            .Select(g => g.First())
-            .ToList();
-
-        var vanityItems = drops
-            .Select(d => d.m_itemData)
-            .Where(d => d != null &&
-                        d.m_shared != null &&
-                        d.m_shared.m_icons != null &&
-                        d.m_shared.m_icons.Length > 0 &&
-                        (d.m_dropPrefab.HasChildWithNameThatContains("attach") || d.m_dropPrefab.HasChildWithNameThatContains("log")) &&
-                        string.IsNullOrWhiteSpace(d.m_shared.m_dlc) &&
-                        (d.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Helmet ||
-                         d.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Chest ||
-                         d.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Legs ||
-                         d.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder ||
-                         d.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility))
-            .OrderBy(d => d.m_shared.m_itemType)
-            .ThenBy(d => d.m_shared.m_name)
-            .ToList();
-
-        var order = new[]
+        var allGameObjects = new List<GameObject>();
+        foreach (var recipe in odb.m_recipes)
         {
-            ItemDrop.ItemData.ItemType.Helmet,
-            ItemDrop.ItemData.ItemType.Chest,
-            ItemDrop.ItemData.ItemType.Legs,
-            ItemDrop.ItemData.ItemType.Shoulder,
-            ItemDrop.ItemData.ItemType.Utility
-        };
+            if (recipe && recipe.m_item)
+                allGameObjects.Add(recipe.m_item.gameObject);
+        }
+        if (odb.m_items != null)
+        {
+            foreach (var go in odb.m_items)
+            {
+                if (go) allGameObjects.Add(go);
+            }
+        }
 
-        var grouped = vanityItems
-            .GroupBy(d => d.m_shared.m_itemType)
-            .OrderBy(g => Array.IndexOf(order, g.Key));
+        var uniqueDrops = new Dictionary<string, ItemDrop>();
+        foreach (var go in allGameObjects)
+        {
+            var itemDrops = go.GetComponentsInChildren<ItemDrop>(true);
+            foreach (var id in itemDrops)
+            {
+                if (id && id.m_itemData?.m_shared != null)
+                {
+                    var name = id.m_itemData.m_shared.m_name;
+                    if (!uniqueDrops.ContainsKey(name))
+                        uniqueDrops[name] = id;
+                }
+            }
+        }
+
+        var vanityItems = new List<ItemDrop.ItemData>();
+        foreach (var drop in uniqueDrops.Values)
+        {
+            var d = drop.m_itemData;
+            if (d != null &&
+                d.m_shared != null &&
+                d.m_shared.m_icons != null &&
+                d.m_shared.m_icons.Length > 0 &&
+                (d.m_dropPrefab.HasChildWithNameThatContains("attach") || d.m_dropPrefab.HasChildWithNameThatContains("log")) &&
+                string.IsNullOrWhiteSpace(d.m_shared.m_dlc) &&
+                (d.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Helmet ||
+                 d.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Chest ||
+                 d.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Legs ||
+                 d.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder ||
+                 d.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility))
+            {
+                vanityItems.Add(d);
+            }
+        }
+
+        vanityItems.Sort((a, b) =>
+        {
+            int typeCompare = a.m_shared.m_itemType.CompareTo(b.m_shared.m_itemType);
+            return typeCompare != 0 ? typeCompare : string.Compare(a.m_shared.m_name, b.m_shared.m_name, StringComparison.Ordinal);
+        });
 
         var slotPrefab = InventoryGui.instance.m_playerGrid.m_elementPrefab;
-        foreach (var group in grouped)
+        ItemDrop.ItemData.ItemType currentType = (ItemDrop.ItemData.ItemType)(-1);
+        GridLayoutGroup currentGrid = null;
+
+        foreach (var data in vanityItems)
         {
-            var headerLocKey = group.Key switch
+            var itemType = data.m_shared.m_itemType;
+
+            if (itemType != currentType)
             {
-                ItemDrop.ItemData.ItemType.Helmet => "$item_helmet",
-                ItemDrop.ItemData.ItemType.Chest => "$item_chest",
-                ItemDrop.ItemData.ItemType.Legs => "$item_legs",
-                ItemDrop.ItemData.ItemType.Shoulder => "$item_shoulder",
-                ItemDrop.ItemData.ItemType.Utility => "$item_utility",
-                _ => group.Key.ToString()
-            };
+                currentType = itemType;
 
-            var headerLabel = Localization.instance.Localize(headerLocKey);
-            AddHeader(headerLabel);
-            var grid = AddGrid(headerLabel);
+                var headerLocKey = itemType switch
+                {
+                    ItemDrop.ItemData.ItemType.Helmet => "$item_helmet",
+                    ItemDrop.ItemData.ItemType.Chest => "$item_chest",
+                    ItemDrop.ItemData.ItemType.Legs => "$item_legs",
+                    ItemDrop.ItemData.ItemType.Shoulder => "$item_shoulder",
+                    ItemDrop.ItemData.ItemType.Utility => "$item_utility",
+                    _ => itemType.ToString()
+                };
 
-            CreateNoneCell(slotPrefab, grid, MapItemTypeToVisSlot(group.Key));
+                var headerLabel = Localization.instance.Localize(headerLocKey);
+                AddHeader(headerLabel);
+                currentGrid = AddGrid(headerLabel);
 
-            foreach (var data in group)
-                CreateCell(slotPrefab, grid, data, MapItemTypeToVisSlot(group.Key));
+                CreateNoneCell(slotPrefab, currentGrid, MapItemTypeToVisSlot(itemType));
+            }
+
+            if (currentGrid != null)
+                CreateCell(slotPrefab, currentGrid, data, MapItemTypeToVisSlot(itemType));
         }
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(_content);
         _scroll.velocity = Vector2.zero;
         _scroll.normalizedPosition = new Vector2(0, 1);
 
-        foreach (var slot in _cellsBySlot.Keys.ToList())
+        foreach (var slot in _cellsBySlot.Keys)
             UpdateSelectedVisuals(slot);
     }
 
@@ -228,7 +246,7 @@ internal static class VanityPanelController
             VanityAPI.ClearVanity(previewVe, VisSlot.Utility);
         }
 
-        foreach (var slot in _cellsBySlot.Keys.ToList())
+        foreach (var slot in _cellsBySlot.Keys)
             UpdateSelectedVisuals(slot);
     }
 
@@ -710,6 +728,7 @@ public class VanityCell : MonoBehaviour
     public GameObject SelectedBadge;
     public bool IsNone = false;
     private UIInputHandler _input;
+    private bool? _lastKnownState = null;
 
     private void Awake()
     {
@@ -736,9 +755,15 @@ public class VanityCell : MonoBehaviour
     private void Update()
     {
         if (IsNone) return;
-        if (!Icon || Item?.m_shared == null || Player.m_localPlayer == null) return;
+        if (!Icon || Item?.m_shared == null) return;
 
-        bool known = Player.m_localPlayer.IsKnownMaterial(Item.m_shared.m_name);
+        var player = Player.m_localPlayer;
+        if (player == null) return;
+
+        bool known = player.IsKnownMaterial(Item.m_shared.m_name);
+        if (_lastKnownState.HasValue && _lastKnownState.Value == known) return;
+
+        _lastKnownState = known;
         Icon.color = known ? Color.white : Color.black;
     }
 
