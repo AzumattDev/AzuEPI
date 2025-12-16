@@ -107,7 +107,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         VanityOption = config("6 - UI Options", "Show Vanity Button", On, "Shows the vanity button in the inventory panel.", NextOrder);
         LoadoutOption = config("6 - UI Options", "Show Loadout Button", On, "Shows the loadout button in the inventory panel.", NextOrder);
         OldLayout = config("6 - UI Options", "Use Legacy Layout", Off, "Uses the old inventory layout instead of the new one.", NextOrder);
-
+        QuickSlotsVerticalLayout = config("6 - UI Options", "Vertical Quickslot Layout (Legacy)", Off, "When using the legacy layout, positions quickslots to the right of regular slots in two columns instead of below them.", NextOrder);
+        
         /* 7 - Buttons */
         ResetConfigOrder();
         MakeDropAllButton = config("7 - Buttons", "Enable Drop All Button", Off, "Adds a button to drop all items from your inventory.", NextOrder, false);
@@ -118,12 +119,9 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         QuickSlotsAmount.SettingChanged += (sender, args) =>
         {
             InitializeHotkeys();
-            InventoryGuiPatches.UpdateInventory_Patch.RebuildQuickslots();
-            SlotHelpers.ResizeSlots();
-            Layout.UpdateInventorySize();
-            InventoryHealth.FixHiddenItems();
+            FullRebuild();
         };
-        ExtraRows.SettingChanged += (sender, args) => { Layout.UpdateInventorySize(); };
+        ExtraRows.SettingChanged += (sender, args) => { FullRebuild(); };
         AddEquipmentRow.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
         DisplayEquipmentRowSeparate.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
         ShowQuickSlots.SettingChanged += (sender, args) => { HotkeyBarController.Hud_Update_Patch.DeselectHotkeyBar(); };
@@ -138,6 +136,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
                 if (element.m_go)
                     Destroy(element.m_go);
             qab.m_elements.Clear();
+            FullRebuild();
         };
 
         WishboneSlot.SettingChanged += (sender, args) =>
@@ -153,6 +152,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
                     API.RemoveSlot(Localization.instance.Localize("$item_wishbone"));
                 InventoryHealth.FixHiddenItems();
             }
+            FullRebuild();
         };
 
         WispLightSlot.SettingChanged += (sender, args) =>
@@ -168,6 +168,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
                     API.RemoveSlot(Localization.instance.Localize("$item_demister"));
                 InventoryHealth.FixHiddenItems();
             }
+            FullRebuild();
         };
 
         VanityOption.SettingChanged += (sender, args) =>
@@ -192,6 +193,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             Layout.UpdateInventorySize();
             Layout.ApplyLayoutCorrections();
             RebuildUI();
+            FullRebuild();
         };
 
         BetterArchery.CheckBetterArchery();
@@ -215,6 +217,14 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         SlotHelpers.ResizeSlots();
 
         Localization.OnLanguageChange += new Action(API.RelocalizeSlots);
+    }
+
+    private void FullRebuild()
+    {
+        InventoryGuiPatches.UpdateInventory_Patch.RebuildQuickslots();
+        SlotHelpers.ResizeSlots();
+        Layout.UpdateInventorySize();
+        InventoryHealth.FixHiddenItems();
     }
 
     private void Start()
@@ -344,6 +354,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<float> QuickAccessY = null!;
     public static ConfigEntry<int> QuickSlotsPerRow = null!;
     public static ConfigEntry<Toggle> AlwaysShowQuickSlotsInUI = null!;
+    public static ConfigEntry<Toggle> QuickSlotsVerticalLayout = null!;
 
     public static ConfigEntry<Vector2> UIAnchor = null!;
     public static ConfigEntry<Vector3> LocalScale = null!;

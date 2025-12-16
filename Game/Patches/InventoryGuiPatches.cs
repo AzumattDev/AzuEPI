@@ -8,9 +8,9 @@ namespace AzuEPI.Game.Patches;
 public class InventoryGuiPatches
 {
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Awake))]
-    [HarmonyPriority(Priority.Last)]
     static class ReparentPlayerGridInventoryGuiAwakePatch
     {
+        [HarmonyPriority(Priority.Last)]
         static void Postfix(InventoryGui __instance)
         {
             GUICache._craftingBkgRT = __instance.m_crafting.Find("Bkg").GetComponent<RectTransform>();
@@ -151,7 +151,7 @@ public class InventoryGuiPatches
                 });
             API.QuickSlotsAdded();
         }
-        
+
         internal static void RebuildQuickslots()
         {
             slots.RemoveAll(s => s is { IsQuickSlot: true });
@@ -234,8 +234,13 @@ public class InventoryGuiPatches
                 RectTransform childRT = currentChild.GetComponent<RectTransform>();
                 if (DisplayEquipmentRowSeparate.Value.isOn())
                 {
-                    if (InventoryGui.instance && childRT.parent != InventoryGui.instance.m_crafting)
-                        childRT.SetParent(InventoryGui.instance.m_crafting, false);
+                    if (InventoryGui.instance)
+                    {
+                        if (OldLayout.Value.isOff() && childRT.parent != InventoryGui.instance.m_crafting)
+                            childRT.SetParent(InventoryGui.instance.m_crafting, false);
+                        else if (OldLayout.Value.isOn() && childRT.parent != InventoryGui.instance.m_playerGrid.transform)
+                            childRT.SetParent(InventoryGui.instance.m_playerGrid.transform, false);
+                    }
 
                     childRT.anchoredPosition = slots[i].Position;
                 }
@@ -327,6 +332,7 @@ public class InventoryGuiPatches
                     _ = SlotOverlays.EnsureInvalidOverlay(slotGo);
                     _ = SlotOverlays.EnsureVanityStateOverlay(slotGo);
                 }
+
                 _overlaysInitialized = true;
             }
 

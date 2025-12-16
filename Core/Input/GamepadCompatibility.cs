@@ -46,9 +46,18 @@ internal static class GamepadCompatibility
                     else if (right)
                     {
                         if (++col < s.EquipCols && EpiGridMap.TryEquipIndexFromRowCol(s, row, col, out int e2))
+                        {
                             next = EpiGridMap.EquipIndexToGrid(s, e2);
+                        }
+                        else if (s.IsVerticalQuickslotLayout && s.QuickCount > 0 && row < s.EquipRowsPerColumn)
+                        {
+                            int q = Mathf.Clamp(row, 0, s.QuickCount - 1);
+                            next = EpiGridMap.QuickIndexToGrid(s, q);
+                        }
                         else
+                        {
                             next = new Vector2i(0, Math.Min(row, s.PlayerHeight - 1));
+                        }
                     }
                     else if (up)
                     {
@@ -63,7 +72,7 @@ internal static class GamepadCompatibility
                         {
                             next = EpiGridMap.EquipIndexToGrid(s, e2);
                         }
-                        else if (s.QuickCount > 0)
+                        else if (s.QuickCount > 0 && !s.IsVerticalQuickslotLayout)
                         {
                             int q = Mathf.Clamp(col, 0, s.QuickCount - 1);
                             next = EpiGridMap.QuickIndexToGrid(s, q);
@@ -79,32 +88,107 @@ internal static class GamepadCompatibility
 
                 case EpiGridMap.CellKind.Quick:
                 {
-                    if (left)
+                    if (s.IsVerticalQuickslotLayout)
                     {
-                        next = (quickIdx > 0)
-                            ? EpiGridMap.QuickIndexToGrid(s, quickIdx - 1)
-                            : new Vector2i(s.Width - 1, s.PlayerHeight - 1);
+                        const int quickslotsPerColumn = 3;
+                        int quickColumn = quickIdx / quickslotsPerColumn;
+                        int quickRow = quickIdx % quickslotsPerColumn;
+
+                        if (left)
+                        {
+                            if (quickColumn > 0)
+                            {
+                                int prevQuickIdx = (quickColumn - 1) * quickslotsPerColumn + quickRow;
+                                if (prevQuickIdx < s.QuickCount)
+                                    next = EpiGridMap.QuickIndexToGrid(s, prevQuickIdx);
+                                else
+                                    next = cur;
+                            }
+                            else if (s.EquipCount > 0)
+                            {
+                                int targetRow = Mathf.Clamp(quickRow, 0, s.EquipRowsPerColumn - 1);
+                                int targetCol = s.EquipCols - 1;
+                                while (targetCol >= 0 && !EpiGridMap.TryEquipIndexFromRowCol(s, targetRow, targetCol, out _))
+                                {
+                                    targetCol--;
+                                    if (targetCol < 0 && targetRow > 0)
+                                    {
+                                        targetRow--;
+                                        targetCol = s.EquipCols - 1;
+                                    }
+                                }
+                                if (targetCol >= 0 && EpiGridMap.TryEquipIndexFromRowCol(s, targetRow, targetCol, out int eIdx))
+                                    next = EpiGridMap.EquipIndexToGrid(s, eIdx);
+                                else
+                                    next = new Vector2i(s.Width - 1, Math.Min(quickRow, s.PlayerHeight - 1));
+                            }
+                            else
+                            {
+                                next = new Vector2i(s.Width - 1, Math.Min(quickRow, s.PlayerHeight - 1));
+                            }
+                        }
+                        else if (right)
+                        {
+                            int nextQuickIdx = (quickColumn + 1) * quickslotsPerColumn + quickRow;
+                            if (nextQuickIdx < s.QuickCount)
+                                next = EpiGridMap.QuickIndexToGrid(s, nextQuickIdx);
+                            else
+                                next = new Vector2i(0, Math.Min(quickRow, s.PlayerHeight - 1));
+                        }
+                        else if (up)
+                        {
+                            if (quickRow > 0)
+                            {
+                                int upQuickIdx = quickIdx - 1;
+                                next = EpiGridMap.QuickIndexToGrid(s, upQuickIdx);
+                            }
+                            else
+                            {
+                                next = new Vector2i(cur.x, 0);
+                            }
+                        }
+                        else if (down)
+                        {
+                            int downQuickIdx = quickIdx + 1;
+                            if (downQuickIdx < s.QuickCount && (downQuickIdx / quickslotsPerColumn) == quickColumn)
+                            {
+                                next = EpiGridMap.QuickIndexToGrid(s, downQuickIdx);
+                            }
+                            else
+                            {
+                                next = new Vector2i(cur.x, s.PlayerHeight - 1);
+                            }
+                        }
                     }
-                    else if (right)
+                    else
                     {
-                        next = (quickIdx + 1 < s.QuickCount)
-                            ? EpiGridMap.QuickIndexToGrid(s, quickIdx + 1)
-                            : new Vector2i(0, s.PlayerHeight - 1);
-                    }
-                    else if (up)
-                    {
-                        int col = Mathf.Clamp(quickIdx, 0, s.EquipCols - 1);
-                        int row = Math.Min(s.EquipRowsPerColumn - 1, s.EquipCount - 1);
-                        while (row >= 0 && !EpiGridMap.TryEquipIndexFromRowCol(s, row, col, out _)) row--;
-                        next = (row >= 0)
-                            ? EpiGridMap.EquipIndexToGrid(s, col * s.EquipRowsPerColumn + row)
-                            : new Vector2i(cur.x, Mathf.Max(0, s.PlayerHeight - 2));
-                    }
-                    else if (down)
-                    {
-                        if (__instance.jumpToNextContainer)
-                            __instance.OnMoveToLowerInventoryGrid?.Invoke(cur);
-                        next = cur;
+                        if (left)
+                        {
+                            next = (quickIdx > 0)
+                                ? EpiGridMap.QuickIndexToGrid(s, quickIdx - 1)
+                                : new Vector2i(s.Width - 1, s.PlayerHeight - 1);
+                        }
+                        else if (right)
+                        {
+                            next = (quickIdx + 1 < s.QuickCount)
+                                ? EpiGridMap.QuickIndexToGrid(s, quickIdx + 1)
+                                : new Vector2i(0, s.PlayerHeight - 1);
+                        }
+                        else if (up)
+                        {
+                            int col = Mathf.Clamp(quickIdx, 0, s.EquipCols - 1);
+                            int row = Math.Min(s.EquipRowsPerColumn - 1, s.EquipCount - 1);
+                            while (row >= 0 && !EpiGridMap.TryEquipIndexFromRowCol(s, row, col, out _)) row--;
+                            next = (row >= 0)
+                                ? EpiGridMap.EquipIndexToGrid(s, col * s.EquipRowsPerColumn + row)
+                                : new Vector2i(cur.x, Mathf.Max(0, s.PlayerHeight - 2));
+                        }
+                        else if (down)
+                        {
+                            if (__instance.jumpToNextContainer)
+                                __instance.OnMoveToLowerInventoryGrid?.Invoke(cur);
+                            next = cur;
+                        }
                     }
 
                     break;
@@ -195,8 +279,9 @@ internal static class EpiGridMap
         public readonly int QuickCount;
         public readonly int EquipCols;
         public readonly int EquipRowsPerColumn;
+        public readonly bool IsVerticalQuickslotLayout;
 
-        public Snapshot(int width, int playerHeight, int baseIndex, int equipCount, int quickCount, int equipCols, int equipRowsPerColumn)
+        public Snapshot(int width, int playerHeight, int baseIndex, int equipCount, int quickCount, int equipCols, int equipRowsPerColumn, bool isVerticalQuickslotLayout)
         {
             Width = width;
             PlayerHeight = playerHeight;
@@ -205,6 +290,7 @@ internal static class EpiGridMap
             QuickCount = quickCount;
             EquipCols = equipCols;
             EquipRowsPerColumn = equipRowsPerColumn;
+            IsVerticalQuickslotLayout = isVerticalQuickslotLayout;
         }
     }
 
@@ -233,15 +319,16 @@ internal static class EpiGridMap
         {
             int equipRowsPerCol = 3;
             int equipCols = Mathf.CeilToInt(equipCount / (float)equipRowsPerCol);
+            bool isVerticalQuickslotLayout = QuickSlotsVerticalLayout.Value.isOn();
 
             int usedEquipRows = Math.Min(equipRowsPerCol, Math.Max(1, equipCount));
-            int quickRows = quickCount > 0 ? 1 : 0;
+            int quickRows = (quickCount > 0 && !isVerticalQuickslotLayout) ? 1 : 0;
             int bandHeight = (equipCount > 0 ? usedEquipRows : 0) + quickRows;
 
             int playerHeight = baseInvHeight + extraRows + bandHeight;
             int baseIndex = width * (playerHeight - bandHeight);
 
-            return new Snapshot(width, playerHeight, baseIndex, equipCount, quickCount, equipCols, equipRowsPerCol);
+            return new Snapshot(width, playerHeight, baseIndex, equipCount, quickCount, equipCols, equipRowsPerCol, isVerticalQuickslotLayout);
         }
         else
         {
@@ -253,7 +340,7 @@ internal static class EpiGridMap
 
             int baseIndex = InventoryHandlers.Layout.GetBaseSlotIndex(inv);
 
-            return new Snapshot(width, playerHeight, baseIndex, equipCount, quickCount, equipCols, equipRowsPerCol);
+            return new Snapshot(width, playerHeight, baseIndex, equipCount, quickCount, equipCols, equipRowsPerCol, false);
         }
     }
 

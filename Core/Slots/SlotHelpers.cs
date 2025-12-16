@@ -7,20 +7,67 @@ public class SlotHelpers
 {
     internal const int EquipRowsPerColumn = 8;
     private const float LeftOffset = -625f;
+    private const float LeftOffsetOld = 655f;
     private const float VerticalOffset = 160f;
 
     internal static void ResizeSlots()
     {
         if (OldLayout.Value.isOn())
         {
-            for (int i = 0; i < InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length; ++i)
+            const int rowsPerColumn = 3;
+            const int expectedRegularSlots = 9;
+
+            int totalSlots = InventoryGuiPatches.UpdateInventory_Patch.slots.Count;
+            int regularSlotCount = totalSlots - Hotkeys.Length;
+
+            for (int i = 0; i < regularSlotCount; ++i)
             {
-                float y = (i % 3) * -Layout.tileSize + VerticalOffset;
-                float x = LeftOffset + (i / 3) * Layout.tileSize + ((i % 3 > (InventoryGuiPatches.UpdateInventory_Patch.slots.Count - 1) % 3 ? 1 : 0) + Math.Max(9 + Hotkeys.Length - InventoryGuiPatches.UpdateInventory_Patch.slots.Count - 1, 0) / 3) * Layout.tileSize / 2;
-                InventoryGuiPatches.UpdateInventory_Patch.slots[i].Position = new Vector2(x, y);
+                int rowIndex = i % rowsPerColumn;
+                int columnIndex = i / rowsPerColumn;
+
+                float y = rowIndex * -Layout.tileSize;
+                float baseX = LeftOffsetOld + columnIndex * Layout.tileSize;
+
+                int lastSlotRowIndex = (regularSlotCount - 1) % rowsPerColumn;
+                int currentRowIsBeyondLastSlot = rowIndex > lastSlotRowIndex ? 1 : 0;
+
+                int totalExpectedSlots = expectedRegularSlots + Hotkeys.Length;
+                int emptySlotCount = Math.Max(totalExpectedSlots - totalSlots - 1, 0);
+                int emptyColumnCount = emptySlotCount / rowsPerColumn;
+
+                float centeringOffset = (currentRowIsBeyondLastSlot + emptyColumnCount) * Layout.tileSize / 2;
+
+                InventoryGuiPatches.UpdateInventory_Patch.slots[i].Position = new Vector2(baseX + centeringOffset, y);
             }
 
-            for (int i = 0; i < Hotkeys.Length; ++i) InventoryGuiPatches.UpdateInventory_Patch.slots[InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length + i].Position = new Vector2(LeftOffset + i * Layout.tileSize, 3 * -Layout.tileSize + VerticalOffset);
+            if (QuickSlotsVerticalLayout.Value.isOn())
+            {
+                const int quickslotsPerColumn = 3;
+                int totalColumns = (regularSlotCount + rowsPerColumn - 1) / rowsPerColumn;
+                float quickslotStartX = LeftOffsetOld + (totalColumns + 0.5f) * Layout.tileSize;
+
+                for (int i = 0; i < Hotkeys.Length; ++i)
+                {
+                    int slotIndex = regularSlotCount + i;
+                    int quickslotColumn = i / quickslotsPerColumn;
+                    int quickslotRow = i % quickslotsPerColumn;
+
+                    float quickslotX = quickslotStartX + quickslotColumn * Layout.tileSize;
+                    float quickslotY = quickslotRow * -Layout.tileSize;
+
+                    InventoryGuiPatches.UpdateInventory_Patch.slots[slotIndex].Position = new Vector2(quickslotX, quickslotY);
+                }
+            }
+            else
+            {
+                float hotkeyRowY = rowsPerColumn * -Layout.tileSize;
+                for (int i = 0; i < Hotkeys.Length; ++i)
+                {
+                    int slotIndex = regularSlotCount + i;
+                    float hotkeyX = LeftOffsetOld + i * Layout.tileSize;
+                    InventoryGuiPatches.UpdateInventory_Patch.slots[slotIndex].Position = new Vector2(hotkeyX, hotkeyRowY);
+                }
+            }
         }
         else
         {
