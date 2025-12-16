@@ -14,6 +14,7 @@ internal static class GamepadCompatibility
     {
         private static bool Prefix(InventoryGrid __instance)
         {
+            if (!ZInput.IsGamepadActive()) return true;
             if (__instance != InventoryGui.instance?.m_playerGrid) return true;
             if (!__instance.m_uiGroup.IsActive) return true;
             if (Console.IsVisible()) return true;
@@ -59,7 +60,7 @@ internal static class GamepadCompatibility
                         {
                             next = EpiGridMap.EquipIndexToGrid(s, e2);
                         }
-                        else if (s.IsVerticalQuickslotLayout && s.QuickCount > 0 && row < s.EquipRowsPerColumn)
+                        else if (s is { IsVerticalQuickslotLayout: true, QuickCount: > 0 } && row < s.EquipRowsPerColumn)
                         {
                             int q = Mathf.Clamp(row, 0, s.QuickCount - 1);
                             next = EpiGridMap.QuickIndexToGrid(s, q);
@@ -86,7 +87,7 @@ internal static class GamepadCompatibility
                         {
                             next = EpiGridMap.EquipIndexToGrid(s, e2);
                         }
-                        else if (s.QuickCount > 0 && !s.IsVerticalQuickslotLayout && isOldLayout)
+                        else if (s is { QuickCount: > 0, IsVerticalQuickslotLayout: false } && isOldLayout)
                         {
                             int q = Mathf.Clamp(col, 0, s.QuickCount - 1);
                             next = EpiGridMap.QuickIndexToGrid(s, q);
@@ -119,10 +120,7 @@ internal static class GamepadCompatibility
                             if (quickColumn > 0)
                             {
                                 int prevQuickIdx = (quickColumn - 1) * quickslotsPerColumn + quickRow;
-                                if (prevQuickIdx < s.QuickCount)
-                                    next = EpiGridMap.QuickIndexToGrid(s, prevQuickIdx);
-                                else
-                                    next = cur;
+                                next = prevQuickIdx < s.QuickCount ? EpiGridMap.QuickIndexToGrid(s, prevQuickIdx) : cur;
                             }
                             else if (s.EquipCount > 0)
                             {
@@ -131,12 +129,11 @@ internal static class GamepadCompatibility
                                 while (targetCol >= 0 && !EpiGridMap.TryEquipIndexFromRowCol(s, targetRow, targetCol, out _))
                                 {
                                     targetCol--;
-                                    if (targetCol < 0 && targetRow > 0)
-                                    {
-                                        targetRow--;
-                                        targetCol = s.EquipCols - 1;
-                                    }
+                                    if (targetCol >= 0 || targetRow <= 0) continue;
+                                    targetRow--;
+                                    targetCol = s.EquipCols - 1;
                                 }
+
                                 if (targetCol >= 0 && EpiGridMap.TryEquipIndexFromRowCol(s, targetRow, targetCol, out int eIdx))
                                     next = EpiGridMap.EquipIndexToGrid(s, eIdx);
                                 else
@@ -150,10 +147,7 @@ internal static class GamepadCompatibility
                         else if (right)
                         {
                             int nextQuickIdx = (quickColumn + 1) * quickslotsPerColumn + quickRow;
-                            if (nextQuickIdx < s.QuickCount)
-                                next = EpiGridMap.QuickIndexToGrid(s, nextQuickIdx);
-                            else
-                                next = new Vector2i(0, Math.Min(quickRow, s.NormalInventoryHeight - 1));
+                            next = nextQuickIdx < s.QuickCount ? EpiGridMap.QuickIndexToGrid(s, nextQuickIdx) : new Vector2i(0, Math.Min(quickRow, s.NormalInventoryHeight - 1));
                         }
                         else if (up)
                         {
@@ -191,10 +185,7 @@ internal static class GamepadCompatibility
                             else if (s.EquipCount > 0)
                             {
                                 int targetRow = Math.Min(s.EquipRowsPerColumn - 1, s.EquipCount - 1);
-                                if (EpiGridMap.TryEquipIndexFromRowCol(s, targetRow, 0, out int eIdx))
-                                    next = EpiGridMap.EquipIndexToGrid(s, eIdx);
-                                else
-                                    next = new Vector2i(s.Width - 1, s.NormalInventoryHeight - 1);
+                                next = EpiGridMap.TryEquipIndexFromRowCol(s, targetRow, 0, out int eIdx) ? EpiGridMap.EquipIndexToGrid(s, eIdx) : new Vector2i(s.Width - 1, s.NormalInventoryHeight - 1);
                             }
                             else
                             {
@@ -210,10 +201,7 @@ internal static class GamepadCompatibility
                             else if (s.EquipCols > 1 && s.EquipCount > s.EquipRowsPerColumn)
                             {
                                 int targetRow = Math.Min(s.EquipRowsPerColumn - 1, s.EquipCount - s.EquipRowsPerColumn - 1);
-                                if (EpiGridMap.TryEquipIndexFromRowCol(s, targetRow, 1, out int eIdx))
-                                    next = EpiGridMap.EquipIndexToGrid(s, eIdx);
-                                else
-                                    next = new Vector2i(0, s.NormalInventoryHeight - 1);
+                                next = EpiGridMap.TryEquipIndexFromRowCol(s, targetRow, 1, out int eIdx) ? EpiGridMap.EquipIndexToGrid(s, eIdx) : new Vector2i(0, s.NormalInventoryHeight - 1);
                             }
                             else
                             {
@@ -222,10 +210,7 @@ internal static class GamepadCompatibility
                         }
                         else if (up)
                         {
-                            if (quickIdx > 0)
-                                next = EpiGridMap.QuickIndexToGrid(s, quickIdx - 1);
-                            else
-                                next = new Vector2i(cur.x, s.NormalInventoryHeight - 1);
+                            next = quickIdx > 0 ? EpiGridMap.QuickIndexToGrid(s, quickIdx - 1) : new Vector2i(cur.x, s.NormalInventoryHeight - 1);
                         }
                         else if (down)
                         {
@@ -239,20 +224,12 @@ internal static class GamepadCompatibility
                     {
                         if (left)
                         {
-                            if (quickIdx > 0)
-                            {
-                                next = EpiGridMap.QuickIndexToGrid(s, quickIdx - 1);
-                            }
-                            else
-                            {
-                                next = new Vector2i(s.Width - 1, s.NormalInventoryHeight - 1);
-                            }
+                            next = quickIdx > 0 ? EpiGridMap.QuickIndexToGrid(s, quickIdx - 1) :
+                                new Vector2i(s.Width - 1, s.NormalInventoryHeight - 1);
                         }
                         else if (right)
                         {
-                            next = (quickIdx + 1 < s.QuickCount)
-                                ? EpiGridMap.QuickIndexToGrid(s, quickIdx + 1)
-                                : new Vector2i(0, s.NormalInventoryHeight - 1);
+                            next = (quickIdx + 1 < s.QuickCount) ? EpiGridMap.QuickIndexToGrid(s, quickIdx + 1) : new Vector2i(0, s.NormalInventoryHeight - 1);
                         }
                         else if (up)
                         {
@@ -322,14 +299,12 @@ internal static class GamepadCompatibility
                                 foundEquipment = true;
                             }
 
-                            if (!foundEquipment && s.QuickCount > 0)
+                            next = foundEquipment switch
                             {
-                                next = EpiGridMap.QuickIndexToGrid(s, 0);
-                            }
-                            else if (!foundEquipment)
-                            {
-                                next = cur;
-                            }
+                                false when s.QuickCount > 0 => EpiGridMap.QuickIndexToGrid(s, 0),
+                                false => cur,
+                                _ => next
+                            };
                         }
                     }
                     else if (up)
