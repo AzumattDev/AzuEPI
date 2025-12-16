@@ -1,7 +1,4 @@
 ﻿#if !API
-using AzuEPI.Core.InventoryHandlers;
-using AzuEPI.Core.Slots;
-using AzuEPI.Game.Patches;
 using AzuEPI.Game.PlayerPreview;
 
 # else

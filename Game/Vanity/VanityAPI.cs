@@ -1,6 +1,4 @@
-﻿using AzuEPI.Core.Slots;
-
-namespace AzuEPI.Game.Vanity;
+﻿namespace AzuEPI.Game.Vanity;
 
 internal static class VanityZdoKeys
 {

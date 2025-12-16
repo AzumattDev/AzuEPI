@@ -1,7 +1,4 @@
-﻿using AzuEPI.Core.Slots;
-using AzuEPI.Game.Patches;
-
-namespace AzuEPI.Core.Input;
+﻿namespace AzuEPI.Core.Input;
 
 internal static class GamepadCompatibility
 {
@@ -44,7 +41,7 @@ internal static class GamepadCompatibility
                         else if (!isOldLayout && col > 0 && s.QuickCount > 0)
                             next = EpiGridMap.QuickIndexToGrid(s, 0);
                         else
-                            next = new Vector2i(s.Width - 1, Math.Min(row, s.NormalInventoryHeight - 1));
+                            next = EpiGridMap.LeftInventoryEdge(s, row);
                     }
                     else if (right)
                     {
@@ -55,14 +52,14 @@ internal static class GamepadCompatibility
                         else if (!isOldLayout && s.QuickCount > 0)
                             next = EpiGridMap.QuickIndexToGrid(s, 0);
                         else
-                            next = new Vector2i(0, Math.Min(row, s.NormalInventoryHeight - 1));
+                            next = EpiGridMap.RightInventoryEdge(s, row);
                     }
                     else if (up)
                     {
                         if (--row >= 0 && EpiGridMap.TryEquipIndexFromRowCol(s, row, col, out int e2))
                             next = EpiGridMap.EquipIndexToGrid(s, e2);
                         else
-                            next = new Vector2i(Mathf.Clamp(cur.x, 0, s.Width - 1), 0);
+                            next = EpiGridMap.TopInventoryEdge(s, cur.x);
                     }
                     else if (down)
                     {
@@ -73,7 +70,7 @@ internal static class GamepadCompatibility
                         else if (!isOldLayout && s.QuickCount > 0)
                             next = EpiGridMap.QuickIndexToGrid(s, 0);
                         else
-                            next = new Vector2i(Mathf.Clamp(cur.x, 0, s.Width - 1), s.NormalInventoryHeight - 1);
+                            next = EpiGridMap.BottomInventoryEdge(s, cur.x);
                     }
 
                     break;
@@ -96,37 +93,28 @@ internal static class GamepadCompatibility
                             }
                             else if (s.EquipCount > 0)
                             {
-                                int targetRow = Mathf.Clamp(quickRow, 0, s.EquipRowsPerColumn - 1);
-                                int targetCol = s.EquipCols - 1;
-                                while (targetCol >= 0 && !EpiGridMap.TryEquipIndexFromRowCol(s, targetRow, targetCol, out _))
-                                {
-                                    targetCol--;
-                                    if (targetCol >= 0 || targetRow <= 0) continue;
-                                    targetRow--;
-                                    targetCol = s.EquipCols - 1;
-                                }
-                                next = targetCol >= 0 && EpiGridMap.TryEquipIndexFromRowCol(s, targetRow, targetCol, out int eIdx)
+                                next = EpiGridMap.TryFindValidEquipmentSlot(s, quickRow, s.EquipCols - 1, out int eIdx)
                                     ? EpiGridMap.EquipIndexToGrid(s, eIdx)
-                                    : new Vector2i(s.Width - 1, Math.Min(quickRow, s.NormalInventoryHeight - 1));
+                                    : EpiGridMap.LeftInventoryEdge(s, quickRow);
                             }
                             else
-                                next = new Vector2i(s.Width - 1, Math.Min(quickRow, s.NormalInventoryHeight - 1));
+                                next = EpiGridMap.LeftInventoryEdge(s, quickRow);
                         }
                         else if (right)
                         {
                             int nextQuickIdx = (quickColumn + 1) * quickslotsPerColumn + quickRow;
-                            next = nextQuickIdx < s.QuickCount ? EpiGridMap.QuickIndexToGrid(s, nextQuickIdx) : new Vector2i(0, Math.Min(quickRow, s.NormalInventoryHeight - 1));
+                            next = nextQuickIdx < s.QuickCount ? EpiGridMap.QuickIndexToGrid(s, nextQuickIdx) : EpiGridMap.RightInventoryEdge(s, quickRow);
                         }
                         else if (up)
                         {
-                            next = quickRow > 0 ? EpiGridMap.QuickIndexToGrid(s, quickIdx - 1) : new Vector2i(cur.x, 0);
+                            next = quickRow > 0 ? EpiGridMap.QuickIndexToGrid(s, quickIdx - 1) : EpiGridMap.TopInventoryEdge(s, cur.x);
                         }
                         else if (down)
                         {
                             int downQuickIdx = quickIdx + 1;
                             next = downQuickIdx < s.QuickCount && (downQuickIdx / quickslotsPerColumn) == quickColumn
                                 ? EpiGridMap.QuickIndexToGrid(s, downQuickIdx)
-                                : new Vector2i(cur.x, s.NormalInventoryHeight - 1);
+                                : EpiGridMap.BottomInventoryEdge(s, cur.x);
                         }
                     }
                     else if (!isOldLayout)
@@ -140,10 +128,10 @@ internal static class GamepadCompatibility
                                 int targetRow = Math.Min(s.EquipRowsPerColumn - 1, s.EquipCount - 1);
                                 next = EpiGridMap.TryEquipIndexFromRowCol(s, targetRow, 0, out int eIdx)
                                     ? EpiGridMap.EquipIndexToGrid(s, eIdx)
-                                    : new Vector2i(s.Width - 1, s.NormalInventoryHeight - 1);
+                                    : EpiGridMap.LeftInventoryEdge(s, s.NormalInventoryHeight - 1);
                             }
                             else
-                                next = new Vector2i(s.Width - 1, s.NormalInventoryHeight - 1);
+                                next = EpiGridMap.LeftInventoryEdge(s, s.NormalInventoryHeight - 1);
                         }
                         else if (right)
                         {
@@ -154,13 +142,13 @@ internal static class GamepadCompatibility
                                 int targetRow = Math.Min(s.EquipRowsPerColumn - 1, s.EquipCount - s.EquipRowsPerColumn - 1);
                                 next = EpiGridMap.TryEquipIndexFromRowCol(s, targetRow, 1, out int eIdx)
                                     ? EpiGridMap.EquipIndexToGrid(s, eIdx)
-                                    : new Vector2i(0, s.NormalInventoryHeight - 1);
+                                    : EpiGridMap.RightInventoryEdge(s, s.NormalInventoryHeight - 1);
                             }
                             else
-                                next = new Vector2i(0, s.NormalInventoryHeight - 1);
+                                next = EpiGridMap.RightInventoryEdge(s, s.NormalInventoryHeight - 1);
                         }
                         else if (up)
-                            next = quickIdx > 0 ? EpiGridMap.QuickIndexToGrid(s, quickIdx - 1) : new Vector2i(cur.x, s.NormalInventoryHeight - 1);
+                            next = quickIdx > 0 ? EpiGridMap.QuickIndexToGrid(s, quickIdx - 1) : EpiGridMap.BottomInventoryEdge(s, cur.x);
                         else if (down)
                         {
                             if (quickIdx + 1 < s.QuickCount)
@@ -172,9 +160,9 @@ internal static class GamepadCompatibility
                     else
                     {
                         if (left)
-                            next = quickIdx > 0 ? EpiGridMap.QuickIndexToGrid(s, quickIdx - 1) : new Vector2i(s.Width - 1, s.NormalInventoryHeight - 1);
+                            next = quickIdx > 0 ? EpiGridMap.QuickIndexToGrid(s, quickIdx - 1) : EpiGridMap.LeftInventoryEdge(s, s.NormalInventoryHeight - 1);
                         else if (right)
-                            next = (quickIdx + 1 < s.QuickCount) ? EpiGridMap.QuickIndexToGrid(s, quickIdx + 1) : new Vector2i(0, s.NormalInventoryHeight - 1);
+                            next = (quickIdx + 1 < s.QuickCount) ? EpiGridMap.QuickIndexToGrid(s, quickIdx + 1) : EpiGridMap.RightInventoryEdge(s, s.NormalInventoryHeight - 1);
                         else if (up)
                         {
                             if (s.EquipCount > 0)
@@ -182,10 +170,10 @@ internal static class GamepadCompatibility
                                 int col = Mathf.Clamp(quickIdx, 0, s.EquipCols - 1);
                                 int row = Math.Min(s.EquipRowsPerColumn - 1, s.EquipCount - 1);
                                 while (row >= 0 && !EpiGridMap.TryEquipIndexFromRowCol(s, row, col, out _)) row--;
-                                next = row >= 0 ? EpiGridMap.EquipIndexToGrid(s, col * s.EquipRowsPerColumn + row) : new Vector2i(cur.x, s.NormalInventoryHeight - 1);
+                                next = row >= 0 ? EpiGridMap.EquipIndexToGrid(s, col * s.EquipRowsPerColumn + row) : EpiGridMap.BottomInventoryEdge(s, cur.x);
                             }
                             else
-                                next = new Vector2i(cur.x, s.NormalInventoryHeight - 1);
+                                next = EpiGridMap.BottomInventoryEdge(s, cur.x);
                         }
                         else if (down)
                         {
@@ -203,10 +191,7 @@ internal static class GamepadCompatibility
                     if (left)
                     {
                         if (cur.x > 0)
-                        {
-                            Vector2i candidate = new Vector2i(cur.x - 1, cur.y);
-                            next = EpiGridMap.IsValidInventoryCell(s, candidate) ? candidate : cur;
-                        }
+                            EpiGridMap.TryMoveInInventory(s, cur, -1, 0, out next);
                         else if (cur.y > 0)
                             next = new Vector2i(s.Width - 1, cur.y - 1);
                         else
@@ -216,8 +201,7 @@ internal static class GamepadCompatibility
                     {
                         if (cur.x < s.Width - 1)
                         {
-                            Vector2i candidate = new Vector2i(cur.x + 1, cur.y);
-                            next = EpiGridMap.IsValidInventoryCell(s, candidate) ? candidate : cur;
+                            EpiGridMap.TryMoveInInventory(s, cur, 1, 0, out next);
                         }
                         else
                         {
@@ -232,20 +216,14 @@ internal static class GamepadCompatibility
                     else if (up)
                     {
                         if (cur.y > 0)
-                        {
-                            Vector2i candidate = new Vector2i(cur.x, cur.y - 1);
-                            next = EpiGridMap.IsValidInventoryCell(s, candidate) ? candidate : cur;
-                        }
+                            EpiGridMap.TryMoveInInventory(s, cur, 0, -1, out next);
                         else
                             next = cur;
                     }
                     else if (down)
                     {
                         if (cur.y < s.NormalInventoryHeight - 1)
-                        {
-                            Vector2i candidate = new Vector2i(cur.x, cur.y + 1);
-                            next = EpiGridMap.IsValidInventoryCell(s, candidate) ? candidate : cur;
-                        }
+                            EpiGridMap.TryMoveInInventory(s, cur, 0, 1, out next);
                         else if (__instance.jumpToNextContainer)
                             __instance.OnMoveToLowerInventoryGrid?.Invoke(cur);
                     }
@@ -447,5 +425,51 @@ internal static class EpiGridMap
     {
         CellKind kind = Classify(s, pos, out _, out _);
         return kind == CellKind.Inventory;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Vector2i LeftInventoryEdge(in Snapshot s, int y) =>
+        new(s.Width - 1, Math.Min(y, s.NormalInventoryHeight - 1));
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Vector2i RightInventoryEdge(in Snapshot s, int y) =>
+        new(0, Math.Min(y, s.NormalInventoryHeight - 1));
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Vector2i TopInventoryEdge(in Snapshot s, int x) =>
+        new(Mathf.Clamp(x, 0, s.Width - 1), 0);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Vector2i BottomInventoryEdge(in Snapshot s, int x) =>
+        new(Mathf.Clamp(x, 0, s.Width - 1), s.NormalInventoryHeight - 1);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool TryMoveInInventory(in Snapshot s, Vector2i from, int dx, int dy, out Vector2i to)
+    {
+        to = new Vector2i(from.x + dx, from.y + dy);
+        if (!IsValidInventoryCell(s, to))
+        {
+            to = from;
+            return false;
+        }
+
+        return true;
+    }
+
+    internal static bool TryFindValidEquipmentSlot(in Snapshot s, int preferredRow, int preferredCol, out int equipIndex)
+    {
+        int targetRow = Mathf.Clamp(preferredRow, 0, s.EquipRowsPerColumn - 1);
+        int targetCol = preferredCol;
+
+        while (targetCol >= 0 && !TryEquipIndexFromRowCol(s, targetRow, targetCol, out _))
+        {
+            targetCol--;
+            if (targetCol >= 0 || targetRow <= 0) continue;
+            targetRow--;
+            targetCol = s.EquipCols - 1;
+        }
+
+        var yes = TryEquipIndexFromRowCol(s, targetRow, targetCol, out equipIndex);
+        return targetCol >= 0 && yes;
     }
 }

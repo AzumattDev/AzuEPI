@@ -1,6 +1,4 @@
-﻿using AzuEPI.Core.InventoryHandlers;
-
-namespace AzuEPI.Game.CLI;
+﻿namespace AzuEPI.Game.CLI;
 
 [HarmonyPatch(typeof(Terminal), nameof(Terminal.InitTerminal))]
 internal static class TerminalInitTerminalPatch

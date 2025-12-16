@@ -1,7 +1,4 @@
-﻿using AzuEPI.Core.InventoryHandlers;
-using AzuEPI.Core.Slots;
-
-namespace AzuEPI.Game.Patches;
+﻿namespace AzuEPI.Game.Patches;
 
 public class InventoryPatches
 {

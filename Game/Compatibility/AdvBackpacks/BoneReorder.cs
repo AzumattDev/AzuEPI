@@ -94,7 +94,7 @@ internal static class BoneReorder
 
     private static string[] GetBoneNames(this SkinnedMeshRenderer skinnedMeshRenderer)
     {
-        List<string> stringList = new List<string>();
+        List<string> stringList = new();
         foreach (Transform bone in skinnedMeshRenderer.bones)
             stringList.Add(bone.name);
         return stringList.ToArray();

@@ -35,31 +35,12 @@ public class UIBuilder
     public static void RebuildUI()
     {
         if (!InventoryGui.instance) return;
-        Transform? equipmentBkgTransform = InventoryGui.instance.m_player.Find(AzuEquipmentBkgName);
-        if (equipmentBkgTransform)
-        {
-            equipmentBkgTransform.gameObject.SetActive(OldLayout.Value.isOn());
-        }
 
-        if (Layout.AzuPlayerBkg)
-        {
-            Layout.AzuPlayerBkg.gameObject.SetActive(OldLayout.Value.isOff());
-        }
-
-        if (PreviewParent)
-        {
-            PreviewParent.SetActive(OldLayout.Value.isOff());
-        }
-
-        if (PlayerPreviewImage)
-        {
-            PlayerPreviewImage.SetActive(OldLayout.Value.isOff());
-        }
-
-        if (CharName)
-        {
-            CharName.gameObject.SetActive(OldLayout.Value.isOff());
-        }
+        InventoryGui.instance.m_player.Find(AzuEquipmentBkgName).SafeSetActive(OldLayout.Value.isOn());
+        Layout.AzuPlayerBkg.SafeSetActive(OldLayout.Value.isOff());
+        PreviewParent.SafeSetActive(OldLayout.Value.isOff());
+        PlayerPreviewImage.SafeSetActive(OldLayout.Value.isOff());
+        CharName.SafeSetActive(OldLayout.Value.isOff());
     }
 
     public static void BuildEquipmentBkg(InventoryGui invGui, RectTransform bkgRect)
@@ -67,27 +48,32 @@ public class UIBuilder
         Transform transform = Object.Instantiate(bkgRect.transform, invGui.m_player);
         transform.SetAsFirstSibling();
         transform.name = AzuEquipmentBkgName;
-        RectTransform rectTransform = transform.GetComponent<RectTransform>();
-        rectTransform.anchorMin = new Vector2(1f, 0.0f);
-        Vector2 maxAnchor = Layout.GetEquipmentBackAnchorMax();
-        if (Chainloader.PluginInfos.TryGetValue(MinimalUiguid, out var pluginInfo) && pluginInfo is not null) maxAnchor.x += 0.03f;
 
-        rectTransform.anchorMax = maxAnchor;
-        InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<RectTransform>().anchorMax = maxAnchor;
+        Vector2 maxAnchor = Layout.GetEquipmentBackAnchorMax();
+        if (Chainloader.PluginInfos.TryGetValue(MinimalUiguid, out var pluginInfo) && pluginInfo is not null)
+            maxAnchor.x += 0.03f;
+
+        transform.GetComponent<RectTransform>()
+            .WithAnchors(new Vector2(1f, 0f), maxAnchor);
+
+        InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<RectTransform>()
+            .WithAnchorMax(maxAnchor);
+
         InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<Image>().raycastTarget = false;
         transform.gameObject.SetActive(OldLayout.Value.isOn());
     }
 
     public static void BuildToggleButtonHlg(InventoryGui invGui)
     {
-        HlgGo = new GameObject(ToggleButtonsHlgName, typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        HlgGo = GameObjectHelper.CreateUIObject(ToggleButtonsHlgName, typeof(HorizontalLayoutGroup))
+            .WithParent(invGui.m_crafting.transform, false);
+
         HlgRt = (RectTransform)HlgGo.transform;
-        HlgRt.SetParent(invGui.m_crafting.transform, false);
-        HlgRt.anchorMin = new Vector2(0f, 1f);
-        HlgRt.anchorMax = new Vector2(0f, 1f);
-        HlgRt.pivot = new Vector2(0.5f, 1f);
-        HlgRt.anchoredPosition = OldLayout.Value.isOff() ? Layout.ToggleButtonsHlgAnchoredPos : Layout.ToggleButtonsHlgAnchoredPosOld;
-        HlgRt.sizeDelta = new Vector2(270f, 32f);
+        HlgRt.WithAnchors(new Vector2(0f, 1f), new Vector2(0f, 1f))
+            .WithPivot(new Vector2(0.5f, 1f))
+            .WithAnchoredPosition(OldLayout.Value.isOff() ? Layout.ToggleButtonsHlgAnchoredPos : Layout.ToggleButtonsHlgAnchoredPosOld)
+            .WithSizeDelta(new Vector2(270f, 32f));
+
         var hlg = HlgGo.GetComponent<HorizontalLayoutGroup>();
         hlg.childAlignment = TextAnchor.MiddleCenter;
         hlg.spacing = 35f;
@@ -109,10 +95,9 @@ public class UIBuilder
     public static void CreateExtendedCraftingPanel(InventoryGui invGui, RectTransform selectedFrame)
     {
         Layout.AzuPlayerBkg = Object.Instantiate(invGui.m_crafting.Find("Bkg"), invGui.m_crafting);
-        var index = selectedFrame.GetSiblingIndex();
-        Layout.AzuPlayerBkg.SetSiblingIndex(index + 2);
+        Layout.AzuPlayerBkg.SetSiblingIndex(selectedFrame.GetSiblingIndex() + 2);
         Layout.AzuPlayerBkg.name = AzuPlayerBkgName;
-        Layout.AzuPlayerBkg.GetComponent<RectTransform>().anchorMin = Layout.PlayerBkgAnchorMin;
+        Layout.AzuPlayerBkg.GetComponent<RectTransform>().WithAnchorMin(Layout.PlayerBkgAnchorMin);
         Layout.AzuPlayerBkg.gameObject.SetActive(OldLayout.Value.isOff());
     }
 
@@ -124,27 +109,27 @@ public class UIBuilder
 
     public static void CreateAzuEpiPreview(InventoryGui invGui, out RectTransform previewParentRT)
     {
-        PreviewParent = new GameObject(PlayerPreviewName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(RectMask2D), typeof(PlayerRotationController));
-        previewParentRT = (RectTransform)PreviewParent.transform;
-        previewParentRT.SetParent(invGui.m_crafting, false);
+        PreviewParent = GameObjectHelper.CreateUIObject(PlayerPreviewName, typeof(CanvasRenderer), typeof(Image), typeof(RectMask2D), typeof(PlayerRotationController))
+            .WithParent(invGui.m_crafting, false)
+            .WithActive(OldLayout.Value.isOff());
 
-        var img = PreviewParent.GetComponent<Image>();
-        img.color = new Color(0f, 0f, 0f, 0.565f);
-        previewParentRT.anchorMin = Layout.PreviewAnchorMin;
-        previewParentRT.anchorMax = Layout.PreviewAnchorMax;
-        previewParentRT.sizeDelta = Layout.PreviewSizeDelta;
-        previewParentRT.anchoredPosition = Layout.PreviewAnchoredPos;
-        PreviewParent.SetActive(OldLayout.Value.isOff());
+        previewParentRT = (RectTransform)PreviewParent.transform;
+        previewParentRT.WithAnchors(Layout.PreviewAnchorMin, Layout.PreviewAnchorMax)
+            .WithSizeDelta(Layout.PreviewSizeDelta)
+            .WithAnchoredPosition(Layout.PreviewAnchoredPos);
+
+        PreviewParent.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.565f);
     }
 
     public static void CreatePlayerPreviewImage(RectTransform previewParentRT)
     {
-        PlayerPreviewImage = new GameObject(PlayerPreviewImageName, typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage));
-        var rt = (RectTransform)PlayerPreviewImage.transform;
-        rt.SetParent(previewParentRT, false);
+        PlayerPreviewImage = GameObjectHelper.CreateUIObject(PlayerPreviewImageName, typeof(CanvasRenderer), typeof(RawImage))
+            .WithParent(previewParentRT, false)
+            .WithActive(OldLayout.Value.isOff());
 
-        rt.sizeDelta = Layout.PlayerPreviewImageSize;
-        rt.anchoredPosition = Vector2.zero;
+        var rt = (RectTransform)PlayerPreviewImage.transform;
+        rt.WithSizeDelta(Layout.PlayerPreviewImageSize)
+            .WithAnchoredPosition(Vector2.zero);
 
         var raw = PlayerPreviewImage.GetComponent<RawImage>();
         raw.raycastTarget = false;
@@ -152,9 +137,7 @@ public class UIBuilder
 
         AzuEPICharacterPanel.instance.render = rt;
         AzuEPICharacterPanel.instance.renderRawImage = raw;
-
         _epiPreviewRect = rt;
-        PlayerPreviewImage.SetActive(OldLayout.Value.isOff());
     }
 
     public static void SetupPreviewPanel()
@@ -177,26 +160,25 @@ public class UIBuilder
 
     public static void BuildDropAllButton(InventoryGui invGui)
     {
-        Transform? dropallButton = invGui.m_player.Find(DropAllButtonName);
+        if (invGui.m_player.Find(DropAllButtonName)) return;
 
-        if (dropallButton == null)
-        {
-            Transform dropAllButtonPrefab = invGui.m_takeAllButton.transform;
-            RectTransform dropAllButtonTransform = Object.Instantiate(dropAllButtonPrefab, invGui.m_player).GetComponent<RectTransform>();
-            dropAllButtonTransform.name = DropAllButtonName;
-            dropAllButtonTransform.GetComponentInChildren<TMP_Text>().text = Localization.instance.Localize("$azuepi_dropall");
-            var buttonComp = dropAllButtonTransform.GetComponent<Button>();
-            buttonComp.onClick.RemoveAllListeners();
-            buttonComp.onClick.AddListener(() => Console.instance.TryRunCommand("azuepi.dropall"));
+        Transform dropAllButtonPrefab = invGui.m_takeAllButton.transform;
+        Transform dropAllButtonTransform = Object.Instantiate(dropAllButtonPrefab, invGui.m_player);
+        dropAllButtonTransform.name = DropAllButtonName;
 
-            dropAllButtonTransform.SetAsFirstSibling();
-            dropAllButtonTransform.anchorMin = Layout.DropAllAnchorMin;
-            dropAllButtonTransform.anchorMax = Layout.DropAllAnchorMax;
-            dropAllButtonTransform.pivot = Layout.DropAllPivot;
-            dropAllButtonTransform.anchoredPosition = DropAllButtonPosition.Value;
-            dropAllButtonTransform.sizeDelta = Layout.DropAllSize;
+        var rectTransform = dropAllButtonTransform.GetComponent<RectTransform>();
+        rectTransform.SetAsFirstSibling();
+        rectTransform.WithAnchors(Layout.DropAllAnchorMin, Layout.DropAllAnchorMax)
+            .WithPivot(Layout.DropAllPivot)
+            .WithAnchoredPosition(DropAllButtonPosition.Value)
+            .WithSizeDelta(Layout.DropAllSize);
 
-            dropAllButtonTransform.gameObject.SetActive(MakeDropAllButton.Value.isOn());
-        }
+        rectTransform.GetComponentInChildren<TMP_Text>().text = Localization.instance.Localize("$azuepi_dropall");
+
+        var buttonComp = dropAllButtonTransform.GetComponent<Button>();
+        buttonComp.onClick.RemoveAllListeners();
+        buttonComp.onClick.AddListener(() => Console.instance.TryRunCommand("azuepi.dropall"));
+
+        dropAllButtonTransform.gameObject.SetActive(MakeDropAllButton.Value.isOn());
     }
 }

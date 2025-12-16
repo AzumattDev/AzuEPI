@@ -1,11 +1,8 @@
 ﻿using APIManager;
-using AzuEPI.Core.InventoryHandlers;
-using AzuEPI.Core.Slots;
 using AzuEPI.Game.Compatibility;
 using AzuEPI.Game.Compatibility.AdvBackpacks;
 using AzuEPI.Game.Loadout;
 //using AzuEPI.Game.Moveable;
-using AzuEPI.Game.Patches;
 using AzuEPI.Game.Slots.QAB;
 using AzuEPI.Game.Vanity;
 using BepInEx.Logging;
@@ -429,48 +426,4 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     }
 
     #endregion
-}
-
-public static class ToggleExtensions
-{
-    public static bool isOn(this AzuExtendedPlayerInventoryPlugin.Toggle toggle)
-    {
-        return toggle == On;
-    }
-
-    public static bool isOff(this AzuExtendedPlayerInventoryPlugin.Toggle toggle)
-    {
-        return toggle == Off;
-    }
-}
-
-public static class LoggerExtensions
-{
-    public static void LogInfoDebug(this ManualLogSource logger, string message)
-    {
-#if DEBUG
-        logger.LogInfo(message);
-#endif
-    }
-
-    public static void LogWarningDebug(this ManualLogSource logger, string message)
-    {
-#if DEBUG
-        logger.LogWarning(message);
-#endif
-    }
-
-    public static void LogErrorDebug(this ManualLogSource logger, string message)
-    {
-#if DEBUG
-        logger.LogError(message);
-#endif
-    }
-
-    public static void LogDebugDebug(this ManualLogSource logger, string message)
-    {
-#if DEBUG
-        logger.LogDebug(message);
-#endif
-    }
 }

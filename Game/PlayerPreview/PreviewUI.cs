@@ -1,4 +1,5 @@
-﻿using AzuEPI.Game.Loadout;
+﻿using AzuEPI.Core.Utilities;
+using AzuEPI.Game.Loadout;
 
 namespace AzuEPI.Game.PlayerPreview;
 
@@ -510,7 +511,7 @@ public class PlayerPreviewManager
 
     internal void CreatePreviewCamera()
     {
-        GameObject camEmpty = new GameObject("Player Inspector Camera");
+        GameObject camEmpty = new("Player Inspector Camera");
         camEmpty.transform.position = AzuEPICharacterPanel.instance.basePosition + Vector3.forward * -3;
         CharacterPanel.cam = camEmpty.AddComponent<Camera>();
         //CharacterPanel.cam.CopyFrom(Camera.main);
@@ -523,65 +524,18 @@ public class PlayerPreviewManager
 
     internal void CreatePreviewLights()
     {
-        GameObject light1 = new GameObject("Item Inspector Light1");
+        GameObject light1 = new("Item Inspector Light1");
         light1.transform.position = CharacterPanel.basePosition + new Vector3(1.5f, 0.5f, -2f);
         Light light1Comp = light1.AddComponent<Light>();
         light1Comp.type = LightType.Point;
         light1Comp.intensity = 3.5f;
         light1Comp.range = 3;
 
-        GameObject light2 = new GameObject("Item Inspector Light2");
+        GameObject light2 = new("Item Inspector Light2");
         light2.transform.position = CharacterPanel.basePosition + new Vector3(-1.5f, -0.5f, 1.5f);
         Light light2Comp = light2.AddComponent<Light>();
         light2Comp.type = LightType.Point;
         light2Comp.intensity = 2.5f;
         light2Comp.range = 3;
-    }
-}
-
-public static class GameObjectExtensions
-{
-    public static void SetLayerForEntireHierarchy(this GameObject gameObject, int layer, int depth = 0)
-    {
-        if (depth >= 50)
-        {
-            return;
-        }
-
-        gameObject.layer = layer;
-
-        foreach (Transform child in gameObject.transform)
-        {
-            SetLayerForEntireHierarchy(child.gameObject, layer, depth + 1);
-        }
-    }
-
-    public static bool HasChildWithNameThatContains(this GameObject gameObject, string name)
-    {
-        List<Transform> children = gameObject.GetAllChildTransforms();
-
-        return children.Any(child => child.name.Contains(name));
-    }
-
-    public static List<Transform> GetAllChildTransforms(this GameObject gameObject)
-    {
-        return _GetAllChildTransforms(gameObject, true);
-    }
-
-    private static List<Transform> _GetAllChildTransforms(GameObject gameObject, bool isRoot = false, List<Transform> transforms = null)
-    {
-        transforms = transforms ?? new List<Transform>();
-
-        if (!isRoot)
-        {
-            transforms.Add(gameObject.transform);
-        }
-
-        for (int i = 0; i < gameObject.transform.childCount; i++)
-        {
-            _GetAllChildTransforms(gameObject.transform.GetChild(i).gameObject, transforms: transforms);
-        }
-
-        return transforms;
     }
 }

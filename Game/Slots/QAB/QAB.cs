@@ -1,6 +1,5 @@
 ﻿using AzuEPI.Core.Text;
 using AzuEPI.EPI;
-using AzuEPI.Game.Patches;
 
 namespace AzuEPI.Game.Slots.QAB;
 

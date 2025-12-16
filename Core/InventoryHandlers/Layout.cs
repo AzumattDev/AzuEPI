@@ -1,6 +1,4 @@
-﻿using AzuEPI.Core.Slots;
-using AzuEPI.EPI;
-using AzuEPI.Game.Patches;
+﻿using AzuEPI.EPI;
 using AzuEPI.Game.PlayerPreview;
 
 namespace AzuEPI.Core.InventoryHandlers;
@@ -19,7 +17,7 @@ public class Layout
     internal static Transform AzuPlayerBkg = null!;
     internal static readonly Vector2 PlayerBkgAnchorMin = new(-0.80f, 0f);
 
-    internal static readonly Vector2 RepairMovement = new Vector2(-460f, 0f);
+    internal static readonly Vector2 RepairMovement = new(-460f, 0f);
 
     internal static Vector2 PreviewAnchorMin = new(0f, 0.14f);
     internal static readonly Vector2 PreviewAnchorMax = new(1f, 0.885f);

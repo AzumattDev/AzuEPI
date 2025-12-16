@@ -1,6 +1,4 @@
-﻿using AzuEPI.Core.InventoryHandlers;
-using AzuEPI.Core.Slots;
-using AzuEPI.Core.Text;
+﻿using AzuEPI.Core.Text;
 using AzuEPI.Game.Vanity;
 
 namespace AzuEPI.Game.Patches;

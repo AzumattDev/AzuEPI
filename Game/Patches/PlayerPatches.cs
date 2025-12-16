@@ -1,5 +1,4 @@
 ﻿using AzuEPI.Core.Input;
-using AzuEPI.Core.InventoryHandlers;
 
 namespace AzuEPI.Game.Patches;
 
