@@ -5,7 +5,7 @@ public class EAQ
     internal static void CheckRandy()
     {
         if (DisplayEquipmentRowSeparate.Value.isOff() && AddEquipmentRow.Value.isOff()) return;
-        if (!Chainloader.PluginInfos.TryGetValue("randyknapp.mods.equipmentandquickslots", out var RandyEAQ)) return;
+        if (!Chainloader.PluginInfos.TryGetValue("randyknapp.mods.equipmentandquickslots", out PluginInfo? RandyEAQ)) return;
         DisplayEquipmentRowSeparate.Value = Off;
         AddEquipmentRow.Value = Off;
         context.Config.Save();

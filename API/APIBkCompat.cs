@@ -48,7 +48,7 @@ namespace AzuExtendedPlayerInventory
             remove
             {
                 if (value == null) return;
-                if (_slotAddedMap.TryGetValue(value, out var wrapper))
+                if (_slotAddedMap.TryGetValue(value, out AzuEPI.API.SlotAddedHandler? wrapper))
                 {
                     AzuEPI.API.SlotAdded -= wrapper;
                     _slotAddedMap.Remove(value);
@@ -78,7 +78,7 @@ namespace AzuExtendedPlayerInventory
             remove
             {
                 if (value == null) return;
-                if (_slotRemovedMap.TryGetValue(value, out var wrapper))
+                if (_slotRemovedMap.TryGetValue(value, out AzuEPI.API.SlotRemovedHandler? wrapper))
                 {
                     AzuEPI.API.SlotRemoved -= wrapper;
                     _slotRemovedMap.Remove(value);
@@ -133,7 +133,7 @@ namespace AzuExtendedPlayerInventory
         private static void RemoveHudEvent(Action<Hud>? handler, Dictionary<Action<Hud>, Action<Hud>> map, Action<Action<Hud>> unsubscribe)
         {
             if (handler == null) return;
-            if (map.TryGetValue(handler, out var wrapper))
+            if (map.TryGetValue(handler, out Action<Hud>? wrapper))
             {
 #if !API
                 unsubscribe(wrapper);
@@ -166,7 +166,7 @@ namespace AzuExtendedPlayerInventory
 
         public static SlotInfo GetSlots()
         {
-            var n = AzuEPI.API.GetSlots();
+            AzuEPI.SlotInfo n = AzuEPI.API.GetSlots();
             return new SlotInfo
             {
                 SlotNames = n.SlotNames ?? Array.Empty<string>(),
@@ -178,7 +178,7 @@ namespace AzuExtendedPlayerInventory
 
         public static SlotInfo GetQuickSlots()
         {
-            var n = AzuEPI.API.GetQuickSlots();
+            AzuEPI.SlotInfo n = AzuEPI.API.GetQuickSlots();
             return new SlotInfo
             {
                 SlotNames = n.SlotNames ?? Array.Empty<string>(),

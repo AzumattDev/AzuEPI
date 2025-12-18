@@ -159,25 +159,25 @@ public class PersonalLoadoutGuiDetails : MonoBehaviour
 
     internal static void BuildToggleButton(InventoryGui gui)
     {
-        var src = gui.m_takeAllButton?.transform ?? gui.m_craftButton?.transform;
+        Transform? src = gui.m_takeAllButton?.transform ?? gui.m_craftButton?.transform;
         if (!src) return;
 
-        var clone = Instantiate(src, gui.m_crafting);
+        Transform? clone = Instantiate(src, gui.m_crafting);
         clone.name = "AzuEPILoadoutsToggleButton";
         clone.SetAsLastSibling();
 
-        var rt = (RectTransform)clone;
+        RectTransform rt = (RectTransform)clone;
         rt.anchorMin = new Vector2(0f, 1f);
         rt.anchorMax = new Vector2(0f, 1f);
         rt.pivot = new Vector2(0f, 1f);
         rt.anchoredPosition = new Vector2(-205f, -30f);
         rt.sizeDelta = new Vector2(120f, 32f);
 
-        var btn = clone.GetComponent<Button>();
+        Button? btn = clone.GetComponent<Button>();
         btn.onClick.RemoveAllListeners();
         btn.onClick.AddListener(() => { ToggleUI(); });
 
-        var label = clone.GetComponentInChildren<TMP_Text>();
+        TMP_Text? label = clone.GetComponentInChildren<TMP_Text>();
         if (label) label.text = "Loadouts";
 
         _toggleBtn = btn;
@@ -220,7 +220,7 @@ public class PersonalLoadoutGuiDetails : MonoBehaviour
         string key = $"{LoadoutKey}{loadoutName}";
         List<ItemDrop.ItemData> equippedItems = player.GetInventory().GetEquippedItems();
         AzuExtendedPlayerInventoryLogger.LogInfo($"SaveLoadout: Saving loadout '{loadoutName}' with {equippedItems.Count} items.");
-        foreach (var item in equippedItems)
+        foreach (ItemDrop.ItemData? item in equippedItems)
         {
             AzuExtendedPlayerInventoryLogger.LogInfo($" - {item.m_shared.m_name} x{item.m_stack}");
         }
@@ -305,8 +305,8 @@ public class PersonalLoadoutGuiDetails : MonoBehaviour
 
     private static void UnequipToBags(Player player)
     {
-        var equipped = player.GetInventory().GetEquippedItems();
-        foreach (var it in equipped)
+        List<ItemDrop.ItemData>? equipped = player.GetInventory().GetEquippedItems();
+        foreach (ItemDrop.ItemData? it in equipped)
         {
             player.UnequipItem(it);
             if (!player.GetInventory().AddItem(it))
@@ -482,7 +482,7 @@ public class PersonalLoadoutDetails
     public string Serialize()
     {
         Inventory tempInventory = new("Loadout", null, 100, 100);
-        foreach (var item in Items)
+        foreach (ItemDrop.ItemData? item in Items)
         {
             tempInventory.AddItem(item.Clone());
         }

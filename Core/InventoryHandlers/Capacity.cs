@@ -5,7 +5,7 @@ public class Capacity
     public static int FreeStackSpace(Inventory inv, ItemDrop.ItemData item)
     {
         int freeStackSpace = 0;
-        foreach (var it in inv.m_inventory)
+        foreach (ItemDrop.ItemData? it in inv.m_inventory)
         {
             if (it.m_shared.m_name != item.m_shared.m_name) continue;
             if (it.m_worldLevel != item.m_worldLevel) continue;
@@ -20,7 +20,7 @@ public class Capacity
     // 2) count *empty* normal cells only in vanilla area
     public static int FreeNormalCells(Inventory inv)
     {
-        var normalRows = Layout.NormalRows(inv);
+        int normalRows = Layout.NormalRows(inv);
         int normalUsed = inv.m_inventory.Count(i => i.m_gridPos.y < normalRows);
         int normalFreeCells = (normalRows * inv.GetWidth()) - normalUsed;
         return normalFreeCells;
@@ -29,7 +29,7 @@ public class Capacity
     public static int FreeQuickCells(Inventory inv)
     {
         int quickFreeCells = 0;
-        foreach (var p in inv.EnumerateQuickCells())
+        foreach (Vector2i p in inv.EnumerateQuickCells())
             if (inv.GetItemAt(p.x, p.y) == null)
                 ++quickFreeCells;
         return quickFreeCells;
@@ -62,7 +62,7 @@ public class Capacity
     public static int FreeEquipmentCells(Inventory inv)
     {
         int extendedFreeCells = 0;
-        foreach (var p in inv.EnumerateEquipmentCells())
+        foreach (Vector2i p in inv.EnumerateEquipmentCells())
             if (inv.GetItemAt(p.x, p.y) == null)
                 ++extendedFreeCells;
         return extendedFreeCells;

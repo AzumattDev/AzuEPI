@@ -9,7 +9,7 @@ public static class IconPatches
     private static Sprite TryOverride(ItemDrop.ItemData item, Sprite fallback)
     {
         if (item == null) return fallback;
-        return VanityAPI.TryGetEquippedVanityIcon(item, out var spr) ? spr : fallback;
+        return VanityAPI.TryGetEquippedVanityIcon(item, out Sprite spr) ? spr : fallback;
     }
 
     [HarmonyPatch(typeof(ItemDrop.ItemData), nameof(ItemDrop.ItemData.GetIcon))]
@@ -23,7 +23,7 @@ public static class IconPatches
     [HarmonyPostfix, HarmonyPriority(Priority.Last)]
     private static void SetupUpgradeItem_Postfix(InventoryGui __instance, Recipe recipe, ItemDrop.ItemData item)
     {
-        var it = item ?? recipe?.m_item?.m_itemData;
+        ItemDrop.ItemData? it = item ?? recipe?.m_item?.m_itemData;
         if (it == null) return;
         __instance.m_upgradeItemIcon.sprite = TryOverride(it, __instance.m_upgradeItemIcon.sprite);
     }
@@ -32,7 +32,7 @@ public static class IconPatches
     [HarmonyPostfix, HarmonyPriority(Priority.Last)]
     private static void UpdateRecipe_Postfix(InventoryGui __instance)
     {
-        var it = __instance.m_selectedRecipe.ItemData;
+        ItemDrop.ItemData? it = __instance.m_selectedRecipe.ItemData;
         if (it == null) return;
         __instance.m_recipeIcon.sprite = TryOverride(it, __instance.m_recipeIcon.sprite);
     }

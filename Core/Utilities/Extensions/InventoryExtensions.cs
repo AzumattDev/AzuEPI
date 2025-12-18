@@ -79,7 +79,7 @@ public static class InventoryExtensions
 
     internal static bool IsAtEquipmentSlot(this Inventory inventory, ItemDrop.ItemData item, out int which)
     {
-        var normalRows = Layout.NormalRows(inventory);
+        int normalRows = Layout.NormalRows(inventory);
         if (AddEquipmentRow.Value.isOff() || item.m_gridPos.y < normalRows || (item.m_gridPos.y - normalRows) * inventory.GetWidth() + item.m_gridPos.x >= InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length)
         {
             which = -1;
@@ -92,7 +92,7 @@ public static class InventoryExtensions
 
     internal static bool IsAtQuickSlot(this Inventory inventory, ItemDrop.ItemData item, out int which)
     {
-        var normalRows = Layout.NormalRows(inventory);
+        int normalRows = Layout.NormalRows(inventory);
         if (AddEquipmentRow.Value.isOff() || item.m_gridPos.y < normalRows || (item.m_gridPos.y - normalRows) * inventory.GetWidth() + item.m_gridPos.x < InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length)
         {
             which = -1;
@@ -156,7 +156,7 @@ public static class InventoryExtensions
 
     internal static bool TryFindEmptyQuickCell(this Inventory inv, out Vector2i pos)
     {
-        foreach (var p in EnumerateQuickCells(inv))
+        foreach (Vector2i p in EnumerateQuickCells(inv))
         {
             if (inv.GetItemAt(p.x, p.y) != null) continue;
             pos = p;
@@ -192,6 +192,6 @@ public static class InventoryExtensions
                     return new Vector2i(x, y);
         }
 
-        return inv.TryFindEmptyQuickCell(out var q) ? q : new Vector2i(-1, -1);
+        return inv.TryFindEmptyQuickCell(out Vector2i q) ? q : new Vector2i(-1, -1);
     }
 }

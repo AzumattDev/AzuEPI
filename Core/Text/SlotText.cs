@@ -9,7 +9,7 @@ public class SlotText
         Transform transform1 = transform.Find("binding");
         if (!transform1)
             transform1 = Object.Instantiate(ExtendedPlayerInventory._elementPrefab.transform.Find("binding"), transform);
-        var textComp = transform1.GetComponent<TMP_Text>();
+        TMP_Text? textComp = transform1.GetComponent<TMP_Text>();
         textComp.enabled = true;
         textComp.overflowMode = TextOverflowModes.Overflow;
         textComp.textWrappingMode = TextWrappingModes.PreserveWhitespaceNoWrap;

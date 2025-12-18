@@ -31,14 +31,14 @@ internal static class SlotOverlays
 
     public static GameObject EnsureInvalidOverlay(GameObject slotGo)
     {
-        if (InvalidByGo.TryGetValue(slotGo, out var overlay) && overlay)
+        if (InvalidByGo.TryGetValue(slotGo, out GameObject? overlay) && overlay)
             return overlay;
         EnsureSharedSpritesLoaded();
 
-        var rt = slotGo.GetComponent<RectTransform>();
+        RectTransform? rt = slotGo.GetComponent<RectTransform>();
 
-        var root = new GameObject(InvalidRootName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        var rootRT = (RectTransform)root.transform;
+        GameObject root = new GameObject(InvalidRootName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        RectTransform rootRT = (RectTransform)root.transform;
         rootRT.SetParent(rt, false);
         rootRT.anchorMin = Vector2.zero;
         rootRT.anchorMax = Vector2.one;
@@ -46,12 +46,12 @@ internal static class SlotOverlays
         rootRT.offsetMax = Vector2.zero;
         rootRT.pivot = new Vector2(0.5f, 0.5f);
 
-        var bkg = root.GetComponent<Image>();
+        Image? bkg = root.GetComponent<Image>();
         bkg.raycastTarget = false;
         bkg.color = new Color(0f, 0f, 0f, 0.95f);
 
-        var check = new GameObject(InvalidSpriteObjectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        var ovRT = (RectTransform)check.transform;
+        GameObject check = new GameObject(InvalidSpriteObjectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        RectTransform ovRT = (RectTransform)check.transform;
         ovRT.SetParent(rootRT, false);
         ovRT.anchorMin = Vector2.zero;
         ovRT.anchorMax = Vector2.one;
@@ -59,7 +59,7 @@ internal static class SlotOverlays
         ovRT.offsetMax = Vector2.zero;
         ovRT.pivot = new Vector2(0.5f, 0.5f);
 
-        var checkImg = check.GetComponent<Image>();
+        Image? checkImg = check.GetComponent<Image>();
         checkImg.raycastTarget = false;
         checkImg.sprite = checkSprite;
 
@@ -70,7 +70,7 @@ internal static class SlotOverlays
 
     public static void SetInvalidVisible(GameObject slotGo, bool visible)
     {
-        if (!InvalidByGo.TryGetValue(slotGo, out var ov) || !ov)
+        if (!InvalidByGo.TryGetValue(slotGo, out GameObject? ov) || !ov)
             ov = EnsureInvalidOverlay(slotGo);
 
         if (ov.activeSelf != visible)
@@ -79,14 +79,14 @@ internal static class SlotOverlays
 
     public static GameObject EnsureVanityStateOverlay(GameObject slotGo)
     {
-        if (VanityStateByGo.TryGetValue(slotGo, out var overlay) && overlay)
+        if (VanityStateByGo.TryGetValue(slotGo, out GameObject? overlay) && overlay)
             return overlay;
         EnsureSharedSpritesLoaded();
 
-        var rt = slotGo.GetComponent<RectTransform>();
+        RectTransform? rt = slotGo.GetComponent<RectTransform>();
 
-        var root = new GameObject(VanityRootName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        var rootRT = (RectTransform)root.transform;
+        GameObject root = new GameObject(VanityRootName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        RectTransform rootRT = (RectTransform)root.transform;
         rootRT.SetParent(rt, false);
         rootRT.anchorMin = Vector2.zero;
         rootRT.anchorMax = Vector2.one;
@@ -94,14 +94,14 @@ internal static class SlotOverlays
         rootRT.offsetMax = Vector2.zero;
         rootRT.pivot = new Vector2(0.5f, 0.5f);
 
-        var bkg = root.GetComponent<Image>();
+        Image? bkg = root.GetComponent<Image>();
         bkg.raycastTarget = false;
         bkg.color = new Color(0f, 0f, 0f, 0.70f);
 
         const float badgeScale = 0.4f;
 
-        var hiddenGo = new GameObject(HiddenIconName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        var hiddenRT = (RectTransform)hiddenGo.transform;
+        GameObject hiddenGo = new GameObject(HiddenIconName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        RectTransform hiddenRT = (RectTransform)hiddenGo.transform;
         hiddenRT.SetParent(rootRT, false);
         hiddenRT.anchorMin = new Vector2(1f - badgeScale, 0f);
         hiddenRT.anchorMax = new Vector2(1f, badgeScale);
@@ -109,14 +109,14 @@ internal static class SlotOverlays
         hiddenRT.offsetMax = Vector2.zero;
         hiddenRT.pivot = new Vector2(0.5f, 0.5f);
 
-        var hiddenImg = hiddenGo.GetComponent<Image>();
+        Image? hiddenImg = hiddenGo.GetComponent<Image>();
         hiddenImg.raycastTarget = false;
         hiddenImg.sprite = hiddenSprite;
         hiddenImg.enabled = false;
         hiddenImg.preserveAspect = true;
 
-        var hasGo = new GameObject(HasIconName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        var hasRT = (RectTransform)hasGo.transform;
+        GameObject hasGo = new GameObject(HasIconName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        RectTransform hasRT = (RectTransform)hasGo.transform;
         hasRT.SetParent(rootRT, false);
 
         hasRT.anchorMin = new Vector2(1f - badgeScale, 0f);
@@ -125,7 +125,7 @@ internal static class SlotOverlays
         hasRT.offsetMax = Vector2.zero;
         hasRT.pivot = new Vector2(0.5f, 0.5f);
 
-        var hasImg = hasGo.GetComponent<Image>();
+        Image? hasImg = hasGo.GetComponent<Image>();
         hasImg.raycastTarget = false;
         hasImg.sprite = hasVanitySprite;
         hasImg.enabled = false;
@@ -139,15 +139,15 @@ internal static class SlotOverlays
     public static void ToggleVanityStateOverlay(GameObject slotGo, VanityState vs)
     {
         if (!slotGo) return;
-        if (!VanityStateByGo.TryGetValue(slotGo, out var root) || !root)
+        if (!VanityStateByGo.TryGetValue(slotGo, out GameObject? root) || !root)
             root = EnsureVanityStateOverlay(slotGo);
 
-        var rootImage = root.GetComponent<Image>();
-        var hiddenT = root.transform.Find(HiddenIconName);
-        var hasVanityT = root.transform.Find(HasIconName);
+        Image? rootImage = root.GetComponent<Image>();
+        Transform? hiddenT = root.transform.Find(HiddenIconName);
+        Transform? hasVanityT = root.transform.Find(HasIconName);
 
-        var hiddenImg = hiddenT ? hiddenT.GetComponent<Image>() : null;
-        var hasVanityImg = hasVanityT ? hasVanityT.GetComponent<Image>() : null;
+        Image? hiddenImg = hiddenT ? hiddenT.GetComponent<Image>() : null;
+        Image? hasVanityImg = hasVanityT ? hasVanityT.GetComponent<Image>() : null;
 
         bool showHidden = vs.IsHidden && hiddenImg && hiddenImg.sprite != null;
         bool showHasVanity = vs.HasVanity && hasVanityImg && hasVanityImg.sprite != null;

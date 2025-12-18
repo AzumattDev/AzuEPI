@@ -19,8 +19,8 @@ static class PlayerSpawnedPatch
                 return;
             }
 
-            var invGui = InventoryGui.instance;
-            var backgroundParent = CreateBackground(invGui);
+            InventoryGui? invGui = InventoryGui.instance;
+            Transform backgroundParent = CreateBackground(invGui);
 
             CreateMainPanel(rootPanel, __instance, backgroundParent, out GameObject? newRootPanel, out PersonalLoadoutGui? itemsetGui);
 
@@ -30,8 +30,8 @@ static class PlayerSpawnedPatch
                 return;
             }
 
-            var craftBtn = invGui?.m_craftButton;
-            var parent = newRootPanel.transform;
+            Button? craftBtn = invGui?.m_craftButton;
+            Transform parent = newRootPanel.transform;
 
             /*var dd = AzuRuntimeDropdown.Create(parent, craftBtn, width: 240f, headerHeight: 38f, maxListHeight: 260f);
             dd.SetOptions(new[] { "Option A", "Option B", "Option C", "Very Long Option That Scrolls" });
@@ -119,19 +119,19 @@ static class PlayerSpawnedPatch
 
     private static Transform CreateBackground(InventoryGui gui)
     {
-        var crafting = gui.m_crafting;
-        var srcBkg = crafting.Find("Bkg");
+        RectTransform? crafting = gui.m_crafting;
+        Transform? srcBkg = crafting.Find("Bkg");
         if (!srcBkg) return null;
 
-        var loadoutPanel = Object.Instantiate(srcBkg, crafting);
+        Transform? loadoutPanel = Object.Instantiate(srcBkg, crafting);
         loadoutPanel.name = "AzuEPILoadoutPanel";
-        var rt = (RectTransform)loadoutPanel.transform;
+        RectTransform rt = (RectTransform)loadoutPanel.transform;
         rt.anchorMin = srcBkg.GetComponent<RectTransform>().anchorMin;
         rt.anchorMax = srcBkg.GetComponent<RectTransform>().anchorMax;
 
         rt.SetAsLastSibling();
 
-        var img = loadoutPanel.GetComponent<Image>();
+        Image? img = loadoutPanel.GetComponent<Image>();
         if (img)
         {
             img.raycastTarget = false;

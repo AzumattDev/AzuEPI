@@ -65,7 +65,7 @@ static class PreviewInstantRefresh_VisEquipmentPatch
 
         PreviewLayerFix.ForceUILayer(AzuEPICharacterPanel.playerPreviewComp.m_visEquipment);
 
-        var cam = AzuEPICharacterPanel.instance?.cam;
+        Camera? cam = AzuEPICharacterPanel.instance?.cam;
         if (cam) cam.Render();
         //PlayerPreviewManager.SyncAnimationState(Player.m_localPlayer, AzuEPICharacterPanel.playerPreviewComp);
     }
@@ -141,14 +141,14 @@ static class VECloneSync
     {
         if (!srcPlayer || !dstPreview) return;
 
-        var src = srcPlayer.m_visEquipment;
-        var dst = dstPreview.m_visEquipment;
+        VisEquipment? src = srcPlayer.m_visEquipment;
+        VisEquipment? dst = dstPreview.m_visEquipment;
 
         int LeftItem, RightItem, ChestItem, LegItem, HelmetItem, ShoulderItem, UtilityItem, TrinketItem;
         int BeardItem = 0, HairItem = 0, LeftBack = 0, RightBack = 0;
         int ShoulderVar = src.m_shoulderItemVariant, LeftVar = src.m_leftItemVariant, LeftBackVar = src.m_leftBackItemVariant;
 
-        var zdo = src.m_nview ? src.m_nview.GetZDO() : null;
+        ZDO? zdo = src.m_nview ? src.m_nview.GetZDO() : null;
         if (zdo != null)
         {
             LeftItem = zdo.GetInt(ZDOVars.s_leftItem);
@@ -233,7 +233,7 @@ static class VECloneSync
         unchecked
         {
             int h = 17;
-            foreach (var x in hashes)
+            foreach (int x in hashes)
                 h = h * 31 + x;
             return h;
         }
@@ -255,7 +255,7 @@ static class PreviewLayerFix
         void SetList(List<GameObject> list)
         {
             if (list == null) return;
-            foreach (var go in list) Set(go);
+            foreach (GameObject? go in list) Set(go);
         }
 
         Set(ve.m_leftItemInstance);
@@ -318,7 +318,7 @@ public class PlayerPreviewManager
 
     internal static GameObject CreatePlayerPreview()
     {
-        var src = ZNetScene.instance.GetPrefab("Player");
+        GameObject? src = ZNetScene.instance.GetPrefab("Player");
         ZNetView.m_forceDisableInit = true;
         GameObject clone = Object.Instantiate(src);
         Player.s_players.Remove(clone.GetComponent<Player>());
@@ -327,9 +327,9 @@ public class PlayerPreviewManager
 
         void DisableBehaviour<T>(string child = "") where T : Behaviour
         {
-            var cloneChild = string.IsNullOrEmpty(child) ? clone : clone.transform.Find(child)?.gameObject;
+            GameObject? cloneChild = string.IsNullOrEmpty(child) ? clone : clone.transform.Find(child)?.gameObject;
             if (cloneChild == null) return;
-            var c = cloneChild.GetComponent<T>();
+            T? c = cloneChild.GetComponent<T>();
             if (c) c.enabled = false;
         }
 
@@ -345,7 +345,7 @@ public class PlayerPreviewManager
         DisableBehaviour<Container>();
         DisableBehaviour<CharacterAnimEvent>("Visual");
         ZNetView.m_forceDisableInit = false;
-        var rb = clone.GetComponent<Rigidbody>();
+        Rigidbody? rb = clone.GetComponent<Rigidbody>();
         if (rb) rb.isKinematic = true;
 
         clone.transform.rotation = Quaternion.LookRotation(-Vector3.forward, Vector3.up);
@@ -368,7 +368,7 @@ public class PlayerPreviewManager
         if (!AzuEPICharacterPanel.playerPreviewComp && AzuEPICharacterPanel.playerPreview)
             AzuEPICharacterPanel.playerPreviewComp = AzuEPICharacterPanel.playerPreview.GetComponent<Player>();
 
-        var panel = AzuEPICharacterPanel.instance;
+        AzuEPICharacterPanel? panel = AzuEPICharacterPanel.instance;
         if (panel?.cam == null)
         {
             Initialize();
@@ -377,13 +377,13 @@ public class PlayerPreviewManager
             Instance.UpdateRenderTexture();
         }
 
-        var localPlayer = Player.m_localPlayer;
+        Player? localPlayer = Player.m_localPlayer;
         if (!localPlayer || !AzuEPICharacterPanel.playerPreviewComp) return;
 
         AzuEPICharacterPanel.playerPreview.SetActive(true);
         panel.cam.enabled = true;
 
-        var dst = AzuEPICharacterPanel.playerPreviewComp;
+        Player dst = AzuEPICharacterPanel.playerPreviewComp;
         dst.m_visEquipment.SetHairItem(localPlayer.m_hairItem);
         dst.m_visEquipment.SetHairColor(localPlayer.m_hairColor);
         dst.m_visEquipment.SetSkinColor(localPlayer.m_skinColor);
@@ -418,7 +418,7 @@ public class PlayerPreviewManager
         AzuEPICharacterPanel.playerPreview = null;
         AzuEPICharacterPanel.playerPreviewComp = null;
 
-        var panel = AzuEPICharacterPanel.instance;
+        AzuEPICharacterPanel? panel = AzuEPICharacterPanel.instance;
         if (panel?.cam)
             Object.Destroy(panel.cam.gameObject);
 
@@ -441,8 +441,8 @@ public class PlayerPreviewManager
 
     internal static void UpdatePlayerPreview(Humanoid pHumanoid)
     {
-        var src = pHumanoid;
-        var dst = AzuEPICharacterPanel.playerPreviewComp;
+        Humanoid? src = pHumanoid;
+        Player? dst = AzuEPICharacterPanel.playerPreviewComp;
         if (!src || !dst) return;
 
         dst.transform.rotation = Quaternion.LookRotation(-Vector3.forward, Vector3.up);

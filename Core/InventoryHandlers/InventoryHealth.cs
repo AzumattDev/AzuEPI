@@ -41,8 +41,8 @@ public class InventoryHealth
         Inventory? inventory = Player.m_localPlayer.GetInventory();
         if (inventory == null || !inventory.ShouldProtectInventorySlots()) return;
 
-        var stuck = new List<ItemDrop.ItemData>();
-        foreach (var it in inventory.GetAllItems())
+        List<ItemDrop.ItemData> stuck = new List<ItemDrop.ItemData>();
+        foreach (ItemDrop.ItemData? it in inventory.GetAllItems())
         {
             if (inventory.IsHiddenCell(it.m_gridPos.x, it.m_gridPos.y))
                 stuck.Add(it);
@@ -52,7 +52,7 @@ public class InventoryHealth
 
         AzuExtendedPlayerInventoryLogger.LogWarning($"Found {stuck.Count} items in hidden cells after slot configuration change. Relocating...");
 
-        foreach (var it in stuck)
+        foreach (ItemDrop.ItemData? it in stuck)
         {
             /*// Try to pull it out and re-add via normal pipeline (stack → normal → quick)
             if (inventory.RemoveItem(it))

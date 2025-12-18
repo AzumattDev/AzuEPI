@@ -29,25 +29,25 @@ internal static class VanityLookup
     private static IEnumerable<ItemDrop> AllItemDrops(ObjectDB odb)
     {
         if (odb == null) yield break;
-        foreach (var go in odb.m_items)
+        foreach (GameObject? go in odb.m_items)
         {
             if (!go) continue;
-            foreach (var id in go.GetComponentsInChildren<ItemDrop>(true))
+            foreach (ItemDrop? id in go.GetComponentsInChildren<ItemDrop>(true))
                 if (id && id.m_itemData?.m_shared != null)
                     yield return id;
         }
 
-        foreach (var r in odb.m_recipes)
+        foreach (Recipe? r in odb.m_recipes)
         {
             if (!r || !r.m_item) continue;
-            var id = r.m_item.GetComponent<ItemDrop>();
+            ItemDrop? id = r.m_item.GetComponent<ItemDrop>();
             if (id && id.m_itemData?.m_shared != null) yield return id;
         }
     }
 
     private static void EnsureBuilt()
     {
-        var odb = ObjectDB.instance;
+        ObjectDB? odb = ObjectDB.instance;
         if (!odb) return;
 
         if (_buildFrame == Time.frameCount) return;
@@ -55,9 +55,9 @@ internal static class VanityLookup
 
         if (_byHash.Count == 0)
         {
-            foreach (var id in AllItemDrops(odb))
+            foreach (ItemDrop? id in AllItemDrops(odb))
             {
-                var prefab = id.m_itemData.m_dropPrefab ? id.m_itemData.m_dropPrefab.name : id.name;
+                string prefab = id.m_itemData.m_dropPrefab ? id.m_itemData.m_dropPrefab.name : id.name;
                 int hash = prefab.GetStableHashCode();
                 _byHash[hash] = (prefab, id);
             }
@@ -67,7 +67,7 @@ internal static class VanityLookup
     public static bool TryGetByHash(int hash, out string prefab, out ItemDrop itemDrop)
     {
         EnsureBuilt();
-        if (_byHash.TryGetValue(hash, out var t))
+        if (_byHash.TryGetValue(hash, out (string prefab, ItemDrop itemDrop) t))
         {
             prefab = t.prefab;
             itemDrop = t.itemDrop;
@@ -82,9 +82,9 @@ internal static class VanityLookup
     public static bool TryGetIcon(int hash, int variant, out Sprite sprite)
     {
         sprite = null;
-        if (!TryGetByHash(hash, out _, out var id)) return false;
+        if (!TryGetByHash(hash, out _, out ItemDrop id)) return false;
 
-        var icons = id.m_itemData?.m_shared?.m_icons;
+        Sprite[]? icons = id.m_itemData?.m_shared?.m_icons;
         if (icons == null || icons.Length == 0) return false;
 
         int v = (variant >= 0 && variant < icons.Length) ? variant : 0;

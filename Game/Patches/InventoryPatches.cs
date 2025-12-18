@@ -160,8 +160,8 @@ public class InventoryPatches
         {
             if (!__instance.ShouldProtectInventorySlots()) return;
 
-            var stuck = new List<ItemDrop.ItemData>();
-            foreach (var it in __instance.GetAllItems())
+            List<ItemDrop.ItemData> stuck = new List<ItemDrop.ItemData>();
+            foreach (ItemDrop.ItemData? it in __instance.GetAllItems())
             {
                 if (__instance.IsHiddenCell(it.m_gridPos.x, it.m_gridPos.y))
                     stuck.Add(it);
@@ -169,7 +169,7 @@ public class InventoryPatches
 
             if (stuck.Count == 0) return;
 
-            foreach (var it in stuck)
+            foreach (ItemDrop.ItemData? it in stuck)
             {
                 if (__instance.RemoveItem(it))
                 {
