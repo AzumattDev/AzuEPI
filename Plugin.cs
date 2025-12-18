@@ -70,7 +70,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         /* 2 - Inventory Settings */
         ResetConfigOrder();
-        ExtraRows = config("2 - Inventory Settings", "Extra Inventory Rows", 0, "Number of extra inventory rows to add. Note: May overlap with chest windows. Use CTRL+drag to reposition if needed.", NextOrder);
+        ExtraRows = config("2 - Inventory Settings", "Extra Inventory Rows", 0, new ConfigDescription("Number of extra inventory rows to add. Note: May overlap with chest windows. Use CTRL+drag to reposition if needed.", new AcceptableValueRange<int>(0, 6)), NextOrder);
         AddEquipmentRow = config("2 - Inventory Settings", "Enable Equipment Row", On, "Adds a special row for equipped items and quick slots. Keep OFF if using Randy Knapp's Equipment and Quick Slots mod.", NextOrder);
         DisplayEquipmentRowSeparate = config("2 - Inventory Settings", "Display Equipment Separately", On, "Shows equipment and quick slots in their own dedicated panel. Keep OFF if using Randy Knapp's Equipment and Quick Slots mod.", NextOrder);
 
@@ -148,6 +148,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
                     API.RemoveSlot(Localization.instance.Localize("$item_wishbone"));
                 InventoryHealth.FixHiddenItems();
             }
+
             FullRebuild();
         };
 
@@ -164,6 +165,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
                     API.RemoveSlot(Localization.instance.Localize("$item_demister"));
                 InventoryHealth.FixHiddenItems();
             }
+
             FullRebuild();
         };
 
