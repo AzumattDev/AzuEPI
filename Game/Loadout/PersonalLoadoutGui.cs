@@ -52,7 +52,7 @@ public class PersonalLoadoutGui : MonoBehaviour
     public static Transform LoadoutsToggleButton = null!;
     private static Button _toggleBtn;
     internal static int tempInventorySize = 0;
-    internal static RectTransform ToggleButtonParentHlg = null!;
+    internal static RectTransform ToggleButtonParentGlg = null!;
 
     public void Awake()
     {
@@ -180,25 +180,25 @@ public class PersonalLoadoutGui : MonoBehaviour
 
     internal static void BuildLoadoutToggleButton(InventoryGui gui)
     {
-        var src = gui.m_takeAllButton?.transform ?? gui.m_craftButton?.transform;
+        Transform? src = gui.m_takeAllButton?.transform ?? gui.m_craftButton?.transform;
         if (!src) return;
 
-        LoadoutsToggleButton = Instantiate(src, ToggleButtonParentHlg);
+        LoadoutsToggleButton = Instantiate(src, ToggleButtonParentGlg);
         LoadoutsToggleButton.name = "AzuEPILoadoutsToggleButton";
         LoadoutsToggleButton.SetAsLastSibling();
 
-        var rt = (RectTransform)LoadoutsToggleButton;
+        RectTransform rt = (RectTransform)LoadoutsToggleButton;
         rt.anchorMin = new Vector2(0f, 1f);
         rt.anchorMax = new Vector2(0f, 1f);
         rt.pivot = new Vector2(0f, 1f);
         rt.anchoredPosition = new Vector2(-205f, -30f);
         rt.sizeDelta = new Vector2(120f, 32f);
 
-        var btn = LoadoutsToggleButton.GetComponent<Button>();
+        Button? btn = LoadoutsToggleButton.GetComponent<Button>();
         btn.onClick.RemoveAllListeners();
         btn.onClick.AddListener(() => { ToggleUI(); });
 
-        var label = LoadoutsToggleButton.GetComponentInChildren<TMP_Text>();
+        TMP_Text? label = LoadoutsToggleButton.GetComponentInChildren<TMP_Text>();
         if (label) label.text = "Loadouts";
 
         _toggleBtn = btn;
@@ -242,7 +242,7 @@ public class PersonalLoadoutGui : MonoBehaviour
         string key = $"{LoadoutKey}{loadoutName}";
         List<ItemDrop.ItemData> equippedItems = player.GetInventory().GetEquippedItems();
         AzuExtendedPlayerInventoryLogger.LogInfo($"SaveLoadout: Saving loadout '{loadoutName}' with {equippedItems.Count} items.");
-        foreach (var item in equippedItems)
+        foreach (ItemDrop.ItemData? item in equippedItems)
         {
             AzuExtendedPlayerInventoryLogger.LogInfo($" - {item.m_shared.m_name} x{item.m_stack}");
         }
@@ -298,7 +298,7 @@ public class PersonalLoadoutGui : MonoBehaviour
     {
         List<ItemDrop.ItemData> items = loadout.Items;
         int freeSlots = player.GetInventory().GetEmptySlots();
-        var canDo = freeSlots >= items.Count;
+        bool canDo = freeSlots >= items.Count;
         if (canDo)
         {
             for (int index = 0; index < items.Count; ++index)
@@ -343,8 +343,8 @@ public class PersonalLoadoutGui : MonoBehaviour
 
     private static void UnequipToBags(Player player)
     {
-        var equipped = player.GetInventory().GetEquippedItems();
-        foreach (var it in equipped)
+        List<ItemDrop.ItemData>? equipped = player.GetInventory().GetEquippedItems();
+        foreach (ItemDrop.ItemData? it in equipped)
         {
             player.UnequipItem(it);
             if (!player.GetInventory().AddItem(it))
@@ -539,7 +539,7 @@ public class PersonalLoadout
     public string Serialize()
     {
         Inventory tempInventory = new("Loadout", null, 100, 100);
-        foreach (var item in Items)
+        foreach (ItemDrop.ItemData? item in Items)
         {
             tempInventory.AddItem(item.Clone());
         }

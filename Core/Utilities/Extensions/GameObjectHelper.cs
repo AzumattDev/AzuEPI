@@ -77,7 +77,7 @@ public static class GameObjectHelper
         return _GetAllChildTransforms(gameObject, true);
     }
 
-    private static List<Transform> _GetAllChildTransforms(GameObject gameObject, bool isRoot = false, List<Transform> transforms = null)
+    private static List<Transform> _GetAllChildTransforms(GameObject gameObject, bool isRoot = false, List<Transform>? transforms = null)
     {
         transforms = transforms ?? new List<Transform>();
 

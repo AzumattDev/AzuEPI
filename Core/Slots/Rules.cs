@@ -8,7 +8,7 @@ internal static class SlotAcceptRules
     {
         if (item == null) return false;
 
-        return Game.Patches.InventoryGuiPatches.UpdateInventory_Patch.slots.Any(s => s is Model.EquipmentSlot { IsAPIAdded: true, Valid: not null } slot && slot.Valid(item));
+        return InventoryGuiPatches.UpdateInventory_Patch.slots.Any(s => s is Model.EquipmentSlot { IsAPIAdded: true, Valid: not null } slot && slot.Valid(item));
     }
 
     public static bool CanItemGoToSlot(Model.Slot slot, ItemDrop.ItemData? item)

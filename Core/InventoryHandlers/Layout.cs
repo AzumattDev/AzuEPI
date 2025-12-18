@@ -26,6 +26,7 @@ public class Layout
     internal static readonly Vector2 PlayerPreviewImageSize = new(500f, 630f);
     internal static readonly Vector2 ToggleButtonsHlgAnchoredPos = new(-222.5f, -30f);
     internal static readonly Vector2 ToggleButtonsHlgAnchoredPosOld = new(-552.5f, -145f);
+    internal static readonly Vector2 ToggleButtonsHlgAnchoredPosOldVert = new(790f, -231f);
 
     internal static readonly Vector2 DropAllSize = new(100f, 30f);
     internal static readonly Vector2 DropAllAnchorMin = new(0.0f, 1.0f);
@@ -78,17 +79,35 @@ public class Layout
 
     public static Vector2 GetEquipmentBackAnchorMax()
     {
-        return new(1.13f + Math.Max(Hotkeys.Length, (InventoryGuiPatches.UpdateInventory_Patch.slots.Count - 1) / 3) * tileSize / 570, 1f);
+        if (OldLayout.Value.isOff())
+        {
+            return new(1.13f + Math.Max(Hotkeys.Length, (InventoryGuiPatches.UpdateInventory_Patch.slots.Count - 1) / 3) * tileSize / 570, 1f);
+        }
+
+        int totalSlots = InventoryGuiPatches.UpdateInventory_Patch.slots.Count;
+        int regularSlotCount = totalSlots - Hotkeys.Length;
+        const int rowsPerColumn = 3;
+
+        int regularColumns = (regularSlotCount + rowsPerColumn - 1) / rowsPerColumn;
+
+        float totalColumns;
+
+        const int quickslotsPerColumn = 3;
+        int quickslotColumns = (Hotkeys.Length + quickslotsPerColumn - 1) / quickslotsPerColumn;
+        totalColumns = regularColumns + 0.5f + quickslotColumns;
+
+        float extraWidth = totalColumns * tileSize / 570;
+        return new(1.15f + extraWidth, 1f);
     }
 
     public static void ApplyLayoutCorrections()
     {
         if (!InventoryGui.instance) return;
-        var instance = InventoryGui.instance;
-        var selectedFrame = instance.m_crafting.Find("selected_frame").GetComponent<RectTransform>();
-        var repairSimple = instance.m_crafting.Find("RepairSimple").GetComponent<RectTransform>();
-        var repairButton = instance.m_crafting.Find("RepairButton").GetComponent<RectTransform>();
-        var craftingBkg = instance.m_crafting.Find("Bkg").GetComponent<Image>();
+        InventoryGui instance = InventoryGui.instance;
+        RectTransform? selectedFrame = instance.m_crafting.Find("selected_frame").GetComponent<RectTransform>();
+        RectTransform? repairSimple = instance.m_crafting.Find("RepairSimple").GetComponent<RectTransform>();
+        RectTransform? repairButton = instance.m_crafting.Find("RepairButton").GetComponent<RectTransform>();
+        Image? craftingBkg = instance.m_crafting.Find("Bkg").GetComponent<Image>();
 
         if (OldLayout.Value.isOn())
         {
@@ -96,7 +115,11 @@ public class Layout
             repairSimple.anchoredPosition = RepairSimpleOrigAnchoredPos;
             repairButton.anchoredPosition = RepairButtonOrigAnchoredPos;
             if (!craftingBkg.isActiveAndEnabled) craftingBkg.enabled = true;
-            if (HlgGo) HlgRt.anchoredPosition = ToggleButtonsHlgAnchoredPosOld;
+            if (!GlgGo) return;
+            if (InventoryGui.instance)
+                GlgGo.WithParent(OldLayout.Value.isOff() ? InventoryGui.instance.m_crafting.transform : InventoryGui.instance.m_player.transform, false);
+            GlgRt.anchoredPosition = ToggleButtonsHlgAnchoredPosOldVert;
+            GUICache.ButtonGridLayoutGroup.constraintCount = QuickSlotsAmount.Value < 3 ? 1 : 2;
         }
         else
         {
@@ -104,8 +127,19 @@ public class Layout
             repairSimple.anchoredPosition += RepairMovement;
             repairButton.anchoredPosition += RepairMovement;
             if (craftingBkg.isActiveAndEnabled) craftingBkg.enabled = false;
-            if (HlgGo) HlgRt.anchoredPosition = ToggleButtonsHlgAnchoredPos;
+            if (!GlgGo) return;
+            if (InventoryGui.instance)
+                GlgGo.WithParent(OldLayout.Value.isOff() ? InventoryGui.instance.m_crafting.transform : InventoryGui.instance.m_player.transform, false);
+            GlgRt.anchoredPosition = ToggleButtonsHlgAnchoredPos;
         }
+    }
+
+    public static void FixPlayerPreview()
+    {
+        if (!PreviewParent) return;
+        PreviewAnchorMin = QuickSlotsAmount.Value > 3 ? new Vector2(0f, 0.24f) : QuickSlotsAmount.Value != 0 ? new Vector2(0f, 0.14f) : Vector2.zero;
+        RectTransform previewParentRT = (RectTransform)PreviewParent.transform;
+        previewParentRT.anchorMin = PreviewAnchorMin;
     }
 
     public static void ProjectEquippedIntoGridTail(Player player, InventoryGrid playerGrid)

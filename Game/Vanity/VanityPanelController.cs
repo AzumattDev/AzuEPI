@@ -23,7 +23,7 @@ internal static class VanityPanelController
     private static readonly Vector2 ScrollRootOffsetMin = new(10f, 10f);
     private static readonly Vector2 ScrollRootOffsetMax = new(-24f, -50f);
 
-    internal static RectTransform ToggleButtonParentHlg = null!;
+    internal static RectTransform ToggleButtonParentGlg = null!;
     private static readonly Vector2 ToggleBtnAnchorMin = new(0f, 1f);
     private static readonly Vector2 ToggleBtnAnchorMax = new(0f, 1f);
     private static readonly Vector2 ToggleBtnPivot = new(0f, 1f);
@@ -88,46 +88,46 @@ internal static class VanityPanelController
     {
         if (!_content) return;
 
-        var player = Player.m_localPlayer;
-        var odb = ObjectDB.instance;
+        Player? player = Player.m_localPlayer;
+        ObjectDB? odb = ObjectDB.instance;
         if (!player || !odb) return;
 
         _cellsBySlot.Clear();
         ClearChildren(_content);
 
-        var allGameObjects = new List<GameObject>();
-        foreach (var recipe in odb.m_recipes)
+        List<GameObject> allGameObjects = new List<GameObject>();
+        foreach (Recipe? recipe in odb.m_recipes)
         {
             if (recipe && recipe.m_item)
                 allGameObjects.Add(recipe.m_item.gameObject);
         }
         if (odb.m_items != null)
         {
-            foreach (var go in odb.m_items)
+            foreach (GameObject? go in odb.m_items)
             {
                 if (go) allGameObjects.Add(go);
             }
         }
 
-        var uniqueDrops = new Dictionary<string, ItemDrop>();
-        foreach (var go in allGameObjects)
+        Dictionary<string, ItemDrop> uniqueDrops = new Dictionary<string, ItemDrop>();
+        foreach (GameObject? go in allGameObjects)
         {
-            var itemDrops = go.GetComponentsInChildren<ItemDrop>(true);
+            ItemDrop[]? itemDrops = go.GetComponentsInChildren<ItemDrop>(true);
             foreach (var id in itemDrops)
             {
                 if (id && id.m_itemData?.m_shared != null)
                 {
-                    var name = id.m_itemData.m_shared.m_name;
+                    string? name = id.m_itemData.m_shared.m_name;
                     if (!uniqueDrops.ContainsKey(name))
                         uniqueDrops[name] = id;
                 }
             }
         }
 
-        var vanityItems = new List<ItemDrop.ItemData>();
-        foreach (var drop in uniqueDrops.Values)
+        List<ItemDrop.ItemData> vanityItems = new List<ItemDrop.ItemData>();
+        foreach (ItemDrop? drop in uniqueDrops.Values)
         {
-            var d = drop.m_itemData;
+            ItemDrop.ItemData? d = drop.m_itemData;
             if (d != null &&
                 d.m_shared != null &&
                 d.m_shared.m_icons != null &&
@@ -150,19 +150,19 @@ internal static class VanityPanelController
             return typeCompare != 0 ? typeCompare : string.Compare(a.m_shared.m_name, b.m_shared.m_name, StringComparison.Ordinal);
         });
 
-        var slotPrefab = InventoryGui.instance.m_playerGrid.m_elementPrefab;
+        GameObject? slotPrefab = InventoryGui.instance.m_playerGrid.m_elementPrefab;
         ItemDrop.ItemData.ItemType currentType = (ItemDrop.ItemData.ItemType)(-1);
         GridLayoutGroup currentGrid = null;
 
-        foreach (var data in vanityItems)
+        foreach (ItemDrop.ItemData? data in vanityItems)
         {
-            var itemType = data.m_shared.m_itemType;
+            ItemDrop.ItemData.ItemType itemType = data.m_shared.m_itemType;
 
             if (itemType != currentType)
             {
                 currentType = itemType;
 
-                var headerLocKey = itemType switch
+                string headerLocKey = itemType switch
                 {
                     ItemDrop.ItemData.ItemType.Helmet => "$item_helmet",
                     ItemDrop.ItemData.ItemType.Chest => "$item_chest",
@@ -172,7 +172,7 @@ internal static class VanityPanelController
                     _ => itemType.ToString()
                 };
 
-                var headerLabel = Localization.instance.Localize(headerLocKey);
+                string? headerLabel = Localization.instance.Localize(headerLocKey);
                 AddHeader(headerLabel);
                 currentGrid = AddGrid(headerLabel);
 
@@ -187,13 +187,13 @@ internal static class VanityPanelController
         _scroll.velocity = Vector2.zero;
         _scroll.normalizedPosition = new Vector2(0, 1);
 
-        foreach (var slot in _cellsBySlot.Keys)
+        foreach (VisSlot slot in _cellsBySlot.Keys)
             UpdateSelectedVisuals(slot);
     }
 
     internal static void UpdateSelectedVisuals(VisSlot slot)
     {
-        var ve = Player.m_localPlayer?.m_visEquipment;
+        VisEquipment? ve = Player.m_localPlayer?.m_visEquipment;
         if (!ve) return;
 
         int v = slot switch
@@ -208,9 +208,9 @@ internal static class VanityPanelController
 
         bool hidden = VanityAPI.IsHidden(v);
 
-        if (_cellsBySlot.TryGetValue(slot, out var list))
+        if (_cellsBySlot.TryGetValue(slot, out List<VanityCell>? list))
         {
-            foreach (var cell in list)
+            foreach (VanityCell? cell in list)
             {
                 bool isSelected = cell.IsNone
                     ? hidden
@@ -225,9 +225,9 @@ internal static class VanityPanelController
 
     public static void ResetAllVanities()
     {
-        var player = Player.m_localPlayer;
+        Player? player = Player.m_localPlayer;
         if (!player) return;
-        var ve = player.m_visEquipment;
+        VisEquipment? ve = player.m_visEquipment;
         if (!ve) return;
 
         VanityAPI.ClearVanity(ve, VisSlot.Helmet);
@@ -236,7 +236,7 @@ internal static class VanityPanelController
         VanityAPI.ClearVanity(ve, VisSlot.Shoulder);
         VanityAPI.ClearVanity(ve, VisSlot.Utility);
 
-        var previewVe = AzuEPICharacterPanel.playerPreviewComp?.m_visEquipment;
+        VisEquipment? previewVe = AzuEPICharacterPanel.playerPreviewComp?.m_visEquipment;
         if (previewVe)
         {
             VanityAPI.ClearVanity(previewVe, VisSlot.Helmet);
@@ -246,26 +246,26 @@ internal static class VanityPanelController
             VanityAPI.ClearVanity(previewVe, VisSlot.Utility);
         }
 
-        foreach (var slot in _cellsBySlot.Keys)
+        foreach (VisSlot slot in _cellsBySlot.Keys)
             UpdateSelectedVisuals(slot);
     }
 
     private static void BuildPanel(InventoryGui gui)
     {
-        var crafting = gui.m_crafting;
-        var srcBkg = crafting.Find("Bkg");
+        RectTransform? crafting = gui.m_crafting;
+        Transform? srcBkg = crafting.Find("Bkg");
         if (!srcBkg) return;
 
-        var vanity = Object.Instantiate(srcBkg, crafting);
+        Transform? vanity = Object.Instantiate(srcBkg, crafting);
         vanity.name = VanityPanelName;
 
         _panel = vanity.GetComponent<RectTransform>();
-        var srcRT = srcBkg.GetComponent<RectTransform>();
+        RectTransform? srcRT = srcBkg.GetComponent<RectTransform>();
         _panel.anchorMin = srcRT.anchorMin;
         _panel.anchorMax = srcRT.anchorMax;
         _panel.SetAsLastSibling();
 
-        var img = vanity.GetComponent<Image>();
+        Image? img = vanity.GetComponent<Image>();
         if (img) img.raycastTarget = false;
     }
 
@@ -274,10 +274,10 @@ internal static class VanityPanelController
         if (!_panel) return;
 
         GameObject scrollRoot;
-        var store = StoreGui.instance;
+        StoreGui? store = StoreGui.instance;
         if (store && store.GetComponentInChildren<ScrollRect>())
         {
-            var src = store.GetComponentInChildren<ScrollRect>().gameObject;
+            GameObject src = store.GetComponentInChildren<ScrollRect>().gameObject;
             scrollRoot = Object.Instantiate(src, _panel);
         }
         else
@@ -286,7 +286,7 @@ internal static class VanityPanelController
             scrollRoot.transform.SetParent(_panel, false);
         }
 
-        var rootRT = (RectTransform)scrollRoot.transform;
+        RectTransform rootRT = (RectTransform)scrollRoot.transform;
         AnchorFill(rootRT);
         rootRT.offsetMin = ScrollRootOffsetMin;
         rootRT.offsetMax = ScrollRootOffsetMax;
@@ -313,12 +313,12 @@ internal static class VanityPanelController
 
     private static RectTransform BuildViewport(RectTransform parent)
     {
-        var go = new GameObject(VanityViewportName, typeof(RectTransform), typeof(Image), typeof(RectMask2D));
-        var rt = (RectTransform)go.transform;
+        GameObject go = new GameObject(VanityViewportName, typeof(RectTransform), typeof(Image), typeof(RectMask2D));
+        RectTransform rt = (RectTransform)go.transform;
         rt.SetParent(parent, false);
         AnchorFill(rt);
 
-        var img = go.GetComponent<Image>();
+        Image? img = go.GetComponent<Image>();
         img.color = new Color(0, 0, 0, 0);
         img.raycastTarget = true;
 
@@ -327,7 +327,7 @@ internal static class VanityPanelController
 
     private static void BuildContentStack(RectTransform parent)
     {
-        var go = new GameObject(VanityContentName,
+        GameObject go = new GameObject(VanityContentName,
             typeof(RectTransform),
             typeof(VerticalLayoutGroup),
             typeof(ContentSizeFitter));
@@ -366,25 +366,25 @@ internal static class VanityPanelController
             barGO.transform.SetParent(panelParent, false);
         }
 
-        var barRT = (RectTransform)barGO.transform;
+        RectTransform barRT = (RectTransform)barGO.transform;
         barRT.anchorMin = BarAnchorMin;
         barRT.anchorMax = BarAnchorMax;
         barRT.pivot = BarPivot;
         barRT.offsetMin = BarOffsetMin;
         barRT.offsetMax = BarOffsetMax;
 
-        var bar = barGO.GetComponent<Scrollbar>();
+        Scrollbar? bar = barGO.GetComponent<Scrollbar>();
         bar.direction = Scrollbar.Direction.BottomToTop;
 
-        var bg = bar.GetComponent<Image>();
+        Image? bg = bar.GetComponent<Image>();
         if (bg) bg.enabled = true;
 
-        var handle = bar.transform.Find("Sliding Area/Handle")?.GetComponent<Image>();
+        Image? handle = bar.transform.Find("Sliding Area/Handle")?.GetComponent<Image>();
         if (handle) handle.enabled = true;
         else
         {
-            var h = new GameObject("Handle", typeof(RectTransform), typeof(Image));
-            var hRT = (RectTransform)h.transform;
+            GameObject h = new GameObject("Handle", typeof(RectTransform), typeof(Image));
+            RectTransform hRT = (RectTransform)h.transform;
             hRT.SetParent(barRT, false);
             AnchorFill(hRT);
             bar.targetGraphic = h.GetComponent<Image>();
@@ -396,11 +396,11 @@ internal static class VanityPanelController
 
     private static void BuildVanityToggleButton(InventoryGui gui)
     {
-        var src = gui.m_takeAllButton?.transform ?? gui.m_craftButton?.transform;
+        Transform? src = gui.m_takeAllButton?.transform ?? gui.m_craftButton?.transform;
         if (!src) return;
 
-        VanityButtonGo = CloneButton(src, ToggleButtonParentHlg, VanityToggleButtonName, ToggleBtnAnchorMin, ToggleBtnAnchorMax, ToggleBtnPivot, ToggleBtnPos, ToggleBtnSize);
-        var btn = VanityButtonGo.GetComponent<Button>();
+        VanityButtonGo = CloneButton(src, ToggleButtonParentGlg, VanityToggleButtonName, ToggleBtnAnchorMin, ToggleBtnAnchorMax, ToggleBtnPivot, ToggleBtnPos, ToggleBtnSize);
+        Button? btn = VanityButtonGo.GetComponent<Button>();
         btn.onClick.RemoveAllListeners();
         btn.onClick.AddListener(() =>
         {
@@ -409,7 +409,7 @@ internal static class VanityPanelController
             if (PersonalLoadoutGui.IsVisible()) PersonalLoadoutGui.Hide();
         });
 
-        var label = VanityButtonGo.GetComponentInChildren<TMP_Text>();
+        TMP_Text? label = VanityButtonGo.GetComponentInChildren<TMP_Text>();
         if (label) label.text = Localization.instance.Localize("$azuepi_vanity");
 
         _toggleBtn = btn;
@@ -418,15 +418,15 @@ internal static class VanityPanelController
 
     private static void BuildResetButton(InventoryGui gui)
     {
-        var src = gui.m_takeAllButton?.transform ?? gui.m_craftButton?.transform;
+        Transform? src = gui.m_takeAllButton?.transform ?? gui.m_craftButton?.transform;
         if (!src || !_panel) return;
 
-        var clone = CloneButton(src, _panel, ResetAllVanityButtonName, ResetBtnAnchorMin, ResetBtnAnchorMax, ResetBtnPivot, ResetBtnPos, ResetBtnSize);
-        var btn = clone.GetComponent<Button>();
+        Transform clone = CloneButton(src, _panel, ResetAllVanityButtonName, ResetBtnAnchorMin, ResetBtnAnchorMax, ResetBtnPivot, ResetBtnPos, ResetBtnSize);
+        Button? btn = clone.GetComponent<Button>();
         btn.onClick.RemoveAllListeners();
         btn.onClick.AddListener(ResetAllVanities);
 
-        var label = clone.GetComponentInChildren<TMP_Text>();
+        TMP_Text? label = clone.GetComponentInChildren<TMP_Text>();
         if (label) label.text = Localization.instance.Localize("$azuepi_reset_vanity");
 
         _resetVanitiesBtn = btn;
@@ -434,23 +434,23 @@ internal static class VanityPanelController
 
     private static RectTransform AddHeader(string label)
     {
-        var go = new GameObject($"Header_{label}", typeof(RectTransform));
-        var rt = (RectTransform)go.transform;
+        GameObject go = new GameObject($"Header_{label}", typeof(RectTransform));
+        RectTransform rt = (RectTransform)go.transform;
         rt.SetParent(_content, false);
         rt.anchorMin = new Vector2(0, 1);
         rt.anchorMax = new Vector2(1, 1);
         rt.pivot = new Vector2(0, 1);
 
-        var txt = go.AddComponent<TextMeshProUGUI>();
+        TextMeshProUGUI? txt = go.AddComponent<TextMeshProUGUI>();
         ApplyHeaderStyle(txt, label, isExpanded: false);
 
-        var headerButton = go.AddComponent<Button>();
+        Button? headerButton = go.AddComponent<Button>();
         headerButton.onClick.AddListener(() =>
         {
             int myIndex = rt.GetSiblingIndex();
             if (myIndex + 1 >= _content.childCount) return;
 
-            var next = _content.GetChild(myIndex + 1);
+            Transform? next = _content.GetChild(myIndex + 1);
             bool newActive = !next.gameObject.activeSelf;
             next.gameObject.SetActive(newActive);
 
@@ -479,24 +479,24 @@ internal static class VanityPanelController
             txt.alignment = TextAlignmentOptions.Left;
         }
 
-        var tri = isExpanded ? DownTriangle : UpTriangle;
+        string tri = isExpanded ? DownTriangle : UpTriangle;
         txt.text = $"{label} {HeaderTriangleSizeTag}{tri}</size>";
     }
 
     private static GridLayoutGroup AddGrid(string headerLabel)
     {
-        var go = new GameObject($"{headerLabel}_Grid", typeof(RectTransform), typeof(GridLayoutGroup), typeof(LayoutElement));
-        var rt = (RectTransform)go.transform;
+        GameObject go = new GameObject($"{headerLabel}_Grid", typeof(RectTransform), typeof(GridLayoutGroup), typeof(LayoutElement));
+        RectTransform rt = (RectTransform)go.transform;
         rt.SetParent(_content, false);
         rt.anchorMin = new Vector2(0, 1);
         rt.anchorMax = new Vector2(1, 1);
         rt.pivot = new Vector2(0, 1);
 
-        var le = go.GetComponent<LayoutElement>();
+        LayoutElement? le = go.GetComponent<LayoutElement>();
         le.flexibleWidth = 1;
         le.flexibleHeight = 0;
 
-        var grid = go.GetComponent<GridLayoutGroup>();
+        GridLayoutGroup? grid = go.GetComponent<GridLayoutGroup>();
         grid.childAlignment = TextAnchor.UpperLeft;
         grid.cellSize = CellSize;
         grid.spacing = Spacing;
@@ -512,17 +512,17 @@ internal static class VanityPanelController
 
     private static void CreateNoneCell(GameObject slotPrefab, GridLayoutGroup grid, VisSlot slot)
     {
-        var go = Object.Instantiate(slotPrefab, grid.transform);
-        var rt = (RectTransform)go.transform;
+        GameObject? go = Object.Instantiate(slotPrefab, grid.transform);
+        RectTransform rt = (RectTransform)go.transform;
         rt.localScale = Vector3.one;
 
-        var le = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
+        LayoutElement? le = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
         le.minWidth = le.preferredWidth = grid.cellSize.x;
         le.minHeight = le.preferredHeight = grid.cellSize.y;
         le.flexibleWidth = 0;
         le.flexibleHeight = 0;
 
-        var icon = go.transform.Find("icon").GetComponent<Image>();
+        Image? icon = go.transform.Find("icon").GetComponent<Image>();
         icon.sprite = null;
         icon.enabled = false;
 
@@ -536,14 +536,14 @@ internal static class VanityPanelController
         DisableChild(go.transform, "binding");
         DisableChildrenContaining(go.transform, "JC_");
 
-        var labelGo = new GameObject("NoneLabel", typeof(RectTransform));
-        var labelRT = (RectTransform)labelGo.transform;
+        GameObject labelGo = new GameObject("NoneLabel", typeof(RectTransform));
+        RectTransform labelRT = (RectTransform)labelGo.transform;
         labelRT.SetParent(go.transform, false);
         labelRT.anchorMin = new Vector2(0.5f, 0.5f);
         labelRT.pivot = new Vector2(0.5f, 0.5f);
         labelRT.anchoredPosition = Vector2.zero;
 
-        var text = labelGo.AddComponent<TextMeshProUGUI>();
+        TextMeshProUGUI? text = labelGo.AddComponent<TextMeshProUGUI>();
         if (_fontSample)
         {
             text.font = _fontSample.font;
@@ -564,12 +564,12 @@ internal static class VanityPanelController
         text.enableWordWrapping = true;
         text.text = Localization.instance?.Localize("$menu_none") ?? "None";
 
-        var selectedBadge = FindOrCreateSelectedBadge(go.transform);
+        GameObject selectedBadge = FindOrCreateSelectedBadge(go.transform);
 
-        var btn = go.GetComponent<Button>();
+        Button? btn = go.GetComponent<Button>();
         btn.onClick = new Button.ButtonClickedEvent();
 
-        var cell = go.GetComponent<VanityCell>() ?? go.AddComponent<VanityCell>();
+        VanityCell? cell = go.GetComponent<VanityCell>() ?? go.AddComponent<VanityCell>();
         cell.Item = null;
         cell.Icon = icon;
         cell.Slot = slot;
@@ -578,24 +578,24 @@ internal static class VanityPanelController
 
         GetOrCreateSlotList(slot).Add(cell);
 
-        var tooltipForNone = go.GetComponent<UITooltip>() ?? go.AddComponent<UITooltip>();
+        UITooltip? tooltipForNone = go.GetComponent<UITooltip>() ?? go.AddComponent<UITooltip>();
         tooltipForNone.m_topic = Localization.instance?.Localize("$menu_none") ?? "None";
         tooltipForNone.m_text = "";
     }
 
     private static void CreateCell(GameObject slotPrefab, GridLayoutGroup grid, ItemDrop.ItemData data, VisSlot slot)
     {
-        var go = Object.Instantiate(slotPrefab, grid.transform);
-        var rt = (RectTransform)go.transform;
+        GameObject? go = Object.Instantiate(slotPrefab, grid.transform);
+        RectTransform rt = (RectTransform)go.transform;
         rt.localScale = Vector3.one;
 
-        var le = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
+        LayoutElement? le = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
         le.minWidth = le.preferredWidth = grid.cellSize.x;
         le.minHeight = le.preferredHeight = grid.cellSize.y;
         le.flexibleWidth = 0;
         le.flexibleHeight = 0;
 
-        var icon = go.transform.Find("icon").GetComponent<Image>();
+        Image? icon = go.transform.Find("icon").GetComponent<Image>();
         icon.sprite = data.m_shared.m_icons[0];
         icon.type = Image.Type.Simple;
         icon.preserveAspect = true;
@@ -611,12 +611,12 @@ internal static class VanityPanelController
         DisableChild(go.transform, "binding");
         DisableChildrenContaining(go.transform, "JC_");
 
-        var selectedBadge = FindOrCreateSelectedBadge(go.transform);
+        GameObject selectedBadge = FindOrCreateSelectedBadge(go.transform);
 
-        var btn = go.GetComponent<Button>();
+        Button? btn = go.GetComponent<Button>();
         btn.onClick = new Button.ButtonClickedEvent();
 
-        var cell = go.GetComponent<VanityCell>() ?? go.AddComponent<VanityCell>();
+        VanityCell? cell = go.GetComponent<VanityCell>() ?? go.AddComponent<VanityCell>();
         cell.Item = data;
         cell.Icon = icon;
         cell.Slot = slot;
@@ -645,11 +645,11 @@ internal static class VanityPanelController
 
     private static Transform CloneButton(Transform src, Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPos, Vector2 size)
     {
-        var clone = Object.Instantiate(src, parent);
+        Transform? clone = Object.Instantiate(src, parent);
         clone.name = name;
         clone.SetAsLastSibling();
 
-        var rt = (RectTransform)clone;
+        RectTransform rt = (RectTransform)clone;
         rt.anchorMin = anchorMin;
         rt.anchorMax = anchorMax;
         rt.pivot = pivot;
@@ -661,7 +661,7 @@ internal static class VanityPanelController
 
     private static void DisableChild(Transform root, string childName)
     {
-        var t = root.Find(childName);
+        Transform? t = root.Find(childName);
         if (t) t.gameObject.SetActive(false);
     }
 
@@ -669,7 +669,7 @@ internal static class VanityPanelController
     {
         for (int i = 0; i < root.childCount; ++i)
         {
-            var t = root.GetChild(i);
+            Transform? t = root.GetChild(i);
             if (t.name.Contains(contains))
                 t.gameObject.SetActive(false);
         }
@@ -677,15 +677,15 @@ internal static class VanityPanelController
 
     private static GameObject FindOrCreateSelectedBadge(Transform root)
     {
-        var t = root.Find("selected") ?? root.Find("Selected");
+        Transform? t = root.Find("selected") ?? root.Find("Selected");
         if (t) return t.gameObject;
 
-        var go = new GameObject("Selected", typeof(RectTransform), typeof(Image));
-        var rt = (RectTransform)go.transform;
+        GameObject go = new GameObject("Selected", typeof(RectTransform), typeof(Image));
+        RectTransform rt = (RectTransform)go.transform;
         rt.SetParent(root, false);
         AnchorFill(rt);
 
-        var img = go.GetComponent<Image>();
+        Image? img = go.GetComponent<Image>();
         img.raycastTarget = false;
         img.color = new Color(1, 1, 1, 0.18f);
         go.SetActive(false);
@@ -700,7 +700,7 @@ internal static class VanityPanelController
 
     private static List<VanityCell> GetOrCreateSlotList(VisSlot slot)
     {
-        if (!_cellsBySlot.TryGetValue(slot, out var list))
+        if (!_cellsBySlot.TryGetValue(slot, out List<VanityCell>? list))
         {
             list = new List<VanityCell>();
             _cellsBySlot[slot] = list;
@@ -732,7 +732,7 @@ public class VanityCell : MonoBehaviour
 
     private void Awake()
     {
-        var tooltip = gameObject.GetComponent<UITooltip>();
+        UITooltip? tooltip = gameObject.GetComponent<UITooltip>();
         if (tooltip != null)
         {
             tooltip.m_topic = Item?.m_shared?.m_name ?? "";
@@ -757,7 +757,7 @@ public class VanityCell : MonoBehaviour
         if (IsNone) return;
         if (!Icon || Item?.m_shared == null) return;
 
-        var player = Player.m_localPlayer;
+        Player? player = Player.m_localPlayer;
         if (player == null) return;
 
         bool known = player.IsKnownMaterial(Item.m_shared.m_name);
@@ -769,8 +769,8 @@ public class VanityCell : MonoBehaviour
 
     public void OnRightClick(UIInputHandler _)
     {
-        var ve = Player.m_localPlayer?.m_visEquipment;
-        var previewVe = AzuEPICharacterPanel.playerPreviewComp?.m_visEquipment;
+        VisEquipment? ve = Player.m_localPlayer?.m_visEquipment;
+        VisEquipment? previewVe = AzuEPICharacterPanel.playerPreviewComp?.m_visEquipment;
         if (!ve) return;
 
         if (IsNone)
@@ -791,8 +791,8 @@ public class VanityCell : MonoBehaviour
 
     public void OnLeftClick(UIInputHandler _)
     {
-        var ve = Player.m_localPlayer?.m_visEquipment;
-        var previewVe = AzuEPICharacterPanel.playerPreviewComp?.m_visEquipment;
+        VisEquipment? ve = Player.m_localPlayer?.m_visEquipment;
+        VisEquipment? previewVe = AzuEPICharacterPanel.playerPreviewComp?.m_visEquipment;
         if (!ve || !previewVe) return;
 
         if (IsNone)

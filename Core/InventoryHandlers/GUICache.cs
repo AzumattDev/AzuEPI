@@ -2,10 +2,11 @@
 
 public class GUICache
 {
-    public static RectTransform _craftingBkgRT;
-    public static RectTransform _selectedFrameRT;
-    public static RectTransform _repairSimpleRT;
-    public static RectTransform _repairButtonRT;
-    public static RectTransform _playerBkgRT;
-    public static RectTransform _playerGridRootRT;
+    public static RectTransform _craftingBkgRT = null!;
+    public static RectTransform _selectedFrameRT = null!;
+    public static RectTransform _repairSimpleRT = null!;
+    public static RectTransform _repairButtonRT = null!;
+    public static RectTransform _playerBkgRT = null!;
+    public static RectTransform _playerGridRootRT = null!;
+    public static GridLayoutGroup ButtonGridLayoutGroup = null!;
 }

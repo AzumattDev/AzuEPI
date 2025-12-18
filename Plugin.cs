@@ -46,7 +46,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     {
         AppDomain.CurrentDomain.AssemblyResolve += (s, e) =>
         {
-            var req = new AssemblyName(e.Name);
+            AssemblyName req = new AssemblyName(e.Name);
             return req.Name == "AzuExtendedPlayerInventory" ? typeof(AzuExtendedPlayerInventoryPlugin).Assembly : null;
         };
     }
@@ -104,8 +104,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         VanityOption = config("6 - UI Options", "Show Vanity Button", On, "Shows the vanity button in the inventory panel.", NextOrder);
         LoadoutOption = config("6 - UI Options", "Show Loadout Button", On, "Shows the loadout button in the inventory panel.", NextOrder);
         OldLayout = config("6 - UI Options", "Use Legacy Layout", Off, "Uses the old inventory layout instead of the new one.", NextOrder);
-        QuickSlotsVerticalLayout = config("6 - UI Options", "Vertical Quickslot Layout (Legacy)", Off, "When using the legacy layout, positions quickslots to the right of regular slots in two columns instead of below them.", NextOrder);
-        
+
         /* 7 - Buttons */
         ResetConfigOrder();
         MakeDropAllButton = config("7 - Buttons", "Enable Drop All Button", Off, "Adds a button to drop all items from your inventory.", NextOrder, false);
@@ -128,8 +127,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             Transform hudroot = Hud.instance.transform.Find("hudroot");
             if (!hudroot) return;
             Transform qabTransform = hudroot.Find(QabName);
-            if (!qabTransform || !qabTransform.TryGetComponent<HotkeyBar>(out var qab)) return;
-            foreach (var element in qab.m_elements)
+            if (!qabTransform || !qabTransform.TryGetComponent<HotkeyBar>(out HotkeyBar? qab)) return;
+            foreach (HotkeyBar.ElementData? element in qab.m_elements)
                 if (element.m_go)
                     Destroy(element.m_go);
             qab.m_elements.Clear();
@@ -191,6 +190,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             Layout.ApplyLayoutCorrections();
             RebuildUI();
             FullRebuild();
+            SlotHelpers.UpdateEquipmentBackgroundAnchors();
         };
 
         BetterArchery.CheckBetterArchery();
@@ -208,7 +208,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             API.AddSlot("$item_demister", "Demister", WishboneSlot.Value.isOn() ? 6 : 5);
         }
 
-        var index = InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length;
+        int index = InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length;
         API.UpdateSlots(index, 1);
         InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(index, new Model.EquipmentSlot { Name = TrinketText.Value, IsQuickSlot = false, Get = player => player.m_trinketItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Trinket });
         SlotHelpers.ResizeSlots();
@@ -222,6 +222,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         SlotHelpers.ResizeSlots();
         Layout.UpdateInventorySize();
         InventoryHealth.FixHiddenItems();
+        SlotHelpers.UpdateEquipmentBackgroundAnchors();
+        RebuildUI();
     }
 
     private void Start()
@@ -267,14 +269,14 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     private void InitializeHotkeys()
     {
         int count = QuickSlotsAmount.Value;
-        var defaultKeys = new[] { KeyCode.Z, KeyCode.X, KeyCode.C, KeyCode.V, KeyCode.B, KeyCode.N };
+        KeyCode[] defaultKeys = new[] { KeyCode.Z, KeyCode.X, KeyCode.C, KeyCode.V, KeyCode.B, KeyCode.N };
 
         Hotkeys = new ConfigEntry<KeyboardShortcut>[count];
         HotkeyTexts = new ConfigEntry<string>[count];
 
         for (int i = 0; i < count; i++)
         {
-            var key = i < defaultKeys.Length ? defaultKeys[i] : KeyCode.None;
+            KeyCode key = i < defaultKeys.Length ? defaultKeys[i] : KeyCode.None;
             Hotkeys[i] = config("4 - Quick Slots", $"HotKey (Quickslot {i + 1})", new KeyboardShortcut(key),
                 $"Hotkey {i + 1} - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", false);
             HotkeyTexts[i] = config("4 - Quick Slots", $"HotKey (Quickslot {i + 1}) Display Text", "",
@@ -351,7 +353,6 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<float> QuickAccessY = null!;
     public static ConfigEntry<int> QuickSlotsPerRow = null!;
     public static ConfigEntry<Toggle> AlwaysShowQuickSlotsInUI = null!;
-    public static ConfigEntry<Toggle> QuickSlotsVerticalLayout = null!;
 
     public static ConfigEntry<Vector2> UIAnchor = null!;
     public static ConfigEntry<Vector3> LocalScale = null!;
@@ -379,8 +380,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description, int order, bool synchronizedSetting = true)
     {
-        var attributes = new ConfigurationManagerAttributes { Order = order };
-        var tags = description.Tags.Length > 0 ? description.Tags.Append(attributes).ToArray() : new object[] { attributes };
+        ConfigurationManagerAttributes attributes = new ConfigurationManagerAttributes { Order = order };
+        object[] tags = description.Tags.Length > 0 ? description.Tags.Append(attributes).ToArray() : new object[] { attributes };
         ConfigDescription extendedDescription = new(description.Description + (synchronizedSetting ? " [Synced with Server]" : " [Not Synced with Server]"), description.AcceptableValues, tags);
         ConfigEntry<T> configEntry = Config.Bind(group, name, value, extendedDescription);
 

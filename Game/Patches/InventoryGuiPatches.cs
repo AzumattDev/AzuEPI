@@ -28,11 +28,12 @@ public class InventoryGuiPatches
             CreateExtendedCraftingPanel(__instance, GUICache._selectedFrameRT);
             CreateRuntimePanel();
 
-            CreateAzuEpiPreview(__instance, out var previewParentRT);
+            CreateAzuEpiPreview(__instance, out RectTransform previewParentRT);
             CreatePlayerPreviewImage(previewParentRT);
             SetupPreviewPanel();
 
-            BuildToggleButtonHlg(__instance);
+            BuildToggleButtonGlg(__instance);
+            Layout.FixPlayerPreview();
             EnsureVanityPanelBuilt(__instance);
             VanityPanelController.SetVisible(false);
             BuildLoadoutToggles(__instance);
@@ -166,12 +167,7 @@ public class InventoryGuiPatches
 
             API.QuickSlotsAdded();
 
-            if (PreviewParent)
-            {
-                Layout.PreviewAnchorMin = QuickSlotsAmount.Value > 3 ? new Vector2(0f, 0.24f) : QuickSlotsAmount.Value != 0 ? new Vector2(0f, 0.14f) : Vector2.zero;
-                var previewParentRT = (RectTransform)PreviewParent.transform;
-                previewParentRT.anchorMin = Layout.PreviewAnchorMin;
-            }
+            Layout.FixPlayerPreview();
         }
 
         private static void Postfix(InventoryGui __instance, Player player, InventoryGrid ___m_playerGrid)
@@ -211,7 +207,7 @@ public class InventoryGuiPatches
 
             for (int i = 0; i < slots.Count; ++i)
             {
-                var currentElement = ___m_playerGrid.m_elements[baseIndex + i];
+                InventoryGrid.Element? currentElement = ___m_playerGrid.m_elements[baseIndex + i];
                 GameObject currentChild = currentElement.m_go;
                 if (!currentChild)
                     continue;
@@ -263,7 +259,7 @@ public class InventoryGuiPatches
             if (_cachedEquipmentBkg == null || _lastInstance != __instance)
                 _cachedEquipmentBkg = __instance.m_player.Find(AzuEquipmentBkgName);
 
-            var equipmentBkgTransform = _cachedEquipmentBkg;
+            Transform? equipmentBkgTransform = _cachedEquipmentBkg;
 
             switch (DisplayEquipmentRowSeparate.Value)
             {
@@ -284,7 +280,7 @@ public class InventoryGuiPatches
                     float extraX = (extraTiles * Layout.tileSize) / totalWidth;
 
                     Vector2 maxAnchor = new(1f + extraX, 1f);
-                    if (Chainloader.PluginInfos.TryGetValue(MinimalUiguid, out var pi) && pi != null)
+                    if (Chainloader.PluginInfos.TryGetValue(MinimalUiguid, out PluginInfo? pi) && pi != null)
                         maxAnchor.x += 0.03f;
 
                     //rectTransform.anchorMax = maxAnchor;
@@ -308,8 +304,8 @@ public class InventoryGuiPatches
 
         private static void UpdateInvalidDropOverlays(InventoryGui ig, InventoryGrid playerGrid, Player player)
         {
-            var dragGo = ig.m_dragGo;
-            var dragItem = ig.m_dragItem;
+            GameObject? dragGo = ig.m_dragGo;
+            ItemDrop.ItemData? dragItem = ig.m_dragItem;
             bool dragging = dragGo && dragItem != null;
 
             if (!_overlaysInitialized)
@@ -317,14 +313,14 @@ public class InventoryGuiPatches
                 int baseIndex = Layout.GetBaseSlotIndex(player.GetInventory());
                 for (int i = 0; i < slots.Count; ++i)
                 {
-                    var slot = slots[i];
+                    Model.Slot? slot = slots[i];
                     if (slot == null) continue;
 
-                    var elemIdx = baseIndex + i;
+                    int elemIdx = baseIndex + i;
                     if (elemIdx < 0 || elemIdx >= playerGrid.m_elements.Count) continue;
 
-                    var elem = playerGrid.m_elements[elemIdx];
-                    var slotGo = elem.m_go;
+                    InventoryGrid.Element? elem = playerGrid.m_elements[elemIdx];
+                    GameObject? slotGo = elem.m_go;
                     if (!slotGo) continue;
 
                     _ = SlotOverlays.EnsureInvalidOverlay(slotGo);
@@ -345,14 +341,14 @@ public class InventoryGuiPatches
 
             for (int i = 0; i < slots.Count; ++i)
             {
-                var slot = slots[i];
+                Model.Slot? slot = slots[i];
                 if (slot == null) continue;
 
-                var elemIdx = baseIndex1 + i;
+                int elemIdx = baseIndex1 + i;
                 if (elemIdx < 0 || elemIdx >= playerGrid.m_elements.Count) continue;
 
-                var elem = playerGrid.m_elements[elemIdx];
-                var slotGo = elem.m_go;
+                InventoryGrid.Element? elem = playerGrid.m_elements[elemIdx];
+                GameObject? slotGo = elem.m_go;
                 if (!slotGo) continue;
 
                 if (!dragging)

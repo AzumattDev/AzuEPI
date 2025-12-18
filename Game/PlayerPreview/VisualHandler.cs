@@ -13,7 +13,7 @@ public class CustomEquipVisuals
         _registered.Add(prefabName);
     }
 
-    public static void RegisterForSlot(string prefabName, string slotName, string visualName = null)
+    public static void RegisterForSlot(string prefabName, string slotName, string? visualName = null)
     {
         if (string.IsNullOrWhiteSpace(prefabName)) return;
         _registered.Add(prefabName);
@@ -22,12 +22,12 @@ public class CustomEquipVisuals
 
     private static string GetSlotOf(string prefabName)
     {
-        return _managed.TryGetValue(prefabName, out var meta) ? (meta.slot ?? "") : "";
+        return _managed.TryGetValue(prefabName, out (string slot, bool bypass, string visual) meta) ? (meta.slot ?? "") : "";
     }
 
     private static string GetSlotOf(ItemDrop.ItemData item)
     {
-        var name = item?.m_dropPrefab?.name;
+        string? name = item?.m_dropPrefab?.name;
         return string.IsNullOrEmpty(name) ? "" : GetSlotOf(name);
     }
 
@@ -48,7 +48,7 @@ public class CustomEquipVisuals
 
         public bool ForceSetEquipped(string prefabName, int hashFromZdo)
         {
-            if (!Equipped.TryGetValue(prefabName, out var entry))
+            if (!Equipped.TryGetValue(prefabName, out EquippedEntry? entry))
                 Equipped[prefabName] = entry = new EquippedEntry(prefabName);
 
             if (entry.CurrentHash == hashFromZdo)
@@ -56,7 +56,7 @@ public class CustomEquipVisuals
 
             if (entry.Instances.Count > 0)
             {
-                foreach (var go in entry.Instances)
+                foreach (GameObject? go in entry.Instances)
                     if (go)
                         Object.Destroy(go);
                 entry.Instances.Clear();
@@ -79,15 +79,15 @@ public class CustomEquipVisuals
         public void UpdateAllVisuals()
         {
             bool changedAny = false;
-            var nview = Vis.m_nview;
-            var zdo = nview ? nview.GetZDO() : null;
+            ZNetView? nview = Vis.m_nview;
+            ZDO? zdo = nview ? nview.GetZDO() : null;
             bool isOwner = nview && nview.IsOwner();
 
-            foreach (var prefabName in _registered)
+            foreach (string? prefabName in _registered)
             {
                 bool shouldShow = false;
                 string displayLocal = "";
-                if (Equipped.TryGetValue(prefabName, out var e) && e.Item != null)
+                if (Equipped.TryGetValue(prefabName, out EquippedEntry? e) && e.Item != null)
                 {
                     shouldShow = e.Item.m_equipped;
                     displayLocal = e.DisplayName ?? "";
@@ -98,7 +98,7 @@ public class CustomEquipVisuals
                     if (isOwner && zdo != null)
                         zdo.Set(ZdoKeyFor(prefabName), 0);
 
-                    if (Equipped.TryGetValue(prefabName, out var e2) && !string.IsNullOrEmpty(e2.DisplayName))
+                    if (Equipped.TryGetValue(prefabName, out EquippedEntry? e2) && !string.IsNullOrEmpty(e2.DisplayName))
                         e2.DisplayName = "";
 
                     if (ForceSetEquipped(prefabName, 0))
@@ -132,7 +132,7 @@ public class CustomEquipVisuals
 
         public void SetDisplayName(string prefabName, string name)
         {
-            if (!Equipped.TryGetValue(prefabName, out var entry))
+            if (!Equipped.TryGetValue(prefabName, out EquippedEntry? entry))
             {
                 entry = new EquippedEntry(prefabName);
                 Equipped[prefabName] = entry;
@@ -143,7 +143,7 @@ public class CustomEquipVisuals
 
             if (Vis.m_nview && Vis.m_nview.IsOwner())
             {
-                var zdo = Vis.m_nview.GetZDO();
+                ZDO? zdo = Vis.m_nview.GetZDO();
                 zdo?.Set(ZdoKeyFor(prefabName), string.IsNullOrEmpty(name) ? 0 : name.GetStableHashCode());
             }
         }
@@ -168,7 +168,7 @@ public class CustomEquipVisuals
         [HarmonyPriority(Priority.First)]
         private static void Prefix(Player __instance)
         {
-            var ve = __instance.GetComponent<VisEquipment>();
+            VisEquipment? ve = __instance.GetComponent<VisEquipment>();
             if (!ve) return;
             if (!_states.ContainsKey(ve))
                 _states[ve] = new State(ve);
@@ -201,13 +201,13 @@ public class CustomEquipVisuals
         private static void Prefix(Humanoid __instance)
         {
             if (__instance is not Player p) return;
-            var ve = p.m_visEquipment;
+            VisEquipment? ve = p.m_visEquipment;
             if (!ve) return;
-            if (!_states.TryGetValue(ve, out var st)) return;
+            if (!_states.TryGetValue(ve, out State? st)) return;
 
-            foreach (var prefabName in _registered)
+            foreach (string? prefabName in _registered)
             {
-                var display = st.Equipped.TryGetValue(prefabName, out var e) ? (e.DisplayName ?? "") : "";
+                string display = st.Equipped.TryGetValue(prefabName, out EquippedEntry? e) ? (e.DisplayName ?? "") : "";
                 st.SetDisplayName(prefabName, display);
             }
         }
@@ -219,7 +219,7 @@ public class CustomEquipVisuals
         private static void Postfix(VisEquipment __instance)
         {
             if (!__instance.m_isPlayer) return;
-            if (_states.TryGetValue(__instance, out var st))
+            if (_states.TryGetValue(__instance, out State? st))
                 st.UpdateAllVisuals();
         }
     }
@@ -230,14 +230,14 @@ public class CustomEquipVisuals
         static void Postfix(Humanoid __instance, string setName, ref int __result)
         {
             if (__instance is not Player p) return;
-            var ve = p.m_visEquipment;
+            VisEquipment? ve = p.m_visEquipment;
             if (!ve) return;
-            if (!_states.TryGetValue(ve, out var st)) return;
+            if (!_states.TryGetValue(ve, out State? st)) return;
 
             int count = 0;
-            foreach (var entry in st.Equipped.Values)
+            foreach (EquippedEntry? entry in st.Equipped.Values)
             {
-                var item = entry.Item;
+                ItemDrop.ItemData? item = entry.Item;
                 if (item != null && item.m_shared.m_setName == setName)
                 {
                     ++count;
@@ -254,11 +254,11 @@ public class CustomEquipVisuals
         private static void Prefix(Humanoid __instance)
         {
             if (__instance is not Player p) return;
-            var ve = p.m_visEquipment;
+            VisEquipment? ve = p.m_visEquipment;
             if (!ve) return;
-            if (!_states.TryGetValue(ve, out var st)) return;
+            if (!_states.TryGetValue(ve, out State? st)) return;
 
-            foreach (var kv in st.Equipped.Values.ToList())
+            foreach (EquippedEntry? kv in st.Equipped.Values.ToList())
             {
                 if (kv.Item != null)
                     p.UnequipItem(kv.Item, false);
@@ -272,13 +272,13 @@ public class CustomEquipVisuals
         private static void Collect(Humanoid humanoid, HashSet<StatusEffect> set)
         {
             if (humanoid is not Player p) return;
-            var ve = p.m_visEquipment;
+            VisEquipment? ve = p.m_visEquipment;
             if (!ve) return;
-            if (!_states.TryGetValue(ve, out var st)) return;
+            if (!_states.TryGetValue(ve, out State? st)) return;
 
-            foreach (var entry in st.Equipped.Values)
+            foreach (EquippedEntry? entry in st.Equipped.Values)
             {
-                var item = entry.Item;
+                ItemDrop.ItemData? item = entry.Item;
                 if (item?.m_shared?.m_equipStatusEffect is { } eff)
                 {
                     set.Add(eff);
@@ -286,7 +286,7 @@ public class CustomEquipVisuals
 
                 if (item != null && humanoid.HaveSetEffect(item))
                 {
-                    var se = item.m_shared.m_equipStatusEffect;
+                    StatusEffect? se = item.m_shared.m_equipStatusEffect;
                     if (se != null) set.Add(se);
                 }
             }
@@ -294,7 +294,7 @@ public class CustomEquipVisuals
 
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instrs)
         {
-            var list = instrs.ToList();
+            List<CodeInstruction> list = instrs.ToList();
 
             list.InsertRange(2, new[]
             {
@@ -312,7 +312,7 @@ public class CustomEquipVisuals
         private static void Postfix(ItemDrop.ItemData __instance, ref bool __result)
         {
             if (__instance?.m_dropPrefab == null) return;
-            var name = __instance.m_dropPrefab.name;
+            string name = __instance.m_dropPrefab.name;
             if (_registered.Contains(name))
             {
                 __result = true;
@@ -328,12 +328,12 @@ public class CustomEquipVisuals
             if (__instance is not Player p) return;
             if (item == null || item.m_dropPrefab == null) return;
 
-            var ve = p.m_visEquipment;
+            VisEquipment? ve = p.m_visEquipment;
             if (!ve) return;
-            if (!_states.TryGetValue(ve, out var st)) return;
+            if (!_states.TryGetValue(ve, out State? st)) return;
 
-            var prefabName = item.m_dropPrefab.name;
-            if (_registered.Contains(prefabName) && st.Equipped.TryGetValue(prefabName, out var entry) && entry.Item == item)
+            string prefabName = item.m_dropPrefab.name;
+            if (_registered.Contains(prefabName) && st.Equipped.TryGetValue(prefabName, out EquippedEntry? entry) && entry.Item == item)
             {
                 __result = true;
             }
@@ -383,20 +383,20 @@ public class CustomEquipVisuals
                 return;
             }
 
-            var ve = p.m_visEquipment;
+            VisEquipment? ve = p.m_visEquipment;
             if (!ve || !_states.TryGetValue(ve, out State? st))
             {
                 __instance.SetupEquipment();
                 return;
             }
 
-            var thisSlot = GetSlotOf(item);
+            string thisSlot = GetSlotOf(item);
             if (!string.IsNullOrEmpty(thisSlot))
             {
-                foreach (var kv in st.Equipped.ToList())
+                foreach (KeyValuePair<string, EquippedEntry> kv in st.Equipped.ToList())
                 {
-                    var otherEntry = kv.Value;
-                    var other = otherEntry.Item;
+                    EquippedEntry? otherEntry = kv.Value;
+                    ItemDrop.ItemData? other = otherEntry.Item;
                     if (other == null || other == item) continue;
 
                     if (string.Equals(GetSlotOf(other), thisSlot, StringComparison.OrdinalIgnoreCase))
@@ -411,7 +411,7 @@ public class CustomEquipVisuals
                 }
             }
 
-            var name = item.m_dropPrefab.name;
+            string name = item.m_dropPrefab.name;
             if (_registered.Contains(name))
             {
                 st.ForceSetEquipped(name, name.GetStableHashCode());
@@ -432,20 +432,20 @@ public class CustomEquipVisuals
             if (humanoid is not Player p) return;
             if (item?.m_dropPrefab == null) return;
 
-            var prefab = item.m_dropPrefab.name;
+            string prefab = item.m_dropPrefab.name;
             if (!_registered.Contains(prefab)) return;
 
-            var ve = p.m_visEquipment;
+            VisEquipment? ve = p.m_visEquipment;
             if (!ve) return;
-            if (!_states.TryGetValue(ve, out var st)) return;
+            if (!_states.TryGetValue(ve, out State? st)) return;
 
-            if (!st.Equipped.TryGetValue(prefab, out var entry))
+            if (!st.Equipped.TryGetValue(prefab, out EquippedEntry? entry))
                 st.Equipped[prefab] = entry = new EquippedEntry(prefab);
 
             entry.Item = item;
 
             string visualKey = prefab;
-            if (_managed.TryGetValue(prefab, out var meta) && !string.IsNullOrEmpty(meta.visual))
+            if (_managed.TryGetValue(prefab, out (string slot, bool bypass, string visual) meta) && !string.IsNullOrEmpty(meta.visual))
                 visualKey = meta.visual;
 
             entry.DisplayName = visualKey;
@@ -454,13 +454,13 @@ public class CustomEquipVisuals
 
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructionsEnumerable)
         {
-            var instructions = instructionsEnumerable.ToList();
-            var isItemEquiped = AccessTools.DeclaredMethod(typeof(Humanoid), nameof(Humanoid.IsItemEquiped));
+            List<CodeInstruction> instructions = instructionsEnumerable.ToList();
+            MethodInfo? isItemEquiped = AccessTools.DeclaredMethod(typeof(Humanoid), nameof(Humanoid.IsItemEquiped));
 
-            var idx = instructions.FindLastIndex(ci => ci.Calls(isItemEquiped));
+            int idx = instructions.FindLastIndex(ci => ci.Calls(isItemEquiped));
             if (idx <= 1) return instructions;
 
-            var labelCarrier = instructions[idx - 2];
+            CodeInstruction? labelCarrier = instructions[idx - 2];
 
             instructions.InsertRange(idx - 2, new[]
             {
@@ -483,14 +483,14 @@ public class CustomEquipVisuals
             if (humanoid is not Player p) return;
             if (item == null || item.m_dropPrefab == null) return;
 
-            var name = item.m_dropPrefab.name;
+            string name = item.m_dropPrefab.name;
             if (!_registered.Contains(name)) return;
 
-            var ve = p.m_visEquipment;
+            VisEquipment? ve = p.m_visEquipment;
             if (!ve) return;
-            if (!_states.TryGetValue(ve, out var st)) return;
+            if (!_states.TryGetValue(ve, out State? st)) return;
 
-            if (st.Equipped.TryGetValue(name, out var entry) && entry.Item == item)
+            if (st.Equipped.TryGetValue(name, out EquippedEntry? entry) && entry.Item == item)
             {
                 entry.Item = null;
                 entry.DisplayName = "";
@@ -503,10 +503,10 @@ public class CustomEquipVisuals
 
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructionEnumerable)
         {
-            var list = instructionEnumerable.ToList();
-            var setupEquipment = AccessTools.DeclaredMethod(typeof(Humanoid), nameof(Humanoid.SetupEquipment));
+            List<CodeInstruction> list = instructionEnumerable.ToList();
+            MethodInfo? setupEquipment = AccessTools.DeclaredMethod(typeof(Humanoid), nameof(Humanoid.SetupEquipment));
 
-            var idx = list.FindIndex(ci => ci.Calls(setupEquipment));
+            int idx = list.FindIndex(ci => ci.Calls(setupEquipment));
             if (idx < 1) return list;
 
             list.InsertRange(idx - 1, new[]

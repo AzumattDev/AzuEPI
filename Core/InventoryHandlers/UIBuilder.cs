@@ -11,7 +11,7 @@ public class UIBuilder
     public const string AzuEquipmentBkgName = $"{Prefix}EquipmentBkg";
     public const string AzuPlayerBkgName = $"{Prefix}PlayerBkg";
     public const string DropAllButtonName = $"{Prefix}DropAllButton";
-    public const string ToggleButtonsHlgName = $"{Prefix}ToggleButtonsHlg";
+    public const string ToggleButtonsGlgName = $"{Prefix}ToggleButtonsGlg";
     public const string RuntimePanelName = $"{Prefix}RuntimePanel";
     public const string PlayerPreviewName = $"{Prefix}PlayerPreview";
     public const string PlayerPreviewImageName = $"{Prefix}PlayerPreviewImg";
@@ -23,9 +23,9 @@ public class UIBuilder
     public static GameObject PreviewParent = null!;
     public static GameObject PlayerPreviewImage = null!;
     public static Transform CharName = null!;
-    public static GameObject HlgGo = null!;
-    public static RectTransform HlgRt = null!;
-    
+    public static GameObject GlgGo = null!;
+    public static RectTransform GlgRt = null!;
+
     public const int columns = 2;
     public const int gapTiles = 4;
     public const float padding = 0.6f;
@@ -41,6 +41,9 @@ public class UIBuilder
         PreviewParent.SafeSetActive(OldLayout.Value.isOff());
         PlayerPreviewImage.SafeSetActive(OldLayout.Value.isOff());
         CharName.SafeSetActive(OldLayout.Value.isOff());
+        GUICache.ButtonGridLayoutGroup.constraintCount = OldLayout.Value.isOff() ? 2 : QuickSlotsAmount.Value < 1 ? 1 : 2;
+        GUICache.ButtonGridLayoutGroup.childAlignment = OldLayout.Value.isOff() ? TextAnchor.MiddleCenter : TextAnchor.MiddleLeft;
+        GUICache.ButtonGridLayoutGroup.cellSize = OldLayout.Value.isOff() ? new Vector2(118f, 32f) : new Vector2(170f, 32f);
     }
 
     public static void BuildEquipmentBkg(InventoryGui invGui, RectTransform bkgRect)
@@ -50,36 +53,38 @@ public class UIBuilder
         transform.name = AzuEquipmentBkgName;
 
         Vector2 maxAnchor = Layout.GetEquipmentBackAnchorMax();
-        if (Chainloader.PluginInfos.TryGetValue(MinimalUiguid, out var pluginInfo) && pluginInfo is not null)
+        if (Chainloader.PluginInfos.TryGetValue(MinimalUiguid, out PluginInfo? pluginInfo) && pluginInfo is not null)
             maxAnchor.x += 0.03f;
 
-        transform.GetComponent<RectTransform>()
-            .WithAnchors(new Vector2(1f, 0f), maxAnchor);
+        transform.GetComponent<RectTransform>().WithAnchors(new Vector2(1f, 0f), maxAnchor);
 
-        InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<RectTransform>()
-            .WithAnchorMax(maxAnchor);
+        InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<RectTransform>().WithAnchorMax(maxAnchor);
 
         InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<Image>().raycastTarget = false;
         transform.gameObject.SetActive(OldLayout.Value.isOn());
     }
 
-    public static void BuildToggleButtonHlg(InventoryGui invGui)
+    public static void BuildToggleButtonGlg(InventoryGui invGui)
     {
-        HlgGo = GameObjectHelper.CreateUIObject(ToggleButtonsHlgName, typeof(HorizontalLayoutGroup))
-            .WithParent(invGui.m_crafting.transform, false);
+        GlgGo = GameObjectHelper.CreateUIObject(ToggleButtonsGlgName, typeof(GridLayoutGroup))
+            .WithParent(OldLayout.Value.isOff() ? invGui.m_crafting.transform : invGui.m_player.transform, false);
 
-        HlgRt = (RectTransform)HlgGo.transform;
-        HlgRt.WithAnchors(new Vector2(0f, 1f), new Vector2(0f, 1f))
+        GlgRt = (RectTransform)GlgGo.transform;
+        GlgRt.WithAnchors(new Vector2(0f, 1f), new Vector2(0f, 1f))
             .WithPivot(new Vector2(0.5f, 1f))
-            .WithAnchoredPosition(OldLayout.Value.isOff() ? Layout.ToggleButtonsHlgAnchoredPos : Layout.ToggleButtonsHlgAnchoredPosOld)
+            .WithAnchoredPosition(OldLayout.Value.isOff() ? Layout.ToggleButtonsHlgAnchoredPos : Layout.ToggleButtonsHlgAnchoredPosOldVert)
             .WithSizeDelta(new Vector2(270f, 32f));
 
-        var hlg = HlgGo.GetComponent<HorizontalLayoutGroup>();
-        hlg.childAlignment = TextAnchor.MiddleCenter;
-        hlg.spacing = 35f;
+        GridLayoutGroup? glg = GlgGo.GetComponent<GridLayoutGroup>();
+        glg.childAlignment = TextAnchor.MiddleCenter;
+        glg.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        glg.constraintCount = 2;
+        glg.spacing = new Vector2(35f, 5f);
+        glg.cellSize = new Vector2(118f, 32f);
 
-        VanityPanelController.ToggleButtonParentHlg = HlgRt;
-        PersonalLoadoutGui.ToggleButtonParentHlg = HlgRt;
+        GUICache.ButtonGridLayoutGroup = glg;
+        VanityPanelController.ToggleButtonParentGlg = GlgRt;
+        PersonalLoadoutGui.ToggleButtonParentGlg = GlgRt;
     }
 
     public static void EnsureVanityPanelBuilt(InventoryGui invGui)
@@ -127,11 +132,11 @@ public class UIBuilder
             .WithParent(previewParentRT, false)
             .WithActive(OldLayout.Value.isOff());
 
-        var rt = (RectTransform)PlayerPreviewImage.transform;
+        RectTransform rt = (RectTransform)PlayerPreviewImage.transform;
         rt.WithSizeDelta(Layout.PlayerPreviewImageSize)
             .WithAnchoredPosition(Vector2.zero);
 
-        var raw = PlayerPreviewImage.GetComponent<RawImage>();
+        RawImage? raw = PlayerPreviewImage.GetComponent<RawImage>();
         raw.raycastTarget = false;
         raw.color = Color.white;
 
@@ -166,7 +171,7 @@ public class UIBuilder
         Transform dropAllButtonTransform = Object.Instantiate(dropAllButtonPrefab, invGui.m_player);
         dropAllButtonTransform.name = DropAllButtonName;
 
-        var rectTransform = dropAllButtonTransform.GetComponent<RectTransform>();
+        RectTransform? rectTransform = dropAllButtonTransform.GetComponent<RectTransform>();
         rectTransform.SetAsFirstSibling();
         rectTransform.WithAnchors(Layout.DropAllAnchorMin, Layout.DropAllAnchorMax)
             .WithPivot(Layout.DropAllPivot)
@@ -175,7 +180,7 @@ public class UIBuilder
 
         rectTransform.GetComponentInChildren<TMP_Text>().text = Localization.instance.Localize("$azuepi_dropall");
 
-        var buttonComp = dropAllButtonTransform.GetComponent<Button>();
+        Button? buttonComp = dropAllButtonTransform.GetComponent<Button>();
         buttonComp.onClick.RemoveAllListeners();
         buttonComp.onClick.AddListener(() => Console.instance.TryRunCommand("azuepi.dropall"));
 
