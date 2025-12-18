@@ -56,7 +56,17 @@ public class UIBuilder
         if (Chainloader.PluginInfos.TryGetValue(MinimalUiguid, out PluginInfo? pluginInfo) && pluginInfo is not null)
             maxAnchor.x += 0.03f;
 
-        transform.GetComponent<RectTransform>().WithAnchors(new Vector2(1f, 0f), maxAnchor);
+        RectTransform equipBkgRT = transform.GetComponent<RectTransform>();
+        equipBkgRT.WithAnchors(new Vector2(1f, 0f), maxAnchor);
+
+        if (OldLayout.Value.isOn() && VanityOption.Value.isOff() && LoadoutOption.Value.isOff())
+        {
+            equipBkgRT.offsetMin = new Vector2(0f, (Layout.tileSize - 10));
+        }
+        else
+        {
+            equipBkgRT.offsetMin = new Vector2(-10,-10);
+        }
 
         InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<RectTransform>().WithAnchorMax(maxAnchor);
 

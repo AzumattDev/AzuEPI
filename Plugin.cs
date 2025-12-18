@@ -175,6 +175,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             {
                 VanityPanelController.VanityButtonGo.gameObject.SetActive(VanityOption.Value.isOn());
             }
+            SlotHelpers.UpdateEquipmentBackgroundAnchors();
         };
 
         LoadoutOption.SettingChanged += (sender, args) =>
@@ -183,6 +184,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             {
                 PersonalLoadoutGui.LoadoutsToggleButton.gameObject.SetActive(LoadoutOption.Value.isOn());
             }
+            SlotHelpers.UpdateEquipmentBackgroundAnchors();
         };
 
         OldLayout.SettingChanged += (sender, args) =>
@@ -218,7 +220,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         Localization.OnLanguageChange += new Action(API.RelocalizeSlots);
     }
 
-    private void FullRebuild()
+    internal void FullRebuild()
     {
         InventoryGuiPatches.UpdateInventory_Patch.RebuildQuickslots();
         SlotHelpers.ResizeSlots();

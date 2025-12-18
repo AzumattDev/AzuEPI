@@ -20,6 +20,15 @@ public class SlotHelpers
         RectTransform? equipBkgRT = equipmentBkg.GetComponent<RectTransform>();
         equipBkgRT.anchorMax = maxAnchor;
 
+        if (OldLayout.Value.isOn() && VanityOption.Value.isOff() && LoadoutOption.Value.isOff())
+        {
+            equipBkgRT.offsetMin = new Vector2(0f, (Layout.tileSize - 10));
+        }
+        else
+        {
+            equipBkgRT.offsetMin = new Vector2(-10, -10);
+        }
+
         if (InventoryGui.instance.m_playerGrid?.m_gridRoot)
         {
             InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<RectTransform>().anchorMax = maxAnchor;
