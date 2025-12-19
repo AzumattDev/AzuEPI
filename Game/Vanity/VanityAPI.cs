@@ -14,6 +14,57 @@ internal static class LoadVanityOnPlayerLoad
     }
 }
 
+internal static class CharacterSelectionVanity
+{
+    internal static Player? PreviewPlayer;
+    internal static readonly Dictionary<int, int> VanityData = new();
+
+    internal static void LoadFromPlayer(Player player)
+    {
+        PreviewPlayer = player;
+        VanityData.Clear();
+
+        if (!player || !player.m_customData.TryGetValue("AzuEPI.Vanity", out string data))
+            return;
+
+        string[] parts = data.Split(':');
+        if (parts.Length >= 6)
+        {
+            if (int.TryParse(parts[0], out int helmet)) VanityData[VanityZdoKeys.Helmet] = helmet;
+            if (int.TryParse(parts[1], out int chest)) VanityData[VanityZdoKeys.Chest] = chest;
+            if (int.TryParse(parts[2], out int legs)) VanityData[VanityZdoKeys.Legs] = legs;
+            if (int.TryParse(parts[3], out int shoulder)) VanityData[VanityZdoKeys.Shoulder] = shoulder;
+            if (int.TryParse(parts[4], out int shoulderVar)) VanityData[VanityZdoKeys.ShoulderVariant] = shoulderVar;
+            if (int.TryParse(parts[5], out int utility)) VanityData[VanityZdoKeys.Utility] = utility;
+            if (parts.Length >= 7 && int.TryParse(parts[6], out int trinket)) VanityData[VanityZdoKeys.Trinket] = trinket;
+        }
+    }
+
+    internal static void Clear()
+    {
+        PreviewPlayer = null;
+        VanityData.Clear();
+    }
+}
+
+[HarmonyPatch(typeof(FejdStartup), nameof(FejdStartup.SetupCharacterPreview))]
+internal static class LoadVanityOnCharacterPreview
+{
+    [HarmonyPostfix]
+    static void Postfix(FejdStartup __instance)
+    {
+        Player? previewPlayer = __instance.GetPreviewPlayer();
+        if (previewPlayer != null)
+        {
+            CharacterSelectionVanity.LoadFromPlayer(previewPlayer);
+        }
+        else
+        {
+            CharacterSelectionVanity.Clear();
+        }
+    }
+}
+
 internal static class VanityZdoKeys
 {
     internal static readonly int Chest = "azu.vanity.chest".GetStableHashCode();

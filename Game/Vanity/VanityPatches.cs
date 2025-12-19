@@ -6,6 +6,12 @@ internal static class VanityHelper
 {
     internal static int GetVanityValue(VisEquipment ve, int key)
     {
+        if (CharacterSelectionVanity.PreviewPlayer != null &&
+            ve == CharacterSelectionVanity.PreviewPlayer.m_visEquipment)
+        {
+            return CharacterSelectionVanity.VanityData.TryGetValue(key, out int value) ? value : 0;
+        }
+
         if (ve == AzuEPICharacterPanel.playerPreviewComp?.m_visEquipment)
         {
             VisEquipment? playerVe = Player.m_localPlayer?.m_visEquipment;
@@ -13,13 +19,17 @@ internal static class VanityHelper
                 return VanityAPI.Get(playerVe, key);
         }
 
-        int value = VanityAPI.Get(ve, key);
-
-        return value;
+        return VanityAPI.Get(ve, key);
     }
 
     internal static int GetVanityVariant(VisEquipment ve, int key)
     {
+        if (CharacterSelectionVanity.PreviewPlayer != null &&
+            ve == CharacterSelectionVanity.PreviewPlayer.m_visEquipment)
+        {
+            return CharacterSelectionVanity.VanityData.TryGetValue(key, out int value) ? value : 0;
+        }
+
         if (ve == AzuEPICharacterPanel.playerPreviewComp?.m_visEquipment)
         {
             VisEquipment? playerVe = Player.m_localPlayer?.m_visEquipment;
