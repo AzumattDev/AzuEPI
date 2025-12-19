@@ -164,15 +164,7 @@ public static class VanityAPI
         ZDO? zdo = ve.m_nview?.GetZDO();
         if (zdo == null) return;
 
-        string data = string.Join(":",
-            zdo.GetInt(VanityZdoKeys.Helmet),
-            zdo.GetInt(VanityZdoKeys.Chest),
-            zdo.GetInt(VanityZdoKeys.Legs),
-            zdo.GetInt(VanityZdoKeys.Shoulder),
-            zdo.GetInt(VanityZdoKeys.ShoulderVariant),
-            zdo.GetInt(VanityZdoKeys.Utility),
-            zdo.GetInt(VanityZdoKeys.Trinket)
-        );
+        string data = $"{zdo.GetInt(VanityZdoKeys.Helmet)}:{zdo.GetInt(VanityZdoKeys.Chest)}:{zdo.GetInt(VanityZdoKeys.Legs)}:{zdo.GetInt(VanityZdoKeys.Shoulder)}:{zdo.GetInt(VanityZdoKeys.ShoulderVariant)}:{zdo.GetInt(VanityZdoKeys.Utility)}:{zdo.GetInt(VanityZdoKeys.Trinket)}";
 
         player.m_customData["AzuEPI.Vanity"] = data;
     }

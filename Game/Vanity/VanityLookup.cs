@@ -25,6 +25,7 @@ internal static class VanityLookup
 {
     private static readonly Dictionary<int, (string prefab, ItemDrop itemDrop)> _byHash = new(2048);
     private static int _buildFrame = -1;
+    private static readonly List<ItemDrop> _tempDrops = new(32);
 
     private static IEnumerable<ItemDrop> AllItemDrops(ObjectDB odb)
     {
@@ -32,7 +33,9 @@ internal static class VanityLookup
         foreach (GameObject? go in odb.m_items)
         {
             if (!go) continue;
-            foreach (ItemDrop? id in go.GetComponentsInChildren<ItemDrop>(true))
+            _tempDrops.Clear();
+            go.GetComponentsInChildren(true, _tempDrops);
+            foreach (ItemDrop? id in _tempDrops)
                 if (id && id.m_itemData?.m_shared != null)
                     yield return id;
         }

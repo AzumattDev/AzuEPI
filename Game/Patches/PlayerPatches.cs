@@ -158,16 +158,17 @@ public class PlayerPatches
             if (InventoryHealth.IgnoreKeyPresses(true) || AddEquipmentRow.Value.isOff() || Hotkeys.Length == 0)
                 return;
 
-            int hotkey = 0;
-            while (!Hotkeys[hotkey].Value.IsKeyDown())
-                if (++hotkey == Hotkeys.Length)
-                    return;
+            for (int hotkey = 0; hotkey < Hotkeys.Length; ++hotkey)
+            {
+                if (!Hotkeys[hotkey].Value.IsKeyDown())
+                    continue;
 
-            int index = (Layout.BaseInventoryHeight + ExtraRows.Value) * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length + hotkey;
-            ItemDrop.ItemData itemAt = ___m_inventory.GetItemAt(index % width, index / width);
-            if (itemAt == null)
+                int index = (Layout.BaseInventoryHeight + ExtraRows.Value) * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length + hotkey;
+                ItemDrop.ItemData itemAt = ___m_inventory.GetItemAt(index % width, index / width);
+                if (itemAt != null)
+                    __instance.UseItem(null, itemAt, true);
                 return;
-            __instance.UseItem(null, itemAt, true);
+            }
         }
 
         private static void CreateTombStone()

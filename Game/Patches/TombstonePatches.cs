@@ -58,10 +58,11 @@ public class TombstonePatches
             }
 
             if (!AutoEquip.Value.isOn()) return;
-            IEnumerable<SlotSnapshot> snaps = API.GetEquipmentSlotSnapshots(localPlayer.GetInventory());
+            Inventory inventory = localPlayer.GetInventory();
+            IEnumerable<SlotSnapshot> snaps = API.GetEquipmentSlotSnapshots(inventory);
             foreach (SlotSnapshot snap in snaps)
             {
-                ItemDrop.ItemData? itemAt = localPlayer.GetInventory().GetItemAt(snap.GridPos.x, snap.GridPos.y);
+                ItemDrop.ItemData? itemAt = inventory.GetItemAt(snap.GridPos.x, snap.GridPos.y);
                 if (itemAt != null)
                     localPlayer.EquipItem(itemAt);
             }

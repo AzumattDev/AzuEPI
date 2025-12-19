@@ -62,6 +62,10 @@ internal static class VanityPanelController
 
     private static readonly Dictionary<VisSlot, List<VanityCell>> _cellsBySlot = new();
 
+    private static readonly List<GameObject> _reusableGameObjectList = new(256);
+    private static readonly Dictionary<string, ItemDrop> _reusableDropsDict = new(256);
+    private static readonly List<ItemDrop.ItemData> _reusableVanityItems = new(128);
+
     public static void EnsureBuilt(InventoryGui gui)
     {
         if (!gui) return;
@@ -95,22 +99,22 @@ internal static class VanityPanelController
         _cellsBySlot.Clear();
         ClearChildren(_content);
 
-        List<GameObject> allGameObjects = new List<GameObject>();
+        _reusableGameObjectList.Clear();
         foreach (Recipe? recipe in odb.m_recipes)
         {
             if (recipe && recipe.m_item)
-                allGameObjects.Add(recipe.m_item.gameObject);
+                _reusableGameObjectList.Add(recipe.m_item.gameObject);
         }
         if (odb.m_items != null)
         {
             foreach (GameObject? go in odb.m_items)
             {
-                if (go) allGameObjects.Add(go);
+                if (go) _reusableGameObjectList.Add(go);
             }
         }
 
-        Dictionary<string, ItemDrop> uniqueDrops = new Dictionary<string, ItemDrop>();
-        foreach (GameObject? go in allGameObjects)
+        _reusableDropsDict.Clear();
+        foreach (GameObject? go in _reusableGameObjectList)
         {
             ItemDrop[]? itemDrops = go.GetComponentsInChildren<ItemDrop>(true);
             foreach (var id in itemDrops)
@@ -118,14 +122,14 @@ internal static class VanityPanelController
                 if (id && id.m_itemData?.m_shared != null)
                 {
                     string? name = id.m_itemData.m_shared.m_name;
-                    if (!uniqueDrops.ContainsKey(name))
-                        uniqueDrops[name] = id;
+                    if (!_reusableDropsDict.ContainsKey(name))
+                        _reusableDropsDict[name] = id;
                 }
             }
         }
 
-        List<ItemDrop.ItemData> vanityItems = new List<ItemDrop.ItemData>();
-        foreach (ItemDrop? drop in uniqueDrops.Values)
+        _reusableVanityItems.Clear();
+        foreach (ItemDrop? drop in _reusableDropsDict.Values)
         {
             ItemDrop.ItemData? d = drop.m_itemData;
             if (d != null &&
@@ -140,11 +144,11 @@ internal static class VanityPanelController
                  d.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder ||
                  d.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility))
             {
-                vanityItems.Add(d);
+                _reusableVanityItems.Add(d);
             }
         }
 
-        vanityItems.Sort((a, b) =>
+        _reusableVanityItems.Sort((a, b) =>
         {
             int typeCompare = a.m_shared.m_itemType.CompareTo(b.m_shared.m_itemType);
             return typeCompare != 0 ? typeCompare : string.Compare(a.m_shared.m_name, b.m_shared.m_name, StringComparison.Ordinal);
@@ -154,7 +158,7 @@ internal static class VanityPanelController
         ItemDrop.ItemData.ItemType currentType = (ItemDrop.ItemData.ItemType)(-1);
         GridLayoutGroup currentGrid = null;
 
-        foreach (ItemDrop.ItemData? data in vanityItems)
+        foreach (ItemDrop.ItemData? data in _reusableVanityItems)
         {
             ItemDrop.ItemData.ItemType itemType = data.m_shared.m_itemType;
 
@@ -660,7 +664,8 @@ internal static class VanityPanelController
 
     private static void DisableChildrenContaining(Transform root, string contains)
     {
-        for (int i = 0; i < root.childCount; ++i)
+        int count = root.childCount;
+        for (int i = 0; i < count; ++i)
         {
             Transform? t = root.GetChild(i);
             if (t.name.Contains(contains))
@@ -687,7 +692,8 @@ internal static class VanityPanelController
 
     private static void ClearChildren(Transform t)
     {
-        for (int i = t.childCount - 1; i >= 0; --i)
+        int count = t.childCount;
+        for (int i = count - 1; i >= 0; --i)
             Object.Destroy(t.GetChild(i).gameObject);
     }
 

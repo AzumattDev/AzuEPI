@@ -33,7 +33,12 @@ public class InventoryPatches
 
             int normalRows = Layout.NormalRows(__instance);
 
-            int normalUsed = ___m_inventory.Count(i => i.m_gridPos.y < normalRows);
+            int normalUsed = 0;
+            foreach (ItemDrop.ItemData item in ___m_inventory)
+            {
+                if (item.m_gridPos.y < normalRows)
+                    normalUsed++;
+            }
             bool normalHas = normalUsed < (normalRows * ___m_width);
 
             if (normalHas)
@@ -156,20 +161,22 @@ public class InventoryPatches
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.Load))]
     internal static class Load_FixHiddenItems_Patch
     {
+        private static readonly List<ItemDrop.ItemData> _stuckItems = new(16);
+
         private static void Postfix(Inventory __instance)
         {
             if (!__instance.ShouldProtectInventorySlots()) return;
 
-            List<ItemDrop.ItemData> stuck = new List<ItemDrop.ItemData>();
+            _stuckItems.Clear();
             foreach (ItemDrop.ItemData? it in __instance.GetAllItems())
             {
                 if (__instance.IsHiddenCell(it.m_gridPos.x, it.m_gridPos.y))
-                    stuck.Add(it);
+                    _stuckItems.Add(it);
             }
 
-            if (stuck.Count == 0) return;
+            if (_stuckItems.Count == 0) return;
 
-            foreach (ItemDrop.ItemData? it in stuck)
+            foreach (ItemDrop.ItemData? it in _stuckItems)
             {
                 if (__instance.RemoveItem(it))
                 {
