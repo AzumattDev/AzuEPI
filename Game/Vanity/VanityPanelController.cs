@@ -236,18 +236,11 @@ internal static class VanityPanelController
         VanityAPI.ClearVanity(ve, VisSlot.Shoulder);
         VanityAPI.ClearVanity(ve, VisSlot.Utility);
 
-        VisEquipment? previewVe = AzuEPICharacterPanel.playerPreviewComp?.m_visEquipment;
-        if (previewVe)
-        {
-            VanityAPI.ClearVanity(previewVe, VisSlot.Helmet);
-            VanityAPI.ClearVanity(previewVe, VisSlot.Chest);
-            VanityAPI.ClearVanity(previewVe, VisSlot.Legs);
-            VanityAPI.ClearVanity(previewVe, VisSlot.Shoulder);
-            VanityAPI.ClearVanity(previewVe, VisSlot.Utility);
-        }
-
         foreach (VisSlot slot in _cellsBySlot.Keys)
             UpdateSelectedVisuals(slot);
+
+        VECloneSync.ResetStamp();
+        VECloneSync.MirrorFrom(player, AzuEPICharacterPanel.playerPreviewComp);
     }
 
     private static void BuildPanel(InventoryGui gui)
@@ -770,36 +763,34 @@ public class VanityCell : MonoBehaviour
     public void OnRightClick(UIInputHandler _)
     {
         VisEquipment? ve = Player.m_localPlayer?.m_visEquipment;
-        VisEquipment? previewVe = AzuEPICharacterPanel.playerPreviewComp?.m_visEquipment;
         if (!ve) return;
 
         if (IsNone)
         {
             VanityAPI.SetHidden(ve, Slot, false);
-            if (previewVe) VanityAPI.SetHidden(previewVe, Slot, false);
             VanityPanelController.UpdateSelectedVisuals(Slot);
+            VECloneSync.ResetStamp();
             VECloneSync.MirrorFrom(Player.m_localPlayer, AzuEPICharacterPanel.playerPreviewComp);
             return;
         }
 
         if (Item?.m_dropPrefab == null) return;
         VanityAPI.ClearVanity(ve, Slot);
-        if (previewVe) VanityAPI.ClearVanity(previewVe, Slot);
         VanityPanelController.UpdateSelectedVisuals(Slot);
+        VECloneSync.ResetStamp();
         VECloneSync.MirrorFrom(Player.m_localPlayer, AzuEPICharacterPanel.playerPreviewComp);
     }
 
     public void OnLeftClick(UIInputHandler _)
     {
         VisEquipment? ve = Player.m_localPlayer?.m_visEquipment;
-        VisEquipment? previewVe = AzuEPICharacterPanel.playerPreviewComp?.m_visEquipment;
-        if (!ve || !previewVe) return;
+        if (!ve) return;
 
         if (IsNone)
         {
             VanityAPI.SetHidden(ve, Slot, true);
-            VanityAPI.SetHidden(previewVe, Slot, true);
             VanityPanelController.UpdateSelectedVisuals(Slot);
+            VECloneSync.ResetStamp();
             VECloneSync.MirrorFrom(Player.m_localPlayer, AzuEPICharacterPanel.playerPreviewComp);
             return;
         }
@@ -812,27 +803,24 @@ public class VanityCell : MonoBehaviour
         {
             case VisSlot.Helmet:
                 VanityAPI.SetVanity(ve, VisSlot.Helmet, prefab);
-                VanityAPI.SetVanity(previewVe, VisSlot.Helmet, prefab);
                 break;
             case VisSlot.Chest:
                 VanityAPI.SetVanity(ve, VisSlot.Chest, prefab);
-                VanityAPI.SetVanity(previewVe, VisSlot.Chest, prefab);
                 break;
             case VisSlot.Legs:
                 VanityAPI.SetVanity(ve, VisSlot.Legs, prefab);
-                VanityAPI.SetVanity(previewVe, VisSlot.Legs, prefab);
                 break;
             case VisSlot.Shoulder:
                 VanityAPI.SetVanity(ve, VisSlot.Shoulder, prefab, variant: 0);
-                VanityAPI.SetVanity(previewVe, VisSlot.Shoulder, prefab, variant: 0);
                 break;
             case VisSlot.Utility:
                 VanityAPI.SetVanity(ve, VisSlot.Utility, prefab);
-                VanityAPI.SetVanity(previewVe, VisSlot.Utility, prefab);
                 break;
         }
 
         VanityPanelController.UpdateSelectedVisuals(Slot);
+        // Reset stamp so MirrorFrom actually runs (vanity changes don't affect the stamp)
+        VECloneSync.ResetStamp();
         VECloneSync.MirrorFrom(Player.m_localPlayer, AzuEPICharacterPanel.playerPreviewComp);
     }
 }
