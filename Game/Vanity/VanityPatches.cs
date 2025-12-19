@@ -10,18 +10,12 @@ internal static class VanityHelper
         {
             VisEquipment? playerVe = Player.m_localPlayer?.m_visEquipment;
             if (playerVe != null)
-            {
-                int value = VanityAPI.Get(playerVe, key);
-                AzuExtendedPlayerInventoryLogger.LogDebug($"[VANITY HELPER] Reading from PLAYER for preview - Key: {key}, Value: {value}");
-                return value;
-            }
-            else
-            {
-                AzuExtendedPlayerInventoryLogger.LogDebug($"[VANITY HELPER] Preview detected but player is NULL!");
-            }
+                return VanityAPI.Get(playerVe, key);
         }
 
-        return VanityAPI.Get(ve, key);
+        int value = VanityAPI.Get(ve, key);
+
+        return value;
     }
 
     internal static int GetVanityVariant(VisEquipment ve, int key)

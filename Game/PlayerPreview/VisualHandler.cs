@@ -220,7 +220,11 @@ public class CustomEquipVisuals
         {
             if (!__instance.m_isPlayer) return;
             if (_states.TryGetValue(__instance, out State? st))
+            {
                 st.UpdateAllVisuals();
+                if (__instance == Player.m_localPlayer?.m_visEquipment)
+                    VECloneSync.ResetStamp();
+            }
         }
     }
 
