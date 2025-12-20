@@ -193,11 +193,11 @@ internal static class QuickAccessBar
         Transform transform = Hud.instance.transform.Find("hudroot");
         if (!(transform.Find(QabName)?.GetComponent<RectTransform>() != null))
             return;
-        if (QuickAccessX.Value == 9999.0)
-            QuickAccessX.Value = transform.Find("healthpanel").GetComponent<RectTransform>().anchoredPosition.x - 32f;
-        if (QuickAccessY.Value == 9999.0)
-            QuickAccessY.Value = transform.Find("healthpanel").GetComponent<RectTransform>().anchoredPosition.y - 870f;
-        transform.Find(QabName).GetComponent<RectTransform>().anchoredPosition = new Vector2(QuickAccessX.Value, QuickAccessY.Value);
+        RectTransform? healthPanel = Hud.instance.m_healthPanel;
+        RectTransform? healthPanelRect = healthPanel.GetComponent<RectTransform>();
+        if (QuickAccessLocation.Value == Vector2.one)
+            QuickAccessLocation.Value = new Vector2(healthPanelRect.anchoredPosition.x - 2.5f, healthPanelRect.anchoredPosition.y - 380.87f);
+        transform.Find(QabName).GetComponent<RectTransform>().anchoredPosition = QuickAccessLocation.Value;
         transform.Find(QabName).GetComponent<RectTransform>().localScale = new Vector3(QuickAccessScale.Value, QuickAccessScale.Value, 1f);
     }
 }

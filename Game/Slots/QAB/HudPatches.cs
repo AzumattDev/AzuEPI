@@ -14,9 +14,18 @@ public class HudPatches
 
             API.HudAwake(__instance);
 
-            Transform transform = Object.Instantiate(__instance.m_rootObject.transform.Find("HotKeyBar"), __instance.m_rootObject.transform, true);
-            transform.name = QabName;
-            transform.GetComponent<RectTransform>().localPosition = Vector3.zero;
+            Transform? vanillaHotkeyBar = __instance.m_rootObject.transform.Find("HotKeyBar");
+            if (vanillaHotkeyBar)
+            {
+                vanillaHotkeyBar.TryGetComponent(out RectTransform rect);
+                if (rect)
+                {
+                    Transform transform = Object.Instantiate(rect, __instance.m_rootObject.transform, true);
+                    transform.name = QabName;
+                    transform.localPosition = Vector3.zero;
+                    transform.SetSiblingIndex(rect.GetSiblingIndex() + 1);
+                }
+            }
 
             API.HudAwakeComplete(__instance);
         }
@@ -43,7 +52,6 @@ public class HudPatches
             if (ExtendedPlayerInventory.lastMousePos == Vector3.zero)
                 ExtendedPlayerInventory.lastMousePos = mousePosition;
 
-            // Cache transforms to avoid Find and GetComponent every frame
             if (_cachedHudrootTransform == null)
                 _cachedHudrootTransform = Hud.instance.transform.Find("hudroot");
             if (_cachedQuickAccessBarTransform == null)
@@ -51,6 +59,8 @@ public class HudPatches
             if (_cachedQuickAccessBarRect == null && _cachedQuickAccessBarTransform != null)
                 _cachedQuickAccessBarRect = _cachedQuickAccessBarTransform.GetComponent<RectTransform>();
 
+            if (InventoryGui.IsVisible()) return;
+            
             if (QuickslotDragKeys.Value.IsPressed() && _cachedQuickAccessBarTransform != null)
             {
                 RectTransform quickAccessBarRect = _cachedQuickAccessBarRect;
@@ -65,8 +75,7 @@ public class HudPatches
                     float deltaX = (mousePosition.x - ExtendedPlayerInventory.lastMousePos.x) / scaleFactor;
                     float deltaY = (mousePosition.y - ExtendedPlayerInventory.lastMousePos.y) / scaleFactor;
 
-                    QuickAccessX.Value += deltaX;
-                    QuickAccessY.Value += deltaY;
+                    QuickAccessLocation.Value = new Vector2(QuickAccessLocation.Value.x + deltaX, QuickAccessLocation.Value.y + deltaY);
                     ExtendedPlayerInventory.currentlyDragging = QabName;
                 }
                 else

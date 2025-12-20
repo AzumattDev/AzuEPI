@@ -15,6 +15,7 @@ namespace AzuEPI;
 [BepInDependency("vapok.mods.adventurebackpacks", BepInDependency.DependencyFlags.SoftDependency)]
 [BepInDependency("ishid4.mods.betterarchery", BepInDependency.DependencyFlags.SoftDependency)]
 [BepInIncompatibility("shudnal.ExtraSlots")]
+[BepInIncompatibility("shudnal.ExtraSlotsCustomSlots")]
 public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 {
     public enum Toggle
@@ -88,11 +89,10 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         QuickSlotsAmount = config("4 - Quick Slots", "Number of Quick Slots", 3, new ConfigDescription("Number of quick slots to add (0-6).", new AcceptableValueRange<int>(0, 6)), NextOrder, true);
         ShowQuickSlots = config("4 - Quick Slots", "Show Quick Slots on HUD", On, "Shows the quick slots bar on screen during gameplay.", NextOrder);
         AlwaysShowQuickSlotsInUI = config("4 - Quick Slots", "Show All Available", On, "Shows all available quickslots in the hud, not just the ones up to the highest occupied slot. Turn off if you want to only show slots up to the highest occupied slot.", NextOrder);
-        QuickAccessScale = config("4 - Quick Slots", "Quick Slots Size", 0.85f, "Size/scale of the quick slots bar.", NextOrder, false);
+        QuickAccessScale = config("4 - Quick Slots", "Quick Slots Size", 1f, "Size/scale of the quick slots bar.", NextOrder, false);
         QuickslotDragKeys = config("4 - Quick Slots", "Quick Slots Drag Keys", new KeyboardShortcut(KeyCode.Mouse0, KeyCode.LeftControl), "Key combination to drag and reposition the quick slots bar.", NextOrder, false);
-        QuickAccessX = config("4 - Quick Slots", "Quick Slots Position X", 9999f, "Horizontal position of quick slots (9999 = automatic).", NextOrder, false);
-        QuickAccessY = config("4 - Quick Slots", "Quick Slots Position Y", 9999f, "Vertical position of quick slots (9999 = automatic).", NextOrder, false);
-        QuickSlotsPerRow = config("4 - Quick Slots", "Quick Slots Per Row", 3, new ConfigDescription("Number of quick slots to display per row. Set to number of quickslots for a single horizontal row, or lower values to stack them vertically.", new AcceptableValueRange<int>(1, 6)), NextOrder, false);
+        QuickAccessLocation = config("4 - Quick Slots", "Quick Slots Position", Vector2.one, "Horizontal position of quick slots (9999 = automatic).", NextOrder, false);
+        QuickSlotsPerRow = config("4 - Quick Slots", "Quick Slots Per Row", 6, new ConfigDescription("Number of quick slots to display per row. Set to number of quickslots for a single horizontal row, or lower values to stack them vertically.", new AcceptableValueRange<int>(1, 6)), NextOrder, false);
 
         /* 5 - Additional Equipment Slots */
         ResetConfigOrder();
@@ -355,8 +355,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<KeyboardShortcut>[] Hotkeys = null!;
     public static ConfigEntry<string>[] HotkeyTexts = null!;
 
-    public static ConfigEntry<float> QuickAccessX = null!;
-    public static ConfigEntry<float> QuickAccessY = null!;
+    public static ConfigEntry<Vector2> QuickAccessLocation = null!;
     public static ConfigEntry<int> QuickSlotsPerRow = null!;
     public static ConfigEntry<Toggle> AlwaysShowQuickSlotsInUI = null!;
 
