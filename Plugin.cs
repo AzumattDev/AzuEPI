@@ -86,13 +86,13 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         /* 4 - Quick Slots */
         ResetConfigOrder();
-        QuickSlotsAmount = config("4 - Quick Slots", "Number of Quick Slots", 3, new ConfigDescription("Number of quick slots to add (0-6).", new AcceptableValueRange<int>(0, 6)), NextOrder, true);
+        QuickSlotsAmount = config("4 - Quick Slots", "Number of Quick Slots", 3, new ConfigDescription("Number of quick slots to add (0-8).", new AcceptableValueRange<int>(0, 8)), NextOrder, true);
         ShowQuickSlots = config("4 - Quick Slots", "Show Quick Slots on HUD", On, "Shows the quick slots bar on screen during gameplay.", NextOrder);
         AlwaysShowQuickSlotsInUI = config("4 - Quick Slots", "Show All Available", On, "Shows all available quickslots in the hud, not just the ones up to the highest occupied slot. Turn off if you want to only show slots up to the highest occupied slot.", NextOrder);
         QuickAccessScale = config("4 - Quick Slots", "Quick Slots Size", 1f, "Size/scale of the quick slots bar.", NextOrder, false);
         QuickslotDragKeys = config("4 - Quick Slots", "Quick Slots Drag Keys", new KeyboardShortcut(KeyCode.Mouse0, KeyCode.LeftControl), "Key combination to drag and reposition the quick slots bar.", NextOrder, false);
         QuickAccessLocation = config("4 - Quick Slots", "Quick Slots Position", Vector2.one, "Horizontal position of quick slots (9999 = automatic).", NextOrder, false);
-        QuickSlotsPerRow = config("4 - Quick Slots", "Quick Slots Per Row", 6, new ConfigDescription("Number of quick slots to display per row. Set to number of quickslots for a single horizontal row, or lower values to stack them vertically.", new AcceptableValueRange<int>(1, 6)), NextOrder, false);
+        QuickSlotsPerRow = config("4 - Quick Slots", "Quick Slots Per Row", 8, new ConfigDescription("Number of quick slots to display per row. Set to number of quickslots for a single horizontal row, or lower values to stack them vertically.", new AcceptableValueRange<int>(1, 8)), NextOrder, false);
 
         /* 5 - Additional Equipment Slots */
         ResetConfigOrder();
@@ -275,18 +275,33 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     private void InitializeHotkeys()
     {
         int count = QuickSlotsAmount.Value;
-        KeyCode[] defaultKeys = new[] { KeyCode.Z, KeyCode.X, KeyCode.C, KeyCode.V, KeyCode.B, KeyCode.N };
+        KeyboardShortcut[] defaultKeys = new[]
+        {
+            new KeyboardShortcut(KeyCode.Z, KeyCode.LeftAlt),
+            new KeyboardShortcut(KeyCode.X, KeyCode.LeftAlt),
+            new KeyboardShortcut(KeyCode.C, KeyCode.LeftAlt),
+            new KeyboardShortcut(KeyCode.V, KeyCode.LeftAlt),
+            new KeyboardShortcut(KeyCode.B, KeyCode.LeftAlt),
+            new KeyboardShortcut(KeyCode.N, KeyCode.LeftAlt),
+            new KeyboardShortcut(KeyCode.Alpha1, KeyCode.LeftAlt),
+            new KeyboardShortcut(KeyCode.Alpha2, KeyCode.LeftAlt),
+        };
 
         Hotkeys = new ConfigEntry<KeyboardShortcut>[count];
         HotkeyTexts = new ConfigEntry<string>[count];
 
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < count; ++i)
         {
-            KeyCode key = i < defaultKeys.Length ? defaultKeys[i] : KeyCode.None;
-            Hotkeys[i] = config("4 - Quick Slots", $"HotKey (Quickslot {i + 1})", new KeyboardShortcut(key),
+            KeyboardShortcut keyboardShortcut = i < defaultKeys.Length ? defaultKeys[i] : KeyboardShortcut.Empty;
+            Hotkeys[i] = config("4 - Quick Slots", $"HotKey (Quickslot {i + 1})", keyboardShortcut,
                 $"Hotkey {i + 1} - Use https://docs.unity3d.com/Manual/ConventionalGameInput.html", false);
-            HotkeyTexts[i] = config("4 - Quick Slots", $"HotKey (Quickslot {i + 1}) Display Text", "",
+            HotkeyTexts[i] = config("4 - Quick Slots", $"HotKey (Quickslot {i + 1}) Display Text", $"Alt + {keyboardShortcut.MainKey.ToString().Replace("Alpha", string.Empty)}",
                 $"Hotkey {i + 1} Display Text. Leave blank to use the hotkey itself.", false);
+            HotkeyTexts[i].SettingChanged += (_, _) =>
+            {
+                InitializeHotkeys();
+                FullRebuild();
+            };
         }
     }
 

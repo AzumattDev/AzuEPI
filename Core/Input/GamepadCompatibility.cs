@@ -78,15 +78,14 @@ internal static class GamepadCompatibility
                 {
                     if (isOldLayout)
                     {
-                        const int quickslotsPerColumn = 3;
-                        int quickColumn = quickIdx / quickslotsPerColumn;
-                        int quickRow = quickIdx % quickslotsPerColumn;
+                        int quickColumn = quickIdx / Layout.OldLayoutQuickslotsPerColumn;
+                        int quickRow = quickIdx % Layout.OldLayoutQuickslotsPerColumn;
 
                         if (left)
                         {
                             if (quickColumn > 0)
                             {
-                                int prevQuickIdx = (quickColumn - 1) * quickslotsPerColumn + quickRow;
+                                int prevQuickIdx = (quickColumn - 1) * Layout.OldLayoutQuickslotsPerColumn + quickRow;
                                 next = prevQuickIdx < s.QuickCount ? EpiGridMap.QuickIndexToGrid(s, prevQuickIdx) : cur;
                             }
                             else if (s.EquipCount > 0)
@@ -100,7 +99,7 @@ internal static class GamepadCompatibility
                         }
                         else if (right)
                         {
-                            int nextQuickIdx = (quickColumn + 1) * quickslotsPerColumn + quickRow;
+                            int nextQuickIdx = (quickColumn + 1) * Layout.OldLayoutQuickslotsPerColumn + quickRow;
                             next = nextQuickIdx < s.QuickCount ? EpiGridMap.QuickIndexToGrid(s, nextQuickIdx) : EpiGridMap.RightInventoryEdge(s, quickRow);
                         }
                         else if (up)
@@ -110,7 +109,7 @@ internal static class GamepadCompatibility
                         else if (down)
                         {
                             int downQuickIdx = quickIdx + 1;
-                            next = downQuickIdx < s.QuickCount && (downQuickIdx / quickslotsPerColumn) == quickColumn
+                            next = downQuickIdx < s.QuickCount && (downQuickIdx / Layout.OldLayoutQuickslotsPerColumn) == quickColumn
                                 ? EpiGridMap.QuickIndexToGrid(s, downQuickIdx)
                                 : EpiGridMap.BottomInventoryEdge(s, cur.x);
                         }
@@ -290,17 +289,16 @@ internal static class EpiGridMap
 
         if (OldLayout.Value.isOn())
         {
-            int equipRowsPerCol = 3;
-            int equipCols = Mathf.CeilToInt(equipCount / (float)equipRowsPerCol);
+            int equipCols = Mathf.CeilToInt(equipCount / (float)Layout.OldLayoutRegularSlotsPerColumn);
 
-            int usedEquipRows = Math.Min(equipRowsPerCol, Math.Max(1, equipCount));
+            int usedEquipRows = Math.Min(Layout.OldLayoutRegularSlotsPerColumn, Math.Max(1, equipCount));
             int bandHeight = (equipCount > 0 ? usedEquipRows : 0);
 
             int playerHeight = baseInvHeight + extraRows + bandHeight;
             int normalInventoryHeight = baseInvHeight + extraRows;
             int baseIndex = width * (playerHeight - bandHeight);
 
-            return new Snapshot(width, playerHeight, baseIndex, equipCount, quickCount, equipCols, equipRowsPerCol, normalInventoryHeight);
+            return new Snapshot(width, playerHeight, baseIndex, equipCount, quickCount, equipCols, Layout.OldLayoutRegularSlotsPerColumn, normalInventoryHeight);
         }
         else
         {

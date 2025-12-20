@@ -40,7 +40,6 @@ public class SlotHelpers
     {
         if (OldLayout.Value.isOn())
         {
-            const int rowsPerColumn = 3;
             const int expectedRegularSlots = 9;
 
             int totalSlots = InventoryGuiPatches.UpdateInventory_Patch.slots.Count;
@@ -48,33 +47,32 @@ public class SlotHelpers
 
             for (int i = 0; i < regularSlotCount; ++i)
             {
-                int rowIndex = i % rowsPerColumn;
-                int columnIndex = i / rowsPerColumn;
+                int rowIndex = i % Layout.OldLayoutRegularSlotsPerColumn;
+                int columnIndex = i / Layout.OldLayoutRegularSlotsPerColumn;
 
                 float y = rowIndex * -Layout.tileSize;
                 float baseX = LeftOffsetOld + columnIndex * Layout.tileSize;
 
-                int lastSlotRowIndex = (regularSlotCount - 1) % rowsPerColumn;
+                int lastSlotRowIndex = (regularSlotCount - 1) % Layout.OldLayoutRegularSlotsPerColumn;
                 int currentRowIsBeyondLastSlot = rowIndex > lastSlotRowIndex ? 1 : 0;
 
                 int totalExpectedSlots = expectedRegularSlots + Hotkeys.Length;
                 int emptySlotCount = Math.Max(totalExpectedSlots - totalSlots - 1, 0);
-                int emptyColumnCount = emptySlotCount / rowsPerColumn;
+                int emptyColumnCount = emptySlotCount / Layout.OldLayoutRegularSlotsPerColumn;
 
                 float centeringOffset = (currentRowIsBeyondLastSlot + emptyColumnCount) * Layout.tileSize / 2;
 
                 InventoryGuiPatches.UpdateInventory_Patch.slots[i].Position = new Vector2(baseX + centeringOffset, y);
             }
 
-            const int quickslotsPerColumn = 3;
-            int totalColumns = (regularSlotCount + rowsPerColumn - 1) / rowsPerColumn;
+            int totalColumns = (regularSlotCount + Layout.OldLayoutRegularSlotsPerColumn - 1) / Layout.OldLayoutRegularSlotsPerColumn;
             float quickslotStartX = LeftOffsetOld + (totalColumns + 0.5f) * Layout.tileSize;
 
             for (int i = 0; i < Hotkeys.Length; ++i)
             {
                 int slotIndex = regularSlotCount + i;
-                int quickslotColumn = i / quickslotsPerColumn;
-                int quickslotRow = i % quickslotsPerColumn;
+                int quickslotColumn = i / Layout.OldLayoutQuickslotsPerColumn;
+                int quickslotRow = i % Layout.OldLayoutQuickslotsPerColumn;
 
                 float quickslotX = quickslotStartX + quickslotColumn * Layout.tileSize;
                 float quickslotY = quickslotRow * -Layout.tileSize;
@@ -132,8 +130,8 @@ public class SlotHelpers
                 }
                 else
                 {
-                    int row1Count = 3;
-                    int row2Count = quickCount - 3;
+                    int row1Count = Math.Min(quickCount, Layout.NewLayoutQuickslotsFirstRow);
+                    int row2Count = quickCount - row1Count;
 
                     float row1Width = row1Count * Layout.tileSize;
                     float row2Width = row2Count * Layout.tileSize;

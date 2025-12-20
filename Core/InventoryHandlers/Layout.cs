@@ -10,6 +10,11 @@ public class Layout
 
     internal const float tileSize = 70f;
 
+    public const int MaxQuickSlots = 8;
+    public const int OldLayoutQuickslotsPerColumn = 3;
+    public const int OldLayoutRegularSlotsPerColumn = 3;
+    public const int NewLayoutQuickslotsFirstRow = 4;
+
     internal static float equipOriginX = -430f;
     internal static float equipOriginY = -75f;
     internal static float columnGapTiles = 4f;
@@ -21,7 +26,7 @@ public class Layout
 
     internal static Vector2 PreviewAnchorMin = new(0f, 0.14f);
     internal static readonly Vector2 PreviewAnchorMax = new(1f, 0.885f);
-    internal static readonly Vector2 PreviewSizeDelta = new(-300f, 0f);
+    internal static readonly Vector2 PreviewSizeDelta = new(-297f, 0f);
     internal static readonly Vector2 PreviewAnchoredPos = new(-507f, 0f);
     internal static readonly Vector2 PlayerPreviewImageSize = new(500f, 630f);
     internal static readonly Vector2 ToggleButtonsHlgAnchoredPos = new(-222.5f, -30f);
@@ -81,19 +86,17 @@ public class Layout
     {
         if (OldLayout.Value.isOff())
         {
-            return new(1.13f + Math.Max(Hotkeys.Length, (InventoryGuiPatches.UpdateInventory_Patch.slots.Count - 1) / 3) * tileSize / 570, 1f);
+            return new(1.13f + Math.Max(Hotkeys.Length, (InventoryGuiPatches.UpdateInventory_Patch.slots.Count - 1) / NewLayoutQuickslotsFirstRow) * tileSize / 570, 1f);
         }
 
         int totalSlots = InventoryGuiPatches.UpdateInventory_Patch.slots.Count;
         int regularSlotCount = totalSlots - Hotkeys.Length;
-        const int rowsPerColumn = 3;
 
-        int regularColumns = (regularSlotCount + rowsPerColumn - 1) / rowsPerColumn;
+        int regularColumns = (regularSlotCount + OldLayoutRegularSlotsPerColumn - 1) / OldLayoutRegularSlotsPerColumn;
 
         float totalColumns;
 
-        const int quickslotsPerColumn = 3;
-        int quickslotColumns = (Hotkeys.Length + quickslotsPerColumn - 1) / quickslotsPerColumn;
+        int quickslotColumns = (Hotkeys.Length + OldLayoutQuickslotsPerColumn - 1) / OldLayoutQuickslotsPerColumn;
         totalColumns = regularColumns + 0.5f + quickslotColumns;
 
         float extraWidth = totalColumns * tileSize / 570;

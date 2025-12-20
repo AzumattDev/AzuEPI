@@ -164,6 +164,7 @@
         <Compile Include="Core\Utilities\Extensions\ToggleExtensions.cs" />
         <Compile Include="Core\Utilities\VersionHandshake.cs"/>
         <Compile Include="Game\CLI\TerminalCommands.cs"/>
+        <Compile Include="Game\Compatibility\ArmoireCompat.cs" />
         <Compile Include="Game\Compatibility\AdvBackpacks\AdvBackpacks.cs"/>
         <Compile Include="Game\Compatibility\AdvBackpacks\BoneReorder.cs"/>
         <Compile Include="Game\Compatibility\BetterArchery.cs" />
