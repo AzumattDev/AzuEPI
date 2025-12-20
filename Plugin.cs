@@ -246,6 +246,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
                 API.AddSlot("$azuepi_fingerslot", new[] { "Andvaranaut", "GoldRubyRing", "SilverRing" });
             }
         };
+
+        ArmoireCompat.CheckForArmoire();
     }
 
     private void OnDestroy()
