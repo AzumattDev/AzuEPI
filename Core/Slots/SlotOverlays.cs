@@ -37,7 +37,7 @@ internal static class SlotOverlays
 
         RectTransform? rt = slotGo.GetComponent<RectTransform>();
 
-        GameObject root = new GameObject(InvalidRootName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        GameObject root = new(InvalidRootName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
         RectTransform rootRT = (RectTransform)root.transform;
         rootRT.SetParent(rt, false);
         rootRT.anchorMin = Vector2.zero;
@@ -50,7 +50,7 @@ internal static class SlotOverlays
         bkg.raycastTarget = false;
         bkg.color = new Color(0f, 0f, 0f, 0.95f);
 
-        GameObject check = new GameObject(InvalidSpriteObjectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        GameObject check = new(InvalidSpriteObjectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
         RectTransform ovRT = (RectTransform)check.transform;
         ovRT.SetParent(rootRT, false);
         ovRT.anchorMin = Vector2.zero;
@@ -85,7 +85,7 @@ internal static class SlotOverlays
 
         RectTransform? rt = slotGo.GetComponent<RectTransform>();
 
-        GameObject root = new GameObject(VanityRootName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        GameObject root = new(VanityRootName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
         RectTransform rootRT = (RectTransform)root.transform;
         rootRT.SetParent(rt, false);
         rootRT.anchorMin = Vector2.zero;
@@ -100,7 +100,7 @@ internal static class SlotOverlays
 
         const float badgeScale = 0.4f;
 
-        GameObject hiddenGo = new GameObject(HiddenIconName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        GameObject hiddenGo = new(HiddenIconName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
         RectTransform hiddenRT = (RectTransform)hiddenGo.transform;
         hiddenRT.SetParent(rootRT, false);
         hiddenRT.anchorMin = new Vector2(1f - badgeScale, 0f);
@@ -115,7 +115,7 @@ internal static class SlotOverlays
         hiddenImg.enabled = false;
         hiddenImg.preserveAspect = true;
 
-        GameObject hasGo = new GameObject(HasIconName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        GameObject hasGo = new(HasIconName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
         RectTransform hasRT = (RectTransform)hasGo.transform;
         hasRT.SetParent(rootRT, false);
 

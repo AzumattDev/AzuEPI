@@ -86,7 +86,7 @@ public static class GameObjectHelper
             transforms.Add(gameObject.transform);
         }
 
-        for (int i = 0; i < gameObject.transform.childCount; i++)
+        for (int i = 0; i < gameObject.transform.childCount; ++i)
         {
             _GetAllChildTransforms(gameObject.transform.GetChild(i).gameObject, transforms: transforms);
         }

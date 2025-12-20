@@ -2,6 +2,7 @@
 using AzuEPI.Game.Compatibility;
 using AzuEPI.Game.Compatibility.AdvBackpacks;
 using AzuEPI.Game.Loadout;
+using AzuEPI.Game.PlayerPreview.Stats;
 //using AzuEPI.Game.Moveable;
 using AzuEPI.Game.Slots.QAB;
 using AzuEPI.Game.Vanity;
@@ -47,7 +48,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     {
         AppDomain.CurrentDomain.AssemblyResolve += (s, e) =>
         {
-            AssemblyName req = new AssemblyName(e.Name);
+            AssemblyName req = new(e.Name);
             return req.Name == "AzuExtendedPlayerInventory" ? typeof(AzuExtendedPlayerInventoryPlugin).Assembly : null;
         };
     }
@@ -110,6 +111,13 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         MakeDropAllButton = config("7 - Buttons", "Enable Drop All Button", Off, "Adds a button to drop all items from your inventory.", NextOrder, false);
         DropAllButtonPosition = config("7 - Buttons", "Drop All Button Position", new Vector2(880.00f, 10.00f), "Position of the Drop All button in the inventory window.", NextOrder, false);
 
+        /* 8 - Player Stats Display */
+        ResetConfigOrder();
+        string defaultStats = "EnemyKills,Deaths,ArrowsShot,EnemyHits,HitsTakenEnemies,PlayerKills,PlayerHits,BossKills,Builds,Crafts,Upgrades,ItemsPickedUp,DistanceTraveled,DistanceWalk,DistanceRun,DistanceSail,TreeChops,MineHits,FoodEaten,PortalsUsed,Jumps,Sleep,TimeInBase,TimeOutOfBase";
+        SelectedPlayerStats = config("8 - Player Stats Display", "Selected Stats", defaultStats,
+            new ConfigDescription("Comma-separated list of stats to display in the player preview. Hover over your character name to see stats.", null, new ConfigurationManagerAttributes { CustomDrawer = StatsConfigDrawer }),
+            NextOrder, false);
+
         InitializeHotkeys();
 
         QuickSlotsAmount.SettingChanged += (sender, args) =>
@@ -121,6 +129,11 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         AddEquipmentRow.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
         DisplayEquipmentRowSeparate.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
         ShowQuickSlots.SettingChanged += (sender, args) => { HotkeyBarController.Hud_Update_Patch.DeselectHotkeyBar(); };
+        SelectedPlayerStats.SettingChanged += (sender, args) =>
+        {
+            if (InventoryGui.instance != null)
+                StatsUI.RebuildUI(InventoryGui.instance, PreviewParent?.GetComponent<RectTransform>());
+        };
         QuickSlotsPerRow.SettingChanged += (sender, args) =>
         {
             if (!Hud.instance) return;
@@ -355,6 +368,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<Toggle> ShowQuickSlots = null!;
     public static ConfigEntry<Toggle> MakeDropAllButton = null!;
     public static ConfigEntry<Vector2> DropAllButtonPosition = null!;
+    public static ConfigEntry<string> SelectedPlayerStats = null!;
     public static ConfigEntry<int> ExtraRows = null!;
     public static ConfigEntry<string> HelmetText = null!;
     public static ConfigEntry<string> ChestText = null!;
@@ -400,7 +414,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description, int order, bool synchronizedSetting = true)
     {
-        ConfigurationManagerAttributes attributes = new ConfigurationManagerAttributes { Order = order };
+        ConfigurationManagerAttributes attributes = new() { Order = order };
         object[] tags = description.Tags.Length > 0 ? description.Tags.Append(attributes).ToArray() : new object[] { attributes };
         ConfigDescription extendedDescription = new(description.Description + (synchronizedSetting ? " [Synced with Server]" : " [Not Synced with Server]"), description.AcceptableValues, tags);
         ConfigEntry<T> configEntry = Config.Bind(group, name, value, extendedDescription);
@@ -444,6 +458,78 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         {
             return "# Acceptable values: " + string.Join(", ", UnityInput.Current.SupportedKeyCodes);
         }
+    }
+
+    private static void StatsConfigDrawer(ConfigEntryBase entry)
+    {
+        PlayerStatType[] allStats = (PlayerStatType[])Enum.GetValues(typeof(PlayerStatType));
+        List<PlayerStatType> selectedStats = ParseStatsList(SelectedPlayerStats.Value);
+
+        GUILayout.Space(5);
+
+        GUILayout.BeginVertical(GUI.skin.box);
+
+        int columns = 3;
+        int itemsPerColumn = Mathf.CeilToInt(allStats.Length / (float)columns);
+
+        GUILayout.BeginHorizontal();
+        for (int col = 0; col < columns; ++col)
+        {
+            GUILayout.BeginVertical();
+            int startIdx = col * itemsPerColumn;
+            int endIdx = Math.Min(startIdx + itemsPerColumn, allStats.Length);
+
+            for (int i = startIdx; i < endIdx && i < allStats.Length; ++i)
+            {
+                PlayerStatType stat = allStats[i];
+                bool isSelected = selectedStats.Contains(stat);
+                bool newValue = GUILayout.Toggle(isSelected, stat.ToString(), GUILayout.ExpandWidth(false));
+
+                if (newValue == isSelected) continue;
+                if (newValue)
+                    selectedStats.Add(stat);
+                else
+                    selectedStats.Remove(stat);
+
+                SelectedPlayerStats.Value = string.Join(",", selectedStats.Select(s => s.ToString()));
+            }
+            GUILayout.EndVertical();
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.EndVertical();
+
+        GUILayout.Space(5);
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Select All", GUILayout.ExpandWidth(false)))
+        {
+            SelectedPlayerStats.Value = string.Join(",", allStats.Select(s => s.ToString()));
+        }
+        if (GUILayout.Button("Clear All", GUILayout.ExpandWidth(false)))
+        {
+            SelectedPlayerStats.Value = "";
+        }
+        if (GUILayout.Button("Reset to Default", GUILayout.ExpandWidth(false)))
+        {
+            const string defaultStats = "EnemyKills,Deaths,ArrowsShot,EnemyHits,HitsTakenEnemies,PlayerKills,PlayerHits,BossKills,Builds,Crafts,Upgrades,ItemsPickedUp,DistanceTraveled,DistanceWalk,DistanceRun,DistanceSail,TreeChops,MineHits,FoodEaten,PortalsUsed,Jumps,Sleep,TimeInBase,TimeOutOfBase";
+            SelectedPlayerStats.Value = defaultStats;
+        }
+        GUILayout.EndHorizontal();
+    }
+
+    public static List<PlayerStatType> ParseStatsList(string statsString)
+    {
+        List<PlayerStatType> result = new();
+        if (string.IsNullOrWhiteSpace(statsString))
+            return result;
+
+        string[] statNames = statsString.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (string statName in statNames)
+        {
+            if (Enum.TryParse(statName.Trim(), out PlayerStatType stat))
+                result.Add(stat);
+        }
+        return result;
     }
 
     #endregion

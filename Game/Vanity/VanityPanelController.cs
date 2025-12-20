@@ -310,7 +310,7 @@ internal static class VanityPanelController
 
     private static RectTransform BuildViewport(RectTransform parent)
     {
-        GameObject go = new GameObject(VanityViewportName, typeof(RectTransform), typeof(Image), typeof(RectMask2D));
+        GameObject go = new(VanityViewportName, typeof(RectTransform), typeof(Image), typeof(RectMask2D));
         RectTransform rt = (RectTransform)go.transform;
         rt.SetParent(parent, false);
         AnchorFill(rt);
@@ -324,7 +324,7 @@ internal static class VanityPanelController
 
     private static void BuildContentStack(RectTransform parent)
     {
-        GameObject go = new GameObject(VanityContentName,
+        GameObject go = new(VanityContentName,
             typeof(RectTransform),
             typeof(VerticalLayoutGroup),
             typeof(ContentSizeFitter));
@@ -380,7 +380,7 @@ internal static class VanityPanelController
         if (handle) handle.enabled = true;
         else
         {
-            GameObject h = new GameObject("Handle", typeof(RectTransform), typeof(Image));
+            GameObject h = new("Handle", typeof(RectTransform), typeof(Image));
             RectTransform hRT = (RectTransform)h.transform;
             hRT.SetParent(barRT, false);
             AnchorFill(hRT);
@@ -431,7 +431,7 @@ internal static class VanityPanelController
 
     private static RectTransform AddHeader(string label)
     {
-        GameObject go = new GameObject($"Header_{label}", typeof(RectTransform));
+        GameObject go = new($"Header_{label}", typeof(RectTransform));
         RectTransform rt = (RectTransform)go.transform;
         rt.SetParent(_content, false);
         rt.anchorMin = new Vector2(0, 1);
@@ -482,7 +482,7 @@ internal static class VanityPanelController
 
     private static GridLayoutGroup AddGrid(string headerLabel)
     {
-        GameObject go = new GameObject($"{headerLabel}_Grid", typeof(RectTransform), typeof(GridLayoutGroup), typeof(LayoutElement));
+        GameObject go = new($"{headerLabel}_Grid", typeof(RectTransform), typeof(GridLayoutGroup), typeof(LayoutElement));
         RectTransform rt = (RectTransform)go.transform;
         rt.SetParent(_content, false);
         rt.anchorMin = new Vector2(0, 1);
@@ -533,7 +533,7 @@ internal static class VanityPanelController
         DisableChild(go.transform, "binding");
         DisableChildrenContaining(go.transform, "JC_");
 
-        GameObject labelGo = new GameObject("NoneLabel", typeof(RectTransform));
+        GameObject labelGo = new("NoneLabel", typeof(RectTransform));
         RectTransform labelRT = (RectTransform)labelGo.transform;
         labelRT.SetParent(go.transform, false);
         labelRT.anchorMin = new Vector2(0.5f, 0.5f);
@@ -678,7 +678,7 @@ internal static class VanityPanelController
         Transform? t = root.Find("selected") ?? root.Find("Selected");
         if (t) return t.gameObject;
 
-        GameObject go = new GameObject("Selected", typeof(RectTransform), typeof(Image));
+        GameObject go = new("Selected", typeof(RectTransform), typeof(Image));
         RectTransform rt = (RectTransform)go.transform;
         rt.SetParent(root, false);
         AnchorFill(rt);

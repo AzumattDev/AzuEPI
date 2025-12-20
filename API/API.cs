@@ -67,7 +67,7 @@ public class API
             return true;
         }
 
-        Model.EquipmentSlot slot = new Model.EquipmentSlot
+        Model.EquipmentSlot slot = new()
         {
             Name = slotName.StartsWith("$") && Localization.instance != null ? Localization.instance.Localize(slotName) : slotName,
             OriginalName = slotName,
@@ -117,7 +117,7 @@ public class API
 #if !API
         if (string.IsNullOrWhiteSpace(slotName) || prefabNames == null) return false;
 
-        HashSet<string> set = new HashSet<string>(prefabNames.Where(n => !string.IsNullOrWhiteSpace(n)), StringComparer.Ordinal);
+        HashSet<string> set = new(prefabNames.Where(n => !string.IsNullOrWhiteSpace(n)), StringComparer.Ordinal);
         if (set.Count == 0) return false;
 
         bool IsValid(ItemDrop.ItemData item) => item != null && item.m_dropPrefab && set.Contains(item.m_dropPrefab.name);
@@ -160,7 +160,7 @@ public class API
             return true;
         }
 
-        Model.EquipmentSlot slot = new Model.EquipmentSlot
+        Model.EquipmentSlot slot = new()
         {
             Name = showName ? slotName.StartsWith("$") && Localization.instance != null ? Localization.instance.Localize(slotName) : slotName : "",
             Valid = item => true,

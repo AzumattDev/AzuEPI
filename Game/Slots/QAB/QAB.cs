@@ -64,7 +64,7 @@ internal static class QuickAccessBar
                 }
                 else
                 {
-                    for (int i = 0; i < __instance.m_items.Count; i++)
+                    for (int i = 0; i < __instance.m_items.Count; ++i)
                     {
                         int value = __instance.m_items[i].m_gridPos.x + __instance.m_items[i].m_gridPos.y * width - firstHotkeyIndex + 1;
                         if (value > amountToShow) amountToShow = value;

@@ -180,11 +180,11 @@ public class UIBuilder
 
         EventTrigger eventTrigger = CharName.gameObject.AddComponent<EventTrigger>();
 
-        EventTrigger.Entry pointerEnter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+        EventTrigger.Entry pointerEnter = new() { eventID = EventTriggerType.PointerEnter };
         pointerEnter.callback.AddListener((data) => { StatsUI.SetHoverState(true); });
         eventTrigger.triggers.Add(pointerEnter);
 
-        EventTrigger.Entry pointerExit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+        EventTrigger.Entry pointerExit = new() { eventID = EventTriggerType.PointerExit };
         pointerExit.callback.AddListener((data) => { StatsUI.SetHoverState(false); });
         eventTrigger.triggers.Add(pointerExit);
     }

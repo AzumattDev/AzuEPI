@@ -41,7 +41,7 @@ public class InventoryHealth
         Inventory? inventory = Player.m_localPlayer.GetInventory();
         if (inventory == null || !inventory.ShouldProtectInventorySlots()) return;
 
-        List<ItemDrop.ItemData> stuck = new List<ItemDrop.ItemData>();
+        List<ItemDrop.ItemData> stuck = new();
         foreach (ItemDrop.ItemData? it in inventory.GetAllItems())
         {
             if (inventory.IsHiddenCell(it.m_gridPos.x, it.m_gridPos.y))
