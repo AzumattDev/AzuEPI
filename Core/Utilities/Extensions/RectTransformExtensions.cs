@@ -44,6 +44,20 @@ public static class RectTransformExtensions
         rt.sizeDelta = sizeDelta;
         return rt;
     }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static RectTransform WithOffsetMin(this RectTransform rt, Vector2 offsetMin)
+    {
+        rt.offsetMin = offsetMin;
+        return rt;
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static RectTransform WithOffsetMax(this RectTransform rt, Vector2 offsetMax)
+    {
+        rt.offsetMax = offsetMax;
+        return rt;
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T GetOrAddComponent<T>(this GameObject go) where T : Component
