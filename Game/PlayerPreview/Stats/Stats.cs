@@ -5,6 +5,7 @@ public class StatsUI
     private static RectTransform? _statsRect;
     private static readonly List<StatElement> _statElements = new();
     private static TMP_FontAsset? _fontAsset;
+    private static bool _isHovering;
 
     public static RectTransform CreateUI(InventoryGui inventoryGui, RectTransform previewParentRect)
     {
@@ -20,13 +21,15 @@ public class StatsUI
         _statsRect.anchorMax = new Vector2(1f, 0f);
         _statsRect.pivot = new Vector2(0.5f, 0f);
         _statsRect.anchoredPosition = Vector2.zero;
-        _statsRect.sizeDelta = new Vector2(0f, 80f);
+        _statsRect.sizeDelta = new Vector2(0f, 220f);
 
         Image bgImage = statsPanel.GetComponent<Image>();
-        bgImage.color = new Color(0f, 0f, 0f, 0.7f);
+        bgImage.color = new Color(0f, 0f, 0f, 0.8f);
         bgImage.raycastTarget = false;
 
-        GameObject contentContainer = new GameObject("Content", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(ContentSizeFitter));
+        statsPanel.SetActive(false);
+
+        GameObject contentContainer = new GameObject("Content", typeof(RectTransform), typeof(GridLayoutGroup));
         RectTransform contentRect = contentContainer.GetComponent<RectTransform>();
         contentRect.SetParent(_statsRect, false);
         contentRect.anchorMin = Vector2.zero;
@@ -34,33 +37,50 @@ public class StatsUI
         contentRect.offsetMin = new Vector2(8f, 8f);
         contentRect.offsetMax = new Vector2(-8f, -8f);
 
-        HorizontalLayoutGroup layout = contentContainer.GetComponent<HorizontalLayoutGroup>();
-        layout.childAlignment = TextAnchor.MiddleCenter;
-        layout.spacing = 10f;
-        layout.childForceExpandWidth = true;
-        layout.childForceExpandHeight = true;
-        layout.childControlWidth = true;
-        layout.childControlHeight = true;
+        GridLayoutGroup gridLayout = contentContainer.GetComponent<GridLayoutGroup>();
+        gridLayout.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+        gridLayout.constraintCount = 3;
+        gridLayout.spacing = new Vector2(6f, 6f);
+        gridLayout.cellSize = new Vector2(85f, 48f);
+        gridLayout.childAlignment = TextAnchor.UpperLeft;
 
-        CreateStatElement(contentContainer, "Armor", "🛡️");
-        CreateStatElement(contentContainer, "Health", "❤️");
-        CreateStatElement(contentContainer, "Stamina", "⚡");
-        CreateStatElement(contentContainer, "Eitr", "✨");
-        CreateStatElement(contentContainer, "Weight", "⚖️");
-        CreateStatElement(contentContainer, "Speed", "👟");
+        CreateStatElement(contentContainer, "Kills", "⚔️", PlayerStatType.EnemyKills);
+        CreateStatElement(contentContainer, "Deaths", "💀", PlayerStatType.Deaths);
+        CreateStatElement(contentContainer, "Arrows", "🏹", PlayerStatType.ArrowsShot);
+
+        CreateStatElement(contentContainer, "Builds", "🏗️", PlayerStatType.Builds);
+        CreateStatElement(contentContainer, "Crafts", "🔨", PlayerStatType.Crafts);
+        CreateStatElement(contentContainer, "Upgrades", "⬆️", PlayerStatType.Upgrades);
+
+        CreateStatElement(contentContainer, "Distance", "🗺️", PlayerStatType.DistanceTraveled);
+        CreateStatElement(contentContainer, "Portals", "🌀", PlayerStatType.PortalsUsed);
+        CreateStatElement(contentContainer, "Jumps", "🦘", PlayerStatType.Jumps);
+
+        CreateStatElement(contentContainer, "Trees", "🌲", PlayerStatType.TreeChops);
+        CreateStatElement(contentContainer, "Mines", "⛏️", PlayerStatType.MineHits);
+        CreateStatElement(contentContainer, "Food", "🍖", PlayerStatType.FoodEaten);
 
         return _statsRect;
     }
 
-    private static void CreateStatElement(GameObject parent, string statName, string icon)
+    private static void CreateStatElement(GameObject parent, string statName, string icon, PlayerStatType statType)
     {
-        GameObject statObj = new GameObject($"Stat_{statName}", typeof(RectTransform), typeof(VerticalLayoutGroup));
+        GameObject statObj = new GameObject($"Stat_{statName}", typeof(RectTransform));
         RectTransform statRect = statObj.GetComponent<RectTransform>();
         statRect.SetParent(parent.transform, false);
 
-        VerticalLayoutGroup vLayout = statObj.GetComponent<VerticalLayoutGroup>();
-        vLayout.childAlignment = TextAnchor.MiddleCenter;
-        vLayout.spacing = 2f;
+        GameObject contentColumn = new GameObject("ContentColumn", typeof(RectTransform), typeof(VerticalLayoutGroup));
+        RectTransform columnRect = contentColumn.GetComponent<RectTransform>();
+        columnRect.SetParent(statRect, false);
+        columnRect.anchorMin = Vector2.zero;
+        columnRect.anchorMax = Vector2.one;
+        columnRect.offsetMin = Vector2.zero;
+        columnRect.offsetMax = Vector2.zero;
+
+        VerticalLayoutGroup vLayout = contentColumn.GetComponent<VerticalLayoutGroup>();
+        vLayout.childAlignment = TextAnchor.UpperCenter;
+        vLayout.spacing = 1f;
+        vLayout.padding = new RectOffset(2, 2, 2, 2);
         vLayout.childForceExpandWidth = true;
         vLayout.childForceExpandHeight = false;
         vLayout.childControlWidth = true;
@@ -68,53 +88,54 @@ public class StatsUI
 
         GameObject iconObj = new GameObject("Icon", typeof(RectTransform));
         RectTransform iconRect = iconObj.GetComponent<RectTransform>();
-        iconRect.SetParent(statRect, false);
+        iconRect.SetParent(columnRect, false);
 
         TextMeshProUGUI iconText = iconObj.AddComponent<TextMeshProUGUI>();
         if (_fontAsset != null) iconText.font = _fontAsset;
         iconText.text = icon;
-        iconText.fontSize = 20f;
+        iconText.fontSize = 16f;
         iconText.alignment = TextAlignmentOptions.Center;
         iconText.color = Color.white;
         iconText.raycastTarget = false;
 
         LayoutElement iconLayout = iconObj.AddComponent<LayoutElement>();
-        iconLayout.preferredHeight = 24f;
+        iconLayout.preferredHeight = 18f;
 
         GameObject valueObj = new GameObject("Value", typeof(RectTransform));
         RectTransform valueRect = valueObj.GetComponent<RectTransform>();
-        valueRect.SetParent(statRect, false);
+        valueRect.SetParent(columnRect, false);
 
         TextMeshProUGUI valueText = valueObj.AddComponent<TextMeshProUGUI>();
         if (_fontAsset != null) valueText.font = _fontAsset;
         valueText.text = "0";
-        valueText.fontSize = 14f;
+        valueText.fontSize = 13f;
         valueText.alignment = TextAlignmentOptions.Center;
-        valueText.color = new Color(0.8f, 0.8f, 0.8f, 1f);
+        valueText.color = new Color(0.95f, 0.95f, 0.95f, 1f);
         valueText.raycastTarget = false;
         valueText.fontStyle = FontStyles.Bold;
 
         LayoutElement valueLayout = valueObj.AddComponent<LayoutElement>();
-        valueLayout.preferredHeight = 18f;
+        valueLayout.preferredHeight = 16f;
 
         GameObject labelObj = new GameObject("Label", typeof(RectTransform));
         RectTransform labelRect = labelObj.GetComponent<RectTransform>();
-        labelRect.SetParent(statRect, false);
+        labelRect.SetParent(columnRect, false);
 
         TextMeshProUGUI labelText = labelObj.AddComponent<TextMeshProUGUI>();
         if (_fontAsset != null) labelText.font = _fontAsset;
         labelText.text = statName;
-        labelText.fontSize = 10f;
+        labelText.fontSize = 9f;
         labelText.alignment = TextAlignmentOptions.Center;
         labelText.color = new Color(0.6f, 0.6f, 0.6f, 1f);
         labelText.raycastTarget = false;
 
         LayoutElement labelLayout = labelObj.AddComponent<LayoutElement>();
-        labelLayout.preferredHeight = 14f;
+        labelLayout.preferredHeight = 12f;
 
         _statElements.Add(new StatElement
         {
             Name = statName,
+            StatType = statType,
             ValueText = valueText,
             IconText = iconText,
             LabelText = labelText
@@ -125,42 +146,42 @@ public class StatsUI
     {
         if (player == null || _statElements.Count == 0) return;
 
+        PlayerProfile? profile = global::Game.instance?.GetPlayerProfile();
+        if (profile == null) return;
+
         foreach (StatElement element in _statElements)
         {
-            switch (element.Name)
+            float statValue = profile.m_playerStats[element.StatType];
+
+            switch (element.StatType)
             {
-                case "Armor":
-                    element.ValueText.text = player.GetBodyArmor().ToString("F0");
+                case PlayerStatType.DistanceTraveled:
+                    element.ValueText.text = $"{(statValue / 1000f):F1}km";
                     break;
-                case "Health":
-                    element.ValueText.text = $"{player.GetHealth():F0}/{player.GetMaxHealth():F0}";
-                    break;
-                case "Stamina":
-                    element.ValueText.text = $"{player.GetStamina():F0}/{player.GetMaxStamina():F0}";
-                    break;
-                case "Eitr":
-                    element.ValueText.text = player.GetMaxEitr() > 0 ? $"{player.GetEitr():F0}/{player.GetMaxEitr():F0}" : "N/A";
-                    break;
-                case "Weight":
-                    Inventory inv = player.GetInventory();
-                    float totalWeight = inv.GetTotalWeight();
-                    element.ValueText.text = $"{totalWeight:F1}/{player.GetMaxCarryWeight():F0}";
-                    float weightRatio = totalWeight / player.GetMaxCarryWeight();
-                    element.ValueText.color = weightRatio > 0.9f ? new Color(1f, 0.3f, 0.3f, 1f) :
-                                              weightRatio > 0.75f ? new Color(1f, 0.8f, 0.3f, 1f) :
-                                              new Color(0.8f, 0.8f, 0.8f, 1f);
-                    break;
-                case "Speed":
-                    float moveSpeed = player.GetJogSpeedFactor() * 100f;
-                    element.ValueText.text = $"{moveSpeed:F0}%";
+
+                default:
+                    if (statValue >= 1000000)
+                        element.ValueText.text = $"{statValue / 1000000f:F1}M";
+                    else if (statValue >= 10000)
+                        element.ValueText.text = $"{statValue / 1000f:F1}k";
+                    else
+                        element.ValueText.text = statValue.ToString("N0");
                     break;
             }
         }
     }
 
+    public static void SetHoverState(bool isHovering)
+    {
+        _isHovering = isHovering;
+        if (_statsRect != null)
+            _statsRect.gameObject.SetActive(isHovering);
+    }
+
     private class StatElement
     {
         public string Name { get; set; } = string.Empty;
+        public PlayerStatType StatType { get; set; }
         public TextMeshProUGUI ValueText { get; set; } = null!;
         public TextMeshProUGUI IconText { get; set; } = null!;
         public TextMeshProUGUI LabelText { get; set; } = null!;

@@ -177,6 +177,16 @@ public class UIBuilder
         foreach (Transform child in CharName)
             if (child.name.Contains("BraidLine"))
                 Object.Destroy(child.gameObject);
+
+        EventTrigger eventTrigger = CharName.gameObject.AddComponent<EventTrigger>();
+
+        EventTrigger.Entry pointerEnter = new EventTrigger.Entry { eventID = EventTriggerType.PointerEnter };
+        pointerEnter.callback.AddListener((data) => { StatsUI.SetHoverState(true); });
+        eventTrigger.triggers.Add(pointerEnter);
+
+        EventTrigger.Entry pointerExit = new EventTrigger.Entry { eventID = EventTriggerType.PointerExit };
+        pointerExit.callback.AddListener((data) => { StatsUI.SetHoverState(false); });
+        eventTrigger.triggers.Add(pointerExit);
     }
 
     public static void BuildDropAllButton(InventoryGui invGui)
