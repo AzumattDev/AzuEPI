@@ -1,5 +1,6 @@
 ﻿using AzuEPI.Game.Loadout;
 using AzuEPI.Game.PlayerPreview;
+using AzuEPI.Game.PlayerPreview.Stats;
 using AzuEPI.Game.Vanity;
 
 namespace AzuEPI.Core.InventoryHandlers;
@@ -65,7 +66,7 @@ public class UIBuilder
         }
         else
         {
-            equipBkgRT.offsetMin = new Vector2(-10,-10);
+            equipBkgRT.offsetMin = new Vector2(-10, -10);
         }
 
         InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<RectTransform>().WithAnchorMax(maxAnchor);
@@ -153,6 +154,11 @@ public class UIBuilder
         AzuEPICharacterPanel.instance.render = rt;
         AzuEPICharacterPanel.instance.renderRawImage = raw;
         _epiPreviewRect = rt;
+    }
+
+    public static void CreateStatsUI(InventoryGui invGui, RectTransform previewParentRT)
+    {
+        StatsUI.CreateUI(invGui, previewParentRT);
     }
 
     public static void SetupPreviewPanel()

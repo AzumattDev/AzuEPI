@@ -91,7 +91,7 @@ internal static class QuickAccessBar
                         if (index < HotkeyTexts.Length && index < Hotkeys.Length)
                             SlotText.Set(HotkeyTexts[index].Value.IsNullOrWhiteSpace()
                                 ? Hotkeys[index].Value.ToString()
-                                : HotkeyTexts[index].Value, elementData.m_go.transform, false);
+                                : HotkeyTexts[index].Value, elementData.m_go.transform);
 
                         elementData.m_icon = elementData.m_go.transform.transform.Find("icon").GetComponent<Image>();
                         elementData.m_durability = elementData.m_go.transform.Find("durability").GetComponent<GuiBar>();

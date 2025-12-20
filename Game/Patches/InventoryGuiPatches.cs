@@ -1,4 +1,5 @@
 ﻿using AzuEPI.Core.Text;
+using AzuEPI.Game.PlayerPreview.Stats;
 using AzuEPI.Game.Vanity;
 
 namespace AzuEPI.Game.Patches;
@@ -38,6 +39,7 @@ public class InventoryGuiPatches
             VanityPanelController.SetVisible(false);
             BuildLoadoutToggles(__instance);
             CreateCharacterName(__instance, previewParentRT);
+            CreateStatsUI(__instance, previewParentRT);
 
             if (GUICache._craftingBkgRT)
                 GUICache._craftingBkgRT.GetComponent<Image>().enabled = OldLayout.Value.isOn();
@@ -294,6 +296,9 @@ public class InventoryGuiPatches
                     equipmentBkgTransform.gameObject.SetActive(false);
                     break;
             }
+
+            if (OldLayout.Value.isOff() && player != null)
+                StatsUI.UpdateStats(player);
 
             UpdateInvalidDropOverlays(__instance, ___m_playerGrid, player);
         }

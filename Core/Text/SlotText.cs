@@ -4,7 +4,7 @@ namespace AzuEPI.Core.Text;
 
 public class SlotText
 {
-    public static void Set(string value, Transform transform, bool center = true)
+    public static void Set(string value, Transform transform)
     {
         Transform transform1 = transform.Find("binding");
         if (!transform1)
@@ -22,10 +22,5 @@ public class SlotText
         textComp.text = value;
         textComp.horizontalAlignment = HorizontalAlignmentOptions.Center;
         textComp.verticalAlignment = VerticalAlignmentOptions.Top;
-        if (!center)
-            return;
-
-        /*rectTransform.sizeDelta = new Vector2(80f, 17f);
-        rectTransform.anchoredPosition = new Vector2(30f, -10f);*/
     }
 }
