@@ -54,16 +54,16 @@ public class API
     public static bool AddSlot(string slotName, Func<Player, ItemDrop.ItemData?> getItem, Func<ItemDrop.ItemData, bool> isValid, int index = -1)
     {
 #if !API
-        AzuExtendedPlayerInventoryLogger.LogInfo("API.AddSlot called, asking to add slot " + slotName);
+        AzuExtendedPlayerInventoryLogger.LogDebug("API.AddSlot called, asking to add slot " + slotName);
         if (string.IsNullOrWhiteSpace(slotName) || (getItem == null && isValid == null)) return false;
 
-        AzuExtendedPlayerInventoryLogger.LogInfo("API.AddSlot proceeding to add slot " + slotName);
+        AzuExtendedPlayerInventoryLogger.LogDebug("API.AddSlot proceeding to add slot " + slotName);
 
         int existingIdx = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s.Name == slotName || (Localization.instance != null && s.Name == Localization.instance.Localize(slotName)));
         if (existingIdx >= 0 && InventoryGuiPatches.UpdateInventory_Patch.slots[existingIdx] is Model.EquipmentSlot existing)
         {
             ComposeOntoSlot(existing, isValid, getItem);
-            AzuExtendedPlayerInventoryLogger.LogInfo($"Extended slot {slotName}");
+            AzuExtendedPlayerInventoryLogger.LogDebug($"Extended slot {slotName}");
             return true;
         }
 

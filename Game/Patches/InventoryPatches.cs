@@ -39,6 +39,7 @@ public class InventoryPatches
                 if (item.m_gridPos.y < normalRows)
                     normalUsed++;
             }
+
             bool normalHas = normalUsed < (normalRows * ___m_width);
 
             if (normalHas)
@@ -75,7 +76,8 @@ public class InventoryPatches
                 return false;
             }
 
-            Player.m_localPlayer.EquipItem(item, false);
+            if (AutoEquip.Value.isOn())
+                Player.m_localPlayer.EquipItem(item, false);
             __instance.Changed();
             __result = true;
             return false;

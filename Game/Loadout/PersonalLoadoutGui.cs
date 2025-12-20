@@ -309,13 +309,49 @@ public class PersonalLoadoutGui : MonoBehaviour
                     continue;
                 }
 
-                AzuExtendedPlayerInventoryLogger.LogWarning("Attempting to add item: " + item.m_shared.m_name);
+                if (item.m_equipped) item.m_equipped = false;
+
+                string targetName = item.m_shared.m_name;
+                long targetCrafterID = item.m_crafterID;
+                string targetCrafterName = item.m_crafterName;
+                float targetDurability = item.m_durability;
+                int targetQuality = item.m_quality;
+
+                AzuExtendedPlayerInventoryLogger.LogDebug("Attempting to add item: " + targetName);
                 bool moved = player.GetInventory().AddItem(item);
-                AzuExtendedPlayerInventoryLogger.LogWarning("Move result: " + moved);
+                AzuExtendedPlayerInventoryLogger.LogDebug("Move result: " + moved);
+
                 if (moved)
                 {
-                    AzuExtendedPlayerInventoryLogger.LogWarning("Equipping item: " + item.m_shared.m_name);
-                    player.EquipItem(item);
+                    AzuExtendedPlayerInventoryLogger.LogDebug("Equipping item: " + targetName);
+
+                    ItemDrop.ItemData? actualItem = null;
+
+                    if (player.GetInventory().ContainsItem(item))
+                    {
+                        actualItem = item;
+                        AzuExtendedPlayerInventoryLogger.LogDebug("Using original item reference");
+                    }
+                    else
+                    {
+                        actualItem = player.GetInventory().GetAllItems().FirstOrDefault(i => i.m_shared.m_name == targetName && i.m_crafterID == targetCrafterID && i.m_crafterName == targetCrafterName && i.m_quality == targetQuality && Math.Abs(i.m_durability - targetDurability) < 0.01f && !i.m_equipped);
+                    }
+
+                    actualItem ??= player.GetInventory().GetAllItems().FirstOrDefault(i => i.m_shared.m_name == targetName && i.m_quality == targetQuality && !i.m_equipped);
+
+                    if (actualItem != null)
+                    {
+                        if (AutoEquip.Value.isOff()) continue;
+                        bool equipped = player.EquipItem(actualItem, false);
+                        if (equipped)
+                        {
+                            AzuExtendedPlayerInventoryLogger.LogDebug($"Successfully equipped {actualItem.m_shared.m_name}");
+                        }
+                    }
+                    else
+                    {
+                        AzuExtendedPlayerInventoryLogger.LogError($"Could not find {targetName} in inventory after adding!");
+                    }
                 }
                 else
                 {
@@ -337,6 +373,7 @@ public class PersonalLoadoutGui : MonoBehaviour
         {
             ItemDrop.ItemData? item = list[index];
             player.UnequipItem(item);
+            item.m_equipped = false;
             player.GetInventory().RemoveItem(item);
         }
     }

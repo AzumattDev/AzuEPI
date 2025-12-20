@@ -278,12 +278,12 @@ public class PersonalLoadoutGuiDetails : MonoBehaviour
 
             if (freeSlots > 0)
             {
-                AzuExtendedPlayerInventoryLogger.LogWarning("Attempting to add item: " + item.m_shared.m_name);
+                AzuExtendedPlayerInventoryLogger.LogDebug("Attempting to add item: " + item.m_shared.m_name);
                 bool moved = player.GetInventory().AddItem(item);
-                AzuExtendedPlayerInventoryLogger.LogWarning("Move result: " + moved);
+                AzuExtendedPlayerInventoryLogger.LogDebug("Move result: " + moved);
                 if (moved)
                 {
-                    AzuExtendedPlayerInventoryLogger.LogWarning("Equipping item: " + item.m_shared.m_name);
+                    AzuExtendedPlayerInventoryLogger.LogDebug("Equipping item: " + item.m_shared.m_name);
                     player.EquipItem(item);
                 }
 
