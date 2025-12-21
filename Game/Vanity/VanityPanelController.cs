@@ -100,13 +100,21 @@ internal static class VanityPanelController
             if (ZInput.IsGamepadActive())
             {
                 ExpandAllSections();
+                UpdateEquippedBorders();
                 SelectFirstCell();
             }
         }
         else
         {
             _selectedCell = null;
-            if (_gamepadSelectionOverlay) _gamepadSelectionOverlay.gameObject.SetActive(false);
+
+            foreach (VanityCell cell in _allCells)
+            {
+                if (cell && cell.SelectedBadge)
+                    cell.SelectedBadge.SetActive(false);
+                if (cell && cell.EquippedBorder)
+                    cell.EquippedBorder.SetActive(false);
+            }
         }
     }
 
@@ -442,33 +450,19 @@ internal static class VanityPanelController
     {
         if (!cell) return;
 
-        _selectedCell = cell;
-
-        if (!_gamepadSelectionOverlay)
+        if (_selectedCell != null && _selectedCell.SelectedBadge != null)
         {
-            GameObject borderGo = new("GamepadSelection", typeof(RectTransform), typeof(Image), typeof(Outline));
-            _gamepadSelectionOverlay = borderGo.GetComponent<Image>();
-            _gamepadSelectionOverlay.color = Color.clear;
-            _gamepadSelectionOverlay.raycastTarget = false;
-
-            Outline outline = borderGo.GetComponent<Outline>();
-            outline.effectColor = new Color(1f, 0.8f, 0f, 1f);
-            outline.effectDistance = new Vector2(3f, 3f);
-            outline.useGraphicAlpha = false;
-
-            RectTransform rt = (RectTransform)borderGo.transform;
-            rt.SetParent(_content, true);
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.zero;
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = CellSize;
+            _selectedCell.SelectedBadge.SetActive(false);
         }
 
-        RectTransform cellRT = (RectTransform)cell.transform;
-        RectTransform borderRT = (RectTransform)_gamepadSelectionOverlay.transform;
-        borderRT.position = cellRT.position;
-        borderRT.SetAsLastSibling();
-        _gamepadSelectionOverlay.gameObject.SetActive(true);
+        _selectedCell = cell;
+
+        if (_selectedCell.SelectedBadge != null)
+        {
+            _selectedCell.SelectedBadge.SetActive(true);
+        }
+
+        UpdateEquippedBorders();
 
         Transform grid = cell.transform.parent;
         if (!grid.gameObject.activeSelf)
@@ -525,6 +519,13 @@ internal static class VanityPanelController
 
     internal static void UpdateSelectedVisuals(VisSlot slot)
     {
+        // When gamepad is active, don't update selected badges automatically
+        if (ZInput.IsGamepadActive() && _visible)
+        {
+            UpdateEquippedBorders();
+            return;
+        }
+
         VisEquipment? ve = Player.m_localPlayer?.m_visEquipment;
         if (!ve) return;
 
@@ -551,6 +552,40 @@ internal static class VanityPanelController
                        cell.Item.m_dropPrefab.name.GetStableHashCode() == v);
 
                 if (cell.SelectedBadge) cell.SelectedBadge.SetActive(isSelected);
+            }
+        }
+    }
+
+    private static void UpdateEquippedBorders()
+    {
+        VisEquipment? ve = Player.m_localPlayer?.m_visEquipment;
+        if (!ve) return;
+
+        foreach (VisSlot slot in _cellsBySlot.Keys)
+        {
+            int v = slot switch
+            {
+                VisSlot.Helmet => VanityAPI.Get(ve, VanityZdoKeys.Helmet),
+                VisSlot.Chest => VanityAPI.Get(ve, VanityZdoKeys.Chest),
+                VisSlot.Legs => VanityAPI.Get(ve, VanityZdoKeys.Legs),
+                VisSlot.Shoulder => VanityAPI.Get(ve, VanityZdoKeys.Shoulder),
+                VisSlot.Utility => VanityAPI.Get(ve, VanityZdoKeys.Utility),
+                _ => 0
+            };
+
+            bool hidden = VanityAPI.IsHidden(v);
+            List<VanityCell>? cellList = GetOrCreateSlotList(slot);
+            if (cellList == null) continue;
+
+            foreach (VanityCell? cell in cellList)
+            {
+                if (!cell || !cell.EquippedBorder) continue;
+
+                bool isEquipped = cell.IsNone
+                    ? hidden
+                    : (!hidden && v != 0 && cell.Item?.m_dropPrefab && cell.Item.m_dropPrefab.name.GetStableHashCode() == v);
+
+                cell.EquippedBorder.SetActive(isEquipped);
             }
         }
     }
@@ -913,6 +948,7 @@ internal static class VanityPanelController
         text.text = Localization.instance?.Localize("$menu_none") ?? "None";
 
         GameObject selectedBadge = FindOrCreateSelectedBadge(go.transform);
+        GameObject equippedBorder = FindOrCreateEquippedBadge(go.transform);
 
         Button? btn = go.GetComponent<Button>();
         btn.onClick = new Button.ButtonClickedEvent();
@@ -922,6 +958,7 @@ internal static class VanityPanelController
         cell.Icon = icon;
         cell.Slot = slot;
         cell.SelectedBadge = selectedBadge;
+        cell.EquippedBorder = equippedBorder;
         cell.IsNone = true;
 
         GetOrCreateSlotList(slot).Add(cell);
@@ -961,6 +998,7 @@ internal static class VanityPanelController
         DisableChildrenContaining(go.transform, "JC_");
 
         GameObject selectedBadge = FindOrCreateSelectedBadge(go.transform);
+        GameObject equippedBorder = FindOrCreateEquippedBadge(go.transform);
 
         Button? btn = go.GetComponent<Button>();
         btn.onClick = new Button.ButtonClickedEvent();
@@ -970,6 +1008,7 @@ internal static class VanityPanelController
         cell.Icon = icon;
         cell.Slot = slot;
         cell.SelectedBadge = selectedBadge;
+        cell.EquippedBorder = equippedBorder;
 
         GetOrCreateSlotList(slot).Add(cell);
         _allCells.Add(cell);
@@ -1042,6 +1081,23 @@ internal static class VanityPanelController
         go.SetActive(false);
         return go;
     }
+    
+    private static GameObject FindOrCreateEquippedBadge(Transform root)
+    {
+        Transform? t = root.Find("equiped") ?? root.Find("equiped_jc_disabled");
+        if (t) return t.gameObject;
+
+        GameObject go = new("equiped", typeof(RectTransform), typeof(Image));
+        RectTransform rt = (RectTransform)go.transform;
+        rt.SetParent(root, false);
+        AnchorFill(rt);
+
+        Image? img = go.GetComponent<Image>();
+        img.raycastTarget = false;
+        img.color = new Color(1, 1, 1, 0.18f);
+        go.SetActive(false);
+        return go;
+    }
 
     private static void ClearChildren(Transform t)
     {
@@ -1098,6 +1154,7 @@ public class VanityCell : MonoBehaviour
     public Image Icon;
     public VisSlot Slot;
     public GameObject SelectedBadge;
+    public GameObject EquippedBorder;
     public bool IsNone = false;
     private UIInputHandler _input;
     private bool? _lastKnownState = null;
