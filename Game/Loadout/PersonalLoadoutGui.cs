@@ -194,12 +194,39 @@ public class PersonalLoadoutGui : MonoBehaviour
         rt.anchoredPosition = new Vector2(-205f, -30f);
         rt.sizeDelta = new Vector2(120f, 32f);
 
+        if (LoadoutsToggleButton.TryGetComponent<UIGamePad>(out var gp))
+        {
+            if (ZInput.instance != null)
+            {
+                gp.m_hint.GetComponentInChildren<TextMeshProUGUI>(true).text = ZInput.instance.GetBoundKeyString("JoyRStick", true);
+            }
+            else
+            {
+                ZInput.Initialize();
+                gp.m_hint.GetComponentInChildren<TextMeshProUGUI>(true).text = ZInput.instance.GetBoundKeyString("JoyRStick", true);
+            }
+
+            gp.m_zinputKey = "JoyRStick";
+            gp.m_keyCode = KeyCode.JoystickButton9;
+        }
+
         Button? btn = LoadoutsToggleButton.GetComponent<Button>();
         btn.onClick.RemoveAllListeners();
-        btn.onClick.AddListener(() => { ToggleUI(); });
+        btn.onClick.AddListener(() =>
+        {
+            ToggleUI();
+            if (InventoryGui.instance)
+            {
+                var craftingPanel = InventoryGui.instance.m_crafting;
+                var vis = IsVisible();
+                craftingPanel.transform.Find("TabsButtons").SafeSetActive(!vis);
+                craftingPanel.transform.Find("RecipeList").SafeSetActive(!vis);
+                craftingPanel.transform.Find("Decription").SafeSetActive(!vis);
+            }
+        });
 
         TMP_Text? label = LoadoutsToggleButton.GetComponentInChildren<TMP_Text>();
-        if (label) label.text = "Loadouts";
+        if (label) label.text = Localization.instance.Localize("$azu_epi_loadout");
 
         _toggleBtn = btn;
         LoadoutsToggleButton.gameObject.SetActive(LoadoutOption.Value.isOn());
@@ -540,6 +567,17 @@ public class PersonalLoadoutGui : MonoBehaviour
         if (!ZInput.GetButtonDown("JoyLStickUp") && !ZInput.GetButtonDown("JoyDPadUp"))
             return;
         SelectItem(Mathf.Max(0, GetSelectedItemIndex() - 1), true);
+    }
+}
+
+[HarmonyPatch(typeof(UnifiedPopup), nameof(UnifiedPopup.IsVisible))]
+static class UnifiedPopupIsVisiblePatch
+{
+    static bool Prefix(ref bool __result)
+    {
+        if (!Player.m_localPlayer || !PersonalLoadoutGui.IsVisible()) return true;
+        __result = true;
+        return false;
     }
 }
 

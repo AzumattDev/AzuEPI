@@ -60,6 +60,10 @@ internal static class VanityPanelController
     private static TMP_Text _fontSample;
     private static bool _visible;
 
+    private static VanityCell _selectedCell;
+    private static readonly List<VanityCell> _allCells = new();
+    private static Image _gamepadSelectionOverlay;
+
     private static readonly Dictionary<VisSlot, List<VanityCell>> _cellsBySlot = new();
 
     private static readonly List<GameObject> _reusableGameObjectList = new(256);
@@ -81,11 +85,57 @@ internal static class VanityPanelController
         SetVisible(_visible);
     }
 
+    public static bool IsVanityPanelVisible()
+    {
+        return _visible;
+    }
+
     public static void SetVisible(bool visible)
     {
         _visible = visible;
         if (_panel) _panel.gameObject.SetActive(visible);
-        if (visible && _panel) _panel.SetAsLastSibling();
+        if (visible && _panel)
+        {
+            _panel.SetAsLastSibling();
+            if (ZInput.IsGamepadActive())
+            {
+                ExpandAllSections();
+                SelectFirstCell();
+            }
+        }
+        else
+        {
+            _selectedCell = null;
+            if (_gamepadSelectionOverlay) _gamepadSelectionOverlay.gameObject.SetActive(false);
+        }
+    }
+
+    private static void ExpandAllSections()
+    {
+        if (!_content) return;
+
+        for (int i = 0; i < _content.childCount; i++)
+        {
+            Transform child = _content.GetChild(i);
+            GridLayoutGroup grid = child.GetComponent<GridLayoutGroup>();
+            if (grid != null && !child.gameObject.activeSelf)
+            {
+                child.gameObject.SetActive(true);
+
+                if (i > 0)
+                {
+                    Transform header = _content.GetChild(i - 1);
+                    TextMeshProUGUI txt = header.GetComponent<TextMeshProUGUI>();
+                    if (txt)
+                    {
+                        string label = txt.text.Split(' ')[0];
+                        ApplyHeaderStyle(txt, label, isExpanded: true);
+                    }
+                }
+            }
+        }
+
+        LayoutRebuilder.ForceRebuildLayoutImmediate(_content);
     }
 
     public static void RefreshGrid()
@@ -97,6 +147,8 @@ internal static class VanityPanelController
         if (!player || !odb) return;
 
         _cellsBySlot.Clear();
+        _allCells.Clear();
+        _selectedCell = null;
         ClearChildren(_content);
 
         _reusableGameObjectList.Clear();
@@ -105,6 +157,7 @@ internal static class VanityPanelController
             if (recipe && recipe.m_item)
                 _reusableGameObjectList.Add(recipe.m_item.gameObject);
         }
+
         if (odb.m_items != null)
         {
             foreach (GameObject? go in odb.m_items)
@@ -193,6 +246,281 @@ internal static class VanityPanelController
 
         foreach (VisSlot slot in _cellsBySlot.Keys)
             UpdateSelectedVisuals(slot);
+    }
+
+    public static void UpdateGamepadNavigation()
+    {
+        if (!_visible || !ZInput.IsGamepadActive() || Console.IsVisible()) return;
+        if (PersonalLoadoutGui.IsVisible()) return; // Don't handle input if loadout is open
+        if (_allCells.Count == 0) return;
+
+        if (_selectedCell == null || !_selectedCell.gameObject.activeInHierarchy)
+        {
+            SelectFirstCell();
+            return;
+        }
+
+        bool left = ZInput.GetButtonDown("JoyDPadLeft") || ZInput.GetButtonDown("JoyLStickLeft");
+        bool right = ZInput.GetButtonDown("JoyDPadRight") || ZInput.GetButtonDown("JoyLStickRight");
+        bool up = ZInput.GetButtonDown("JoyDPadUp") || ZInput.GetButtonDown("JoyLStickUp");
+        bool down = ZInput.GetButtonDown("JoyDPadDown") || ZInput.GetButtonDown("JoyLStickDown");
+
+        if (left || right || up || down)
+        {
+            Navigate(left, right, up, down);
+        }
+
+        if (ZInput.GetButtonDown("JoyButtonA"))
+        {
+            _selectedCell?.OnLeftClick(null);
+        }
+        else if (ZInput.GetButtonDown("JoyButtonX"))
+        {
+            _selectedCell?.OnRightClick(null);
+        }
+        else if (ZInput.GetButtonDown("JoyLTrigger") || ZInput.GetButtonDown("JoyRTrigger"))
+        {
+            ToggleCurrentSection();
+        }
+    }
+
+    private static void ToggleCurrentSection()
+    {
+        if (_selectedCell == null) return;
+
+        Transform grid = _selectedCell.transform.parent;
+        int gridIndex = grid.GetSiblingIndex();
+        int headerIndex = gridIndex - 1;
+
+        if (headerIndex < 0 || headerIndex >= _content.childCount) return;
+
+        Transform header = _content.GetChild(headerIndex);
+        Button headerButton = header.GetComponent<Button>();
+        if (headerButton != null)
+        {
+            headerButton.onClick.Invoke();
+        }
+    }
+
+    private static void Navigate(bool left, bool right, bool up, bool down)
+    {
+        if (_selectedCell == null) return;
+
+        GridLayoutGroup parentGrid = _selectedCell.transform.parent.GetComponent<GridLayoutGroup>();
+        if (!parentGrid) return;
+
+        List<VanityCell> gridCells = new();
+        foreach (Transform child in parentGrid.transform)
+        {
+            if (child.gameObject.activeSelf)
+            {
+                VanityCell cell = child.GetComponent<VanityCell>();
+                if (cell) gridCells.Add(cell);
+            }
+        }
+
+        int currentIndex = gridCells.IndexOf(_selectedCell);
+        if (currentIndex < 0) return;
+
+        int columns = parentGrid.constraintCount;
+        int currentRow = currentIndex / columns;
+        int currentCol = currentIndex % columns;
+
+        VanityCell nextCell = null;
+
+        if (left && currentCol > 0)
+        {
+            nextCell = gridCells[currentIndex - 1];
+        }
+        else if (right && currentCol < columns - 1 && currentIndex + 1 < gridCells.Count)
+        {
+            nextCell = gridCells[currentIndex + 1];
+        }
+        else if (up)
+        {
+            if (currentRow > 0)
+            {
+                int targetIndex = (currentRow - 1) * columns + currentCol;
+                if (targetIndex < gridCells.Count)
+                    nextCell = gridCells[targetIndex];
+            }
+            else
+            {
+                int currentSectionIndex = GetSectionIndexOfCell(_selectedCell);
+                VanityCell prevSectionCell = FindLastCellInSection(currentSectionIndex - 1);
+                if (prevSectionCell != null)
+                    nextCell = prevSectionCell;
+            }
+        }
+        else if (down)
+        {
+            int targetIndex = (currentRow + 1) * columns + currentCol;
+            if (targetIndex < gridCells.Count)
+            {
+                nextCell = gridCells[targetIndex];
+            }
+            else
+            {
+                int currentSectionIndex = GetSectionIndexOfCell(_selectedCell);
+                VanityCell nextSectionCell = FindFirstCellInSection(currentSectionIndex + 1);
+                if (nextSectionCell != null)
+                    nextCell = nextSectionCell;
+            }
+        }
+
+        if (nextCell != null)
+        {
+            SelectCell(nextCell);
+        }
+    }
+
+    private static int GetSectionIndexOfCell(VanityCell cell)
+    {
+        if (!cell) return -1;
+        Transform grid = cell.transform.parent;
+        return grid.GetSiblingIndex();
+    }
+
+    private static VanityCell FindFirstCellInSection(int sectionIndex)
+    {
+        if (sectionIndex < 0 || sectionIndex >= _content.childCount) return null;
+
+        Transform section = _content.GetChild(sectionIndex);
+        if (!section.gameObject.activeSelf) return FindFirstCellInSection(sectionIndex + 1);
+
+        GridLayoutGroup grid = section.GetComponent<GridLayoutGroup>();
+        if (!grid) return null;
+
+        foreach (Transform child in grid.transform)
+        {
+            if (child.gameObject.activeSelf)
+            {
+                VanityCell cell = child.GetComponent<VanityCell>();
+                if (cell) return cell;
+            }
+        }
+
+        return FindFirstCellInSection(sectionIndex + 1);
+    }
+
+    private static VanityCell FindLastCellInSection(int sectionIndex)
+    {
+        if (sectionIndex < 0 || sectionIndex >= _content.childCount) return null;
+
+        Transform section = _content.GetChild(sectionIndex);
+        if (!section.gameObject.activeSelf) return FindLastCellInSection(sectionIndex - 1);
+
+        GridLayoutGroup grid = section.GetComponent<GridLayoutGroup>();
+        if (!grid) return null;
+
+        VanityCell lastCell = null;
+        foreach (Transform child in grid.transform)
+        {
+            if (child.gameObject.activeSelf)
+            {
+                VanityCell cell = child.GetComponent<VanityCell>();
+                if (cell) lastCell = cell;
+            }
+        }
+
+        return lastCell ?? FindLastCellInSection(sectionIndex - 1);
+    }
+
+    private static void SelectFirstCell()
+    {
+        foreach (VanityCell cell in _allCells)
+        {
+            if (cell && cell.gameObject.activeInHierarchy)
+            {
+                SelectCell(cell);
+                return;
+            }
+        }
+    }
+
+    private static void SelectCell(VanityCell cell)
+    {
+        if (!cell) return;
+
+        _selectedCell = cell;
+
+        if (!_gamepadSelectionOverlay)
+        {
+            GameObject borderGo = new("GamepadSelection", typeof(RectTransform), typeof(Image), typeof(Outline));
+            _gamepadSelectionOverlay = borderGo.GetComponent<Image>();
+            _gamepadSelectionOverlay.color = Color.clear;
+            _gamepadSelectionOverlay.raycastTarget = false;
+
+            Outline outline = borderGo.GetComponent<Outline>();
+            outline.effectColor = new Color(1f, 0.8f, 0f, 1f);
+            outline.effectDistance = new Vector2(3f, 3f);
+            outline.useGraphicAlpha = false;
+
+            RectTransform rt = (RectTransform)borderGo.transform;
+            rt.SetParent(_content, true);
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.zero;
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = CellSize;
+        }
+
+        RectTransform cellRT = (RectTransform)cell.transform;
+        RectTransform borderRT = (RectTransform)_gamepadSelectionOverlay.transform;
+        borderRT.position = cellRT.position;
+        borderRT.SetAsLastSibling();
+        _gamepadSelectionOverlay.gameObject.SetActive(true);
+
+        Transform grid = cell.transform.parent;
+        if (!grid.gameObject.activeSelf)
+        {
+            grid.gameObject.SetActive(true);
+            int headerIndex = grid.GetSiblingIndex() - 1;
+            if (headerIndex >= 0)
+            {
+                Transform header = _content.GetChild(headerIndex);
+                TextMeshProUGUI txt = header.GetComponent<TextMeshProUGUI>();
+                if (txt)
+                {
+                    string label = txt.text.Split(' ')[0];
+                    ApplyHeaderStyle(txt, label, isExpanded: true);
+                }
+            }
+
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_content);
+        }
+
+        EnsureSelectionVisible();
+    }
+
+    private static void EnsureSelectionVisible()
+    {
+        if (!_selectedCell || !_scroll || !_viewport || !_content) return;
+
+        RectTransform cellRT = (RectTransform)_selectedCell.transform;
+
+        Vector3[] cellCorners = new Vector3[4];
+        cellRT.GetWorldCorners(cellCorners);
+
+        Vector3[] viewportCorners = new Vector3[4];
+        _viewport.GetWorldCorners(viewportCorners);
+
+        float cellTop = cellCorners[1].y;
+        float cellBottom = cellCorners[0].y;
+        float viewportTop = viewportCorners[1].y;
+        float viewportBottom = viewportCorners[0].y;
+
+        if (cellTop > viewportTop || cellBottom < viewportBottom)
+        {
+            Canvas.ForceUpdateCanvases();
+            Vector2 contentPos = _content.anchoredPosition;
+            float viewportHeight = _viewport.rect.height;
+            float contentHeight = _content.rect.height;
+
+            float cellLocalY = -cellRT.anchoredPosition.y;
+            float targetY = Mathf.Clamp(cellLocalY - viewportHeight / 2f, 0, Mathf.Max(0, contentHeight - viewportHeight));
+
+            _content.anchoredPosition = new Vector2(contentPos.x, targetY);
+        }
     }
 
     internal static void UpdateSelectedVisuals(VisSlot slot)
@@ -404,7 +732,30 @@ internal static class VanityPanelController
             _visible = !_visible;
             SetVisible(_visible);
             if (PersonalLoadoutGui.IsVisible()) PersonalLoadoutGui.Hide();
+            if (InventoryGui.instance)
+            {
+                var craftingPanel = InventoryGui.instance.m_crafting;
+                craftingPanel.transform.Find("TabsButtons").SafeSetActive(!_visible);
+                craftingPanel.transform.Find("RecipeList").SafeSetActive(!_visible);
+                craftingPanel.transform.Find("Decription").SafeSetActive(!_visible);
+            }
         });
+
+        if (VanityButtonGo.TryGetComponent<UIGamePad>(out var gp))
+        {
+            if (ZInput.instance != null)
+            {
+                gp.m_hint.GetComponentInChildren<TextMeshProUGUI>(true).text = ZInput.instance.GetBoundKeyString("JoyLStick", true);
+            }
+            else
+            {
+                ZInput.Initialize();
+                gp.m_hint.GetComponentInChildren<TextMeshProUGUI>(true).text = ZInput.instance.GetBoundKeyString("JoyLStick", true);
+            }
+
+            gp.m_zinputKey = "JoyLStick";
+            gp.m_keyCode = KeyCode.JoystickButton8;
+        }
 
         TMP_Text? label = VanityButtonGo.GetComponentInChildren<TMP_Text>();
         if (label) label.text = Localization.instance.Localize("$azuepi_vanity");
@@ -574,6 +925,7 @@ internal static class VanityPanelController
         cell.IsNone = true;
 
         GetOrCreateSlotList(slot).Add(cell);
+        _allCells.Add(cell);
 
         UITooltip? tooltipForNone = go.GetComponent<UITooltip>() ?? go.AddComponent<UITooltip>();
         tooltipForNone.m_topic = Localization.instance?.Localize("$menu_none") ?? "None";
@@ -620,6 +972,7 @@ internal static class VanityPanelController
         cell.SelectedBadge = selectedBadge;
 
         GetOrCreateSlotList(slot).Add(cell);
+        _allCells.Add(cell);
     }
 
     private static VisSlot MapItemTypeToVisSlot(ItemDrop.ItemData.ItemType t) => t switch
@@ -716,6 +1069,26 @@ static class Vanity_OnShow
     {
         VanityPanelController.EnsureBuilt(__instance);
         VanityPanelController.RefreshGrid();
+    }
+}
+
+[HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Update))]
+static class Vanity_GamepadUpdate
+{
+    static void Postfix()
+    {
+        VanityPanelController.UpdateGamepadNavigation();
+    }
+}
+
+[HarmonyPatch(typeof(UnifiedPopup), nameof(UnifiedPopup.IsVisible))]
+static class UnifiedPopupIsVisiblePatch
+{
+    static bool Prefix(ref bool __result)
+    {
+        if (!Player.m_localPlayer || !VanityPanelController.IsVanityPanelVisible()) return true;
+        __result = true;
+        return false;
     }
 }
 
