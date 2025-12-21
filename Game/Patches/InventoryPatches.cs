@@ -56,8 +56,11 @@ public class InventoryPatches
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.AddItem), typeof(ItemDrop.ItemData))]
     private static class InventoryAddItemPatch1
     {
+        [HarmonyPriority(Priority.First)]
         private static bool Prefix(Inventory __instance, ref bool __result, ItemDrop.ItemData item)
         {
+            if (item?.m_shared == null) return true;
+
             if (Player.m_localPlayer == null)
                 return true;
 
@@ -87,8 +90,11 @@ public class InventoryPatches
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.AddItem), typeof(ItemDrop.ItemData), typeof(int), typeof(int), typeof(int))]
     private static class AddItem_XY_Guard_Patch
     {
+        [HarmonyPriority(Priority.Last)]
         private static bool Prefix(Inventory __instance, ref bool __result, ItemDrop.ItemData item, int amount, int x, int y)
         {
+            if (item?.m_shared == null) return true;
+
             if (!__instance.ShouldProtectInventorySlots()) return true;
 
             if (__instance.IsHiddenCell(x, y))
@@ -115,8 +121,11 @@ public class InventoryPatches
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.AddItem), typeof(ItemDrop.ItemData), typeof(Vector2i))]
     internal static class AddItem_Pos_Guard_Patch
     {
+        [HarmonyPriority(Priority.First)]
         private static bool Prefix(Inventory __instance, ref bool __result, ItemDrop.ItemData item, Vector2i pos)
         {
+            if (item?.m_shared == null) return true;
+
             if (!__instance.ShouldProtectInventorySlots()) return true;
 
             if (__instance.IsHiddenCell(pos.x, pos.y))
@@ -138,8 +147,10 @@ public class InventoryPatches
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.CanAddItem), typeof(ItemDrop.ItemData), typeof(int))]
     static class CanAddItem_QuickAware_Patch
     {
+        [HarmonyPriority(Priority.First)]
         private static bool Prefix(Inventory __instance, ItemDrop.ItemData item, int stack, ref bool __result)
         {
+            if (item?.m_shared == null) return true;
             if (!__instance.ShouldProtectInventorySlots()) return true;
 
             if (stack <= 0) stack = item.m_stack;
@@ -165,6 +176,7 @@ public class InventoryPatches
     {
         private static readonly List<ItemDrop.ItemData> _stuckItems = new(16);
 
+        [HarmonyPriority(Priority.Last)]
         private static void Postfix(Inventory __instance)
         {
             if (!__instance.ShouldProtectInventorySlots()) return;
@@ -200,6 +212,7 @@ public class InventoryPatches
     {
         private static bool Prefix(Inventory __instance, ref bool __result, Inventory fromInventory, ItemDrop.ItemData item, int amount, int x, int y)
         {
+            if (item?.m_shared == null) return true;
             if (!__instance.ShouldProtectInventorySlots()) return true;
 
             if (__instance.IsHiddenCell(x, y))
