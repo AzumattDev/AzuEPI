@@ -236,7 +236,7 @@ public class InventoryGuiPatches
                         if (OldLayout.Value.isOff() && childRT.parent != InventoryGui.instance.m_crafting)
                             childRT.SetParent(InventoryGui.instance.m_crafting, false);
                         else if (OldLayout.Value.isOn() && childRT.parent != InventoryGui.instance.m_playerGrid.transform)
-                            childRT.SetParent(InventoryGui.instance.m_playerGrid.transform, false);
+                            childRT.SetParent(InventoryGui.instance.m_playerGrid.transform.parent, false);
                     }
 
                     childRT.anchoredPosition = slots[i].Position;
