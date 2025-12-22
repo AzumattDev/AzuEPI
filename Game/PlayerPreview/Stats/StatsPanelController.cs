@@ -191,7 +191,7 @@ public static class StatsPanelController
         _scroll.scrollSensitivity = 800f;
 
         _viewport = BuildViewport(rootRT);
-        BuildContentGrid(_viewport);
+        BuildContentStack(_viewport);
 
         _scroll.viewport = _viewport;
         _scroll.content = _content;
@@ -215,11 +215,11 @@ public static class StatsPanelController
         return rt;
     }
 
-    private static void BuildContentGrid(RectTransform parent)
+    private static void BuildContentStack(RectTransform parent)
     {
         GameObject go = new(StatsContentName,
             typeof(RectTransform),
-            typeof(GridLayoutGroup),
+            typeof(VerticalLayoutGroup),
             typeof(ContentSizeFitter));
 
         _content = (RectTransform)go.transform;
@@ -228,13 +228,14 @@ public static class StatsPanelController
         _content.anchorMax = new Vector2(1f, 1f);
         _content.pivot = new Vector2(0.5f, 1f);
 
-        GridLayoutGroup? grid = go.GetComponent<GridLayoutGroup>();
-        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid.constraintCount = Columns;
-        grid.spacing = Spacing;
-        grid.cellSize = CellSize;
-        grid.childAlignment = TextAnchor.UpperCenter;
-        grid.padding = new RectOffset(12, 12, 12, 12);
+        VerticalLayoutGroup? vLayout = go.GetComponent<VerticalLayoutGroup>();
+        vLayout.childAlignment = TextAnchor.UpperLeft;
+        vLayout.spacing = 8f;
+        vLayout.padding = new RectOffset(16, 16, 16, 16);
+        vLayout.childControlWidth = true;
+        vLayout.childControlHeight = true;
+        vLayout.childForceExpandWidth = true;
+        vLayout.childForceExpandHeight = false;
 
         ContentSizeFitter? fitter = go.GetComponent<ContentSizeFitter>();
         fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
@@ -289,16 +290,186 @@ public static class StatsPanelController
 
         _statElements.Clear();
 
-        List<PlayerStatType> selectedStats = ParseStatsList(SelectedPlayerStats.Value);
-        if (selectedStats.Count == 0)
-            selectedStats = GetDefaultStats();
+        CreateLiveStatsSection();
 
-        foreach (PlayerStatType statType in selectedStats)
+        CreateSection("General", new[]
         {
-            string icon = StatIcons.TryGetValue(statType, out string? statIcon) ? statIcon : "📊";
+            PlayerStatType.WorldLoads,
+            PlayerStatType.Deaths,
+            PlayerStatType.Cheats
+        });
+
+        CreateSection("Combat", new[]
+        {
+            PlayerStatType.EnemyKills,
+            PlayerStatType.BossKills,
+            PlayerStatType.EnemyHits,
+            PlayerStatType.HitsTakenEnemies,
+            PlayerStatType.ArrowsShot,
+            PlayerStatType.PlayerKills,
+            PlayerStatType.PlayerHits
+        });
+
+        CreateSection("Exploration", new[]
+        {
+            PlayerStatType.DistanceTraveled,
+            PlayerStatType.DistanceWalk,
+            PlayerStatType.DistanceRun,
+            PlayerStatType.DistanceSail,
+            PlayerStatType.DistanceAir,
+            PlayerStatType.Jumps,
+            PlayerStatType.PortalsUsed
+        });
+
+        CreateSection("Activity", new[]
+        {
+            PlayerStatType.Builds,
+            PlayerStatType.Crafts,
+            PlayerStatType.Upgrades,
+            PlayerStatType.CraftsOrUpgrades,
+            PlayerStatType.ItemsPickedUp,
+            PlayerStatType.TreeChops,
+            PlayerStatType.MineHits,
+            PlayerStatType.FoodEaten,
+            PlayerStatType.Sleep
+        });
+
+        CreateSection("Other", new[]
+        {
+            PlayerStatType.TimeInBase,
+            PlayerStatType.TimeOutOfBase,
+            PlayerStatType.CreatureTamed,
+            PlayerStatType.DoorsOpened,
+            PlayerStatType.BeesHarvested
+        });
+    }
+
+    private static void CreateLiveStatsSection()
+    {
+        if (!_content) return;
+
+        GameObject headerObj = new("Section_Attributes", typeof(RectTransform));
+        RectTransform headerRect = headerObj.GetComponent<RectTransform>();
+        headerRect.SetParent(_content, false);
+
+        TextMeshProUGUI headerText = headerObj.AddComponent<TextMeshProUGUI>();
+        if (_fontAsset != null) headerText.font = _fontAsset;
+        headerText.text = "Attributes";
+        headerText.fontSize = 14f;
+        headerText.fontStyle = FontStyles.Bold;
+        headerText.alignment = TextAlignmentOptions.Left;
+        headerText.color = new Color(1f, 0.84f, 0f, 1f);
+        headerText.raycastTarget = false;
+
+        LayoutElement headerLayout = headerObj.AddComponent<LayoutElement>();
+        headerLayout.preferredHeight = 20f;
+        headerLayout.minHeight = 20f;
+
+        CreateLiveStatRow("Health");
+        CreateLiveStatRow("Stamina");
+        CreateLiveStatRow("Eitr");
+        CreateLiveStatRow("Health Regen");
+        CreateLiveStatRow("Stamina Regen");
+        CreateLiveStatRow("Eitr Regen");
+        CreateLiveStatRow("Movement Speed");
+        CreateLiveStatRow("Run Speed");
+        CreateLiveStatRow("Swim Speed");
+
+        GameObject spacer = new("Spacer_Attributes", typeof(RectTransform));
+        RectTransform spacerRect = spacer.GetComponent<RectTransform>();
+        spacerRect.SetParent(_content, false);
+        LayoutElement spacerLayout = spacer.AddComponent<LayoutElement>();
+        spacerLayout.preferredHeight = 8f;
+        spacerLayout.minHeight = 8f;
+    }
+
+    private static void CreateLiveStatRow(string statName)
+    {
+        GameObject rowObj = new($"LiveStatRow_{statName}", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        RectTransform rowRect = rowObj.GetComponent<RectTransform>();
+        rowRect.SetParent(_content, false);
+
+        HorizontalLayoutGroup hLayout = rowObj.GetComponent<HorizontalLayoutGroup>();
+        hLayout.childAlignment = TextAnchor.MiddleLeft;
+        hLayout.spacing = 4f;
+        hLayout.childControlWidth = false;
+        hLayout.childControlHeight = true;
+        hLayout.childForceExpandWidth = false;
+        hLayout.childForceExpandHeight = false;
+
+        LayoutElement rowLayout = rowObj.AddComponent<LayoutElement>();
+        rowLayout.preferredHeight = 18f;
+        rowLayout.minHeight = 18f;
+
+        GameObject labelObj = new("Label", typeof(RectTransform));
+        RectTransform labelRect = labelObj.GetComponent<RectTransform>();
+        labelRect.SetParent(rowRect, false);
+
+        TextMeshProUGUI labelText = labelObj.AddComponent<TextMeshProUGUI>();
+        if (_fontAsset != null) labelText.font = _fontAsset;
+        labelText.text = statName;
+        labelText.fontSize = 11f;
+        labelText.alignment = TextAlignmentOptions.Left;
+        labelText.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+        labelText.raycastTarget = false;
+
+        LayoutElement labelLayout = labelObj.AddComponent<LayoutElement>();
+        labelLayout.flexibleWidth = 1f;
+        labelLayout.minWidth = 100f;
+
+        GameObject valueObj = new("Value", typeof(RectTransform));
+        RectTransform valueRect = valueObj.GetComponent<RectTransform>();
+        valueRect.SetParent(rowRect, false);
+
+        TextMeshProUGUI valueText = valueObj.AddComponent<TextMeshProUGUI>();
+        if (_fontAsset != null) valueText.font = _fontAsset;
+        valueText.text = "0";
+        valueText.fontSize = 11f;
+        valueText.alignment = TextAlignmentOptions.Right;
+        valueText.color = Color.white;
+        valueText.raycastTarget = false;
+        valueText.fontStyle = FontStyles.Bold;
+
+        LayoutElement valueLayout = valueObj.AddComponent<LayoutElement>();
+        valueLayout.minWidth = 60f;
+        valueLayout.preferredWidth = 60f;
+
+        _statElements.Add(new StatElement { Name = statName, StatType = (PlayerStatType)(-1), ValueText = valueText, IsLiveStat = true });
+    }
+
+    private static void CreateSection(string title, PlayerStatType[] stats)
+    {
+        if (!_content) return;
+
+        GameObject headerObj = new($"Section_{title}", typeof(RectTransform));
+        RectTransform headerRect = headerObj.GetComponent<RectTransform>();
+        headerRect.SetParent(_content, false);
+
+        TextMeshProUGUI headerText = headerObj.AddComponent<TextMeshProUGUI>();
+        if (_fontAsset != null) headerText.font = _fontAsset;
+        headerText.text = title;
+        headerText.fontSize = 14f;
+        headerText.fontStyle = FontStyles.Bold;
+        headerText.alignment = TextAlignmentOptions.Left;
+        headerText.color = new Color(1f, 0.84f, 0f, 1f);
+        headerText.raycastTarget = false;
+
+        LayoutElement headerLayout = headerObj.AddComponent<LayoutElement>();
+        headerLayout.preferredHeight = 20f;
+        headerLayout.minHeight = 20f;
+
+        foreach (PlayerStatType statType in stats)
+        {
             string label = StatLabels.TryGetValue(statType, out string? statLabel) ? statLabel : statType.ToString();
-            CreateStatElement(_content.gameObject, label, icon, statType);
+            CreateStatRow(_content.gameObject, label, statType);
         }
+
+        GameObject spacer = new($"Spacer_{title}", typeof(RectTransform));
+        RectTransform spacerRect = spacer.GetComponent<RectTransform>();
+        spacerRect.SetParent(_content, false);
+        LayoutElement spacerLayout = spacer.AddComponent<LayoutElement>();
+        spacerLayout.preferredHeight = 8f;
+        spacerLayout.minHeight = 8f;
     }
 
     private static List<PlayerStatType> GetDefaultStats()
@@ -314,76 +485,58 @@ public static class StatsPanelController
         };
     }
 
-    private static void CreateStatElement(GameObject parent, string statName, string icon, PlayerStatType statType)
+    private static void CreateStatRow(GameObject parent, string statName, PlayerStatType statType)
     {
-        GameObject statObj = new($"Stat_{statName}", typeof(RectTransform));
-        RectTransform statRect = statObj.GetComponent<RectTransform>();
-        statRect.SetParent(parent.transform, false);
+        GameObject rowObj = new($"StatRow_{statName}", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        RectTransform rowRect = rowObj.GetComponent<RectTransform>();
+        rowRect.SetParent(parent.transform, false);
 
-        GameObject contentColumn = new("ContentColumn", typeof(RectTransform), typeof(VerticalLayoutGroup));
-        RectTransform columnRect = contentColumn.GetComponent<RectTransform>();
-        columnRect.SetParent(statRect, false);
-        columnRect.anchorMin = Vector2.zero;
-        columnRect.anchorMax = Vector2.one;
-        columnRect.offsetMin = Vector2.zero;
-        columnRect.offsetMax = Vector2.zero;
+        HorizontalLayoutGroup hLayout = rowObj.GetComponent<HorizontalLayoutGroup>();
+        hLayout.childAlignment = TextAnchor.MiddleLeft;
+        hLayout.spacing = 4f;
+        hLayout.childControlWidth = false;
+        hLayout.childControlHeight = true;
+        hLayout.childForceExpandWidth = false;
+        hLayout.childForceExpandHeight = false;
 
-        VerticalLayoutGroup vLayout = contentColumn.GetComponent<VerticalLayoutGroup>();
-        vLayout.childAlignment = TextAnchor.UpperCenter;
-        vLayout.spacing = 1f;
-        vLayout.padding = new RectOffset(2, 2, 2, 2);
-        vLayout.childForceExpandWidth = true;
-        vLayout.childForceExpandHeight = false;
-        vLayout.childControlWidth = true;
-        vLayout.childControlHeight = true;
-
-        GameObject iconObj = new("Icon", typeof(RectTransform));
-        RectTransform iconRect = iconObj.GetComponent<RectTransform>();
-        iconRect.SetParent(columnRect, false);
-
-        TextMeshProUGUI iconText = iconObj.AddComponent<TextMeshProUGUI>();
-        if (_fontAsset != null) iconText.font = _fontAsset;
-        iconText.text = icon;
-        iconText.fontSize = 16f;
-        iconText.alignment = TextAlignmentOptions.Center;
-        iconText.color = Color.white;
-        iconText.raycastTarget = false;
-
-        LayoutElement iconLayout = iconObj.AddComponent<LayoutElement>();
-        iconLayout.preferredHeight = 18f;
-
-        GameObject valueObj = new("Value", typeof(RectTransform));
-        RectTransform valueRect = valueObj.GetComponent<RectTransform>();
-        valueRect.SetParent(columnRect, false);
-
-        TextMeshProUGUI valueText = valueObj.AddComponent<TextMeshProUGUI>();
-        if (_fontAsset != null) valueText.font = _fontAsset;
-        valueText.text = "0";
-        valueText.fontSize = 13f;
-        valueText.alignment = TextAlignmentOptions.Center;
-        valueText.color = new Color(0.95f, 0.95f, 0.95f, 1f);
-        valueText.raycastTarget = false;
-        valueText.fontStyle = FontStyles.Bold;
-
-        LayoutElement valueLayout = valueObj.AddComponent<LayoutElement>();
-        valueLayout.preferredHeight = 16f;
+        LayoutElement rowLayout = rowObj.AddComponent<LayoutElement>();
+        rowLayout.preferredHeight = 18f;
+        rowLayout.minHeight = 18f;
 
         GameObject labelObj = new("Label", typeof(RectTransform));
         RectTransform labelRect = labelObj.GetComponent<RectTransform>();
-        labelRect.SetParent(columnRect, false);
+        labelRect.SetParent(rowRect, false);
 
         TextMeshProUGUI labelText = labelObj.AddComponent<TextMeshProUGUI>();
         if (_fontAsset != null) labelText.font = _fontAsset;
         labelText.text = statName;
-        labelText.fontSize = 9f;
-        labelText.alignment = TextAlignmentOptions.Center;
-        labelText.color = new Color(0.6f, 0.6f, 0.6f, 1f);
+        labelText.fontSize = 11f;
+        labelText.alignment = TextAlignmentOptions.Left;
+        labelText.color = new Color(0.9f, 0.9f, 0.9f, 1f);
         labelText.raycastTarget = false;
 
         LayoutElement labelLayout = labelObj.AddComponent<LayoutElement>();
-        labelLayout.preferredHeight = 12f;
+        labelLayout.flexibleWidth = 1f;
+        labelLayout.minWidth = 100f;
 
-        _statElements.Add(new StatElement { Name = statName, StatType = statType, ValueText = valueText, IconText = iconText, LabelText = labelText });
+        GameObject valueObj = new("Value", typeof(RectTransform));
+        RectTransform valueRect = valueObj.GetComponent<RectTransform>();
+        valueRect.SetParent(rowRect, false);
+
+        TextMeshProUGUI valueText = valueObj.AddComponent<TextMeshProUGUI>();
+        if (_fontAsset != null) valueText.font = _fontAsset;
+        valueText.text = "0";
+        valueText.fontSize = 11f;
+        valueText.alignment = TextAlignmentOptions.Right;
+        valueText.color = Color.white;
+        valueText.raycastTarget = false;
+        valueText.fontStyle = FontStyles.Bold;
+
+        LayoutElement valueLayout = valueObj.AddComponent<LayoutElement>();
+        valueLayout.minWidth = 60f;
+        valueLayout.preferredWidth = 60f;
+
+        _statElements.Add(new StatElement { Name = statName, StatType = statType, ValueText = valueText });
     }
 
     internal static void BuildToggleButton(InventoryGui gui)
@@ -445,6 +598,41 @@ public static class StatsPanelController
 
         foreach (StatElement element in _statElements)
         {
+            if (element.IsLiveStat)
+            {
+                switch (element.Name)
+                {
+                    case "Health":
+                        element.ValueText.text = $"{player.GetHealth():F0} / {player.GetMaxHealth():F0}";
+                        break;
+                    case "Stamina":
+                        element.ValueText.text = $"{player.GetStamina():F0} / {player.GetMaxStamina():F0}";
+                        break;
+                    case "Eitr":
+                        element.ValueText.text = $"{player.GetEitr():F0} / {player.GetMaxEitr():F0}";
+                        break;
+                    case "Health Regen":
+                        element.ValueText.text = $"{player.m_health:F1}/s";
+                        break;
+                    case "Stamina Regen":
+                        element.ValueText.text = $"{player.m_staminaRegen:F1}/s";
+                        break;
+                    case "Eitr Regen":
+                        element.ValueText.text = $"{player.m_eiterRegen:F1}/s";
+                        break;
+                    case "Movement Speed":
+                        element.ValueText.text = $"{player.GetJogSpeedFactor() * 100:F0}%";
+                        break;
+                    case "Run Speed":
+                        element.ValueText.text = $"{player.GetRunSpeedFactor() * 100:F0}%";
+                        break;
+                    case "Swim Speed":
+                        element.ValueText.text = $"{player.m_swimSpeed * 100:F0}%";
+                        break;
+                }
+                continue;
+            }
+
             float statValue = profile.m_playerStats[element.StatType];
 
             switch (element.StatType)
@@ -512,7 +700,6 @@ public static class StatsPanelController
         public string Name { get; set; } = string.Empty;
         public PlayerStatType StatType { get; set; }
         public TextMeshProUGUI ValueText { get; set; } = null!;
-        public TextMeshProUGUI IconText { get; set; } = null!;
-        public TextMeshProUGUI LabelText { get; set; } = null!;
+        public bool IsLiveStat { get; set; }
     }
 }
