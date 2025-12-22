@@ -1,4 +1,5 @@
-﻿using AzuEPI.Game.Vanity;
+﻿using AzuEPI.Game.PlayerPreview.Stats;
+using AzuEPI.Game.Vanity;
 
 namespace AzuEPI.Game.Loadout;
 
@@ -156,6 +157,7 @@ public class PersonalLoadoutGui : MonoBehaviour
         {
             Show();
             VanityPanelController.SetVisible(false);
+            StatsPanelController.Hide();
         }
     }
 
@@ -226,7 +228,11 @@ public class PersonalLoadoutGui : MonoBehaviour
         });
 
         TMP_Text? label = LoadoutsToggleButton.GetComponentInChildren<TMP_Text>();
-        if (label) label.text = Localization.instance.Localize("$azu_epi_loadout");
+        if (label)
+        {
+            label.text = "🎯";
+            label.fontSize = 20;
+        }
 
         _toggleBtn = btn;
         LoadoutsToggleButton.gameObject.SetActive(LoadoutOption.Value.isOn());

@@ -38,6 +38,9 @@ public class InventoryGuiPatches
             EnsureVanityPanelBuilt(__instance);
             VanityPanelController.SetVisible(false);
             BuildLoadoutToggles(__instance);
+            EnsureStatsPanelBuilt(__instance);
+            BuildStatsToggleButton(__instance);
+            StatsPanelController.SetVisible(false);
             CreateCharacterName(__instance, previewParentRT);
             CreateStatsUI(__instance, previewParentRT);
 
@@ -300,6 +303,9 @@ public class InventoryGuiPatches
 
             if (OldLayout.Value.isOff() && player != null)
                 StatsUI.UpdateStats(player);
+
+            if (StatsPanelController.IsVisible() && player != null)
+                StatsPanelController.UpdateStats(player);
 
             UpdateInvalidDropOverlays(__instance, ___m_playerGrid, player);
         }

@@ -42,9 +42,9 @@ public class UIBuilder
         PreviewParent.SafeSetActive(OldLayout.Value.isOff());
         PlayerPreviewImage.SafeSetActive(OldLayout.Value.isOff());
         CharName.SafeSetActive(OldLayout.Value.isOff());
-        GUICache.ButtonGridLayoutGroup.constraintCount = OldLayout.Value.isOff() ? 2 : QuickSlotsAmount.Value < 1 ? 1 : 2;
+        GUICache.ButtonGridLayoutGroup.constraintCount = OldLayout.Value.isOff() ? 3 : QuickSlotsAmount.Value < 1 ? 1 : 3;
         GUICache.ButtonGridLayoutGroup.childAlignment = OldLayout.Value.isOff() ? TextAnchor.MiddleCenter : TextAnchor.MiddleLeft;
-        GUICache.ButtonGridLayoutGroup.cellSize = OldLayout.Value.isOff() ? new Vector2(118f, 32f) : new Vector2(170f, 32f);
+        GUICache.ButtonGridLayoutGroup.cellSize = OldLayout.Value.isOff() ? new Vector2(122f, 32f) : new Vector2(90f, 32f);
     }
 
     public static void BuildEquipmentBkg(InventoryGui invGui, RectTransform bkgRect)
@@ -84,18 +84,19 @@ public class UIBuilder
         GlgRt.WithAnchors(new Vector2(0f, 1f), new Vector2(0f, 1f))
             .WithPivot(new Vector2(0.5f, 1f))
             .WithAnchoredPosition(OldLayout.Value.isOff() ? Layout.ToggleButtonsHlgAnchoredPos : Layout.ToggleButtonsHlgAnchoredPosOldVert)
-            .WithSizeDelta(new Vector2(270f, 32f));
+            .WithSizeDelta(new Vector2(320f, 32f));
 
         GridLayoutGroup? glg = GlgGo.GetComponent<GridLayoutGroup>();
         glg.childAlignment = TextAnchor.MiddleCenter;
         glg.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        glg.constraintCount = 2;
-        glg.spacing = new Vector2(35f, 5f);
-        glg.cellSize = new Vector2(118f, 32f);
+        glg.constraintCount = 3;
+        glg.spacing = new Vector2(25f, 5f);
+        glg.cellSize = new Vector2(90f, 32f);
 
         GUICache.ButtonGridLayoutGroup = glg;
         VanityPanelController.ToggleButtonParentGlg = GlgRt;
         PersonalLoadoutGui.ToggleButtonParentGlg = GlgRt;
+        StatsPanelController.ToggleButtonParentGlg = GlgRt;
     }
 
     public static void EnsureVanityPanelBuilt(InventoryGui invGui)
@@ -106,6 +107,16 @@ public class UIBuilder
     public static void BuildLoadoutToggles(InventoryGui invGui)
     {
         PersonalLoadoutGui.BuildLoadoutToggleButton(invGui);
+    }
+
+    public static void BuildStatsToggleButton(InventoryGui invGui)
+    {
+        StatsPanelController.BuildToggleButton(invGui);
+    }
+
+    public static void EnsureStatsPanelBuilt(InventoryGui invGui)
+    {
+        StatsPanelController.EnsureBuilt(invGui);
     }
 
     public static void CreateExtendedCraftingPanel(InventoryGui invGui, RectTransform selectedFrame)
@@ -177,16 +188,6 @@ public class UIBuilder
         foreach (Transform child in CharName)
             if (child.name.Contains("BraidLine"))
                 Object.Destroy(child.gameObject);
-
-        EventTrigger eventTrigger = CharName.gameObject.AddComponent<EventTrigger>();
-
-        EventTrigger.Entry pointerEnter = new() { eventID = EventTriggerType.PointerEnter };
-        pointerEnter.callback.AddListener((data) => { StatsUI.SetHoverState(true); });
-        eventTrigger.triggers.Add(pointerEnter);
-
-        EventTrigger.Entry pointerExit = new() { eventID = EventTriggerType.PointerExit };
-        pointerExit.callback.AddListener((data) => { StatsUI.SetHoverState(false); });
-        eventTrigger.triggers.Add(pointerExit);
     }
 
     public static void BuildDropAllButton(InventoryGui invGui)

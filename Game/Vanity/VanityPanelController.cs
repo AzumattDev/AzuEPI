@@ -1,5 +1,6 @@
 ﻿using AzuEPI.Game.Loadout;
 using AzuEPI.Game.PlayerPreview;
+using AzuEPI.Game.PlayerPreview.Stats;
 
 namespace AzuEPI.Game.Vanity;
 
@@ -85,7 +86,7 @@ internal static class VanityPanelController
         SetVisible(_visible);
     }
 
-    public static bool IsVanityPanelVisible()
+    public static bool IsVisible()
     {
         return _visible;
     }
@@ -767,6 +768,7 @@ internal static class VanityPanelController
             _visible = !_visible;
             SetVisible(_visible);
             if (PersonalLoadoutGui.IsVisible()) PersonalLoadoutGui.Hide();
+            if (StatsPanelController.IsVisible()) StatsPanelController.Hide();
             if (InventoryGui.instance)
             {
                 var craftingPanel = InventoryGui.instance.m_crafting;
@@ -793,7 +795,11 @@ internal static class VanityPanelController
         }
 
         TMP_Text? label = VanityButtonGo.GetComponentInChildren<TMP_Text>();
-        if (label) label.text = Localization.instance.Localize("$azuepi_vanity");
+        if (label)
+        {
+            label.text = "👕";
+            label.fontSize = 20;
+        }
 
         _toggleBtn = btn;
         VanityButtonGo.gameObject.SetActive(VanityOption.Value.isOn());
@@ -1142,7 +1148,7 @@ static class UnifiedPopupIsVisiblePatch
 {
     static bool Prefix(ref bool __result)
     {
-        if (!Player.m_localPlayer || !VanityPanelController.IsVanityPanelVisible()) return true;
+        if (!Player.m_localPlayer || !VanityPanelController.IsVisible()) return true;
         __result = true;
         return false;
     }

@@ -5,9 +5,8 @@ public class StatsUI
     private static RectTransform? _statsRect;
     private static readonly List<StatElement> _statElements = new();
     private static TMP_FontAsset? _fontAsset;
-    private static bool _isHovering;
 
-    private static readonly Dictionary<PlayerStatType, string> StatIcons = new()
+    public static readonly Dictionary<PlayerStatType, string> StatIcons = new()
     {
         { PlayerStatType.EnemyKills, "⚔️" },
         { PlayerStatType.Deaths, "💀" },
@@ -42,7 +41,7 @@ public class StatsUI
         { PlayerStatType.BeesHarvested, "🐝" },
     };
 
-    private static readonly Dictionary<PlayerStatType, string> StatLabels = new()
+    public static readonly Dictionary<PlayerStatType, string> StatLabels = new()
     {
         { PlayerStatType.EnemyKills, "Kills" },
         { PlayerStatType.EnemyHits, "Hits" },
@@ -255,13 +254,6 @@ public class StatsUI
                     break;
             }
         }
-    }
-
-    public static void SetHoverState(bool isHovering)
-    {
-        _isHovering = isHovering;
-        if (_statsRect != null)
-            _statsRect.gameObject.SetActive(isHovering);
     }
 
     public static void RebuildUI(InventoryGui inventoryGui, RectTransform? previewParentRect)

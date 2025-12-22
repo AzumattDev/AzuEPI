@@ -195,6 +195,7 @@
         <Compile Include="Game\PlayerPreview\RealPlayer\PlayerRotationController.cs"/>
         <Compile Include="Game\PlayerPreview\RealPlayer\PreviewUITEST.cs"/>
         <Compile Include="Game\PlayerPreview\VisualHandler.cs"/>
+        <Compile Include="Game\PlayerPreview\Stats\StatsPanelController.cs" />
         <Compile Include="Game\Slots\QAB\HudPatches.cs"/>
         <Compile Include="Game\Slots\QAB\QAB.cs"/>
         <Compile Include="Game\Vanity\VanityAPI.cs"/>
