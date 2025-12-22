@@ -61,7 +61,7 @@ public class StatsUI
         { PlayerStatType.PortalsUsed, "Portals" },
         { PlayerStatType.TimeInBase, "In Base" },
         { PlayerStatType.TimeOutOfBase, "Explored" },
-        { PlayerStatType.CraftsOrUpgrades, "Craft/Up" },
+        { PlayerStatType.CraftsOrUpgrades, "Craft/Upgrade" },
         { PlayerStatType.WorldLoads, "Loads" },
         { PlayerStatType.CreatureTamed, "Tamed" },
         { PlayerStatType.DoorsOpened, "Doors" },

@@ -42,6 +42,7 @@ public static class StatsPanelController
     private static Button? _toggleBtn;
     private static Transform? StatsButtonGo;
     private static TMP_FontAsset? _fontAsset;
+    private static Transform? _tabBorderTemplate;
     private static readonly List<StatElement> _statElements = new();
 
     public static RectTransform? ToggleButtonParentGlg;
@@ -101,7 +102,7 @@ public static class StatsPanelController
         { PlayerStatType.PortalsUsed, "Portals" },
         { PlayerStatType.TimeInBase, "In Base" },
         { PlayerStatType.TimeOutOfBase, "Explored" },
-        { PlayerStatType.CraftsOrUpgrades, "Craft/Up" },
+        { PlayerStatType.CraftsOrUpgrades, "Craft/Upgrades" },
         { PlayerStatType.WorldLoads, "Loads" },
         { PlayerStatType.CreatureTamed, "Tamed" },
         { PlayerStatType.DoorsOpened, "Doors" },
@@ -134,11 +135,37 @@ public static class StatsPanelController
         if (fontSample != null)
             _fontAsset = fontSample.font;
 
+        _tabBorderTemplate = gui.m_crafting.transform.Find("TabsButtons/TabBorder");
+
         BuildPanel(gui);
         BuildScrollTree();
         PopulateStats();
 
+        SelectedPlayerStats.SettingChanged += OnStatsConfigChanged;
+
         _panel?.gameObject.SetActive(false);
+    }
+
+    private static void OnStatsConfigChanged(object sender, EventArgs e)
+    {
+        RebuildStats();
+    }
+
+    public static void RebuildStats()
+    {
+        if (!_content) return;
+
+        foreach (Transform child in _content)
+        {
+            Object.Destroy(child.gameObject);
+        }
+
+        PopulateStats();
+
+        if (_visible && Player.m_localPlayer != null)
+        {
+            UpdateStats(Player.m_localPlayer);
+        }
     }
 
     private static void BuildPanel(InventoryGui gui)
@@ -227,6 +254,8 @@ public static class StatsPanelController
         _content.anchorMin = new Vector2(0f, 1f);
         _content.anchorMax = new Vector2(1f, 1f);
         _content.pivot = new Vector2(0.5f, 1f);
+        _content.offsetMin = Vector2.zero;
+        _content.offsetMax = Vector2.zero;
 
         VerticalLayoutGroup? vLayout = go.GetComponent<VerticalLayoutGroup>();
         vLayout.childAlignment = TextAnchor.UpperLeft;
@@ -292,56 +321,74 @@ public static class StatsPanelController
 
         CreateLiveStatsSection();
 
-        CreateSection("General", new[]
-        {
-            PlayerStatType.WorldLoads,
-            PlayerStatType.Deaths,
-            PlayerStatType.Cheats
-        });
+        List<PlayerStatType> selectedStats = ParseStatsList(SelectedPlayerStats.Value);
+        if (selectedStats.Count == 0)
+            selectedStats = GetDefaultStats();
 
-        CreateSection("Combat", new[]
-        {
-            PlayerStatType.EnemyKills,
-            PlayerStatType.BossKills,
-            PlayerStatType.EnemyHits,
-            PlayerStatType.HitsTakenEnemies,
-            PlayerStatType.ArrowsShot,
-            PlayerStatType.PlayerKills,
-            PlayerStatType.PlayerHits
-        });
+        List<PlayerStatType> generalStats = new();
+        List<PlayerStatType> combatStats = new();
+        List<PlayerStatType> explorationStats = new();
+        List<PlayerStatType> activityStats = new();
+        List<PlayerStatType> otherStats = new();
 
-        CreateSection("Exploration", new[]
+        foreach (PlayerStatType stat in selectedStats)
         {
-            PlayerStatType.DistanceTraveled,
-            PlayerStatType.DistanceWalk,
-            PlayerStatType.DistanceRun,
-            PlayerStatType.DistanceSail,
-            PlayerStatType.DistanceAir,
-            PlayerStatType.Jumps,
-            PlayerStatType.PortalsUsed
-        });
+            switch (stat)
+            {
+                case PlayerStatType.WorldLoads:
+                case PlayerStatType.Deaths:
+                case PlayerStatType.Cheats:
+                    generalStats.Add(stat);
+                    break;
 
-        CreateSection("Activity", new[]
-        {
-            PlayerStatType.Builds,
-            PlayerStatType.Crafts,
-            PlayerStatType.Upgrades,
-            PlayerStatType.CraftsOrUpgrades,
-            PlayerStatType.ItemsPickedUp,
-            PlayerStatType.TreeChops,
-            PlayerStatType.MineHits,
-            PlayerStatType.FoodEaten,
-            PlayerStatType.Sleep
-        });
+                case PlayerStatType.EnemyKills:
+                case PlayerStatType.BossKills:
+                case PlayerStatType.EnemyHits:
+                case PlayerStatType.HitsTakenEnemies:
+                case PlayerStatType.ArrowsShot:
+                case PlayerStatType.PlayerKills:
+                case PlayerStatType.PlayerHits:
+                    combatStats.Add(stat);
+                    break;
 
-        CreateSection("Other", new[]
-        {
-            PlayerStatType.TimeInBase,
-            PlayerStatType.TimeOutOfBase,
-            PlayerStatType.CreatureTamed,
-            PlayerStatType.DoorsOpened,
-            PlayerStatType.BeesHarvested
-        });
+                case PlayerStatType.DistanceTraveled:
+                case PlayerStatType.DistanceWalk:
+                case PlayerStatType.DistanceRun:
+                case PlayerStatType.DistanceSail:
+                case PlayerStatType.DistanceAir:
+                case PlayerStatType.Jumps:
+                case PlayerStatType.PortalsUsed:
+                    explorationStats.Add(stat);
+                    break;
+
+                case PlayerStatType.Builds:
+                case PlayerStatType.Crafts:
+                case PlayerStatType.Upgrades:
+                case PlayerStatType.CraftsOrUpgrades:
+                case PlayerStatType.ItemsPickedUp:
+                case PlayerStatType.TreeChops:
+                case PlayerStatType.MineHits:
+                case PlayerStatType.FoodEaten:
+                case PlayerStatType.Sleep:
+                    activityStats.Add(stat);
+                    break;
+
+                default:
+                    otherStats.Add(stat);
+                    break;
+            }
+        }
+
+        if (generalStats.Count > 0)
+            CreateSection("General", generalStats.ToArray());
+        if (combatStats.Count > 0)
+            CreateSection("Combat", combatStats.ToArray());
+        if (explorationStats.Count > 0)
+            CreateSection("Exploration", explorationStats.ToArray());
+        if (activityStats.Count > 0)
+            CreateSection("Activity", activityStats.ToArray());
+        if (otherStats.Count > 0)
+            CreateSection("Other", otherStats.ToArray());
     }
 
     private static void CreateLiveStatsSection()
@@ -435,6 +482,33 @@ public static class StatsPanelController
         valueLayout.preferredWidth = 60f;
 
         _statElements.Add(new StatElement { Name = statName, StatType = (PlayerStatType)(-1), ValueText = valueText, IsLiveStat = true });
+
+        CreateSeparator();
+    }
+
+    private static void CreateSeparator()
+    {
+        if (!_content || !_tabBorderTemplate) return;
+
+        GameObject separator = Object.Instantiate(_tabBorderTemplate.gameObject, _content);
+        separator.name = "Separator";
+        RectTransform sepRT = separator.GetComponent<RectTransform>();
+        sepRT.anchorMin = new Vector2(0f, 0f);
+        sepRT.anchorMax = new Vector2(1f, 0f);
+        sepRT.pivot = new Vector2(0.5f, 0.5f);
+        sepRT.sizeDelta = new Vector2(0f, 2f);
+
+        LayoutElement sepLayout = separator.AddComponent<LayoutElement>();
+        sepLayout.preferredHeight = 2f;
+        sepLayout.minHeight = 2f;
+
+        Image? img = separator.GetComponent<Image>();
+        if (img)
+        {
+            Color c = img.color;
+            c.a = 0.3f;
+            img.color = c;
+        }
     }
 
     private static void CreateSection(string title, PlayerStatType[] stats)
@@ -474,6 +548,7 @@ public static class StatsPanelController
 
     private static List<PlayerStatType> GetDefaultStats()
     {
+        return ParseStatsList(SelectedPlayerStats.DefaultValue.ToString());
         return new List<PlayerStatType>
         {
             PlayerStatType.EnemyKills, PlayerStatType.Deaths, PlayerStatType.ArrowsShot, PlayerStatType.EnemyHits,
@@ -537,6 +612,8 @@ public static class StatsPanelController
         valueLayout.preferredWidth = 60f;
 
         _statElements.Add(new StatElement { Name = statName, StatType = statType, ValueText = valueText });
+
+        CreateSeparator();
     }
 
     internal static void BuildToggleButton(InventoryGui gui)
@@ -555,14 +632,14 @@ public static class StatsPanelController
             if (PersonalLoadoutGui.IsVisible()) PersonalLoadoutGui.Hide();
             if (InventoryGui.instance)
             {
-                var craftingPanel = InventoryGui.instance.m_crafting;
+                RectTransform? craftingPanel = InventoryGui.instance.m_crafting;
                 craftingPanel.transform.Find("TabsButtons").SafeSetActive(!_visible);
                 craftingPanel.transform.Find("RecipeList").SafeSetActive(!_visible);
                 craftingPanel.transform.Find("Decription").SafeSetActive(!_visible);
             }
         });
 
-        if (StatsButtonGo.TryGetComponent<UIGamePad>(out var gp))
+        if (StatsButtonGo.TryGetComponent<UIGamePad>(out UIGamePad? gp))
         {
             if (ZInput.instance != null)
             {
@@ -670,8 +747,7 @@ public static class StatsPanelController
         }
     }
 
-    private static Transform CloneButton(Transform src, Transform parent, string name,
-        Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPos, Vector2 size)
+    private static Transform CloneButton(Transform src, Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPos, Vector2 size)
     {
         Transform clone = Object.Instantiate(src, parent);
         clone.name = name;
