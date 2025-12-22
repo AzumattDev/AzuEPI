@@ -468,7 +468,22 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         GUILayout.Space(5);
 
         GUILayout.BeginVertical(GUI.skin.box);
-
+        GUILayout.Space(5);
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Select All", GUILayout.ExpandWidth(false)))
+        {
+            SelectedPlayerStats.Value = string.Join(",", allStats.Select(s => s.ToString()));
+        }
+        if (GUILayout.Button("Clear All", GUILayout.ExpandWidth(false)))
+        {
+            SelectedPlayerStats.Value = "";
+        }
+        if (GUILayout.Button("Reset to Default", GUILayout.ExpandWidth(false)))
+        {
+            const string defaultStats = "EnemyKills,Deaths,ArrowsShot,EnemyHits,HitsTakenEnemies,PlayerKills,PlayerHits,BossKills,Builds,Crafts,Upgrades,ItemsPickedUp,DistanceTraveled,DistanceWalk,DistanceRun,DistanceSail,TreeChops,MineHits,FoodEaten,PortalsUsed,Jumps,Sleep,TimeInBase,TimeOutOfBase";
+            SelectedPlayerStats.Value = defaultStats;
+        }
+        GUILayout.EndHorizontal();
         int columns = 3;
         int itemsPerColumn = Mathf.CeilToInt(allStats.Length / (float)columns);
 
@@ -498,23 +513,6 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         GUILayout.EndHorizontal();
 
         GUILayout.EndVertical();
-
-        GUILayout.Space(5);
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("Select All", GUILayout.ExpandWidth(false)))
-        {
-            SelectedPlayerStats.Value = string.Join(",", allStats.Select(s => s.ToString()));
-        }
-        if (GUILayout.Button("Clear All", GUILayout.ExpandWidth(false)))
-        {
-            SelectedPlayerStats.Value = "";
-        }
-        if (GUILayout.Button("Reset to Default", GUILayout.ExpandWidth(false)))
-        {
-            const string defaultStats = "EnemyKills,Deaths,ArrowsShot,EnemyHits,HitsTakenEnemies,PlayerKills,PlayerHits,BossKills,Builds,Crafts,Upgrades,ItemsPickedUp,DistanceTraveled,DistanceWalk,DistanceRun,DistanceSail,TreeChops,MineHits,FoodEaten,PortalsUsed,Jumps,Sleep,TimeInBase,TimeOutOfBase";
-            SelectedPlayerStats.Value = defaultStats;
-        }
-        GUILayout.EndHorizontal();
     }
 
     public static List<PlayerStatType> ParseStatsList(string statsString)
