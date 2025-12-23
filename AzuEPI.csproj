@@ -175,15 +175,22 @@
         <Compile Include="Game\Compatibility\WeightBase.cs" />
         <Compile Include="Game\Compatibility\JudesEquipment.cs"/>
         <Compile Include="Game\Compatibility\RustBags.cs"/>
-        <Compile Include="Game\Loadout\LoadoutPatches.cs"/>
-        <Compile Include="Game\Loadout\PersonalLoadoutGui.cs"/>
-        <Compile Include="Game\Loadout\PersonalLoadoutGuiDetails.cs"/>
-        <Compile Include="Game\Loadout\UIDragger.cs"/>
         <Compile Include="Game\Managers\ItemDataManager.cs"/>
         <Compile Include="Game\Managers\LocalizationManager.cs"/>
         <Compile Include="Game\Managers\Patcher.cs"/>
         <Compile Include="Game\Moveable\DragControl.cs"/>
         <Compile Include="Game\Moveable\MoveableChestInventory.cs"/>
+        <Compile Include="Game\Compatibility\Hunter_Legacy.cs" />
+        <Compile Include="Game\Panels\Loadout\LoadoutPatches.cs" />
+        <Compile Include="Game\Panels\Loadout\PersonalLoadoutGui.cs" />
+        <Compile Include="Game\Panels\Loadout\PersonalLoadoutGuiDetails.cs" />
+        <Compile Include="Game\Panels\Loadout\UIDragger.cs" />
+        <Compile Include="Game\Panels\Stats\StatsPanelController.cs" />
+        <Compile Include="Game\Panels\Vanity\SlotIconChanges.cs" />
+        <Compile Include="Game\Panels\Vanity\VanityAPI.cs" />
+        <Compile Include="Game\Panels\Vanity\VanityLookup.cs" />
+        <Compile Include="Game\Panels\Vanity\VanityPanelController.cs" />
+        <Compile Include="Game\Panels\Vanity\VanityPatches.cs" />
         <Compile Include="Game\Patches\InventoryGuiPatches.cs"/>
         <Compile Include="Game\Patches\InventoryPatches.cs"/>
         <Compile Include="Game\Patches\PlayerPatches.cs"/>
@@ -191,18 +198,11 @@
         <Compile Include="Game\Patches\TombstonePatches.cs"/>
         <Compile Include="Game\PlayerPreview\PlayerRotationController.cs"/>
         <Compile Include="Game\PlayerPreview\PreviewUI.cs"/>
-        <Compile Include="Game\PlayerPreview\Stats\Stats.cs"/>
         <Compile Include="Game\PlayerPreview\RealPlayer\PlayerRotationController.cs"/>
         <Compile Include="Game\PlayerPreview\RealPlayer\PreviewUITEST.cs"/>
         <Compile Include="Game\PlayerPreview\VisualHandler.cs"/>
-        <Compile Include="Game\PlayerPreview\Stats\StatsPanelController.cs" />
         <Compile Include="Game\Slots\QAB\HudPatches.cs"/>
         <Compile Include="Game\Slots\QAB\QAB.cs"/>
-        <Compile Include="Game\Vanity\VanityAPI.cs"/>
-        <Compile Include="Game\Vanity\VanityPanelController.cs"/>
-        <Compile Include="Game\Vanity\VanityPatches.cs"/>
-        <Compile Include="Game\Vanity\SlotIconChanges.cs" />
-        <Compile Include="Game\Vanity\VanityLookup.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)|$(Platform)' != 'API|AnyCPU'">
@@ -224,6 +224,7 @@
         <Compile Include="API\API.cs"/>
         <Compile Include="API\APIBkCompat.cs" />
         <Compile Include="Core\Slots\Model.cs"/>
+        <Compile Include="Game\Compatibility\Wizardry.cs" />
         <Compile Include="GlobalUsings.cs"/>
         <None Include="App.config"/>
     </ItemGroup>

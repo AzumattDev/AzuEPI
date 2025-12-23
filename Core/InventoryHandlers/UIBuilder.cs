@@ -83,7 +83,7 @@ public class UIBuilder
         GlgRt = (RectTransform)GlgGo.transform;
         GlgRt.WithAnchors(new Vector2(0f, 1f), new Vector2(0f, 1f))
             .WithPivot(new Vector2(0.5f, 1f))
-            .WithAnchoredPosition(OldLayout.Value.isOff() ? Layout.ToggleButtonsHlgAnchoredPos : Layout.ToggleButtonsHlgAnchoredPosOldVert)
+            .WithAnchoredPosition(OldLayout.Value.isOff() ? Layout.ToggleButtonsGlgAnchoredPos : Layout.ToggleButtonsGlgAnchoredPosOldVert)
             .WithSizeDelta(new Vector2(320f, 32f));
 
         GridLayoutGroup? glg = GlgGo.GetComponent<GridLayoutGroup>();
@@ -91,7 +91,7 @@ public class UIBuilder
         glg.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
         glg.constraintCount = 3;
         glg.spacing = new Vector2(25f, 5f);
-        glg.cellSize = new Vector2(90f, 32f);
+        glg.cellSize = new Vector2(122f, 32f);
 
         GUICache.ButtonGridLayoutGroup = glg;
         VanityPanelController.ToggleButtonParentGlg = GlgRt;
@@ -166,12 +166,7 @@ public class UIBuilder
         AzuEPICharacterPanel.instance.renderRawImage = raw;
         _epiPreviewRect = rt;
     }
-
-    public static void CreateStatsUI(InventoryGui invGui, RectTransform previewParentRT)
-    {
-        StatsUI.CreateUI(invGui, previewParentRT);
-    }
-
+    
     public static void SetupPreviewPanel()
     {
         PlayerPreviewManager.Initialize();

@@ -2,7 +2,7 @@
 
 public class JudesEquipmentCompat
 {
-    public HashSet<string> Backpacks = new()
+    public readonly HashSet<string> Backpacks = new()
     {
         "BackpackHeavy", "BackpackSimple"
     };

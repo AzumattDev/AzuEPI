@@ -8,12 +8,12 @@ namespace AzuEPI.Game.PlayerPreview.Stats;
 
 public static class StatsPanelController
 {
-    public const string StatsPanelName = "StatsPanel";
-    public const string StatsScrollRootName = "ScrollRoot";
-    public const string StatsViewportName = "Viewport";
-    public const string StatsContentName = "Content";
-    public const string StatsScrollbarName = "Scrollbar";
-    public const string StatsToggleButtonName = "AzuEPIStatsToggleButton";
+    public const string StatsPanelName = $"{Prefix}StatsPanel";
+    public const string StatsScrollRootName = "StatsPanelScrollRoot";
+    public const string StatsViewportName = "StatsPanelViewport";
+    public const string StatsContentName = "StatsPanelContent";
+    public const string StatsScrollbarName = "StatsPanelScrollbar";
+    public const string StatsToggleButtonName = $"{Prefix}StatsToggleButton";
 
     private static readonly Vector2 ToggleBtnAnchorMin = new(0f, 1f);
     private static readonly Vector2 ToggleBtnAnchorMax = new(0f, 1f);
@@ -47,6 +47,7 @@ public static class StatsPanelController
 
     public static RectTransform? ToggleButtonParentGlg;
 
+    // TODO: Maybe allow pinning specific stats to player preview again.
     private static readonly Dictionary<PlayerStatType, string> StatIcons = new()
     {
         { PlayerStatType.EnemyKills, "⚔️" },
@@ -131,9 +132,18 @@ public static class StatsPanelController
     {
         if (_panel) return;
 
-        TMP_Text? fontSample = gui.m_craftButton?.GetComponentInChildren<TMP_Text>();
-        if (fontSample != null)
+        TMP_Text? fontSample = gui.m_craftButton?.GetComponentInChildren<TMP_Text>()
+                             ?? gui.m_takeAllButton?.GetComponentInChildren<TMP_Text>()
+                             ?? gui.m_info?.GetComponentInChildren<TMP_Text>();
+
+        if (fontSample != null && fontSample.font != null)
+        {
             _fontAsset = fontSample.font;
+        }
+        else
+        {
+            AzuExtendedPlayerInventoryLogger.LogWarning("Could not find TMP font asset for stats panel. Text may not display correctly.");
+        }
 
         _tabBorderTemplate = gui.m_crafting.transform.Find("TabsButtons/TabBorder");
 
@@ -236,7 +246,7 @@ public static class StatsPanelController
         AnchorFill(rt);
 
         Image? img = go.GetComponent<Image>();
-        img.color = new Color(0, 0, 0, 0.85f);
+        img.color = new Color(0, 0, 0, 0.565f);
         img.raycastTarget = true;
 
         return rt;
@@ -244,10 +254,7 @@ public static class StatsPanelController
 
     private static void BuildContentStack(RectTransform parent)
     {
-        GameObject go = new(StatsContentName,
-            typeof(RectTransform),
-            typeof(VerticalLayoutGroup),
-            typeof(ContentSizeFitter));
+        GameObject go = new(StatsContentName, typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
 
         _content = (RectTransform)go.transform;
         _content.SetParent(parent, false);
@@ -400,9 +407,13 @@ public static class StatsPanelController
         headerRect.SetParent(_content, false);
 
         TextMeshProUGUI headerText = headerObj.AddComponent<TextMeshProUGUI>();
-        if (_fontAsset != null) headerText.font = _fontAsset;
+        if (_fontAsset)
+        {
+            headerText.font = _fontAsset;
+            headerText.fontSharedMaterial = _fontAsset.material;
+        }
         headerText.text = "Attributes";
-        headerText.fontSize = 14f;
+        headerText.fontSize = 20f;
         headerText.fontStyle = FontStyles.Bold;
         headerText.alignment = TextAlignmentOptions.Left;
         headerText.color = new Color(1f, 0.84f, 0f, 1f);
@@ -415,7 +426,6 @@ public static class StatsPanelController
         CreateLiveStatRow("Health");
         CreateLiveStatRow("Stamina");
         CreateLiveStatRow("Eitr");
-        CreateLiveStatRow("Health Regen");
         CreateLiveStatRow("Stamina Regen");
         CreateLiveStatRow("Eitr Regen");
         CreateLiveStatRow("Movement Speed");
@@ -439,9 +449,9 @@ public static class StatsPanelController
         HorizontalLayoutGroup hLayout = rowObj.GetComponent<HorizontalLayoutGroup>();
         hLayout.childAlignment = TextAnchor.MiddleLeft;
         hLayout.spacing = 4f;
-        hLayout.childControlWidth = false;
+        hLayout.childControlWidth = true;
         hLayout.childControlHeight = true;
-        hLayout.childForceExpandWidth = false;
+        hLayout.childForceExpandWidth = true;
         hLayout.childForceExpandHeight = false;
 
         LayoutElement rowLayout = rowObj.AddComponent<LayoutElement>();
@@ -453,9 +463,13 @@ public static class StatsPanelController
         labelRect.SetParent(rowRect, false);
 
         TextMeshProUGUI labelText = labelObj.AddComponent<TextMeshProUGUI>();
-        if (_fontAsset != null) labelText.font = _fontAsset;
+        if (_fontAsset)
+        {
+            labelText.font = _fontAsset;
+            labelText.fontSharedMaterial = _fontAsset.material;
+        }
         labelText.text = statName;
-        labelText.fontSize = 11f;
+        labelText.fontSize = 18f;
         labelText.alignment = TextAlignmentOptions.Left;
         labelText.color = new Color(0.9f, 0.9f, 0.9f, 1f);
         labelText.raycastTarget = false;
@@ -469,9 +483,13 @@ public static class StatsPanelController
         valueRect.SetParent(rowRect, false);
 
         TextMeshProUGUI valueText = valueObj.AddComponent<TextMeshProUGUI>();
-        if (_fontAsset != null) valueText.font = _fontAsset;
+        if (_fontAsset)
+        {
+            valueText.font = _fontAsset;
+            valueText.fontSharedMaterial = _fontAsset.material;
+        }
         valueText.text = "0";
-        valueText.fontSize = 11f;
+        valueText.fontSize = 18f;
         valueText.alignment = TextAlignmentOptions.Right;
         valueText.color = Color.white;
         valueText.raycastTarget = false;
@@ -520,9 +538,13 @@ public static class StatsPanelController
         headerRect.SetParent(_content, false);
 
         TextMeshProUGUI headerText = headerObj.AddComponent<TextMeshProUGUI>();
-        if (_fontAsset != null) headerText.font = _fontAsset;
+        if (_fontAsset)
+        {
+            headerText.font = _fontAsset;
+            headerText.fontSharedMaterial = _fontAsset.material;
+        }
         headerText.text = title;
-        headerText.fontSize = 14f;
+        headerText.fontSize = 20f;
         headerText.fontStyle = FontStyles.Bold;
         headerText.alignment = TextAlignmentOptions.Left;
         headerText.color = new Color(1f, 0.84f, 0f, 1f);
@@ -548,16 +570,10 @@ public static class StatsPanelController
 
     private static List<PlayerStatType> GetDefaultStats()
     {
-        return ParseStatsList(SelectedPlayerStats.DefaultValue.ToString());
-        return new List<PlayerStatType>
-        {
-            PlayerStatType.EnemyKills, PlayerStatType.Deaths, PlayerStatType.ArrowsShot, PlayerStatType.EnemyHits,
-            PlayerStatType.HitsTakenEnemies, PlayerStatType.PlayerKills, PlayerStatType.PlayerHits, PlayerStatType.BossKills,
-            PlayerStatType.Builds, PlayerStatType.Crafts, PlayerStatType.Upgrades, PlayerStatType.ItemsPickedUp,
-            PlayerStatType.DistanceTraveled, PlayerStatType.DistanceWalk, PlayerStatType.DistanceRun, PlayerStatType.DistanceSail,
-            PlayerStatType.TreeChops, PlayerStatType.MineHits, PlayerStatType.FoodEaten, PlayerStatType.PortalsUsed,
-            PlayerStatType.Jumps, PlayerStatType.Sleep, PlayerStatType.TimeInBase, PlayerStatType.TimeOutOfBase
-        };
+        return Enum.GetValues(typeof(PlayerStatType))
+            .Cast<PlayerStatType>()
+            .Where(stat => stat != PlayerStatType.Count)
+            .ToList();
     }
 
     private static void CreateStatRow(GameObject parent, string statName, PlayerStatType statType)
@@ -569,7 +585,7 @@ public static class StatsPanelController
         HorizontalLayoutGroup hLayout = rowObj.GetComponent<HorizontalLayoutGroup>();
         hLayout.childAlignment = TextAnchor.MiddleLeft;
         hLayout.spacing = 4f;
-        hLayout.childControlWidth = false;
+        hLayout.childControlWidth = true;
         hLayout.childControlHeight = true;
         hLayout.childForceExpandWidth = false;
         hLayout.childForceExpandHeight = false;
@@ -583,9 +599,13 @@ public static class StatsPanelController
         labelRect.SetParent(rowRect, false);
 
         TextMeshProUGUI labelText = labelObj.AddComponent<TextMeshProUGUI>();
-        if (_fontAsset != null) labelText.font = _fontAsset;
+        if (_fontAsset)
+        {
+            labelText.font = _fontAsset;
+            labelText.fontSharedMaterial = _fontAsset.material;
+        }
         labelText.text = statName;
-        labelText.fontSize = 11f;
+        labelText.fontSize = 18f;
         labelText.alignment = TextAlignmentOptions.Left;
         labelText.color = new Color(0.9f, 0.9f, 0.9f, 1f);
         labelText.raycastTarget = false;
@@ -599,9 +619,13 @@ public static class StatsPanelController
         valueRect.SetParent(rowRect, false);
 
         TextMeshProUGUI valueText = valueObj.AddComponent<TextMeshProUGUI>();
-        if (_fontAsset != null) valueText.font = _fontAsset;
+        if (_fontAsset)
+        {
+            valueText.font = _fontAsset;
+            valueText.fontSharedMaterial = _fontAsset.material;
+        }
         valueText.text = "0";
-        valueText.fontSize = 11f;
+        valueText.fontSize = 18f;
         valueText.alignment = TextAlignmentOptions.Right;
         valueText.color = Color.white;
         valueText.raycastTarget = false;
@@ -688,9 +712,6 @@ public static class StatsPanelController
                     case "Eitr":
                         element.ValueText.text = $"{player.GetEitr():F0} / {player.GetMaxEitr():F0}";
                         break;
-                    case "Health Regen":
-                        element.ValueText.text = $"{player.m_health:F1}/s";
-                        break;
                     case "Stamina Regen":
                         element.ValueText.text = $"{player.m_staminaRegen:F1}/s";
                         break;
@@ -704,7 +725,7 @@ public static class StatsPanelController
                         element.ValueText.text = $"{player.GetRunSpeedFactor() * 100:F0}%";
                         break;
                     case "Swim Speed":
-                        element.ValueText.text = $"{player.m_swimSpeed * 100:F0}%";
+                        element.ValueText.text = $"{player.m_swimSpeed * player.GetAttackSpeedFactorMovement():F0}%";
                         break;
                 }
                 continue;

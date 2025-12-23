@@ -42,7 +42,6 @@ public class InventoryGuiPatches
             BuildStatsToggleButton(__instance);
             StatsPanelController.SetVisible(false);
             CreateCharacterName(__instance, previewParentRT);
-            CreateStatsUI(__instance, previewParentRT);
 
             if (GUICache._craftingBkgRT)
                 GUICache._craftingBkgRT.GetComponent<Image>().enabled = OldLayout.Value.isOn();
@@ -301,9 +300,7 @@ public class InventoryGuiPatches
                     break;
             }
 
-            if (OldLayout.Value.isOff() && player != null)
-                StatsUI.UpdateStats(player);
-
+            //TODO: Fix performance of this.
             if (StatsPanelController.IsVisible() && player != null)
                 StatsPanelController.UpdateStats(player);
 

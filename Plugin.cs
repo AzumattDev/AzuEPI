@@ -113,9 +113,13 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         /* 8 - Player Stats Display */
         ResetConfigOrder();
-        string defaultStats = "EnemyKills,Deaths,ArrowsShot,EnemyHits,HitsTakenEnemies,PlayerKills,PlayerHits,BossKills,Builds,Crafts,Upgrades,ItemsPickedUp,DistanceTraveled,DistanceWalk,DistanceRun,DistanceSail,TreeChops,MineHits,FoodEaten,PortalsUsed,Jumps,Sleep,TimeInBase,TimeOutOfBase";
+        string defaultStats = string.Join(",",
+            Enum.GetValues(typeof(PlayerStatType))
+                .Cast<PlayerStatType>()
+                .Where(stat => stat != PlayerStatType.Count)
+                .Select(stat => stat.ToString()));
         SelectedPlayerStats = config("8 - Player Stats Display", "Selected Stats", defaultStats,
-            new ConfigDescription("Comma-separated list of stats to display in the player preview. Hover over your character name to see stats.", null, new ConfigurationManagerAttributes { CustomDrawer = StatsConfigDrawer }),
+            new ConfigDescription("Comma-separated list of stats to display in the player preview. Open the stats panel with the 📋 button.", null, new ConfigurationManagerAttributes { CustomDrawer = StatsConfigDrawer }),
             NextOrder, false);
 
         InitializeHotkeys();
@@ -131,8 +135,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         ShowQuickSlots.SettingChanged += (sender, args) => { HotkeyBarController.Hud_Update_Patch.DeselectHotkeyBar(); };
         SelectedPlayerStats.SettingChanged += (sender, args) =>
         {
-            if (InventoryGui.instance != null)
-                StatsUI.RebuildUI(InventoryGui.instance, PreviewParent?.GetComponent<RectTransform>());
+            // if (InventoryGui.instance != null)
+            //     StatsUI.RebuildUI(InventoryGui.instance, PreviewParent?.GetComponent<RectTransform>());
         };
         QuickSlotsPerRow.SettingChanged += (sender, args) =>
         {
@@ -253,6 +257,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             AdvBackpacksCompat.Init();
             JudesEquipmentCompat.Init();
             RustyBagsCompat.Init();
+            Hunter_LegacyCompat.Init();
+            WizardryCompat.Init();
 
             if (Chainloader.PluginInfos.TryGetValue("randyknapp.mods.epicloot", out PluginInfo? randyEl) && randyEl is not null)
             {
@@ -463,6 +469,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     private static void StatsConfigDrawer(ConfigEntryBase entry)
     {
         PlayerStatType[] allStats = (PlayerStatType[])Enum.GetValues(typeof(PlayerStatType));
+        allStats = allStats.Where(x => x != PlayerStatType.Count).ToArray();
         List<PlayerStatType> selectedStats = ParseStatsList(SelectedPlayerStats.Value);
 
         GUILayout.Space(5);
@@ -477,11 +484,6 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         if (GUILayout.Button("Clear All", GUILayout.ExpandWidth(false)))
         {
             SelectedPlayerStats.Value = "";
-        }
-        if (GUILayout.Button("Reset to Default", GUILayout.ExpandWidth(false)))
-        {
-            const string defaultStats = "EnemyKills,Deaths,ArrowsShot,EnemyHits,HitsTakenEnemies,PlayerKills,PlayerHits,BossKills,Builds,Crafts,Upgrades,ItemsPickedUp,DistanceTraveled,DistanceWalk,DistanceRun,DistanceSail,TreeChops,MineHits,FoodEaten,PortalsUsed,Jumps,Sleep,TimeInBase,TimeOutOfBase";
-            SelectedPlayerStats.Value = defaultStats;
         }
         GUILayout.EndHorizontal();
         int columns = 3;
