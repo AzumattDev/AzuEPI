@@ -1,4 +1,5 @@
 using AzuEPI.Game.Loadout;
+using AzuEPI.Game.Panels.Stats;
 using AzuEPI.Game.Panels.Vanity;
 using TMPro;
 using UnityEngine;
@@ -324,6 +325,11 @@ static class Vanity_GamepadUpdate
         if (PersonalLoadoutGui.IsVisible())
         {
             PersonalLoadoutGui.instance!.HandleUIUpdates();
+        }
+
+        if (StatsPanelController.IsVisible())
+        {
+            StatsPanelController.HandleScrollInput();
         }
     }
 }

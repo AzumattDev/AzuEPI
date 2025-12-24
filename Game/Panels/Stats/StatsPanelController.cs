@@ -44,6 +44,8 @@ public static class StatsPanelController
 
     public static RectTransform? ToggleButtonParentGlg;
 
+    public static ScrollRect? GetScrollRect() => _scroll;
+    
     // TODO: Maybe allow pinning specific stats to player preview again.
     private static readonly Dictionary<PlayerStatType, string> StatIcons = new()
     {
@@ -660,6 +662,53 @@ public static class StatsPanelController
                         element.ValueText.text = statValue.ToString("N0");
                     break;
             }
+        }
+    }
+    
+    internal static void HandleScrollInput()
+    {
+        if (!IsVisible())
+            return;
+
+        ScrollRect? scroll = GetScrollRect();
+        if (scroll == null || scroll.content == null)
+            return;
+
+        if (!ZInput.IsGamepadActive())
+            return;
+        
+        float scrollInput = 0f;
+
+        if (ZInput.instance != null)
+        {
+            try
+            {
+                scrollInput = ZInput.GetJoyRightStickY();
+            }
+            catch
+            {
+            }
+        }
+
+        // Fallback to raw Unity Input
+        if (Mathf.Approximately(scrollInput, 0f))
+        {
+            try
+            {
+                scrollInput = Input.GetAxis("Joy2 Axis 5");
+                if (Mathf.Approximately(scrollInput, 0f))
+                    scrollInput = Input.GetAxis("Joy2 Axis 10");
+            }
+            catch
+            {
+            }
+        }
+
+        if (Mathf.Abs(scrollInput) > 0.1f)
+        {
+            float scrollDelta = -scrollInput * 1f * Time.deltaTime;
+            float newValue = Mathf.Clamp01(scroll.verticalNormalizedPosition + scrollDelta);
+            scroll.verticalNormalizedPosition = newValue;
         }
     }
 
