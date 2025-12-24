@@ -20,21 +20,32 @@ public class TombstonePatches
     [HarmonyPatch(typeof(TombStone), nameof(TombStone.Interact))]
     private static class TombStoneInteractPatch
     {
+        [HarmonyPriority(Priority.First)]
         private static void Prefix(TombStone __instance, bool hold, Container ___m_container)
         {
             if (hold) return;
-            AzuExtendedPlayerInventoryLogger.LogDebugDebug("TombStone_Interact");
-            int num = API.GetFullHeight(___m_container.m_width);
-            ___m_container.m_height = num;
-            string base64String = ___m_container.m_nview.GetZDO().GetString(ZDOVars.s_items);
-            if (string.IsNullOrEmpty(base64String))
-                return;
-            ZPackage pkg = new(base64String);
-            ___m_container.m_loading = true;
-            ___m_container.m_inventory.Load(pkg);
-            ___m_container.m_loading = false;
-            ___m_container.m_lastRevision = ___m_container.m_nview.GetZDO().DataRevision;
-            ___m_container.m_lastDataString = base64String;
+
+            int targetHeight = API.GetFullHeight(___m_container.m_width);
+
+            if (targetHeight <= ___m_container.m_height) return;
+            AzuExtendedPlayerInventoryLogger.LogDebug($"TombStone Interact: Adjusting height {___m_container.m_height} -> {targetHeight}");
+            ___m_container.m_height = targetHeight;
+            ___m_container.m_inventory.m_height = targetHeight;
+
+            ___m_container.m_lastRevision = 0;
+            ___m_container.m_lastDataString = "";
+        }
+
+        private static void Postfix(TombStone __instance, bool hold, Humanoid character, Container ___m_container, ref bool __result)
+        {
+            if (hold) return;
+            if (!__result) return; // Vanilla already handled it
+
+            // If vanilla auto-looted but items remain, open the container UI
+            if (!(___m_container?.GetInventory()?.NrOfItems() > 0)) return;
+            AzuExtendedPlayerInventoryLogger.LogDebug($"TombStone still has {___m_container.GetInventory().NrOfItems()} items, opening container UI");
+            // Manually open the container UI since vanilla won't
+            ___m_container.Interact(character, false, false);
         }
     }
 
@@ -112,9 +123,8 @@ public class TombstonePatches
             }
 
             __state.TempWeight += tempWeight + 150f;
-            __state.Height = AddEquipmentRow.Value.isOn() ? API.GetAddedRows(Player.m_localPlayer.m_inventory.m_width) : 0;
+            __state.Height = 0; // Don't adjust height - inventory already has correct size from UpdateInventorySize()
             player.m_maxCarryWeight += __state.TempWeight;
-            player.m_inventory.m_height += __state.Height;
         }
 
         private static void Postfix()
@@ -127,7 +137,7 @@ public class TombstonePatches
             if (__state.ChangedPickup)
                 Player.m_enableAutoPickup = __state.PrevPickup;
             player.m_maxCarryWeight -= __state.TempWeight;
-            player.m_inventory.m_height -= __state.Height;
+            // Don't restore height - we didn't change it
         }
     }
 }
