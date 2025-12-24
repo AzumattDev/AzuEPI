@@ -231,22 +231,7 @@ public static class PanelUtilities
 
         Transform buttonGo = CloneButton(src, parent, config.Name, config.AnchorMin, config.AnchorMax, config.Pivot, config.AnchoredPosition, config.Size);
 
-        if (buttonGo.TryGetComponent(out UIGamePad gp))
-        {
-            if (ZInput.instance != null)
-            {
-                gp.m_hint.GetComponentInChildren<TextMeshProUGUI>(true).text =
-                    ZInput.instance.GetBoundKeyString(config.GamepadKey, true);
-            }
-            else
-            {
-                ZInput.Initialize();
-                gp.m_hint.GetComponentInChildren<TextMeshProUGUI>(true).text = ZInput.instance.GetBoundKeyString(config.GamepadKey, true);
-            }
-
-            gp.m_zinputKey = config.GamepadKey;
-            gp.m_keyCode = config.GamepadKeyCode;
-        }
+        BindGamePad(buttonGo, config.GamepadKey, config.GamepadKeyCode);
 
         Button btn = buttonGo.GetComponent<Button>();
         btn.onClick.RemoveAllListeners();
@@ -266,6 +251,26 @@ public static class PanelUtilities
     #endregion
 
     #region UI Helpers
+
+    public static void BindGamePad(Transform buttonGo, string GamepadKey, KeyCode GamepadKeyCode)
+    {
+        if (buttonGo.TryGetComponent(out UIGamePad gp))
+        {
+            if (ZInput.instance != null)
+            {
+                gp.m_hint.GetComponentInChildren<TextMeshProUGUI>(true).text =
+                    ZInput.instance.GetBoundKeyString(GamepadKey, true);
+            }
+            else
+            {
+                ZInput.Initialize();
+                gp.m_hint.GetComponentInChildren<TextMeshProUGUI>(true).text = ZInput.instance.GetBoundKeyString(GamepadKey, true);
+            }
+
+            gp.m_zinputKey = GamepadKey;
+            gp.m_keyCode = GamepadKeyCode;
+        }
+    }
 
     public static void HideCraftingElements(bool hide)
     {

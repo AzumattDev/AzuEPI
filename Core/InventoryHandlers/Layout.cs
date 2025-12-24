@@ -122,7 +122,7 @@ public class Layout
             if (InventoryGui.instance)
                 GlgGo.WithParent(OldLayout.Value.isOff() ? InventoryGui.instance.m_crafting.transform : InventoryGui.instance.m_player.transform, false);
             GlgRt.anchoredPosition = ToggleButtonsGlgAnchoredPosOldVert;
-            GUICache.ButtonGridLayoutGroup.constraintCount = QuickSlotsAmount.Value < 3 ? 1 : 2;
+            GUICache.ButtonGridLayoutGroup.constraintCount = QuickSlotsAmount.Value < 1 && InventoryGuiPatches.UpdateInventory_Patch.slots.Count < 10  ? 2 : 3;
         }
         else
         {

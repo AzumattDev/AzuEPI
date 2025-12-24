@@ -42,7 +42,7 @@ public class UIBuilder
         PreviewParent.SafeSetActive(OldLayout.Value.isOff());
         PlayerPreviewImage.SafeSetActive(OldLayout.Value.isOff());
         CharName.SafeSetActive(OldLayout.Value.isOff());
-        GUICache.ButtonGridLayoutGroup.constraintCount = OldLayout.Value.isOff() ? 3 : QuickSlotsAmount.Value < 1 ? 1 : 3;
+        GUICache.ButtonGridLayoutGroup.constraintCount = OldLayout.Value.isOff() ? 3 : QuickSlotsAmount.Value < 1 && InventoryGuiPatches.UpdateInventory_Patch.slots.Count < 10 ? 2 : 3;
         GUICache.ButtonGridLayoutGroup.childAlignment = OldLayout.Value.isOff() ? TextAnchor.MiddleCenter : TextAnchor.MiddleLeft;
         GUICache.ButtonGridLayoutGroup.cellSize = OldLayout.Value.isOff() ? new Vector2(122f, 32f) : new Vector2(90f, 32f);
     }

@@ -455,53 +455,36 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
                 elementTooltip.m_text = flag ? $"$azu_epi_loadouts_load:\n{string.Join("\n", loadout.Items.Select(i => Localization.instance.Localize(i.m_shared.m_name)))}" : "$azu_epi_loadouts_empty";
                 element.GetComponent<Button>().onClick.AddListener(() => OnSelectedLoadout(element));
 
-                Transform priceTransform = Utils.FindChild(element.transform, "price");
-                if (priceTransform != null)
+                Button elementButton = element.GetComponent<Button>();
+                if (elementButton != null)
                 {
-                    GameObject renameButtonObj = new GameObject("RenameButton");
-                    renameButtonObj.transform.SetParent(element.transform, false);
+                    Transform renameButtonTransform = PanelUtilities.CloneButton(
+                        src: instance.m_chooseButton.transform,
+                        parent: element.transform,
+                        name: "RenameButton",
+                        anchorMin: new Vector2(1f, 0.5f),
+                        anchorMax: new Vector2(1f, 0.5f),
+                        pivot: new Vector2(1f, 0.5f),
+                        anchoredPos: new Vector2(-10f, 0f),
+                        size: new Vector2(30f, 30f)
+                    );
 
-                    RectTransform renameRT = renameButtonObj.AddComponent<RectTransform>();
-                    renameRT.anchorMin = new Vector2(1f, 0.5f);
-                    renameRT.anchorMax = new Vector2(1f, 0.5f);
-                    renameRT.pivot = new Vector2(1f, 0.5f);
-                    renameRT.anchoredPosition = new Vector2(-10f, 0f);
-                    renameRT.sizeDelta = new Vector2(30f, 30f);
+                    Button renameBtn = renameButtonTransform.GetComponent<Button>();
+                    renameBtn.onClick.RemoveAllListeners();
 
-                    Button renameBtn = renameButtonObj.AddComponent<Button>();
-                    Image renameBtnImg = renameButtonObj.AddComponent<Image>();
-                    renameBtnImg.color = new Color(0.5f, 0.5f, 0.5f, 0.8f);
-
-                    GameObject textObj = new GameObject("Text");
-                    textObj.transform.SetParent(renameButtonObj.transform, false);
-                    TMP_Text renameText = textObj.AddComponent<TextMeshProUGUI>();
-
-                    TMP_Text sourceText = elementName;
-                    if (sourceText != null)
+                    TMP_Text renameText = renameButtonTransform.GetComponentInChildren<TMP_Text>();
+                    if (renameText != null)
                     {
-                        if (sourceText.font != null)
-                            renameText.font = sourceText.font;
-                        if (sourceText.fontSharedMaterial != null)
-                            renameText.fontSharedMaterial = sourceText.fontSharedMaterial;
+                        renameText.text = "R";
+                        renameText.fontSize = 18;
+                        renameText.fontStyle = FontStyles.Bold;
+                        renameText.alignment = TextAlignmentOptions.Center;
+                        renameText.color = Color.white;
                     }
 
-                    renameText.text = "R";
-                    renameText.fontSize = 18;
-                    renameText.fontStyle = FontStyles.Bold;
-                    renameText.alignment = TextAlignmentOptions.Center;
-                    renameText.color = Color.white;
-
-                    RectTransform textRT = textObj.GetComponent<RectTransform>();
-                    textRT.anchorMin = Vector2.zero;
-                    textRT.anchorMax = Vector2.one;
-                    textRT.offsetMin = Vector2.zero;
-                    textRT.offsetMax = Vector2.zero;
-
-                    UITooltip sourceTooltip = element.GetComponent<UITooltip>();
-                    if (sourceTooltip != null)
+                    UITooltip renameTooltip = renameButtonTransform.GetComponent<UITooltip>();
+                    if (renameTooltip != null)
                     {
-                        UITooltip renameTooltip = renameButtonObj.AddComponent<UITooltip>();
-                        renameTooltip.m_tooltipPrefab = sourceTooltip.m_tooltipPrefab;
                         renameTooltip.m_text = "$azu_epi_loadout_rename_tooltip";
                         renameTooltip.m_topic = "";
                     }

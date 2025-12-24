@@ -1,4 +1,6 @@
-﻿namespace AzuEPI.Game.Loadout;
+﻿using AzuEPI.Game.Panels;
+
+namespace AzuEPI.Game.Loadout;
 
 [HarmonyPatch(typeof(Player), nameof(Player.OnSpawned))]
 static class PlayerSpawnedPatch
@@ -57,7 +59,7 @@ static class PlayerSpawnedPatch
     private static void CreateMainPanel(GameObject rootPanel, Player player, Transform backgroundParent, out GameObject clonedRootPanel, out PersonalLoadoutGui gui)
     {
         GameObject newRootPanel = GameObject.Instantiate(rootPanel, backgroundParent, false);
-        newRootPanel.name = "AzuEPILoadoutsRootPanel";
+        newRootPanel.name = $"{Prefix}LoadoutsRootPanel";
         newRootPanel.GetComponent<Canvas>().sortingOrder = 699;
         //Utils.FindChild(newRootPanel.transform, "border (1)").gameObject.GetComponent<Image>().sprite = player.m_inventory.GetBkg();
         clonedRootPanel = newRootPanel;
@@ -85,7 +87,8 @@ static class PlayerSpawnedPatch
         Utils.FindChild(newRootPanel.transform, "border (1)").gameObject.SetActive(false);
         itemsetGui.m_chooseButton = Utils.FindChild(newRootPanel.transform, "BuyButton").GetComponent<Button>();
         itemsetGui.m_chooseButton.transform.Find("Text").GetComponent<TMP_Text>().text = Localization.instance.Localize("$azu_epi_equipLoadout");
-
+        PanelUtilities.BindGamePad(itemsetGui.m_chooseButton.transform, "JoyButtonA", KeyCode.JoystickButton0);
+        
         itemsetGui.m_sellButton = Utils.FindChild(newRootPanel.transform, "SellButton").GetComponent<Button>();
         itemsetGui.m_sellButton.GetComponent<UITooltip>().m_text = Localization.instance.Localize("$azu_epi_equipSelected");
 
@@ -104,6 +107,7 @@ static class PlayerSpawnedPatch
 
         newRootPanel.transform.Find("Store/coins/coin icon").GetComponent<RectTransform>().anchoredPosition += new Vector2(0, 5);
         newRootPanel.transform.Find("Store/coins").GetComponent<RectTransform>().anchoredPosition += new Vector2(35, 0);
+        newRootPanel.transform.Find("Store/coins").SafeSetActive(false);
 
         itemsetGui.m_topicText = Utils.FindChild(newRootPanel.transform, "topic").GetComponent<TMP_Text>();
 
