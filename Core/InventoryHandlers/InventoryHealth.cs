@@ -7,14 +7,14 @@ public class InventoryHealth
         if (Player.m_localPlayer == null)
             return;
         Inventory? playerInventory = Player.m_localPlayer.GetInventory();
-        List<Vector2i> curPositions = new();
+        HashSet<Vector2i> curPositions = new();
         List<ItemDrop.ItemData> itemsToFix = new();
         if (playerInventory == null) return;
         if (playerInventory?.m_inventory != null)
             for (int index = 0; index < playerInventory.m_inventory.Count; ++index)
             {
                 ItemDrop.ItemData? itemData = playerInventory.m_inventory[index];
-                bool overlappingItem = curPositions.Exists(pos => pos == itemData.m_gridPos);
+                bool overlappingItem = curPositions.Contains(itemData.m_gridPos);
                 if (overlappingItem || itemData.m_gridPos.x < 0 || itemData.m_gridPos.x >= playerInventory.m_width || itemData.m_gridPos.y < 0 || itemData.m_gridPos.y >= playerInventory.m_height || itemData.m_stack < 1)
                 {
                     if (itemData.m_stack < 1) playerInventory.RemoveItem(itemData);

@@ -300,15 +300,12 @@ public class InventoryGuiPatches
                     break;
             }
 
-            //TODO: Fix performance of this.
-            if (StatsPanelController.IsVisible() && player != null)
+            if (StatsPanelController.IsVisible() && player != null && Time.frameCount % 10 == 0)
                 StatsPanelController.UpdateStats(player);
 
             UpdateInvalidDropOverlays(__instance, ___m_playerGrid, player);
         }
 
-        private static ItemDrop.ItemData _lastDragItem;
-        private static bool _lastDraggingState;
         private static bool _overlaysInitialized;
 
         private static void UpdateInvalidDropOverlays(InventoryGui ig, InventoryGrid playerGrid, Player player)
@@ -338,13 +335,6 @@ public class InventoryGuiPatches
 
                 _overlaysInitialized = true;
             }
-
-            bool stateChanged = dragging != _lastDraggingState || dragItem != _lastDragItem;
-            if (!stateChanged && !dragging)
-                return;
-
-            _lastDraggingState = dragging;
-            _lastDragItem = dragItem;
 
             int baseIndex1 = Layout.GetBaseSlotIndex(player.GetInventory());
 
@@ -377,6 +367,67 @@ public class InventoryGuiPatches
                 bool allowed = SlotAcceptRules.CanItemGoToSlot(slot, dragItem);
                 SlotOverlays.SetInvalidVisible(slotGo, !allowed);
             }
+        }
+    }
+
+    // Prevent expensive crafting updates (200+ recipes) during drag/drop operations
+    [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.UpdateRecipeList))]
+    private static class ThrottleCraftingUpdates_Patch
+    {
+        private static float _lastUpdateTime;
+        private static int _lastInventoryHash;
+
+        private static bool Prefix(InventoryGui __instance)
+        {
+            if (__instance.m_dragGo != null)
+                return false;
+
+            float timeSinceUpdate = Time.time - _lastUpdateTime;
+
+            if (timeSinceUpdate < 0.25f) // Don't update more than 4 times per second
+            {
+                if (Player.m_localPlayer?.GetInventory() is { } inv)
+                {
+                    int currentHash = CalculateInventoryHash(inv);
+                    if (currentHash == _lastInventoryHash)
+                        return false;
+
+                    _lastInventoryHash = currentHash;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            _lastUpdateTime = Time.time;
+            return true;
+        }
+
+        private static int CalculateInventoryHash(Inventory inv)
+        {
+            int count = inv.m_inventory.Count;
+            if (count == 0) return 0;
+
+            int hash = count;
+
+            ItemDrop.ItemData? first = inv.m_inventory[0];
+            hash ^= first.m_shared.m_name.GetHashCode();
+            hash ^= first.m_stack;
+
+            if (count > 1)
+            {
+                ItemDrop.ItemData? last = inv.m_inventory[count - 1];
+                hash ^= last.m_shared.m_name.GetHashCode() << 8;
+                hash ^= last.m_stack << 16;
+            }
+
+            if (count <= 10) return hash;
+            ItemDrop.ItemData? mid = inv.m_inventory[count / 2];
+            hash ^= mid.m_shared.m_name.GetHashCode() << 4;
+            hash ^= mid.m_stack << 12;
+
+            return hash;
         }
     }
 }
