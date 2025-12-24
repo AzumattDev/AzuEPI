@@ -771,14 +771,14 @@ internal static class VanityPanelController
             if (StatsPanelController.IsVisible()) StatsPanelController.Hide();
             if (InventoryGui.instance)
             {
-                var craftingPanel = InventoryGui.instance.m_crafting;
+                RectTransform? craftingPanel = InventoryGui.instance.m_crafting;
                 craftingPanel.transform.Find("TabsButtons").SafeSetActive(!_visible);
                 craftingPanel.transform.Find("RecipeList").SafeSetActive(!_visible);
                 craftingPanel.transform.Find("Decription").SafeSetActive(!_visible);
             }
         });
 
-        if (VanityButtonGo.TryGetComponent<UIGamePad>(out var gp))
+        if (VanityButtonGo.TryGetComponent<UIGamePad>(out UIGamePad? gp))
         {
             if (ZInput.instance != null)
             {

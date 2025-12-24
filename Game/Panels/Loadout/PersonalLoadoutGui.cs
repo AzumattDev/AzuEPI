@@ -196,7 +196,7 @@ public class PersonalLoadoutGui : MonoBehaviour
         rt.anchoredPosition = new Vector2(-205f, -30f);
         rt.sizeDelta = new Vector2(120f, 32f);
 
-        if (LoadoutsToggleButton.TryGetComponent<UIGamePad>(out var gp))
+        if (LoadoutsToggleButton.TryGetComponent<UIGamePad>(out UIGamePad? gp))
         {
             if (ZInput.instance != null)
             {
@@ -219,8 +219,8 @@ public class PersonalLoadoutGui : MonoBehaviour
             ToggleUI();
             if (InventoryGui.instance)
             {
-                var craftingPanel = InventoryGui.instance.m_crafting;
-                var vis = IsVisible();
+                RectTransform? craftingPanel = InventoryGui.instance.m_crafting;
+                bool vis = IsVisible();
                 craftingPanel.transform.Find("TabsButtons").SafeSetActive(!vis);
                 craftingPanel.transform.Find("RecipeList").SafeSetActive(!vis);
                 craftingPanel.transform.Find("Decription").SafeSetActive(!vis);
