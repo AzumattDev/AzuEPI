@@ -184,14 +184,22 @@ public class Layout
                         }
                         else
                         {
-                            Vector2i free = FindFirstFreeNonSlotCell(playerInventory, inventoryWidth, firstTailRow);
-                            if (free.x >= 0)
+                            ItemDrop.ItemData? itemAtSrc = playerInventory.GetItemAt(srcPos.x, srcPos.y);
+                            if (itemAtSrc == null || itemAtSrc == occupant)
                             {
-                                occupant.m_gridPos = free;
+                                occupant.m_gridPos = srcPos;
                             }
                             else
                             {
-                                AzuExtendedPlayerInventoryLogger.LogDebug($"ProjectEquippedIntoGridTail: no free non-slot cell for '{occupant.m_shared.m_name}', leaving it in tail.");
+                                Vector2i free = FindFirstFreeNonSlotCell(playerInventory, inventoryWidth, firstTailRow);
+                                if (free.x >= 0)
+                                {
+                                    occupant.m_gridPos = free;
+                                }
+                                else
+                                {
+                                    AzuExtendedPlayerInventoryLogger.LogDebug($"ProjectEquippedIntoGridTail: no free non-slot cell for '{occupant.m_shared.m_name}', leaving it in tail.");
+                                }
                             }
                         }
                     }
