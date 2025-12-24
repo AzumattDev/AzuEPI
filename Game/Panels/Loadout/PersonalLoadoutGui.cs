@@ -481,6 +481,7 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
                         renameText.alignment = TextAlignmentOptions.Center;
                         renameText.color = Color.white;
                     }
+                    PanelUtilities.BindGamePad(renameButtonTransform, "", KeyCode.None);
 
                     UITooltip renameTooltip = renameButtonTransform.GetComponent<UITooltip>();
                     if (renameTooltip != null)

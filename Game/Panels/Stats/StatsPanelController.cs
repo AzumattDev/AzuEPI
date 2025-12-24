@@ -45,7 +45,7 @@ public static class StatsPanelController
     public static RectTransform? ToggleButtonParentGlg;
 
     public static ScrollRect? GetScrollRect() => _scroll;
-    
+
     // TODO: Maybe allow pinning specific stats to player preview again.
     private static readonly Dictionary<PlayerStatType, string> StatIcons = new()
     {
@@ -331,6 +331,7 @@ public static class StatsPanelController
             headerText.font = _fontAsset;
             headerText.fontSharedMaterial = _fontAsset.material;
         }
+
         headerText.text = "Attributes";
         headerText.fontSize = 20f;
         headerText.fontStyle = FontStyles.Bold;
@@ -378,6 +379,7 @@ public static class StatsPanelController
         rowLayout.minHeight = 18f;
 
         GameObject labelObj = new("Label", typeof(RectTransform));
+        labelObj.SafeSetActive(false);
         RectTransform labelRect = labelObj.GetComponent<RectTransform>();
         labelRect.SetParent(rowRect, false);
 
@@ -387,6 +389,8 @@ public static class StatsPanelController
             labelText.font = _fontAsset;
             labelText.fontSharedMaterial = _fontAsset.material;
         }
+
+        labelObj.SafeSetActive(true);
         labelText.text = statName;
         labelText.fontSize = 18f;
         labelText.alignment = TextAlignmentOptions.Left;
@@ -400,13 +404,15 @@ public static class StatsPanelController
         GameObject valueObj = new("Value", typeof(RectTransform));
         RectTransform valueRect = valueObj.GetComponent<RectTransform>();
         valueRect.SetParent(rowRect, false);
-
+        valueObj.SafeSetActive(false);
         TextMeshProUGUI valueText = valueObj.AddComponent<TextMeshProUGUI>();
         if (_fontAsset)
         {
             valueText.font = _fontAsset;
             valueText.fontSharedMaterial = _fontAsset.material;
         }
+
+        valueObj.SafeSetActive(true);
         valueText.text = "0";
         valueText.fontSize = 18f;
         valueText.alignment = TextAlignmentOptions.Right;
@@ -456,13 +462,14 @@ public static class StatsPanelController
         GameObject headerObj = new($"Section_{title}", typeof(RectTransform));
         RectTransform headerRect = headerObj.GetComponent<RectTransform>();
         headerRect.SetParent(_content, false);
-
+        headerObj.SafeSetActive(false);
         TextMeshProUGUI headerText = headerObj.AddComponent<TextMeshProUGUI>();
         if (_fontAsset)
         {
             headerText.font = _fontAsset;
             headerText.fontSharedMaterial = _fontAsset.material;
         }
+        headerObj.SafeSetActive(true);
         headerText.text = title;
         headerText.fontSize = 20f;
         headerText.fontStyle = FontStyles.Bold;
@@ -512,6 +519,7 @@ public static class StatsPanelController
         rowLayout.minHeight = 18f;
 
         GameObject labelObj = new("Label", typeof(RectTransform));
+        labelObj.SafeSetActive(false);
         RectTransform labelRect = labelObj.GetComponent<RectTransform>();
         labelRect.SetParent(rowRect, false);
 
@@ -521,6 +529,8 @@ public static class StatsPanelController
             labelText.font = _fontAsset;
             labelText.fontSharedMaterial = _fontAsset.material;
         }
+
+        labelObj.SafeSetActive(true);
         labelText.text = statName;
         labelText.fontSize = 18f;
         labelText.alignment = TextAlignmentOptions.Left;
@@ -534,13 +544,16 @@ public static class StatsPanelController
         GameObject valueObj = new("Value", typeof(RectTransform));
         RectTransform valueRect = valueObj.GetComponent<RectTransform>();
         valueRect.SetParent(rowRect, false);
-
+        valueObj.SafeSetActive(false);
         TextMeshProUGUI valueText = valueObj.AddComponent<TextMeshProUGUI>();
         if (_fontAsset)
         {
             valueText.font = _fontAsset;
             valueText.fontSharedMaterial = _fontAsset.material;
         }
+
+        valueObj.SafeSetActive(true);
+
         valueText.text = "0";
         valueText.fontSize = 18f;
         valueText.alignment = TextAlignmentOptions.Right;
@@ -625,6 +638,7 @@ public static class StatsPanelController
                         element.ValueText.text = $"{player.m_swimSpeed * player.GetAttackSpeedFactorMovement():F0}%";
                         break;
                 }
+
                 continue;
             }
 
@@ -664,7 +678,7 @@ public static class StatsPanelController
             }
         }
     }
-    
+
     internal static void HandleScrollInput()
     {
         if (!IsVisible())
@@ -676,7 +690,7 @@ public static class StatsPanelController
 
         if (!ZInput.IsGamepadActive())
             return;
-        
+
         float scrollInput = 0f;
 
         if (ZInput.instance != null)
