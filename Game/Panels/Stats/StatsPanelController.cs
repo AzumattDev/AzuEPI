@@ -1,10 +1,7 @@
 using AzuEPI.Game.Loadout;
-using AzuEPI.Game.Vanity;
-using TMPro;
-using UnityEngine;
-using UnityEngine.UI;
+using AzuEPI.Game.Panels.Vanity;
 
-namespace AzuEPI.Game.PlayerPreview.Stats;
+namespace AzuEPI.Game.Panels.Stats;
 
 public static class StatsPanelController
 {
@@ -116,13 +113,11 @@ public static class StatsPanelController
     {
         _visible = visible;
         if (_panel) _panel.gameObject.SetActive(visible);
-        if (visible && _panel)
+        if (!visible || !_panel) return;
+        _panel.SetAsLastSibling();
+        if (Player.m_localPlayer != null)
         {
-            _panel.SetAsLastSibling();
-            if (Player.m_localPlayer != null)
-            {
-                UpdateStats(Player.m_localPlayer);
-            }
+            UpdateStats(Player.m_localPlayer);
         }
     }
 
@@ -132,15 +127,8 @@ public static class StatsPanelController
     {
         if (_panel) return;
 
-        TMP_Text? fontSample = gui.m_craftButton?.GetComponentInChildren<TMP_Text>()
-                             ?? gui.m_takeAllButton?.GetComponentInChildren<TMP_Text>()
-                             ?? gui.m_info?.GetComponentInChildren<TMP_Text>();
-
-        if (fontSample != null && fontSample.font != null)
-        {
-            _fontAsset = fontSample.font;
-        }
-        else
+        _fontAsset = PanelUtilities.GetFontAsset(gui);
+        if (_fontAsset == null)
         {
             AzuExtendedPlayerInventoryLogger.LogWarning("Could not find TMP font asset for stats panel. Text may not display correctly.");
         }
@@ -180,21 +168,7 @@ public static class StatsPanelController
 
     private static void BuildPanel(InventoryGui gui)
     {
-        RectTransform? crafting = gui.m_crafting;
-        Transform? srcBkg = crafting.Find("Bkg");
-        if (!srcBkg) return;
-
-        Transform? statsPanel = Object.Instantiate(srcBkg, crafting);
-        statsPanel.name = StatsPanelName;
-
-        _panel = statsPanel.GetComponent<RectTransform>();
-        RectTransform? srcRT = srcBkg.GetComponent<RectTransform>();
-        _panel.anchorMin = srcRT.anchorMin;
-        _panel.anchorMax = srcRT.anchorMax;
-        _panel.SetAsLastSibling();
-
-        Image? img = statsPanel.GetComponent<Image>();
-        if (img) img.raycastTarget = false;
+        _panel = PanelUtilities.BuildPanel(gui, StatsPanelName);
     }
 
     private static void BuildScrollTree()
@@ -215,7 +189,7 @@ public static class StatsPanelController
         }
 
         RectTransform rootRT = (RectTransform)scrollRoot.transform;
-        AnchorFill(rootRT);
+        PanelUtilities.AnchorFill(rootRT);
         rootRT.offsetMin = ScrollRootOffsetMin;
         rootRT.offsetMax = ScrollRootOffsetMax;
 
@@ -240,84 +214,27 @@ public static class StatsPanelController
 
     private static RectTransform BuildViewport(RectTransform parent)
     {
-        GameObject go = new(StatsViewportName, typeof(RectTransform), typeof(Image), typeof(RectMask2D));
-        RectTransform rt = (RectTransform)go.transform;
-        rt.SetParent(parent, false);
-        AnchorFill(rt);
-
-        Image? img = go.GetComponent<Image>();
-        img.color = new Color(0, 0, 0, 0.565f);
-        img.raycastTarget = true;
-
-        return rt;
+        return PanelUtilities.BuildViewport(parent, StatsViewportName, new Color(0, 0, 0, 0.565f));
     }
 
     private static void BuildContentStack(RectTransform parent)
     {
-        GameObject go = new(StatsContentName, typeof(RectTransform), typeof(VerticalLayoutGroup), typeof(ContentSizeFitter));
-
-        _content = (RectTransform)go.transform;
-        _content.SetParent(parent, false);
-        _content.anchorMin = new Vector2(0f, 1f);
-        _content.anchorMax = new Vector2(1f, 1f);
-        _content.pivot = new Vector2(0.5f, 1f);
+        _content = PanelUtilities.BuildVerticalContent(parent, StatsContentName, new RectOffset(16, 16, 16, 16), 8f);
         _content.offsetMin = Vector2.zero;
         _content.offsetMax = Vector2.zero;
-
-        VerticalLayoutGroup? vLayout = go.GetComponent<VerticalLayoutGroup>();
-        vLayout.childAlignment = TextAnchor.UpperLeft;
-        vLayout.spacing = 8f;
-        vLayout.padding = new RectOffset(16, 16, 16, 16);
-        vLayout.childControlWidth = true;
-        vLayout.childControlHeight = true;
-        vLayout.childForceExpandWidth = true;
-        vLayout.childForceExpandHeight = false;
-
-        ContentSizeFitter? fitter = go.GetComponent<ContentSizeFitter>();
-        fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-        fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
     }
 
     private static Scrollbar BuildScrollbar(Transform panelParent)
     {
-        GameObject barGO;
-        if (InventoryGui.instance.m_recipeListScroll)
+        return PanelUtilities.BuildScrollbar(panelParent, new PanelUtilities.ScrollbarConfig
         {
-            barGO = Object.Instantiate(InventoryGui.instance.m_recipeListScroll.gameObject, panelParent);
-            barGO.name = StatsScrollbarName;
-        }
-        else
-        {
-            barGO = new GameObject(StatsScrollbarName, typeof(RectTransform), typeof(Image), typeof(Scrollbar));
-            barGO.transform.SetParent(panelParent, false);
-        }
-
-        RectTransform barRT = (RectTransform)barGO.transform;
-        barRT.anchorMin = BarAnchorMin;
-        barRT.anchorMax = BarAnchorMax;
-        barRT.pivot = BarPivot;
-        barRT.offsetMin = BarOffsetMin;
-        barRT.offsetMax = BarOffsetMax;
-
-        Scrollbar? bar = barGO.GetComponent<Scrollbar>();
-        bar.direction = Scrollbar.Direction.BottomToTop;
-
-        Image? bg = bar.GetComponent<Image>();
-        if (bg) bg.enabled = true;
-
-        Image? handle = bar.transform.Find("Sliding Area/Handle")?.GetComponent<Image>();
-        if (handle) handle.enabled = true;
-        else
-        {
-            GameObject h = new("Handle", typeof(RectTransform), typeof(Image));
-            RectTransform hRT = (RectTransform)h.transform;
-            hRT.SetParent(barRT, false);
-            AnchorFill(hRT);
-            bar.targetGraphic = h.GetComponent<Image>();
-            bar.handleRect = hRT;
-        }
-
-        return bar;
+            Name = StatsScrollbarName,
+            AnchorMin = BarAnchorMin,
+            AnchorMax = BarAnchorMax,
+            Pivot = BarPivot,
+            OffsetMin = BarOffsetMin,
+            OffsetMax = BarOffsetMax
+        });
     }
 
     private static void PopulateStats()
@@ -571,10 +488,7 @@ public static class StatsPanelController
 
     private static List<PlayerStatType> GetDefaultStats()
     {
-        return Enum.GetValues(typeof(PlayerStatType))
-            .Cast<PlayerStatType>()
-            .Where(stat => stat != PlayerStatType.Count)
-            .ToList();
+        return Enum.GetValues(typeof(PlayerStatType)).Cast<PlayerStatType>().Where(stat => stat != PlayerStatType.Count).ToList();
     }
 
     private static void CreateStatRow(GameObject parent, string statName, PlayerStatType statType)
@@ -644,51 +558,30 @@ public static class StatsPanelController
 
     internal static void BuildToggleButton(InventoryGui gui)
     {
-        Transform? src = gui.m_takeAllButton?.transform ?? gui.m_craftButton?.transform;
-        if (!src || ToggleButtonParentGlg == null) return;
+        if (ToggleButtonParentGlg == null) return;
 
-        StatsButtonGo = CloneButton(src, ToggleButtonParentGlg, StatsToggleButtonName, ToggleBtnAnchorMin, ToggleBtnAnchorMax, ToggleBtnPivot, new Vector2(-50f, -30f), ToggleBtnSize);
-        Button? btn = StatsButtonGo.GetComponent<Button>();
-        btn.onClick.RemoveAllListeners();
-        btn.onClick.AddListener(() =>
-        {
-            _visible = !_visible;
-            SetVisible(_visible);
-            if (VanityPanelController.IsVisible()) VanityPanelController.SetVisible(false);
-            if (PersonalLoadoutGui.IsVisible()) PersonalLoadoutGui.Hide();
-            if (InventoryGui.instance)
+        PanelUtilities.ButtonConfig config = new(
+            name: StatsToggleButtonName,
+            anchorMin: ToggleBtnAnchorMin,
+            anchorMax: ToggleBtnAnchorMax,
+            pivot: ToggleBtnPivot,
+            anchoredPosition: new Vector2(-50f, -30f),
+            size: ToggleBtnSize,
+            gamepadKey: "JoyTabLeft",
+            gamepadKeyCode: KeyCode.JoystickButton4,
+            label: "📋",
+            labelFontSize: 20f,
+            onClick: () =>
             {
-                RectTransform? craftingPanel = InventoryGui.instance.m_crafting;
-                craftingPanel.transform.Find("TabsButtons").SafeSetActive(!_visible);
-                craftingPanel.transform.Find("RecipeList").SafeSetActive(!_visible);
-                craftingPanel.transform.Find("Decription").SafeSetActive(!_visible);
+                _visible = !_visible;
+                SetVisible(_visible);
+                if (VanityPanelController.IsVisible()) VanityPanelController.SetVisible(false);
+                if (PersonalLoadoutGui.IsVisible()) PersonalLoadoutGui.Hide();
+                PanelUtilities.HideCraftingElements(_visible);
             }
-        });
+        );
 
-        if (StatsButtonGo.TryGetComponent<UIGamePad>(out UIGamePad? gp))
-        {
-            if (ZInput.instance != null)
-            {
-                gp.m_hint.GetComponentInChildren<TextMeshProUGUI>(true).text = ZInput.instance.GetBoundKeyString("JoyTabLeft", true);
-            }
-            else
-            {
-                ZInput.Initialize();
-                gp.m_hint.GetComponentInChildren<TextMeshProUGUI>(true).text = ZInput.instance.GetBoundKeyString("JoyTabLeft", true);
-            }
-
-            gp.m_zinputKey = "JoyTabLeft";
-            gp.m_keyCode = KeyCode.JoystickButton4;
-        }
-
-        TMP_Text? label = StatsButtonGo.GetComponentInChildren<TMP_Text>();
-        if (label)
-        {
-            label.text = "📋";
-            label.fontSize = 20;
-        }
-
-        _toggleBtn = btn;
+        (StatsButtonGo, _toggleBtn) = PanelUtilities.BuildToggleButton(gui, ToggleButtonParentGlg, config);
         StatsButtonGo.gameObject.SetActive(true);
     }
 
@@ -768,30 +661,6 @@ public static class StatsPanelController
                     break;
             }
         }
-    }
-
-    private static Transform CloneButton(Transform src, Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPos, Vector2 size)
-    {
-        Transform clone = Object.Instantiate(src, parent);
-        clone.name = name;
-        clone.SetAsLastSibling();
-
-        RectTransform rt = (RectTransform)clone;
-        rt.anchorMin = anchorMin;
-        rt.anchorMax = anchorMax;
-        rt.pivot = pivot;
-        rt.anchoredPosition = anchoredPos;
-        rt.sizeDelta = size;
-
-        return clone;
-    }
-
-    private static void AnchorFill(RectTransform rt)
-    {
-        rt.anchorMin = Vector2.zero;
-        rt.anchorMax = Vector2.one;
-        rt.offsetMin = Vector2.zero;
-        rt.offsetMax = Vector2.zero;
     }
 
     private class StatElement

@@ -1,7 +1,4 @@
-﻿using HarmonyLib;
-using UnityEngine;
-
-namespace AzuEPI.Game.Vanity;
+﻿namespace AzuEPI.Game.Panels.Vanity;
 
 [HarmonyPatch]
 public static class IconPatches

@@ -1,6 +1,6 @@
 ﻿using AzuEPI.Core.Text;
-using AzuEPI.Game.PlayerPreview.Stats;
-using AzuEPI.Game.Vanity;
+using AzuEPI.Game.Panels.Stats;
+using AzuEPI.Game.Panels.Vanity;
 
 namespace AzuEPI.Game.Patches;
 

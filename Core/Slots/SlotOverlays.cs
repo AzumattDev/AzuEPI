@@ -1,4 +1,4 @@
-﻿using AzuEPI.Game.Vanity;
+﻿using AzuEPI.Game.Panels.Vanity;
 
 namespace AzuEPI.Core.Slots;
 

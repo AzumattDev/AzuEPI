@@ -2,10 +2,9 @@
 using AzuEPI.Game.Compatibility;
 using AzuEPI.Game.Compatibility.AdvBackpacks;
 using AzuEPI.Game.Loadout;
-using AzuEPI.Game.PlayerPreview.Stats;
+using AzuEPI.Game.Panels.Vanity;
 //using AzuEPI.Game.Moveable;
 using AzuEPI.Game.Slots.QAB;
-using AzuEPI.Game.Vanity;
 using BepInEx.Logging;
 using LocalizationManager;
 using ServerSync;

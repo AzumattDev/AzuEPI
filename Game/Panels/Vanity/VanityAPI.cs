@@ -1,6 +1,4 @@
-﻿using HarmonyLib;
-
-namespace AzuEPI.Game.Vanity;
+﻿namespace AzuEPI.Game.Panels.Vanity;
 
 [HarmonyPatch(typeof(Player), nameof(Player.EquipInventoryItems))]
 internal static class LoadVanityOnPlayerLoad

@@ -6,7 +6,7 @@ public class BetterArchery
     {
         if (!Chainloader.PluginInfos.TryGetValue("ishid4.mods.betterarchery", out PluginInfo? betterArchery)) return;
         // Force disable the configuration for BetterArchery. Turn off the quiver
-        bool tryGetEntry = betterArchery.Instance.Config.TryGetEntry<bool>("Quiver", "Enable Quiver", out ConfigEntry<bool>? entry);
+        bool tryGetEntry = betterArchery.Instance.Config.TryGetEntry("Quiver", "Enable Quiver", out ConfigEntry<bool>? entry);
         if (!tryGetEntry || !entry.Value) return;
         entry.Value = false;
         AzuExtendedPlayerInventoryLogger.LogWarning(

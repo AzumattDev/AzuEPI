@@ -1,5 +1,6 @@
-﻿using AzuEPI.Game.PlayerPreview.Stats;
-using AzuEPI.Game.Vanity;
+﻿using AzuEPI.Game.Panels;
+using AzuEPI.Game.Panels.Stats;
+using AzuEPI.Game.Panels.Vanity;
 
 namespace AzuEPI.Game.Loadout;
 
@@ -74,9 +75,21 @@ public class PersonalLoadoutGui : MonoBehaviour
         m_instance = null;
     }
 
-    private void Update()
+    /*private void Update()
     {
         if (!m_storeRootPanel.activeSelf || !PanelActive) return;
+        if (ShouldHide() || ShouldClose())
+        {
+            Hide();
+        }
+        else
+        {
+            UpdateUI();
+        }
+    }*/
+
+    public void HandleUIUpdates()
+    {
         if (ShouldHide() || ShouldClose())
         {
             Hide();
@@ -182,59 +195,29 @@ public class PersonalLoadoutGui : MonoBehaviour
 
     internal static void BuildLoadoutToggleButton(InventoryGui gui)
     {
-        Transform? src = gui.m_takeAllButton?.transform ?? gui.m_craftButton?.transform;
-        if (!src) return;
-
-        LoadoutsToggleButton = Instantiate(src, ToggleButtonParentGlg);
-        LoadoutsToggleButton.name = "AzuEPILoadoutsToggleButton";
-        LoadoutsToggleButton.SetAsLastSibling();
-
-        RectTransform rt = (RectTransform)LoadoutsToggleButton;
-        rt.anchorMin = new Vector2(0f, 1f);
-        rt.anchorMax = new Vector2(0f, 1f);
-        rt.pivot = new Vector2(0f, 1f);
-        rt.anchoredPosition = new Vector2(-205f, -30f);
-        rt.sizeDelta = new Vector2(120f, 32f);
-
-        if (LoadoutsToggleButton.TryGetComponent<UIGamePad>(out UIGamePad? gp))
-        {
-            if (ZInput.instance != null)
+        PanelUtilities.ButtonConfig config = new(
+            name: "AzuEPILoadoutsToggleButton",
+            anchorMin: new Vector2(0f, 1f),
+            anchorMax: new Vector2(0f, 1f),
+            pivot: new Vector2(0f, 1f),
+            anchoredPosition: new Vector2(-205f, -30f),
+            size: new Vector2(120f, 32f),
+            gamepadKey: "JoyRStick",
+            gamepadKeyCode: KeyCode.JoystickButton9,
+            label: "🎯",
+            labelFontSize: 20f,
+            onClick: () =>
             {
-                gp.m_hint.GetComponentInChildren<TextMeshProUGUI>(true).text = ZInput.instance.GetBoundKeyString("JoyRStick", true);
+                ToggleUI();
+                if (InventoryGui.instance)
+                {
+                    bool vis = IsVisible();
+                    PanelUtilities.HideCraftingElements(vis);
+                }
             }
-            else
-            {
-                ZInput.Initialize();
-                gp.m_hint.GetComponentInChildren<TextMeshProUGUI>(true).text = ZInput.instance.GetBoundKeyString("JoyRStick", true);
-            }
+        );
 
-            gp.m_zinputKey = "JoyRStick";
-            gp.m_keyCode = KeyCode.JoystickButton9;
-        }
-
-        Button? btn = LoadoutsToggleButton.GetComponent<Button>();
-        btn.onClick.RemoveAllListeners();
-        btn.onClick.AddListener(() =>
-        {
-            ToggleUI();
-            if (InventoryGui.instance)
-            {
-                RectTransform? craftingPanel = InventoryGui.instance.m_crafting;
-                bool vis = IsVisible();
-                craftingPanel.transform.Find("TabsButtons").SafeSetActive(!vis);
-                craftingPanel.transform.Find("RecipeList").SafeSetActive(!vis);
-                craftingPanel.transform.Find("Decription").SafeSetActive(!vis);
-            }
-        });
-
-        TMP_Text? label = LoadoutsToggleButton.GetComponentInChildren<TMP_Text>();
-        if (label)
-        {
-            label.text = "🎯";
-            label.fontSize = 20;
-        }
-
-        _toggleBtn = btn;
+        (LoadoutsToggleButton, _toggleBtn) = PanelUtilities.BuildToggleButton(gui, ToggleButtonParentGlg, config);
         LoadoutsToggleButton.gameObject.SetActive(LoadoutOption.Value.isOn());
     }
 
@@ -573,17 +556,6 @@ public class PersonalLoadoutGui : MonoBehaviour
         if (!ZInput.GetButtonDown("JoyLStickUp") && !ZInput.GetButtonDown("JoyDPadUp"))
             return;
         SelectItem(Mathf.Max(0, GetSelectedItemIndex() - 1), true);
-    }
-}
-
-[HarmonyPatch(typeof(UnifiedPopup), nameof(UnifiedPopup.IsVisible))]
-static class UnifiedPopupIsVisiblePatch
-{
-    static bool Prefix(ref bool __result)
-    {
-        if (!Player.m_localPlayer || !PersonalLoadoutGui.IsVisible()) return true;
-        __result = true;
-        return false;
     }
 }
 

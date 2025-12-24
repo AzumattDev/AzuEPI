@@ -1,9 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
-using UnityEngine.UI;
-
-namespace AzuEPI.Game.Vanity;
+﻿namespace AzuEPI.Game.Panels.Vanity;
 
 public readonly struct VanityState
 {

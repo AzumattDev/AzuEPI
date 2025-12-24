@@ -1,7 +1,7 @@
 ﻿using AzuEPI.Game.Loadout;
+using AzuEPI.Game.Panels.Stats;
+using AzuEPI.Game.Panels.Vanity;
 using AzuEPI.Game.PlayerPreview;
-using AzuEPI.Game.PlayerPreview.Stats;
-using AzuEPI.Game.Vanity;
 
 namespace AzuEPI.Core.InventoryHandlers;
 

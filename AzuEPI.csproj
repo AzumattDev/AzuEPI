@@ -225,6 +225,7 @@
         <Compile Include="API\APIBkCompat.cs" />
         <Compile Include="Core\Slots\Model.cs"/>
         <Compile Include="Game\Compatibility\Wizardry.cs" />
+        <Compile Include="Game\Panels\PanelUtilities.cs" />
         <Compile Include="GlobalUsings.cs"/>
         <None Include="App.config"/>
     </ItemGroup>

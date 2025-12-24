@@ -1,6 +1,6 @@
 ﻿using AzuEPI.Game.PlayerPreview;
 
-namespace AzuEPI.Game.Vanity;
+namespace AzuEPI.Game.Panels.Vanity;
 
 internal static class VanityHelper
 {
