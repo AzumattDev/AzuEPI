@@ -4,57 +4,40 @@ namespace AzuEPI.Game.Patches;
 
 public class InventoryPatches
 {
-    private static Type? _itemContainerType;
-    private static MethodInfo? _itemDataGetMethod;
-    private static bool _checkedForBackpacksMod;
-
-    private static bool HasItemContainer(ItemDrop.ItemData item)
+    // Not proud of this, but for now it's a quickfix. Find a permanent fix later. TODO
+    private static bool IsBackpackItem(ItemDrop.ItemData item)
     {
         if (item?.m_shared == null) return false;
 
-        if (!_checkedForBackpacksMod)
+        string name = item.m_shared.m_name.ToLowerInvariant();
+        string prefabName = item.m_dropPrefab?.name?.ToLowerInvariant() ?? "";
+
+        if (name.Contains("backpack") || prefabName.Contains("backpack") || prefabName.StartsWith("bp_"))
+            return true;
+
+        // Check for ItemContainer via reflection (Backpacks mod specific)
+        try
         {
-            _checkedForBackpacksMod = true;
-
-            try
+            var itemData = item.Data();
+            if (itemData != null)
             {
-                _itemContainerType = Type.GetType("Backpacks.ItemContainer, Backpacks");
-
-                if (_itemContainerType != null)
+                var getMethod = itemData.GetType().GetMethod("Get");
+                if (getMethod != null)
                 {
-                    ItemInfo? sampleData = item.Data();
-                    if (sampleData != null)
+                    var containerType = Type.GetType("Backpacks.ItemContainer, Backpacks");
+                    if (containerType != null)
                     {
-                        IEnumerable<MethodInfo> getMethods = sampleData.GetType().GetMethods()
-                            .Where(m => m.Name == "Get" && m.IsGenericMethod && m.GetParameters().Length == 0);
-
-                        _itemDataGetMethod = getMethods.FirstOrDefault();
+                        var genericMethod = getMethod.MakeGenericMethod(containerType);
+                        var container = genericMethod.Invoke(itemData, null);
+                        if (container != null)
+                            return true;
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                AzuExtendedPlayerInventoryLogger.LogDebug($"Backpacks mod not detected or incompatible: {ex.Message}");
-            }
         }
+        catch { /* Not a backpack */ }
 
-        if (_itemContainerType == null || _itemDataGetMethod == null)
-            return false;
-
-        try
-        {
-            ItemInfo? itemData = item.Data();
-            if (itemData == null) return false;
-
-            MethodInfo genericMethod = _itemDataGetMethod.MakeGenericMethod(_itemContainerType);
-            object? container = genericMethod.Invoke(itemData, null);
-
-            return container != null;
-        }
-        catch
-        {
-            return false;
-        }
+        return false;
     }
 
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.FindEmptySlot))]
@@ -152,7 +135,7 @@ public class InventoryPatches
 
             if (!__instance.ShouldProtectInventorySlots()) return true;
 
-            if (HasItemContainer(item)) return true;
+            if (IsBackpackItem(item)) return true;
 
             if (__instance.IsHiddenCell(x, y))
             {
@@ -243,10 +226,10 @@ public class InventoryPatches
             {
                 if (__instance.IsHiddenCell(it.m_gridPos.x, it.m_gridPos.y))
                 {
-                    // Skip items with custom containers (e.g., Backpacks mod) - let them stay where they are to avoid conflicts
-                    if (HasItemContainer(it))
+                    // Skip backpack items - let them stay where they are to avoid conflicts
+                    if (IsBackpackItem(it))
                     {
-                        AzuExtendedPlayerInventoryLogger.LogDebug($"Skipping container item {it.m_shared.m_name} in hidden cell ({it.m_gridPos.x}, {it.m_gridPos.y})");
+                        AzuExtendedPlayerInventoryLogger.LogDebug($"Skipping backpack item {it.m_shared.m_name} in hidden cell ({it.m_gridPos.x}, {it.m_gridPos.y})");
                         continue;
                     }
 
