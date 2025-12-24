@@ -154,25 +154,25 @@
         <Compile Include="Core\InventoryHandlers\Layout.cs"/>
         <Compile Include="Core\InventoryHandlers\UIBuilder.cs"/>
         <Compile Include="Core\InventoryHandlers\GUICache.cs"/>
-        <Compile Include="Core\Slots\EpiDropRouter.cs" />
+        <Compile Include="Core\Slots\EpiDropRouter.cs"/>
         <Compile Include="Core\Slots\Rules.cs"/>
         <Compile Include="Core\Slots\SlotHelpers.cs"/>
         <Compile Include="Core\Slots\SlotOverlays.cs"/>
         <Compile Include="Core\Text\Formatting.cs"/>
         <Compile Include="Core\Text\SlotText.cs"/>
-        <Compile Include="Core\Utilities\Extensions\GameObjectHelper.cs" />
-        <Compile Include="Core\Utilities\Extensions\InventoryExtensions.cs" />
-        <Compile Include="Core\Utilities\Extensions\LoggerExtensions.cs" />
-        <Compile Include="Core\Utilities\Extensions\RectTransformExtensions.cs" />
-        <Compile Include="Core\Utilities\Extensions\ToggleExtensions.cs" />
+        <Compile Include="Core\Utilities\Extensions\GameObjectHelper.cs"/>
+        <Compile Include="Core\Utilities\Extensions\InventoryExtensions.cs"/>
+        <Compile Include="Core\Utilities\Extensions\LoggerExtensions.cs"/>
+        <Compile Include="Core\Utilities\Extensions\RectTransformExtensions.cs"/>
+        <Compile Include="Core\Utilities\Extensions\ToggleExtensions.cs"/>
         <Compile Include="Core\Utilities\VersionHandshake.cs"/>
         <Compile Include="Game\CLI\TerminalCommands.cs"/>
-        <Compile Include="Game\Compatibility\ArmoireCompat.cs" />
+        <Compile Include="Game\Compatibility\ArmoireCompat.cs"/>
         <Compile Include="Game\Compatibility\AdvBackpacks\AdvBackpacks.cs"/>
         <Compile Include="Game\Compatibility\AdvBackpacks\BoneReorder.cs"/>
-        <Compile Include="Game\Compatibility\BetterArchery.cs" />
-        <Compile Include="Game\Compatibility\EAQ.cs" />
-        <Compile Include="Game\Compatibility\WeightBase.cs" />
+        <Compile Include="Game\Compatibility\BetterArchery.cs"/>
+        <Compile Include="Game\Compatibility\EAQ.cs"/>
+        <Compile Include="Game\Compatibility\WeightBase.cs"/>
         <Compile Include="Game\Compatibility\JudesEquipment.cs"/>
         <Compile Include="Game\Compatibility\RustBags.cs"/>
         <Compile Include="Game\Managers\ItemDataManager.cs"/>
@@ -180,21 +180,23 @@
         <Compile Include="Game\Managers\Patcher.cs"/>
         <Compile Include="Game\Moveable\DragControl.cs"/>
         <Compile Include="Game\Moveable\MoveableChestInventory.cs"/>
-        <Compile Include="Game\Compatibility\Hunter_Legacy.cs" />
-        <Compile Include="Game\Panels\Loadout\LoadoutPatches.cs" />
-        <Compile Include="Game\Panels\Loadout\PersonalLoadoutGui.cs" />
-        <Compile Include="Game\Panels\Loadout\PersonalLoadoutGuiDetails.cs" />
-        <Compile Include="Game\Panels\Loadout\UIDragger.cs" />
-        <Compile Include="Game\Panels\Stats\StatsPanelController.cs" />
-        <Compile Include="Game\Panels\Vanity\SlotIconChanges.cs" />
-        <Compile Include="Game\Panels\Vanity\VanityAPI.cs" />
-        <Compile Include="Game\Panels\Vanity\VanityLookup.cs" />
-        <Compile Include="Game\Panels\Vanity\VanityPanelController.cs" />
-        <Compile Include="Game\Panels\Vanity\VanityPatches.cs" />
+        <Compile Include="Game\Compatibility\Hunter_Legacy.cs"/>
+        <Compile Include="Game\Compatibility\Wizardry.cs"/>
+        <Compile Include="Game\Panels\PanelUtilities.cs"/>
+        <Compile Include="Game\Panels\Loadout\LoadoutPatches.cs"/>
+        <Compile Include="Game\Panels\Loadout\PersonalLoadoutGui.cs"/>
+        <Compile Include="Game\Panels\Loadout\PersonalLoadoutGuiDetails.cs"/>
+        <Compile Include="Game\Panels\Loadout\UIDragger.cs"/>
+        <Compile Include="Game\Panels\Stats\StatsPanelController.cs"/>
+        <Compile Include="Game\Panels\Vanity\SlotIconChanges.cs"/>
+        <Compile Include="Game\Panels\Vanity\VanityAPI.cs"/>
+        <Compile Include="Game\Panels\Vanity\VanityLookup.cs"/>
+        <Compile Include="Game\Panels\Vanity\VanityPanelController.cs"/>
+        <Compile Include="Game\Panels\Vanity\VanityPatches.cs"/>
         <Compile Include="Game\Patches\InventoryGuiPatches.cs"/>
         <Compile Include="Game\Patches\InventoryPatches.cs"/>
         <Compile Include="Game\Patches\PlayerPatches.cs"/>
-        <Compile Include="Game\Patches\PreventKeys.cs" />
+        <Compile Include="Game\Patches\PreventKeys.cs"/>
         <Compile Include="Game\Patches\TombstonePatches.cs"/>
         <Compile Include="Game\PlayerPreview\PlayerRotationController.cs"/>
         <Compile Include="Game\PlayerPreview\PreviewUI.cs"/>
@@ -222,10 +224,8 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="API\API.cs"/>
-        <Compile Include="API\APIBkCompat.cs" />
+        <Compile Include="API\APIBkCompat.cs"/>
         <Compile Include="Core\Slots\Model.cs"/>
-        <Compile Include="Game\Compatibility\Wizardry.cs" />
-        <Compile Include="Game\Panels\PanelUtilities.cs" />
         <Compile Include="GlobalUsings.cs"/>
         <None Include="App.config"/>
     </ItemGroup>
@@ -238,7 +238,7 @@
     </ItemGroup>
     <ItemGroup>
         <Content Include=".github\workflows\publish-mod.yml"/>
-        <Content Include="NewFile1.txt" />
+        <Content Include="NewFile1.txt"/>
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)|$(Platform)' != 'API|AnyCPU'">
         <Folder Include="Core\"/>
