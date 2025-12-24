@@ -159,6 +159,9 @@ public class Layout
         int equipmentTailStartIndex = GetBaseSlotIndex(playerInventory);
         ItemDrop.ItemData?[] projectedEquippedItemsBySlot = new ItemDrop.ItemData[allSlots.Count];
 
+        Dictionary<ItemDrop.ItemData, Vector2i> plannedMoves = new();
+        HashSet<Vector2i> targetPositions = new();
+
         for (int i = 0; i < allSlots.Count; ++i)
         {
             Model.Slot? slot = allSlots[i];
@@ -168,49 +171,66 @@ public class Layout
 
             if (equipmentSlot.Get?.Invoke(player) is { } equippedItem)
             {
-                Vector2i srcPos = equippedItem.m_gridPos;
-
-                if (srcPos != destPos)
-                {
-                    ItemDrop.ItemData? occupant = playerInventory.GetItemAt(destPos.x, destPos.y);
-
-                    if (occupant != null && occupant != equippedItem)
-                    {
-                        bool srcInNormalRegion = srcPos.y < firstTailRow;
-
-                        if (srcInNormalRegion)
-                        {
-                            occupant.m_gridPos = srcPos;
-                        }
-                        else
-                        {
-                            ItemDrop.ItemData? itemAtSrc = playerInventory.GetItemAt(srcPos.x, srcPos.y);
-                            if (itemAtSrc == null || itemAtSrc == occupant)
-                            {
-                                occupant.m_gridPos = srcPos;
-                            }
-                            else
-                            {
-                                Vector2i free = FindFirstFreeNonSlotCell(playerInventory, inventoryWidth, firstTailRow);
-                                if (free.x >= 0)
-                                {
-                                    occupant.m_gridPos = free;
-                                }
-                                else
-                                {
-                                    AzuExtendedPlayerInventoryLogger.LogDebug($"ProjectEquippedIntoGridTail: no free non-slot cell for '{occupant.m_shared.m_name}', leaving it in tail.");
-                                }
-                            }
-                        }
-                    }
-
-                    equippedItem.m_gridPos = destPos;
-                }
-
                 projectedEquippedItemsBySlot[i] = equippedItem;
+                if (equippedItem.m_gridPos != destPos)
+                {
+                    plannedMoves[equippedItem] = destPos;
+                    targetPositions.Add(destPos);
+                }
             }
 
             ++equipmentTailStartIndex;
+        }
+
+        foreach (var kvp in plannedMoves)
+        {
+            ItemDrop.ItemData equippedItem = kvp.Key;
+            Vector2i destPos = kvp.Value;
+            Vector2i srcPos = equippedItem.m_gridPos;
+
+            ItemDrop.ItemData? occupant = playerInventory.GetItemAt(destPos.x, destPos.y);
+
+            if (occupant != null && occupant != equippedItem)
+            {
+                // Don't move the occupant if it's also being moved to a different equipment slot
+                if (plannedMoves.ContainsKey(occupant))
+                {
+                    continue;
+                }
+
+                bool srcInNormalRegion = srcPos.y < firstTailRow;
+
+                if (srcInNormalRegion)
+                {
+                    occupant.m_gridPos = srcPos;
+                }
+                else
+                {
+                    ItemDrop.ItemData? itemAtSrc = playerInventory.GetItemAt(srcPos.x, srcPos.y);
+
+                    bool srcIsFree = itemAtSrc == null || itemAtSrc == occupant || itemAtSrc == equippedItem;
+                    bool srcItemMoving = itemAtSrc != null && plannedMoves.ContainsKey(itemAtSrc);
+
+                    if (srcIsFree || srcItemMoving)
+                    {
+                        occupant.m_gridPos = srcPos;
+                    }
+                    else
+                    {
+                        Vector2i free = FindFirstFreeNonSlotCell(playerInventory, inventoryWidth, firstTailRow);
+                        if (free.x >= 0)
+                        {
+                            occupant.m_gridPos = free;
+                        }
+                        else
+                        {
+                            AzuExtendedPlayerInventoryLogger.LogDebug($"ProjectEquippedIntoGridTail: no free non-slot cell for '{occupant.m_shared.m_name}', leaving it in tail.");
+                        }
+                    }
+                }
+            }
+
+            equippedItem.m_gridPos = destPos;
         }
 
         ExtendedPlayerInventory.equipItems = projectedEquippedItemsBySlot;

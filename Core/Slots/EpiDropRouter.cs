@@ -35,10 +35,19 @@ internal static class EpiDropRouter
                 return false;
             }
 
-            if (destItem == null || !destIsSlot || !WillVanillaSwap(dragged, draggedAmount, destItem)) return true;
-            if (!sourceIsSlot) return true;
+            if (destItem == null || !WillVanillaSwap(dragged, draggedAmount, destItem))
+                return true;
+
+            if (destIsSlot && sourceIsSlot)
+            {
+                if (API.SlotValidates(srcSlotIndex, destItem)) return true;
+                AzuExtendedPlayerInventoryLogger.LogDebug($"Blocked swap: '{destItem.m_shared.m_name}' in slot '{dstSlot.OriginalName}' cannot relocate to source slot '{srcSlot.OriginalName}'.");
+                return false;
+            }
+
+            if (destIsSlot || !sourceIsSlot) return true;
             if (API.SlotValidates(srcSlotIndex, destItem)) return true;
-            AzuExtendedPlayerInventoryLogger.LogDebug($"Blocked swap: '{destItem.m_shared.m_name}' in '{DescribeSlotOrPos(dstSlot, destPos, destIsSlot)}' cannot relocate to source slot '{srcSlot.OriginalName}'.");
+            AzuExtendedPlayerInventoryLogger.LogDebug($"Blocked swap: '{destItem.m_shared.m_name}' at {DescribeSlotOrPos(dstSlot, destPos, destIsSlot)} cannot swap into source slot '{srcSlot.OriginalName}'.");
             return false;
         }
         catch (Exception e)
