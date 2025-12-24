@@ -3,13 +3,23 @@ using AzuEPI.Game.Loadout;
 
 namespace AzuEPI.Game.PlayerPreview;
 
-[HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Show))]
-static class CreatePlayerPreveiwInventoryGuiShowPatch
+[HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Awake))]
+static class InitializePlayerPreviewInventoryGuiAwakePatch
 {
     [HarmonyPriority(Priority.Last)]
     static void Postfix(InventoryGui __instance)
     {
-        PlayerPreviewManager.CreatePlayerPreviewShow();
+        PlayerPreviewManager.InitializePlayerPreview();
+    }
+}
+
+[HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Show))]
+static class ShowPlayerPreviewInventoryGuiShowPatch
+{
+    [HarmonyPriority(Priority.Last)]
+    static void Postfix(InventoryGui __instance)
+    {
+        PlayerPreviewManager.ShowPlayerPreview();
     }
 }
 
@@ -358,6 +368,70 @@ public class PlayerPreviewManager
         return clone;
     }
 
+    internal static void InitializePlayerPreview()
+    {
+        if (!ZNetScene.instance || !AzuEPICharacterPanel.instance)
+            return;
+
+        if (!AzuEPICharacterPanel.playerPreview)
+            AzuEPICharacterPanel.playerPreview = CreatePlayerPreview();
+
+        if (!AzuEPICharacterPanel.playerPreviewComp && AzuEPICharacterPanel.playerPreview)
+            AzuEPICharacterPanel.playerPreviewComp = AzuEPICharacterPanel.playerPreview.GetComponent<Player>();
+
+        AzuEPICharacterPanel? panel = AzuEPICharacterPanel.instance;
+        if (panel?.cam == null)
+        {
+            Initialize();
+            Instance.CreatePreviewCamera();
+            Instance.CreatePreviewLights();
+            Instance.UpdateRenderTexture();
+        }
+    }
+
+    internal static void ShowPlayerPreview()
+    {
+        VECloneSync.ResetStamp();
+
+        if (!AzuEPICharacterPanel.playerPreview || !AzuEPICharacterPanel.playerPreviewComp)
+        {
+            InitializePlayerPreview();
+        }
+
+        Player? localPlayer = Player.m_localPlayer;
+        if (!localPlayer || !AzuEPICharacterPanel.playerPreviewComp) return;
+
+        AzuEPICharacterPanel? panel = AzuEPICharacterPanel.instance;
+        if (panel?.cam == null)
+        {
+            InitializePlayerPreview();
+            if (panel?.cam == null) return;
+        }
+
+        AzuEPICharacterPanel.playerPreview.SetActive(true);
+        panel.cam.enabled = true;
+
+        Player dst = AzuEPICharacterPanel.playerPreviewComp;
+
+        dst.m_visEquipment.SetHairItem(localPlayer.m_hairItem);
+        dst.m_visEquipment.SetHairColor(localPlayer.m_hairColor);
+        dst.m_visEquipment.SetSkinColor(localPlayer.m_skinColor);
+        dst.m_visEquipment.SetModel(localPlayer.m_visEquipment.m_currentModelIndex);
+        dst.m_visEquipment.m_isPlayer = true;
+
+        dst.m_animator.SetBool("wakeup", false);
+        SyncAnimationState(localPlayer, dst);
+        dst.m_animator.Update(0f);
+
+        VECloneSync.MirrorFrom(localPlayer, dst);
+
+        dst.transform.rotation = Quaternion.LookRotation(-Vector3.forward, Vector3.up);
+        AzuEPICharacterPanel.playerPreview.gameObject.SetLayerForEntireHierarchy(LayerMask.NameToLayer("UI"));
+
+        panel.cam.Render();
+    }
+
+    [Obsolete("Split into InitializePlayerPreview (Awake) and ShowPlayerPreview (Show) for better performance")]
     internal static void CreatePlayerPreviewShow()
     {
         VECloneSync.ResetStamp();

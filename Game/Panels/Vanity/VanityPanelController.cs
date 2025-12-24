@@ -70,19 +70,31 @@ internal static class VanityPanelController
     private static readonly List<GameObject> _reusableGameObjectList = new(256);
     private static readonly Dictionary<string, ItemDrop> _reusableDropsDict = new(256);
     private static readonly List<ItemDrop.ItemData> _reusableVanityItems = new(128);
+    private static bool _gridPopulated = false;
 
     public static void EnsureBuilt(InventoryGui gui)
     {
         if (!gui) return;
 
-        if (!_panel) BuildPanel(gui);
+        bool wasFirstBuild = false;
+
+        if (!_panel)
+        {
+            BuildPanel(gui);
+            wasFirstBuild = true;
+        }
         if (!_scroll) BuildScrollTree();
         if (!_toggleBtn) BuildVanityToggleButton(gui);
         if (!_resetVanitiesBtn) BuildResetButton(gui);
 
         _fontSample = gui.m_craftButton?.GetComponentInChildren<TMP_Text>();
 
-        RefreshGrid();
+        if ((wasFirstBuild || !_gridPopulated) && Player.m_localPlayer && ObjectDB.instance)
+        {
+            RefreshGrid();
+            _gridPopulated = true;
+        }
+
         SetVisible(_visible);
     }
 
@@ -980,7 +992,6 @@ static class Vanity_OnShow
     static void Postfix(InventoryGui __instance)
     {
         VanityPanelController.EnsureBuilt(__instance);
-        VanityPanelController.RefreshGrid();
     }
 }
 
