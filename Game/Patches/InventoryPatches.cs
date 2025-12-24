@@ -1,7 +1,45 @@
-﻿namespace AzuEPI.Game.Patches;
+﻿using ItemDataManager;
+
+namespace AzuEPI.Game.Patches;
 
 public class InventoryPatches
 {
+    // Not proud of this, but for now it's a quickfix. Find a permanent fix later. TODO
+    private static bool IsBackpackItem(ItemDrop.ItemData item)
+    {
+        if (item?.m_shared == null) return false;
+
+        string name = item.m_shared.m_name.ToLowerInvariant();
+        string prefabName = item.m_dropPrefab?.name?.ToLowerInvariant() ?? "";
+
+        if (name.Contains("backpack") || prefabName.Contains("backpack") || prefabName.StartsWith("bp_"))
+            return true;
+
+        // Check for ItemContainer via reflection (Backpacks mod specific)
+        try
+        {
+            var itemData = item.Data();
+            if (itemData != null)
+            {
+                var getMethod = itemData.GetType().GetMethod("Get");
+                if (getMethod != null)
+                {
+                    var containerType = Type.GetType("Backpacks.ItemContainer, Backpacks");
+                    if (containerType != null)
+                    {
+                        var genericMethod = getMethod.MakeGenericMethod(containerType);
+                        var container = genericMethod.Invoke(itemData, null);
+                        if (container != null)
+                            return true;
+                    }
+                }
+            }
+        }
+        catch { /* Not a backpack */ }
+
+        return false;
+    }
+
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.FindEmptySlot))]
     private static class FindEmptySlot_FilterHidden_AddQuick_Patch
     {
@@ -97,6 +135,8 @@ public class InventoryPatches
 
             if (!__instance.ShouldProtectInventorySlots()) return true;
 
+            if (IsBackpackItem(item)) return true;
+
             if (__instance.IsHiddenCell(x, y))
             {
                 __result = __instance.AddItem(item, amount,
@@ -185,21 +225,57 @@ public class InventoryPatches
             foreach (ItemDrop.ItemData? it in __instance.GetAllItems())
             {
                 if (__instance.IsHiddenCell(it.m_gridPos.x, it.m_gridPos.y))
+                {
+                    // Skip backpack items - let them stay where they are to avoid conflicts
+                    if (IsBackpackItem(it))
+                    {
+                        AzuExtendedPlayerInventoryLogger.LogDebug($"Skipping backpack item {it.m_shared.m_name} in hidden cell ({it.m_gridPos.x}, {it.m_gridPos.y})");
+                        continue;
+                    }
                     _stuckItems.Add(it);
+                }
             }
 
             if (_stuckItems.Count == 0) return;
 
             foreach (ItemDrop.ItemData? it in _stuckItems)
             {
-                if (__instance.RemoveItem(it))
+                Vector2i originalPos = it.m_gridPos;
+
+                if (!__instance.RemoveItem(it))
                 {
-                    // Vanilla AddItem(ItemData) now uses our FindEmptySlot (quick-aware)
-                    if (!__instance.AddItem(it))
+                    AzuExtendedPlayerInventoryLogger.LogWarning($"Failed to remove stuck item {it.m_shared.m_name} from hidden cell ({originalPos.x}, {originalPos.y})");
+                    continue;
+                }
+
+                bool added = __instance.AddItem(it);
+
+                if (added && !__instance.m_inventory.Contains(it))
+                {
+                    added = false;
+                    AzuExtendedPlayerInventoryLogger.LogWarning($"AddItem claimed success but {it.m_shared.m_name} not in inventory");
+                }
+
+                if (!added)
+                {
+                    it.m_gridPos = new Vector2i(0, 0);
+                    added = __instance.AddItem(it, it.m_stack, 0, 0);
+
+                    if (added && !__instance.m_inventory.Contains(it))
                     {
-                        it.m_gridPos = new Vector2i(0, 0);
-                        __instance.AddItem(it, it.m_stack, 0, 0);
+                        added = false;
                     }
+                }
+
+                if (!added)
+                {
+                    AzuExtendedPlayerInventoryLogger.LogError($"CRITICAL: Could not add {it.m_shared.m_name} back to inventory, forcing add at (0,0)");
+                    it.m_gridPos = new Vector2i(0, 0);
+                    __instance.m_inventory.Add(it);
+                }
+                else
+                {
+                    AzuExtendedPlayerInventoryLogger.LogDebug($"Moved {it.m_shared.m_name} from hidden cell ({originalPos.x}, {originalPos.y}) to ({it.m_gridPos.x}, {it.m_gridPos.y})");
                 }
             }
 
@@ -241,7 +317,6 @@ public class InventoryPatches
                 return false;
             }
 
-            // Quick target allowed; vanilla handles the move
             return true;
         }
     }
