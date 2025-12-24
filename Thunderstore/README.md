@@ -1,8 +1,5 @@
 # AzuEPI - Extended Player Inventory
 
-**Version 2.0.0** - Complete overhaul with vanity, loadouts, stats, and more!
-
-## What's New in v2.0
 
 - **Vanity System** - Change armor appearance without losing stats
 - **Loadout System** - Save & swap 10 equipment sets with custom names
