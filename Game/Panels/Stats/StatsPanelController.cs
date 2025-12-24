@@ -491,6 +491,7 @@ public static class StatsPanelController
         valueText.text = "0";
         valueText.fontSize = 18f;
         valueText.alignment = TextAlignmentOptions.Right;
+        valueText.textWrappingMode = TextWrappingModes.PreserveWhitespaceNoWrap;
         valueText.color = Color.white;
         valueText.raycastTarget = false;
         valueText.fontStyle = FontStyles.Bold;
@@ -627,6 +628,7 @@ public static class StatsPanelController
         valueText.text = "0";
         valueText.fontSize = 18f;
         valueText.alignment = TextAlignmentOptions.Right;
+        valueText.textWrappingMode = TextWrappingModes.PreserveWhitespaceNoWrap;
         valueText.color = Color.white;
         valueText.raycastTarget = false;
         valueText.fontStyle = FontStyles.Bold;
