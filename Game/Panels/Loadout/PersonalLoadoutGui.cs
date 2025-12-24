@@ -20,7 +20,7 @@ internal static class EpiSwapContext
     }
 }
 
-public class PersonalLoadoutGui : MonoBehaviour
+public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
 {
     public static PersonalLoadoutGui? m_instance;
     public static GameObject m_rootPanel = null!;
@@ -51,10 +51,12 @@ public class PersonalLoadoutGui : MonoBehaviour
     public static bool PanelActive;
     public static PersonalLoadoutGui? instance => m_instance;
     public const string LoadoutKey = "AzuEPILoadout_";
+    public const string LoadoutNameKey = "AzuEPILoadoutName_";
     public static Transform LoadoutsToggleButton = null!;
     private static Button _toggleBtn;
     internal static int tempInventorySize = 0;
     internal static RectTransform ToggleButtonParentGlg = null!;
+    private static string? m_loadoutBeingRenamed;
 
     public void Awake()
     {
@@ -445,12 +447,69 @@ public class PersonalLoadoutGui : MonoBehaviour
                 elementIcon.color = flag ? Color.white : new Color(1f, 0.0f, 1f, 0.0f);
 
                 TMP_Text elementName = element.transform.Find("name").GetComponent<TMP_Text>();
-                elementName.text = Localization.instance.Localize($"$azu_epi_loadout {loadoutName}");
+                string customName = GetLoadoutCustomName(loadoutName);
+                elementName.text = Localization.instance.Localize(customName);
                 elementName.color = flag ? Color.white : Color.grey;
                 UITooltip elementTooltip = element.GetComponent<UITooltip>();
-                elementTooltip.m_topic = loadoutName;
+                elementTooltip.m_topic = customName;
                 elementTooltip.m_text = flag ? $"$azu_epi_loadouts_load:\n{string.Join("\n", loadout.Items.Select(i => Localization.instance.Localize(i.m_shared.m_name)))}" : "$azu_epi_loadouts_empty";
                 element.GetComponent<Button>().onClick.AddListener(() => OnSelectedLoadout(element));
+
+                Transform priceTransform = Utils.FindChild(element.transform, "price");
+                if (priceTransform != null)
+                {
+                    GameObject renameButtonObj = new GameObject("RenameButton");
+                    renameButtonObj.transform.SetParent(element.transform, false);
+
+                    RectTransform renameRT = renameButtonObj.AddComponent<RectTransform>();
+                    renameRT.anchorMin = new Vector2(1f, 0.5f);
+                    renameRT.anchorMax = new Vector2(1f, 0.5f);
+                    renameRT.pivot = new Vector2(1f, 0.5f);
+                    renameRT.anchoredPosition = new Vector2(-10f, 0f);
+                    renameRT.sizeDelta = new Vector2(30f, 30f);
+
+                    Button renameBtn = renameButtonObj.AddComponent<Button>();
+                    Image renameBtnImg = renameButtonObj.AddComponent<Image>();
+                    renameBtnImg.color = new Color(0.5f, 0.5f, 0.5f, 0.8f);
+
+                    GameObject textObj = new GameObject("Text");
+                    textObj.transform.SetParent(renameButtonObj.transform, false);
+                    TMP_Text renameText = textObj.AddComponent<TextMeshProUGUI>();
+
+                    TMP_Text sourceText = elementName;
+                    if (sourceText != null)
+                    {
+                        if (sourceText.font != null)
+                            renameText.font = sourceText.font;
+                        if (sourceText.fontSharedMaterial != null)
+                            renameText.fontSharedMaterial = sourceText.fontSharedMaterial;
+                    }
+
+                    renameText.text = "R";
+                    renameText.fontSize = 18;
+                    renameText.fontStyle = FontStyles.Bold;
+                    renameText.alignment = TextAlignmentOptions.Center;
+                    renameText.color = Color.white;
+
+                    RectTransform textRT = textObj.GetComponent<RectTransform>();
+                    textRT.anchorMin = Vector2.zero;
+                    textRT.anchorMax = Vector2.one;
+                    textRT.offsetMin = Vector2.zero;
+                    textRT.offsetMax = Vector2.zero;
+
+                    UITooltip sourceTooltip = element.GetComponent<UITooltip>();
+                    if (sourceTooltip != null)
+                    {
+                        UITooltip renameTooltip = renameButtonObj.AddComponent<UITooltip>();
+                        renameTooltip.m_tooltipPrefab = sourceTooltip.m_tooltipPrefab;
+                        renameTooltip.m_text = "$azu_epi_loadout_rename_tooltip";
+                        renameTooltip.m_topic = "";
+                    }
+
+                    string currentLoadoutId = loadoutName;
+                    renameBtn.onClick.AddListener(() => RequestRenameLoadout(currentLoadoutId));
+                }
+
                 TMP_Text component4 = Utils.FindChild(element.transform, "price").GetComponent<TMP_Text>();
                 Utils.FindChild(element.transform, "coin icon").GetComponent<Image>().enabled = false;
                 string plural = loadout.Items.Count > 1 ? "items" : "item";
@@ -556,6 +615,67 @@ public class PersonalLoadoutGui : MonoBehaviour
         if (!ZInput.GetButtonDown("JoyLStickUp") && !ZInput.GetButtonDown("JoyDPadUp"))
             return;
         SelectItem(Mathf.Max(0, GetSelectedItemIndex() - 1), true);
+    }
+
+    public string GetText()
+    {
+        if (string.IsNullOrEmpty(m_loadoutBeingRenamed))
+            return "";
+
+        Player player = Player.m_localPlayer;
+        if (player == null) return "";
+
+        string nameKey = $"{LoadoutNameKey}{m_loadoutBeingRenamed}";
+        if (player.m_customData.TryGetValue(nameKey, out string customName))
+            return customName;
+
+        return m_loadoutBeingRenamed;
+    }
+
+    public void SetText(string text)
+    {
+        if (string.IsNullOrEmpty(m_loadoutBeingRenamed))
+            return;
+
+        Player player = Player.m_localPlayer;
+        if (player == null) return;
+
+        text = text.Trim();
+        if (string.IsNullOrEmpty(text))
+            text = m_loadoutBeingRenamed;
+
+        if (text.Length > 20)
+            text = text.Substring(0, 20);
+
+        string nameKey = $"{LoadoutNameKey}{m_loadoutBeingRenamed}";
+        player.m_customData[nameKey] = text;
+
+        AzuExtendedPlayerInventoryLogger.LogInfo($"Renamed loadout '{m_loadoutBeingRenamed}' to '{text}'");
+
+        m_loadoutBeingRenamed = null;
+
+        FillList();
+    }
+
+    public static void RequestRenameLoadout(string loadoutId)
+    {
+        if (m_instance == null)
+            return;
+
+        m_loadoutBeingRenamed = loadoutId;
+        TextInput.instance.RequestText((TextReceiver)m_instance, "$azu_epi_loadout_rename", 20);
+    }
+
+    public static string GetLoadoutCustomName(string loadoutId)
+    {
+        Player player = Player.m_localPlayer;
+        if (player == null) return loadoutId;
+
+        string nameKey = $"{LoadoutNameKey}{loadoutId}";
+        if (player.m_customData.TryGetValue(nameKey, out string customName) && !string.IsNullOrEmpty(customName))
+            return customName;
+
+        return $"Loadout {loadoutId}";
     }
 }
 
