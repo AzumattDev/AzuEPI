@@ -52,6 +52,8 @@ Mods that add slots using the API will either create the slot, or extend the slo
 - **Multiplayer sync** - appearance syncs across network
 - **Auto-disables** when Armoire mod is detected
 
+Left click to set, right click to clear. Controller is A and X respectively.
+
 ![Vanity System](https://i.imgur.com/UV6N3gl.png)
 
 ### Loadout System
@@ -66,7 +68,7 @@ Mods that add slots using the API will either create the slot, or extend the slo
 
 ### Player Stats & Preview
 
-- **Player Preview**: Real-time 3D character in inventory
+- **Player Preview**: Real-time 3D character in inventory - Rotate and zoom.
 - **Stats Panel**: 40+ stats with smart formatting
     - Distances: "5.2km" or "500m"
     - Time: "2d 5h" or "45m 30s"
@@ -74,8 +76,9 @@ Mods that add slots using the API will either create the slot, or extend the slo
 - **Access**: Click 📋 button or hover over character name
 - **Fully customizable**: Choose which stats to display
 
+Right stick to scroll the stats window with controller.
+
 ![Player Preview & Stats](https://i.imgur.com/IahuMoB.png)
-*Screenshot placeholder: Character preview with stats panel visible*
 
 ### Gamepad Support (where possible!)
 
@@ -303,7 +306,3 @@ AzuEPI provides a comprehensive API for adding custom equipment slots.
 
 [![Odin Plus Discord](https://i.imgur.com/XXP6HCU.png)](https://discord.gg/Pb6bVMnFb2)
 [![Azumatt's Discord](https://i.imgur.com/Xlcbmm9.png)](https://discord.gg/pdHgy6Bsng)
-
----
-
-*v2.0.0 - Complete inventory overhaul for Valheim*
