@@ -32,27 +32,75 @@ public static class InventoryExtensions
 
     internal static bool IsEquipmentSlotFreeAndItemValid(this Inventory inventory, ItemDrop.ItemData item, out int which)
     {
+        AzuExtendedPlayerInventoryLogger.LogDebugDebug($"IsEquipmentSlotFreeAndItemValid: Checking item '{item.m_shared.m_name}' (Type: {item.m_shared.m_itemType})");
+
         // Prioritize API-added slots over built-in slots to avoid placing items in generic slots when they have dedicated slots
         which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is Model.EquipmentSlot { Valid: not null, IsAPIAdded: true } slot && slot.Valid(item) && !slot.Occupied);
+
+        if (which >= 0)
+        {
+            AzuExtendedPlayerInventoryLogger.LogDebugDebug($"IsEquipmentSlotFreeAndItemValid: Found API-added slot {which} ({InventoryGuiPatches.UpdateInventory_Patch.slots[which]?.Name})");
+        }
+        else
+        {
+            AzuExtendedPlayerInventoryLogger.LogDebugDebug($"IsEquipmentSlotFreeAndItemValid: No free API-added slot found, checking built-in slots");
+
+            for (int i = 0; i < InventoryGuiPatches.UpdateInventory_Patch.slots.Count; i++)
+            {
+                var s = InventoryGuiPatches.UpdateInventory_Patch.slots[i];
+                if (s is Model.EquipmentSlot { Valid: not null, IsAPIAdded: true } slot)
+                {
+                    bool validates = slot.Valid(item);
+                    bool occupied = slot.Occupied;
+                    AzuExtendedPlayerInventoryLogger.LogDebugDebug($"  API Slot {i} ({s.Name}): Validates={validates}, Occupied={occupied}");
+                }
+            }
+        }
 
         if (which < 0)
         {
             which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is Model.EquipmentSlot { Valid: not null, IsAPIAdded: false } slot && slot.Valid(item) && !slot.Occupied);
+
+            if (which >= 0)
+            {
+                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"IsEquipmentSlotFreeAndItemValid: Found built-in slot {which} ({InventoryGuiPatches.UpdateInventory_Patch.slots[which]?.Name})");
+            }
+            else
+            {
+                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"IsEquipmentSlotFreeAndItemValid: No free built-in slot found either");
+
+                for (int i = 0; i < InventoryGuiPatches.UpdateInventory_Patch.slots.Count; i++)
+                {
+                    var s = InventoryGuiPatches.UpdateInventory_Patch.slots[i];
+                    if (s is Model.EquipmentSlot { Valid: not null, IsAPIAdded: false } slot)
+                    {
+                        bool validates = slot.Valid(item);
+                        bool occupied = slot.Occupied;
+                        AzuExtendedPlayerInventoryLogger.LogDebugDebug($"  Built-in Slot {i} ({s.Name}): Validates={validates}, Occupied={occupied}");
+                    }
+                }
+            }
         }
 
         if (which < 0)
+        {
+            AzuExtendedPlayerInventoryLogger.LogDebugDebug($"IsEquipmentSlotFreeAndItemValid: No valid free slot found for '{item.m_shared.m_name}'");
             return false;
+        }
 
         Vector2i pos = inventory.EpiIndexToGridPos(which);
 
         if (pos.x < 0 || pos.x >= inventory.GetWidth() || pos.y < 0 || pos.y >= inventory.GetHeight())
         {
-            AzuExtendedPlayerInventoryLogger.LogWarning($"Calculated equipment slot position ({pos.x}, {pos.y}) is out of inventory bounds ({inventory.GetWidth()}x{inventory.GetHeight()}). Skipping auto-equip.");
+            AzuExtendedPlayerInventoryLogger.LogWarningDebug($"Calculated equipment slot position ({pos.x}, {pos.y}) is out of inventory bounds ({inventory.GetWidth()}x{inventory.GetHeight()}). Skipping auto-equip.");
             which = -1;
             return false;
         }
 
-        return inventory.GetItemAt(pos.x, pos.y) == null;
+        bool isEmpty = inventory.GetItemAt(pos.x, pos.y) == null;
+        AzuExtendedPlayerInventoryLogger.LogDebugDebug($"IsEquipmentSlotFreeAndItemValid: Slot {which} at ({pos.x}, {pos.y}) is {(isEmpty ? "empty" : "occupied")}");
+
+        return isEmpty;
     }
 
     internal static bool IsEquipmentSlotFree(this Inventory inventory, out int which)

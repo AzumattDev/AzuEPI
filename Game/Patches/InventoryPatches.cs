@@ -35,7 +35,10 @@ public class InventoryPatches
                 }
             }
         }
-        catch { /* Not a backpack */ }
+        catch
+        {
+            /* Not a backpack */
+        }
 
         return false;
     }
@@ -97,28 +100,72 @@ public class InventoryPatches
         [HarmonyPriority(Priority.First)]
         private static bool Prefix(Inventory __instance, ref bool __result, ItemDrop.ItemData item)
         {
-            if (item?.m_shared == null) return true;
+            if (item?.m_shared == null)
+            {
+                AzuExtendedPlayerInventoryLogger.LogDebugDebug("AddItem: Item or shared data is null, skipping auto-equip");
+                return true;
+            }
 
             if (Player.m_localPlayer == null)
+            {
+                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: No local player, skipping auto-equip");
                 return true;
+            }
 
-            if (AddEquipmentRow.Value.isOff() || __instance != Player.m_localPlayer.GetInventory())
+            if (AddEquipmentRow.Value.isOff())
+            {
+                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: AddEquipmentRow is OFF, skipping auto-equip");
                 return true;
+            }
+
+            if (__instance != Player.m_localPlayer.GetInventory())
+            {
+                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: Not player inventory, skipping auto-equip");
+                return true;
+            }
 
             if (!__instance.IsEquipmentSlotFreeAndItemValid(item, out int which))
+            {
+                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: No valid free equipment slot found, using vanilla placement");
                 return true;
+            }
+
+            AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: Found equipment slot {which}, attempting to place");
 
             Vector2i pos = __instance.EpiIndexToGridPos(which);
 
             bool placed = __instance.AddItem(item, item.m_stack, pos.x, pos.y);
             if (!placed)
             {
+                AzuExtendedPlayerInventoryLogger.LogWarningDebug($"AddItem {item.m_shared.m_name}: Failed to place in equipment slot at ({pos.x}, {pos.y})");
                 __result = false;
                 return false;
             }
 
+            AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: Successfully placed at ({pos.x}, {pos.y})");
+
+            ItemDrop.ItemData? actualItem = __instance.GetItemAt(pos.x, pos.y);
+            if (actualItem == null)
+            {
+                AzuExtendedPlayerInventoryLogger.LogWarningDebug($"AddItem {item.m_shared.m_name}: Item not found at ({pos.x}, {pos.y}) after placement");
+                __instance.Changed();
+                __result = true;
+                return false;
+            }
+
+            AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: Retrieved item from inventory - IsEquipped={actualItem.m_equipped}, InInventory={__instance.ContainsItem(actualItem)}");
+
             if (AutoEquip.Value.isOn())
-                Player.m_localPlayer.EquipItem(item, false);
+            {
+                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: Calling EquipItem...");
+                bool equipResult = Player.m_localPlayer.EquipItem(actualItem, false);
+                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: EquipItem returned {equipResult}, item.m_equipped={actualItem.m_equipped}");
+            }
+            else
+            {
+                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: AutoEquip is OFF, skipping equip");
+            }
+
             __instance.Changed();
             __result = true;
             return false;

@@ -136,8 +136,27 @@ public class InventoryGuiPatches
             new Model.EquipmentSlot { Name = HelmetText.Value, IsQuickSlot = false, Get = player => player.m_helmetItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Helmet },
             new Model.EquipmentSlot { Name = ChestText.Value, IsQuickSlot = false, Get = player => player.m_chestItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Chest },
             new Model.EquipmentSlot { Name = LegsText.Value, IsQuickSlot = false, Get = player => player.m_legItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Legs },
-            new Model.EquipmentSlot { Name = BackText.Value, IsQuickSlot = false, Get = player => player.m_shoulderItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder },
-            new Model.EquipmentSlot { Name = UtilityText.Value, IsQuickSlot = false, Get = player => player.m_utilityItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility && !SlotAcceptRules.HasDedicatedAPISlot(item) },
+            new Model.EquipmentSlot { Name = BackText.Value, IsQuickSlot = false, Get = player =>
+            {
+                var shoulderItem = player.m_shoulderItem;
+                // If the shoulder slot contains an item with a dedicated API slot (like a backpack),
+                if (shoulderItem != null && SlotAcceptRules.HasDedicatedAPISlot(shoulderItem))
+                {
+                    return player.GetInventory()?.GetEquippedItems()
+                        ?.FirstOrDefault(i => i != null && i != shoulderItem && i.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder && !SlotAcceptRules.HasDedicatedAPISlot(i));
+                }
+                return shoulderItem;
+            }, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder && !SlotAcceptRules.HasDedicatedAPISlot(item) },
+            new Model.EquipmentSlot { Name = UtilityText.Value, IsQuickSlot = false, Get = player =>
+            {
+                var utilityItem = player.m_utilityItem;
+                if (utilityItem != null && SlotAcceptRules.HasDedicatedAPISlot(utilityItem))
+                {
+                    return player.GetInventory()?.GetEquippedItems()
+                        ?.FirstOrDefault(i => i != null && i != utilityItem && i.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility && !SlotAcceptRules.HasDedicatedAPISlot(i));
+                }
+                return utilityItem;
+            }, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility && !SlotAcceptRules.HasDedicatedAPISlot(item) },
         };
 
         private static RectTransform _cachedBkgRect;
@@ -209,6 +228,15 @@ public class InventoryGuiPatches
             Inventory inventory = player.GetInventory();
 
             int baseIndex = Layout.GetBaseSlotIndex(inventory);
+
+            for (int i = 0; i < ___m_playerGrid.m_elements.Count; ++i)
+            {
+                InventoryGrid.Element? elem = ___m_playerGrid.m_elements[i];
+                if (elem?.m_go != null && !elem.m_used)
+                {
+                    SlotOverlays.SetVanityOverlayVisible(elem.m_go, new VanityState());
+                }
+            }
 
             Vector2 baseGridPos = new((_cachedPlayerGridRect.rect.width - ___m_playerGrid.GetWidgetSize().x) / 2f, 0.0f);
 

@@ -420,7 +420,7 @@ public class PlayerPreviewManager
         dst.m_visEquipment.m_isPlayer = true;
 
         dst.m_animator.SetBool("wakeup", false);
-        SyncAnimationState(localPlayer, dst);
+        //SyncAnimationState(localPlayer, dst);
         dst.m_animator.Update(0f);
 
         VECloneSync.MirrorFrom(localPlayer, dst);

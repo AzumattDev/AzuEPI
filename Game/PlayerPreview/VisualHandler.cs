@@ -290,7 +290,7 @@ public class CustomEquipVisuals
 
                 if (item != null && humanoid.HaveSetEffect(item))
                 {
-                    StatusEffect? se = item.m_shared.m_equipStatusEffect;
+                    StatusEffect? se = item.m_shared.m_setStatusEffect;
                     if (se != null) set.Add(se);
                 }
             }

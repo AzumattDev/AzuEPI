@@ -136,9 +136,10 @@ internal static class SlotOverlays
         return root;
     }
 
-    public static void ToggleVanityStateOverlay(GameObject slotGo, VanityState vs)
+    public static void SetVanityOverlayVisible(GameObject slotGo, VanityState vs)
     {
         if (!slotGo) return;
+        
         if (!VanityStateByGo.TryGetValue(slotGo, out GameObject? root) || !root)
             root = EnsureVanityStateOverlay(slotGo);
 
@@ -155,9 +156,11 @@ internal static class SlotOverlays
         if (hiddenImg) hiddenImg.enabled = showHidden;
         if (hasVanityImg) hasVanityImg.enabled = showHasVanity;
 
-        bool any = showHidden || showHasVanity;
+        bool anyVisible = showHidden || showHasVanity;
 
-        if (root.activeSelf != any) root.SetActive(any);
+        if (root.activeSelf != anyVisible)
+            root.SetActive(anyVisible);
+
         if (rootImage) rootImage.enabled = showHidden;
     }
 }
