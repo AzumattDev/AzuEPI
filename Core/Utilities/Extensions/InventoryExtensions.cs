@@ -47,7 +47,7 @@ public static class InventoryExtensions
 
             for (int i = 0; i < InventoryGuiPatches.UpdateInventory_Patch.slots.Count; i++)
             {
-                var s = InventoryGuiPatches.UpdateInventory_Patch.slots[i];
+                Model.Slot? s = InventoryGuiPatches.UpdateInventory_Patch.slots[i];
                 if (s is Model.EquipmentSlot { Valid: not null, IsAPIAdded: true } slot)
                 {
                     bool validates = slot.Valid(item);
@@ -71,7 +71,7 @@ public static class InventoryExtensions
 
                 for (int i = 0; i < InventoryGuiPatches.UpdateInventory_Patch.slots.Count; i++)
                 {
-                    var s = InventoryGuiPatches.UpdateInventory_Patch.slots[i];
+                    Model.Slot? s = InventoryGuiPatches.UpdateInventory_Patch.slots[i];
                     if (s is Model.EquipmentSlot { Valid: not null, IsAPIAdded: false } slot)
                     {
                         bool validates = slot.Valid(item);

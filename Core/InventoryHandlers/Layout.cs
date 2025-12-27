@@ -182,7 +182,7 @@ public class Layout
             ++equipmentTailStartIndex;
         }
 
-        foreach (var kvp in plannedMoves)
+        foreach (KeyValuePair<ItemDrop.ItemData, Vector2i> kvp in plannedMoves)
         {
             ItemDrop.ItemData equippedItem = kvp.Key;
             Vector2i destPos = kvp.Value;

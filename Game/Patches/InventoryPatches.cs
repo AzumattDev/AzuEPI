@@ -4,45 +4,6 @@ namespace AzuEPI.Game.Patches;
 
 public class InventoryPatches
 {
-    // Not proud of this, but for now it's a quickfix. Find a permanent fix later. TODO
-    private static bool IsBackpackItem(ItemDrop.ItemData item)
-    {
-        if (item?.m_shared == null) return false;
-
-        string name = item.m_shared.m_name.ToLowerInvariant();
-        string prefabName = item.m_dropPrefab?.name?.ToLowerInvariant() ?? "";
-
-        if (name.Contains("backpack") || prefabName.Contains("backpack") || prefabName.StartsWith("bp_"))
-            return true;
-
-        // Check for ItemContainer via reflection (Backpacks mod specific)
-        try
-        {
-            var itemData = item.Data();
-            if (itemData != null)
-            {
-                var getMethod = itemData.GetType().GetMethod("Get");
-                if (getMethod != null)
-                {
-                    var containerType = Type.GetType("Backpacks.ItemContainer, Backpacks");
-                    if (containerType != null)
-                    {
-                        var genericMethod = getMethod.MakeGenericMethod(containerType);
-                        var container = genericMethod.Invoke(itemData, null);
-                        if (container != null)
-                            return true;
-                    }
-                }
-            }
-        }
-        catch
-        {
-            /* Not a backpack */
-        }
-
-        return false;
-    }
-
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.FindEmptySlot))]
     private static class FindEmptySlot_FilterHidden_AddQuick_Patch
     {
@@ -182,7 +143,7 @@ public class InventoryPatches
 
             if (!__instance.ShouldProtectInventorySlots()) return true;
 
-            if (IsBackpackItem(item)) return true;
+            if (Player.m_localPlayer.m_isLoading) return true;
 
             if (__instance.IsHiddenCell(x, y))
             {
@@ -273,13 +234,6 @@ public class InventoryPatches
             {
                 if (__instance.IsHiddenCell(it.m_gridPos.x, it.m_gridPos.y))
                 {
-                    // Skip backpack items - let them stay where they are to avoid conflicts
-                    if (IsBackpackItem(it))
-                    {
-                        AzuExtendedPlayerInventoryLogger.LogDebug($"Skipping backpack item {it.m_shared.m_name} in hidden cell ({it.m_gridPos.x}, {it.m_gridPos.y})");
-                        continue;
-                    }
-
                     _stuckItems.Add(it);
                 }
             }

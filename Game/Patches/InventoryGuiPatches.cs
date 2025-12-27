@@ -138,7 +138,7 @@ public class InventoryGuiPatches
             new Model.EquipmentSlot { Name = LegsText.Value, IsQuickSlot = false, Get = player => player.m_legItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Legs },
             new Model.EquipmentSlot { Name = BackText.Value, IsQuickSlot = false, Get = player =>
             {
-                var shoulderItem = player.m_shoulderItem;
+                ItemDrop.ItemData? shoulderItem = player.m_shoulderItem;
                 // If the shoulder slot contains an item with a dedicated API slot (like a backpack),
                 if (shoulderItem != null && SlotAcceptRules.HasDedicatedAPISlot(shoulderItem))
                 {
@@ -149,7 +149,7 @@ public class InventoryGuiPatches
             }, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder && !SlotAcceptRules.HasDedicatedAPISlot(item) },
             new Model.EquipmentSlot { Name = UtilityText.Value, IsQuickSlot = false, Get = player =>
             {
-                var utilityItem = player.m_utilityItem;
+                ItemDrop.ItemData? utilityItem = player.m_utilityItem;
                 if (utilityItem != null && SlotAcceptRules.HasDedicatedAPISlot(utilityItem))
                 {
                     return player.GetInventory()?.GetEquippedItems()
