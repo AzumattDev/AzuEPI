@@ -127,7 +127,7 @@ public class AdvBackpacksCompat
     [HarmonyPatch("AdventureBackpacks.Patches.HumanoidPatches+HumanoidUnequipItemPatch, AdventureBackpacks", "Prefix"), HarmonyPrefix]
     public static void AdventureBackpackHumanoidUnequipItemPatchPrefix(ref ItemDrop.ItemData __state)
     {
-        Player? player = Player.m_localPlayer ?? FejdStartup.instance.GetPreviewPlayer();
+        Player? player = Player.m_localPlayer ?? FejdStartup.instance != null ? FejdStartup.instance.GetPreviewPlayer() : null;
         if (player == null || player.GetInventory() == null) return;
         __state = player.m_shoulderItem;
 
@@ -139,7 +139,7 @@ public class AdvBackpacksCompat
     [HarmonyPatch("AdventureBackpacks.Patches.HumanoidPatches+HumanoidUnequipItemPatch, AdventureBackpacks", "Prefix"), HarmonyPostfix]
     public static void AdventureBackpackHumanoidUnequipItemPatchPostfix(ref ItemDrop.ItemData __state)
     {
-        Player? player = Player.m_localPlayer ?? FejdStartup.instance.GetPreviewPlayer();
+        Player? player = Player.m_localPlayer ?? FejdStartup.instance != null ? FejdStartup.instance.GetPreviewPlayer() : null;
         if (player == null || player.GetInventory() == null) return;
         player.m_shoulderItem = __state;
     }

@@ -12,7 +12,7 @@ internal class PreventKeys
     {
         foreach (ConfigEntry<KeyboardShortcut> hotkey in Hotkeys)
         {
-            if (hotkey.Value.IsKeyDown())
+            if (hotkey.Value.IsKeyDown() && Player.m_localPlayer && !Player.m_localPlayer.TakeInput())
             {
                 __result = false;
             }
