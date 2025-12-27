@@ -180,6 +180,7 @@
         <Compile Include="Game\Managers\Patcher.cs"/>
         <Compile Include="Game\Moveable\DragControl.cs"/>
         <Compile Include="Game\Moveable\MoveableChestInventory.cs"/>
+        <Compile Include="Game\Compatibility\BackpacksCompat.cs"/>
         <Compile Include="Game\Compatibility\Hunter_Legacy.cs"/>
         <Compile Include="Game\Compatibility\Wizardry.cs"/>
         <Compile Include="Game\Panels\PanelUtilities.cs"/>
@@ -226,7 +227,6 @@
         <Compile Include="API\API.cs"/>
         <Compile Include="API\APIBkCompat.cs"/>
         <Compile Include="Core\Slots\Model.cs"/>
-        <Compile Include="Game\Compatibility\BackpacksCompat.cs" />
         <Compile Include="GlobalUsings.cs"/>
         <None Include="App.config"/>
     </ItemGroup>

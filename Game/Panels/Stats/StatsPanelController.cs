@@ -321,7 +321,84 @@ public static class StatsPanelController
     {
         if (!_content) return;
 
-        GameObject headerObj = new("Section_Attributes", typeof(RectTransform));
+        CreateSectionHeader("Attributes", new Color(1f, 0.84f, 0f, 1f));
+        CreateLiveStatRow("Health");
+        CreateLiveStatRow("Stamina");
+        CreateLiveStatRow("Eitr");
+        CreateLiveStatRow("Adrenaline");
+        CreateSpacer("Spacer_Attributes");
+
+        CreateSectionHeader("Regeneration", new Color(0.4f, 1f, 0.4f, 1f));
+        CreateLiveStatRow("Health Regen");
+        CreateLiveStatRow("Health Regen Multi");
+        CreateLiveStatRow("Food Regen");
+        CreateLiveStatRow("Stamina Regen");
+        CreateLiveStatRow("Stamina Regen Multi");
+        CreateLiveStatRow("Eitr Regen");
+        CreateLiveStatRow("Eitr Regen Multi");
+        CreateSpacer("Spacer_Regen");
+
+        CreateSectionHeader("Combat", new Color(1f, 0.5f, 0f, 1f));
+        CreateLiveStatRow("Attack Speed");
+        CreateLiveStatRow("Damage Modifier");
+        CreateLiveStatRow("Stagger Resist");
+        CreateLiveStatRow("Timed Block Bonus");
+        CreateLiveStatRow("Crit Chance");
+        CreateLiveStatRow("Lifesteal");
+        CreateSpacer("Spacer_Combat");
+
+        CreateSectionHeader("Carry Weight", new Color(0.7f, 0.7f, 1f, 1f));
+        CreateLiveStatRow("Current Weight");
+        CreateLiveStatRow("Max Weight");
+        CreateLiveStatRow("Extra Carry Weight");
+        CreateSpacer("Spacer_CarryWeight");
+
+        CreateSectionHeader("Stamina Usage", new Color(1f, 1f, 0.5f, 1f));
+        CreateLiveStatRow("Jump Stamina");
+        CreateLiveStatRow("Attack Stamina");
+        CreateLiveStatRow("Block Stamina");
+        CreateLiveStatRow("Dodge Stamina");
+        CreateLiveStatRow("Swim Stamina");
+        CreateLiveStatRow("Run Stamina");
+        CreateLiveStatRow("Sneak Stamina");
+        CreateLiveStatRow("Home Item Stamina");
+        CreateSpacer("Spacer_StaminaUsage");
+
+        CreateSectionHeader("Equipment Bonuses", new Color(1f, 0.8f, 0.5f, 1f));
+        CreateLiveStatRow("Total Armor");
+        CreateLiveStatRow("Heat Resistance");
+        CreateLiveStatRow("Equipment Movement");
+        CreateSpacer("Spacer_EquipmentBonuses");
+
+        /*CreateSectionHeader("Skills", new Color(0.8f, 0.5f, 1f, 1f));
+        CreateDynamicTextRow("Skills");
+        CreateSpacer("Spacer_Skills");*/
+
+        CreateSectionHeader("Stealth & Utility", new Color(0.6f, 0.6f, 0.8f, 1f));
+        CreateLiveStatRow("Noise Level");
+        CreateLiveStatRow("Stealth Level");
+        CreateLiveStatRow("Fall Damage");
+        CreateSpacer("Spacer_Utility");
+
+        CreateSectionHeader("Movement", new Color(0.5f, 1f, 0.5f, 1f));
+        CreateLiveStatRow("Movement Speed");
+        CreateLiveStatRow("Run Speed");
+        CreateLiveStatRow("Swim Speed");
+        CreateLiveStatRow("Jump Height");
+        CreateSpacer("Spacer_Movement");
+
+        CreateResistancesSection();
+
+        //CreateActiveEffectsSection();
+
+        //CreateSetBonusesSection();
+    }
+
+    private static void CreateSectionHeader(string title, Color color)
+    {
+        if (!_content) return;
+
+        GameObject headerObj = new($"Section_{title}", typeof(RectTransform));
         RectTransform headerRect = headerObj.GetComponent<RectTransform>();
         headerRect.SetParent(_content, false);
 
@@ -332,7 +409,46 @@ public static class StatsPanelController
             headerText.fontSharedMaterial = _fontAsset.material;
         }
 
-        headerText.text = "Attributes";
+        headerText.text = title;
+        headerText.fontSize = 20f;
+        headerText.fontStyle = FontStyles.Bold;
+        headerText.alignment = TextAlignmentOptions.Left;
+        headerText.color = color;
+        headerText.raycastTarget = false;
+
+        LayoutElement headerLayout = headerObj.AddComponent<LayoutElement>();
+        headerLayout.preferredHeight = 20f;
+        headerLayout.minHeight = 20f;
+    }
+
+    private static void CreateSpacer(string name)
+    {
+        if (!_content) return;
+
+        GameObject spacer = new(name, typeof(RectTransform));
+        RectTransform spacerRect = spacer.GetComponent<RectTransform>();
+        spacerRect.SetParent(_content, false);
+        LayoutElement spacerLayout = spacer.AddComponent<LayoutElement>();
+        spacerLayout.preferredHeight = 8f;
+        spacerLayout.minHeight = 8f;
+    }
+
+    private static void CreateResistancesSection()
+    {
+        if (!_content) return;
+
+        GameObject headerObj = new("Section_Resistances", typeof(RectTransform));
+        RectTransform headerRect = headerObj.GetComponent<RectTransform>();
+        headerRect.SetParent(_content, false);
+
+        TextMeshProUGUI headerText = headerObj.AddComponent<TextMeshProUGUI>();
+        if (_fontAsset)
+        {
+            headerText.font = _fontAsset;
+            headerText.fontSharedMaterial = _fontAsset.material;
+        }
+
+        headerText.text = "Resistances";
         headerText.fontSize = 20f;
         headerText.fontStyle = FontStyles.Bold;
         headerText.alignment = TextAlignmentOptions.Left;
@@ -343,21 +459,73 @@ public static class StatsPanelController
         headerLayout.preferredHeight = 20f;
         headerLayout.minHeight = 20f;
 
-        CreateLiveStatRow("Health");
-        CreateLiveStatRow("Stamina");
-        CreateLiveStatRow("Eitr");
-        CreateLiveStatRow("Stamina Regen");
-        CreateLiveStatRow("Eitr Regen");
-        CreateLiveStatRow("Movement Speed");
-        CreateLiveStatRow("Run Speed");
-        CreateLiveStatRow("Swim Speed");
+        CreateLiveStatRow("Armor");
+        CreateLiveStatRow("Blunt Resist");
+        CreateLiveStatRow("Slash Resist");
+        CreateLiveStatRow("Pierce Resist");
+        CreateLiveStatRow("Fire Resist");
+        CreateLiveStatRow("Frost Resist");
+        CreateLiveStatRow("Lightning Resist");
+        CreateLiveStatRow("Poison Resist");
+        CreateLiveStatRow("Spirit Resist");
 
-        GameObject spacer = new("Spacer_Attributes", typeof(RectTransform));
+        GameObject spacer = new("Spacer_Resistances", typeof(RectTransform));
         RectTransform spacerRect = spacer.GetComponent<RectTransform>();
         spacerRect.SetParent(_content, false);
         LayoutElement spacerLayout = spacer.AddComponent<LayoutElement>();
         spacerLayout.preferredHeight = 8f;
         spacerLayout.minHeight = 8f;
+    }
+
+    private static void CreateActiveEffectsSection()
+    {
+        if (!_content) return;
+
+        CreateSectionHeader("Active Effects", new Color(0.5f, 0.8f, 1f, 1f));
+
+        CreateDynamicTextRow("ActiveEffects");
+
+        CreateSpacer("Spacer_ActiveEffects");
+    }
+
+    private static void CreateSetBonusesSection()
+    {
+        if (!_content) return;
+
+        CreateSectionHeader("Active Set Bonuses", new Color(0.8f, 0.6f, 1f, 1f));
+
+        CreateDynamicTextRow("SetBonuses");
+
+        CreateSpacer("Spacer_SetBonuses");
+    }
+
+    private static void CreateDynamicTextRow(string id)
+    {
+        if (!_content) return;
+
+        GameObject textObj = new($"DynamicText_{id}", typeof(RectTransform));
+        RectTransform textRect = textObj.GetComponent<RectTransform>();
+        textRect.SetParent(_content, false);
+
+        TextMeshProUGUI text = textObj.AddComponent<TextMeshProUGUI>();
+        if (_fontAsset)
+        {
+            text.font = _fontAsset;
+            text.fontSharedMaterial = _fontAsset.material;
+        }
+
+        text.text = "";
+        text.fontSize = 16f;
+        text.alignment = TextAlignmentOptions.TopLeft;
+        text.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+        text.raycastTarget = false;
+        text.enableWordWrapping = true;
+
+        LayoutElement textLayout = textObj.AddComponent<LayoutElement>();
+        textLayout.preferredHeight = 16f;
+        textLayout.flexibleHeight = 1f;
+
+        _statElements.Add(new StatElement { Name = id, StatType = (PlayerStatType)(-2), ValueText = text, IsLiveStat = true });
     }
 
     private static void CreateLiveStatRow(string statName)
@@ -469,6 +637,7 @@ public static class StatsPanelController
             headerText.font = _fontAsset;
             headerText.fontSharedMaterial = _fontAsset.material;
         }
+
         headerObj.SafeSetActive(true);
         headerText.text = title;
         headerText.fontSize = 20f;
@@ -622,11 +791,136 @@ public static class StatsPanelController
                     case "Eitr":
                         element.ValueText.text = $"{player.GetEitr():F0} / {player.GetMaxEitr():F0}";
                         break;
+                    case "Adrenaline":
+                        float adrenaline = CalculateAdrenaline(player);
+                        element.ValueText.text = adrenaline > 0 ? $"{adrenaline:F0}%" : "0%";
+                        break;
+
+                    case "Health Regen":
+                        float healthRegen = CalculateHealthRegen(player);
+                        element.ValueText.text = $"{healthRegen:F1}/tick";
+                        break;
+                    case "Health Regen Multi":
+                        float healthRegenMulti = CalculateHealthRegenMultiplier(player);
+                        element.ValueText.text = healthRegenMulti != 0 ? $"{healthRegenMulti:+0;-0}%" : "0%";
+                        break;
+                    case "Food Regen":
+                        float foodRegen = CalculateFoodRegen(player);
+                        element.ValueText.text = $"{foodRegen:F1}/s";
+                        break;
                     case "Stamina Regen":
                         element.ValueText.text = $"{player.m_staminaRegen:F1}/s";
                         break;
+                    case "Stamina Regen Multi":
+                        float staminaRegenMulti = CalculateStaminaRegenMultiplier(player);
+                        element.ValueText.text = staminaRegenMulti != 0 ? $"{staminaRegenMulti:+0;-0}%" : "0%";
+                        break;
                     case "Eitr Regen":
                         element.ValueText.text = $"{player.m_eiterRegen:F1}/s";
+                        break;
+                    case "Eitr Regen Multi":
+                        float eitrRegenMulti = CalculateEitrRegenMultiplier(player);
+                        element.ValueText.text = eitrRegenMulti != 0 ? $"{eitrRegenMulti:+0;-0}%" : "0%";
+                        break;
+
+                    case "Attack Speed":
+                        float attackSpeed = CalculateAttackSpeed(player);
+                        element.ValueText.text = $"{attackSpeed:F0}%";
+                        break;
+                    case "Damage Modifier":
+                        float damageMod = CalculateDamageModifier(player);
+                        element.ValueText.text = damageMod != 0 ? $"{damageMod:+0;-0}%" : "0%";
+                        break;
+                    case "Stagger Resist":
+                        float staggerResist = CalculateStaggerResist(player);
+                        element.ValueText.text = staggerResist != 0 ? $"{staggerResist:+0;-0}%" : "0%";
+                        break;
+                    case "Timed Block Bonus":
+                        float blockBonus = CalculateTimedBlockBonus(player);
+                        element.ValueText.text = blockBonus != 0 ? $"{blockBonus:+0;-0}%" : "0%";
+                        break;
+                    case "Crit Chance":
+                        float critChance = CalculateCritChance(player);
+                        element.ValueText.text = critChance > 0 ? $"{critChance:F1}%" : "0%";
+                        break;
+                    case "Lifesteal":
+                        float lifesteal = CalculateLifesteal(player);
+                        element.ValueText.text = lifesteal > 0 ? $"{lifesteal:F1}%" : "0%";
+                        break;
+
+                    case "Current Weight":
+                        float current = player.GetInventory()?.GetTotalWeight() ?? 0f;
+                        element.ValueText.text = $"{current:F0}";
+                        break;
+                    case "Max Weight":
+                        float max = player.m_maxCarryWeight;
+                        element.ValueText.text = $"{max:F0}";
+                        break;
+                    case "Extra Carry Weight":
+                        float extra = CalculateExtraCarryWeight(player);
+                        element.ValueText.text = extra > 0 ? $"+{extra:F0}" : "0";
+                        break;
+
+                    case "Jump Stamina":
+                        float jumpStamina = CalculateJumpStaminaUsage(player);
+                        element.ValueText.text = jumpStamina != 0 ? $"{jumpStamina:+0;-0}%" : "0%";
+                        break;
+                    case "Attack Stamina":
+                        float attackStamina = CalculateAttackStaminaUsage(player);
+                        element.ValueText.text = attackStamina != 0 ? $"{attackStamina:+0;-0}%" : "0%";
+                        break;
+                    case "Block Stamina":
+                        float blockStamina = CalculateBlockStaminaUsage(player);
+                        element.ValueText.text = blockStamina != 0 ? $"{blockStamina:+0;-0}%" : "0%";
+                        break;
+                    case "Dodge Stamina":
+                        float dodgeStamina = CalculateDodgeStaminaUsage(player);
+                        element.ValueText.text = dodgeStamina != 0 ? $"{dodgeStamina:+0;-0}%" : "0%";
+                        break;
+                    case "Swim Stamina":
+                        float swimStamina = CalculateSwimStaminaUsage(player);
+                        element.ValueText.text = swimStamina != 0 ? $"{swimStamina:+0;-0}%" : "0%";
+                        break;
+                    case "Run Stamina":
+                        float runStamina = CalculateRunStaminaUsage(player);
+                        element.ValueText.text = runStamina != 0 ? $"{runStamina:+0;-0}%" : "0%";
+                        break;
+                    case "Sneak Stamina":
+                        float sneakStamina = CalculateSneakStaminaUsage(player);
+                        element.ValueText.text = sneakStamina != 0 ? $"{sneakStamina:+0;-0}%" : "0%";
+                        break;
+                    case "Home Item Stamina":
+                        float homeStamina = CalculateHomeItemStaminaUsage(player);
+                        element.ValueText.text = homeStamina != 0 ? $"{homeStamina:+0;-0}%" : "0%";
+                        break;
+
+                    case "Total Armor":
+                        element.ValueText.text = $"{player.GetBodyArmor():F0}";
+                        break;
+                    case "Heat Resistance":
+                        float heatResist = CalculateHeatResistance(player);
+                        element.ValueText.text = heatResist != 0 ? $"{heatResist:+0;-0}%" : "0%";
+                        break;
+                    case "Equipment Movement":
+                        float equipMove = CalculateEquipmentMovement(player);
+                        element.ValueText.text = equipMove != 0 ? $"{equipMove:+0;-0}%" : "0%";
+                        break;
+
+                    case "Skills":
+                        element.ValueText.text = GetTopSkills(player);
+                        break;
+
+                    case "Noise Level":
+                        float noise = CalculateNoiseLevel(player);
+                        element.ValueText.text = noise != 0 ? $"{noise:+0;-0}%" : "0%";
+                        break;
+                    case "Stealth Level":
+                        float stealth = CalculateStealthLevel(player);
+                        element.ValueText.text = stealth != 0 ? $"{stealth:+0;-0}%" : "0%";
+                        break;
+                    case "Fall Damage":
+                        float fallDamage = CalculateFallDamage(player);
+                        element.ValueText.text = fallDamage != 0 ? $"{fallDamage:+0;-0}%" : "0%";
                         break;
                     case "Movement Speed":
                         element.ValueText.text = $"{player.GetJogSpeedFactor() * 100:F0}%";
@@ -636,6 +930,46 @@ public static class StatsPanelController
                         break;
                     case "Swim Speed":
                         element.ValueText.text = $"{player.m_swimSpeed * player.GetAttackSpeedFactorMovement():F0}%";
+                        break;
+                    case "Jump Height":
+                        float jumpMod = CalculateJumpModifier(player);
+                        element.ValueText.text = jumpMod > 0 ? $"+{jumpMod:F0}%" : jumpMod < 0 ? $"{jumpMod:F0}%" : "100%";
+                        break;
+
+                    case "Armor":
+                        element.ValueText.text = $"{player.GetBodyArmor():F0}";
+                        break;
+                    case "Blunt Resist":
+                        element.ValueText.text = FormatResistance(GetResistance(player, HitData.DamageType.Blunt));
+                        break;
+                    case "Slash Resist":
+                        element.ValueText.text = FormatResistance(GetResistance(player, HitData.DamageType.Slash));
+                        break;
+                    case "Pierce Resist":
+                        element.ValueText.text = FormatResistance(GetResistance(player, HitData.DamageType.Pierce));
+                        break;
+                    case "Fire Resist":
+                        element.ValueText.text = FormatResistance(GetResistance(player, HitData.DamageType.Fire));
+                        break;
+                    case "Frost Resist":
+                        element.ValueText.text = FormatResistance(GetResistance(player, HitData.DamageType.Frost));
+                        break;
+                    case "Lightning Resist":
+                        element.ValueText.text = FormatResistance(GetResistance(player, HitData.DamageType.Lightning));
+                        break;
+                    case "Poison Resist":
+                        element.ValueText.text = FormatResistance(GetResistance(player, HitData.DamageType.Poison));
+                        break;
+                    case "Spirit Resist":
+                        element.ValueText.text = FormatResistance(GetResistance(player, HitData.DamageType.Spirit));
+                        break;
+
+                    case "ActiveEffects":
+                        element.ValueText.text = GetActiveEffects(player);
+                        break;
+
+                    case "SetBonuses":
+                        element.ValueText.text = GetActiveSetBonuses(player);
                         break;
                 }
 
@@ -676,6 +1010,527 @@ public static class StatsPanelController
                         element.ValueText.text = statValue.ToString("N0");
                     break;
             }
+        }
+    }
+
+    private static float CalculateHealthRegen(Player player)
+    {
+        float totalRegen = 0f;
+
+        try
+        {
+            if (player.m_seman?.GetStatusEffects() != null)
+            {
+                foreach (StatusEffect effect in player.m_seman.GetStatusEffects())
+                {
+                    if (effect is not SE_Stats seStats) continue;
+                    if (seStats.m_tickInterval > 0 && seStats.m_healthPerTick != 0)
+                    {
+                        totalRegen += seStats.m_healthPerTick;
+                    }
+
+                    if (seStats is { m_healthOverTime: > 0, m_healthOverTimeInterval: > 0 })
+                    {
+                        totalRegen += seStats.m_healthOverTimeTickHP;
+                    }
+                }
+            }
+        }
+        catch
+        {
+            /* Ignore errors */
+        }
+
+        return totalRegen;
+    }
+
+    private static float CalculateFoodRegen(Player player)
+    {
+        float foodRegen = 0f;
+
+        try
+        {
+            if (player.m_foods is { Count: > 0 })
+            {
+                foreach (Player.Food? food in player.m_foods)
+                {
+                    if (food is not { m_item: not null }) continue;
+                    float foodHealth = food.m_item.m_shared.m_food;
+                    float foodTime = food.m_item.m_shared.m_foodBurnTime;
+                    if (foodTime > 0)
+                    {
+                        foodRegen += foodHealth / foodTime;
+                    }
+                }
+            }
+        }
+        catch
+        {
+            /* Ignore errors */
+        }
+
+        return foodRegen;
+    }
+
+    private static float CalculateMultiplierModifier(Player player, Func<SE_Stats, float> getMultiplier)
+    {
+        float bonusPercent = 0f;
+
+        try
+        {
+            if (player.m_seman?.GetStatusEffects() != null)
+            {
+                foreach (StatusEffect effect in player.m_seman.GetStatusEffects())
+                {
+                    if (effect is not SE_Stats seStats) continue;
+                    float value = getMultiplier(seStats);
+                    if (value != 1f)
+                        bonusPercent += (value - 1f) * 100f;
+                }
+            }
+        }
+        catch
+        {
+            /* Ignore errors */
+        }
+
+        return bonusPercent;
+    }
+
+    private static float CalculateAdrenaline(Player player) => CalculateModifiers(player, seStats => seStats.m_adrenalineModifier);
+
+    private static float CalculateHealthRegenMultiplier(Player player) => CalculateMultiplierModifier(player, seStats => seStats.m_healthRegenMultiplier);
+
+    private static float CalculateStaminaRegenMultiplier(Player player) => CalculateMultiplierModifier(player, seStats => seStats.m_staminaRegenMultiplier);
+
+    private static float CalculateEitrRegenMultiplier(Player player) => CalculateMultiplierModifier(player, seStats => seStats.m_eitrRegenMultiplier);
+
+    private static float CalculateAttackSpeed(Player player)
+    {
+        float attackSpeed = 100f;
+
+        try
+        {
+            attackSpeed = player.GetAttackSpeedFactorMovement() * 100f;
+        }
+        catch
+        {
+            /* Ignore errors */
+        }
+
+        return attackSpeed;
+    }
+
+    private static float CalculateDamageModifier(Player player) => CalculateMultiplierModifier(player, seStats => seStats.m_damageModifier);
+
+    private static float CalculateStaggerResist(Player player)
+    {
+        float stagger = 0f;
+
+        try
+        {
+            if (player.m_seman?.GetStatusEffects() != null)
+            {
+                foreach (StatusEffect effect in player.m_seman.GetStatusEffects())
+                {
+                    if (effect is SE_Stats seStats && seStats.m_staggerModifier != 0f)
+                    {
+                        stagger -= seStats.m_staggerModifier * 100f;
+                    }
+                }
+            }
+        }
+        catch
+        {
+            /* Ignore errors */
+        }
+
+        return stagger;
+    }
+
+    private static float CalculateTimedBlockBonus(Player player) => CalculateModifiers(player, seStats => seStats.m_timedBlockBonus);
+
+    private static float CalculateMaxCarryWeight(Player player)
+    {
+        float maxWeight = 0f;
+
+        try
+        {
+            maxWeight = player.m_maxCarryWeight;
+        }
+        catch
+        {
+            /* Ignore errors */
+        }
+
+        return maxWeight;
+    }
+
+    private static float CalculateExtraCarryWeight(Player player)
+    {
+        float extraWeight = 0f;
+
+        try
+        {
+            if (player.m_seman?.GetStatusEffects() != null)
+            {
+                foreach (StatusEffect effect in player.m_seman.GetStatusEffects())
+                {
+                    if (effect is SE_Stats { m_addMaxCarryWeight: > 0 } seStats)
+                    {
+                        extraWeight += seStats.m_addMaxCarryWeight;
+                    }
+                }
+            }
+        }
+        catch
+        {
+            /* Ignore errors */
+        }
+
+        return extraWeight;
+    }
+
+    private static float CalculateModifiers(Player player, Func<SE_Stats, float> getSeStatsModifier, Func<ItemDrop.ItemData.SharedData, float>? getItemModifier = null)
+    {
+        float modifier = 0f;
+
+        try
+        {
+            if (player.m_seman?.GetStatusEffects() != null)
+            {
+                foreach (StatusEffect effect in player.m_seman.GetStatusEffects())
+                {
+                    if (effect is not SE_Stats seStats) continue;
+                    float value = getSeStatsModifier(seStats);
+                    if (value != 0f)
+                        modifier += value * 100f;
+                }
+            }
+
+            if (getItemModifier != null)
+            {
+                List<ItemDrop.ItemData> equipped = player.GetInventory()?.GetEquippedItems() ?? new List<ItemDrop.ItemData>();
+                foreach (ItemDrop.ItemData item in equipped)
+                {
+                    if (item == null) continue;
+                    float value = getItemModifier(item.m_shared);
+                    if (value != 0f)
+                        modifier += value * 100f;
+                }
+            }
+        }
+        catch
+        {
+            /* Ignore errors */
+        }
+
+        return modifier;
+    }
+
+    private static float CalculateJumpStaminaUsage(Player player) => CalculateModifiers(player, seStats => seStats.m_jumpStaminaUseModifier, shared => shared.m_jumpStaminaModifier);
+
+    private static float CalculateAttackStaminaUsage(Player player) => CalculateModifiers(player, seStats => seStats.m_attackStaminaUseModifier, shared => shared.m_attackStaminaModifier);
+
+    private static float CalculateBlockStaminaUsage(Player player) => CalculateModifiers(player, seStats => seStats.m_blockStaminaUseModifier, shared => shared.m_blockStaminaModifier);
+
+    private static float CalculateDodgeStaminaUsage(Player player) => CalculateModifiers(player, seStats => seStats.m_dodgeStaminaUseModifier, shared => shared.m_dodgeStaminaModifier);
+
+    private static float CalculateSwimStaminaUsage(Player player) => CalculateModifiers(player, seStats => seStats.m_swimStaminaUseModifier, shared => shared.m_swimStaminaModifier);
+
+    private static float CalculateRunStaminaUsage(Player player) => CalculateModifiers(player, seStats => seStats.m_runStaminaUseModifier, shared => shared.m_runStaminaModifier);
+
+    private static float CalculateSneakStaminaUsage(Player player) => CalculateModifiers(player, seStats => seStats.m_sneakStaminaUseModifier, shared => shared.m_sneakStaminaModifier);
+
+    private static float CalculateHomeItemStaminaUsage(Player player) => CalculateModifiers(player, _ => 0f, shared => shared.m_homeItemsStaminaModifier);
+
+    private static float CalculateNoiseLevel(Player player) => CalculateModifiers(player, seStats => seStats.m_noiseModifier);
+
+    private static float CalculateStealthLevel(Player player) => CalculateModifiers(player, seStats => seStats.m_stealthModifier);
+
+    private static float CalculateFallDamage(Player player) => CalculateModifiers(player, seStats => seStats.m_fallDamageModifier);
+
+    private static float CalculateCritChance(Player player)
+    {
+        float critChance = 0f;
+
+        try
+        {
+            if (player.m_seman?.GetStatusEffects() != null)
+            {
+                foreach (StatusEffect effect in player.m_seman.GetStatusEffects())
+                {
+                    if (effect == null) continue;
+
+                    string effectName = effect.m_name?.ToLower() ?? "";
+                    string tooltip = effect.m_tooltip?.ToLower() ?? "";
+
+                    if (effectName.Contains("crit") || tooltip.Contains("crit"))
+                    {
+                        critChance += 5f;
+                    }
+                }
+            }
+        }
+        catch
+        {
+            /* Ignore errors */
+        }
+
+        return critChance;
+    }
+
+    private static float CalculateLifesteal(Player player)
+    {
+        float lifesteal = 0f;
+
+        try
+        {
+            if (player.m_seman?.GetStatusEffects() != null)
+            {
+                foreach (StatusEffect effect in player.m_seman.GetStatusEffects())
+                {
+                    if (effect == null) continue;
+
+                    string effectName = effect.m_name?.ToLower() ?? "";
+                    string tooltip = effect.m_tooltip?.ToLower() ?? "";
+
+                    if (effectName.Contains("lifesteal") || tooltip.Contains("lifesteal"))
+                    {
+                        lifesteal += 5f;
+                    }
+                }
+            }
+        }
+        catch
+        {
+            /* Ignore errors */
+        }
+
+        return lifesteal;
+    }
+
+    private static float CalculateJumpModifier(Player player)
+    {
+        float jumpModifier = 0f;
+
+        try
+        {
+            if (player.m_seman?.GetStatusEffects() != null)
+            {
+                foreach (StatusEffect effect in player.m_seman.GetStatusEffects())
+                {
+                    if (effect is SE_Stats seStats)
+                    {
+                        jumpModifier += seStats.m_jumpStaminaUseModifier * 100f;
+                    }
+                }
+            }
+        }
+        catch
+        {
+            /* Ignore errors */
+        }
+
+        return jumpModifier;
+    }
+
+    private static HitData.DamageModifier GetResistance(Player player, HitData.DamageType damageType)
+    {
+        HitData.DamageModifiers mods = player.GetBodyArmor() > 0 ? player.GetDamageModifiers() : new HitData.DamageModifiers();
+
+        return damageType switch
+        {
+            HitData.DamageType.Blunt => mods.m_blunt,
+            HitData.DamageType.Slash => mods.m_slash,
+            HitData.DamageType.Pierce => mods.m_pierce,
+            HitData.DamageType.Fire => mods.m_fire,
+            HitData.DamageType.Frost => mods.m_frost,
+            HitData.DamageType.Lightning => mods.m_lightning,
+            HitData.DamageType.Poison => mods.m_poison,
+            HitData.DamageType.Spirit => mods.m_spirit,
+            _ => HitData.DamageModifier.Normal
+        };
+    }
+
+    private static string FormatResistance(HitData.DamageModifier modifier)
+    {
+        return modifier switch
+        {
+            HitData.DamageModifier.Immune => "Immune",
+            HitData.DamageModifier.VeryResistant => "Very Resistant",
+            HitData.DamageModifier.Resistant => "Resistant",
+            HitData.DamageModifier.SlightlyResistant => "Slightly Resistant",
+            HitData.DamageModifier.Normal => "Normal",
+            HitData.DamageModifier.SlightlyWeak => "Slightly Weak",
+            HitData.DamageModifier.Weak => "Weak",
+            HitData.DamageModifier.VeryWeak => "Very Weak",
+            _ => "Unknown"
+        };
+    }
+
+    private static float CalculateHeatResistance(Player player) => CalculateModifiers(player, _ => 0f, shared => shared.m_heatResistanceModifier);
+
+    private static float CalculateEquipmentMovement(Player player) => CalculateModifiers(player, _ => 0f, shared => shared.m_movementModifier);
+
+    private static string GetTopSkills(Player player)
+    {
+        try
+        {
+            if (player.m_skills == null)
+                return "None";
+
+            System.Text.StringBuilder sb = new();
+            List<Skills.Skill> skillList = player.m_skills.GetSkillList();
+
+            List<Skills.Skill> topSkills = skillList
+                .Where(s => s is { m_level: > 0 })
+                .OrderByDescending(s => s.m_level)
+                .Take(5)
+                .ToList();
+
+            if (topSkills.Count == 0)
+                return "None";
+
+            foreach (Skills.Skill skill in topSkills)
+            {
+                string skillName = skill.m_info.m_skill.ToString();
+                sb.Append($"• {skillName}: {skill.m_level:F0}");
+
+                if (skill != topSkills.Last())
+                    sb.AppendLine();
+            }
+
+            return sb.ToString();
+        }
+        catch (Exception ex)
+        {
+            AzuExtendedPlayerInventoryLogger.LogWarning($"Error getting skills: {ex.Message}");
+            return "Error";
+        }
+    }
+
+    private static string GetActiveEffects(Player player)
+    {
+        try
+        {
+            if (player.m_seman?.GetStatusEffects() == null)
+                return "None";
+
+            List<StatusEffect> effects = player.m_seman.GetStatusEffects();
+            if (effects.Count == 0)
+                return "None";
+
+            System.Text.StringBuilder sb = new();
+            int count = 0;
+            int skipped = 0;
+
+            foreach (StatusEffect effect in effects)
+            {
+                if (effect == null || string.IsNullOrEmpty(effect.m_name))
+                    continue;
+
+                if (effect.m_name.Contains("Food") || effect.m_name.Contains("food"))
+                    continue;
+
+                if (effect.m_name.Contains("set") || effect.m_name.Contains("Set"))
+                {
+                    skipped++;
+                    continue;
+                }
+
+                string timeStr = "";
+                if (effect.m_ttl > 0)
+                {
+                    float remaining = effect.m_time;
+                    if (remaining > 60)
+                        timeStr = $" {remaining / 60:F0}m";
+                    else if (remaining > 0)
+                        timeStr = $" {remaining:F0}s";
+                }
+
+                sb.Append($"• {effect.m_name}{timeStr}");
+                count++;
+
+                if (count < effects.Count - skipped)
+                    sb.AppendLine();
+
+                if (count < 5) continue;
+                {
+                    int remaining = effects.Count - count - skipped;
+                    if (remaining > 0)
+                        sb.Append($"\n+{remaining} more...");
+                    break;
+                }
+            }
+
+            return count > 0 ? sb.ToString() : "None";
+        }
+        catch (Exception ex)
+        {
+            AzuExtendedPlayerInventoryLogger.LogWarning($"Error getting active effects: {ex.Message}");
+            return "Error";
+        }
+    }
+
+    private static string GetActiveSetBonuses(Player player)
+    {
+        Dictionary<string, int> setCount = new();
+        Dictionary<string, int> setSize = new();
+
+        try
+        {
+            List<ItemDrop.ItemData> equipped = player.GetInventory()?.GetEquippedItems() ?? new List<ItemDrop.ItemData>();
+
+            foreach (ItemDrop.ItemData item in equipped)
+            {
+                if (item == null || string.IsNullOrEmpty(item.m_shared.m_setName)) continue;
+
+                string setName = item.m_shared.m_setName;
+                if (!setCount.ContainsKey(setName))
+                {
+                    setCount[setName] = 0;
+                    setSize[setName] = item.m_shared.m_setSize;
+                }
+
+                setCount[setName]++;
+            }
+
+            if (setCount.Count == 0)
+                return "None";
+
+            System.Text.StringBuilder sb = new();
+            int displayCount = 0;
+            foreach (KeyValuePair<string, int> kvp in setCount.OrderByDescending(x => x.Value))
+            {
+                string setName = kvp.Key;
+                int count = kvp.Value;
+                int required = setSize.TryGetValue(setName, out int size) ? size : 1;
+
+                bool active = count >= required;
+                string activeMarker = active ? "✓" : "✗";
+                string color = active ? "#00FF00" : "#FF6666";
+
+                sb.Append($"<color={color}>{activeMarker}</color> {setName} ({count}/{required})");
+
+                displayCount++;
+
+                if (displayCount < setCount.Count)
+                    sb.AppendLine();
+
+                if (displayCount < 5) continue;
+                int remaining = setCount.Count - displayCount;
+                if (remaining > 0)
+                    sb.Append($"\n+{remaining} more...");
+                break;
+            }
+
+            return sb.ToString();
+        }
+        catch (Exception ex)
+        {
+            AzuExtendedPlayerInventoryLogger.LogWarning($"Error getting set bonuses: {ex.Message}");
+            return "Error";
         }
     }
 
