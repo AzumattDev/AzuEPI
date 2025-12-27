@@ -13,7 +13,12 @@ public class PlayerPatches
 
             int height = API.GetFullHeight(__instance.m_inventory.GetWidth());
             __instance.m_inventory.m_height = height;
-            __instance.m_tombstone.GetComponent<Container>().m_height = height;
+
+            Container? tombstone = __instance.m_tombstone?.GetComponent<Container>();
+            if (tombstone != null)
+            {
+                tombstone.m_height = height;
+            }
         }
     }
 
@@ -46,42 +51,58 @@ public class PlayerPatches
                 return;
             }
 
-            LoadValue(fromPlayer, "ExtendedPlayerData", out string init);
-
-            if (LoadValue(fromPlayer, "QuickSlotInventory", out string quickSlotData))
+            try
             {
-                ZPackage pkg = new(quickSlotData);
-                QuickSlotInventory.Load(pkg);
-                fromPlayer.m_inventory.MoveAll(QuickSlotInventory);
-                foreach (ItemDrop.ItemData? item in QuickSlotInventory.GetAllItems())
+                InventoryPatches.IsInMigration = true;
+                AzuExtendedPlayerInventoryLogger.LogDebug("Starting player data migration from old storage systems");
+
+                LoadValue(fromPlayer, "ExtendedPlayerData", out string init);
+
+                if (LoadValue(fromPlayer, "QuickSlotInventory", out string quickSlotData))
                 {
-                    if (item.m_dropPrefab == null) continue;
-                    TryAddItemToInventory(fromPlayer, item, fromPlayer.m_inventory, false);
+                    AzuExtendedPlayerInventoryLogger.LogDebug("Migrating QuickSlotInventory data");
+                    ZPackage pkg = new(quickSlotData);
+                    QuickSlotInventory.Load(pkg);
+                    fromPlayer.m_inventory.MoveAll(QuickSlotInventory);
+                    foreach (ItemDrop.ItemData? item in QuickSlotInventory.GetAllItems())
+                    {
+                        if (item.m_dropPrefab == null) continue;
+                        TryAddItemToInventory(fromPlayer, item, fromPlayer.m_inventory, false);
+                    }
+
+                    QuickSlotInventory.RemoveAll();
+
+                    pkg = new ZPackage();
+                    QuickSlotInventory.Save(pkg);
+                    SaveValue(fromPlayer, "QuickSlotInventory", pkg.GetBase64());
+                    AzuExtendedPlayerInventoryLogger.LogDebug("QuickSlotInventory migration complete");
                 }
 
-                QuickSlotInventory.RemoveAll();
+                if (LoadValue(fromPlayer, "EquipmentSlotInventory", out string equipSlotData))
+                {
+                    AzuExtendedPlayerInventoryLogger.LogDebug("Migrating EquipmentSlotInventory data");
+                    ZPackage pkg = new(equipSlotData);
+                    EquipmentSlotInventory.Load(pkg);
+                    //fromPlayer.m_inventory.MoveAll(EquipmentSlotInventory);
+                    foreach (ItemDrop.ItemData? item in EquipmentSlotInventory.GetAllItems())
+                    {
+                        if (item.m_dropPrefab == null) continue;
+                        TryAddItemToInventory(fromPlayer, item, fromPlayer.m_inventory);
+                    }
 
-                pkg = new ZPackage();
-                QuickSlotInventory.Save(pkg);
-                SaveValue(fromPlayer, "QuickSlotInventory", pkg.GetBase64());
+                    EquipmentSlotInventory.RemoveAll();
+
+                    pkg = new ZPackage();
+                    EquipmentSlotInventory.Save(pkg);
+                    SaveValue(fromPlayer, "EquipmentSlotInventory", pkg.GetBase64());
+                    AzuExtendedPlayerInventoryLogger.LogDebug("EquipmentSlotInventory migration complete");
+                }
+
+                AzuExtendedPlayerInventoryLogger.LogDebug("Player data migration complete");
             }
-
-            if (LoadValue(fromPlayer, "EquipmentSlotInventory", out string equipSlotData))
+            finally
             {
-                ZPackage pkg = new(equipSlotData);
-                EquipmentSlotInventory.Load(pkg);
-                //fromPlayer.m_inventory.MoveAll(EquipmentSlotInventory);
-                foreach (ItemDrop.ItemData? item in EquipmentSlotInventory.GetAllItems())
-                {
-                    if (item.m_dropPrefab == null) continue;
-                    TryAddItemToInventory(fromPlayer, item, fromPlayer.m_inventory);
-                }
-
-                EquipmentSlotInventory.RemoveAll();
-
-                pkg = new ZPackage();
-                EquipmentSlotInventory.Save(pkg);
-                SaveValue(fromPlayer, "EquipmentSlotInventory", pkg.GetBase64());
+                InventoryPatches.IsInMigration = false;
             }
         }
 
@@ -149,12 +170,20 @@ public class PlayerPatches
             int height = API.GetFullHeight(width);
             ___m_inventory.m_height = height;
 
-            if (!TombstoneContainerCache.TryGetValue(__instance, out Container tombstoneContainer))
+            if (!TombstoneContainerCache.TryGetValue(__instance, out Container? tombstoneContainer))
             {
-                tombstoneContainer = __instance.m_tombstone.GetComponent<Container>();
-                TombstoneContainerCache[__instance] = tombstoneContainer;
+                tombstoneContainer = __instance.m_tombstone?.GetComponent<Container>();
+                if (tombstoneContainer != null)
+                {
+                    TombstoneContainerCache[__instance] = tombstoneContainer;
+                }
             }
-            tombstoneContainer.m_height = height;
+
+            if (tombstoneContainer != null)
+            {
+                tombstoneContainer.m_height = height;
+            }
+
             if (InventoryHealth.IgnoreKeyPresses(true) || AddEquipmentRow.Value.isOff() || Hotkeys.Length == 0)
                 return;
 

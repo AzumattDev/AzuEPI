@@ -32,6 +32,14 @@ public static class InventoryExtensions
 
     internal static bool IsEquipmentSlotFreeAndItemValid(this Inventory inventory, ItemDrop.ItemData item, out int which)
     {
+        which = -1;
+
+        if (InventoryGuiPatches.UpdateInventory_Patch.slots == null || InventoryGuiPatches.UpdateInventory_Patch.slots.Count == 0)
+        {
+            AzuExtendedPlayerInventoryLogger.LogDebugDebug("IsEquipmentSlotFreeAndItemValid: Slots not initialized yet");
+            return false;
+        }
+
         AzuExtendedPlayerInventoryLogger.LogDebugDebug($"IsEquipmentSlotFreeAndItemValid: Checking item '{item.m_shared.m_name}' (Type: {item.m_shared.m_itemType})");
 
         // Prioritize API-added slots over built-in slots to avoid placing items in generic slots when they have dedicated slots

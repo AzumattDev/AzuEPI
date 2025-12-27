@@ -115,7 +115,7 @@ public class AdvBackpacksCompat
             player.m_shoulderItem = equippedBackpack;
     }
 
-    [HarmonyPatch("AdventureBackpacks.Extensions.PlayerExtensions, AdventureBackpacks", "GetEquippedBackpack"), HarmonyPrefix]
+    [HarmonyPatch("AdventureBackpacks.Extensions.PlayerExtensions, AdventureBackpacks", "GetEquippedBackpack"), HarmonyPostfix]
     public static void AdvBackpackGetEquippedBackpackPostfix(Player player, ItemDrop.ItemData __state)
     {
         if (player == null)
@@ -127,7 +127,7 @@ public class AdvBackpacksCompat
     [HarmonyPatch("AdventureBackpacks.Patches.HumanoidPatches+HumanoidUnequipItemPatch, AdventureBackpacks", "Prefix"), HarmonyPrefix]
     public static void AdventureBackpackHumanoidUnequipItemPatchPrefix(ref ItemDrop.ItemData __state)
     {
-        Player? player = Player.m_localPlayer ?? FejdStartup.instance != null ? FejdStartup.instance.GetPreviewPlayer() : null;
+        Player? player = Player.m_localPlayer;
         if (player == null || player.GetInventory() == null) return;
         __state = player.m_shoulderItem;
 
@@ -139,7 +139,7 @@ public class AdvBackpacksCompat
     [HarmonyPatch("AdventureBackpacks.Patches.HumanoidPatches+HumanoidUnequipItemPatch, AdventureBackpacks", "Prefix"), HarmonyPostfix]
     public static void AdventureBackpackHumanoidUnequipItemPatchPostfix(ref ItemDrop.ItemData __state)
     {
-        Player? player = Player.m_localPlayer ?? FejdStartup.instance != null ? FejdStartup.instance.GetPreviewPlayer() : null;
+        Player? player = Player.m_localPlayer;
         if (player == null || player.GetInventory() == null) return;
         player.m_shoulderItem = __state;
     }

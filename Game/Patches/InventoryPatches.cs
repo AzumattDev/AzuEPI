@@ -1,9 +1,12 @@
-﻿using ItemDataManager;
+using ItemDataManager;
 
 namespace AzuEPI.Game.Patches;
 
 public class InventoryPatches
 {
+    internal static bool IsInMigration = false;
+    private static bool _isLoadingInventory = false;
+
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.FindEmptySlot))]
     private static class FindEmptySlot_FilterHidden_AddQuick_Patch
     {
@@ -58,9 +61,32 @@ public class InventoryPatches
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.AddItem), typeof(ItemDrop.ItemData))]
     private static class InventoryAddItemPatch1
     {
+        private static bool _inAutoEquipCall = false;
+
         [HarmonyPriority(Priority.First)]
         private static bool Prefix(Inventory __instance, ref bool __result, ItemDrop.ItemData item)
         {
+            // Prevent recursion
+            if (_inAutoEquipCall)
+            {
+                AzuExtendedPlayerInventoryLogger.LogDebugDebug("AddItem: Recursion detected, skipping auto-equip");
+                return true;
+            }
+
+            // Don't interfere during migration from old storage systems
+            if (IsInMigration)
+            {
+                AzuExtendedPlayerInventoryLogger.LogDebugDebug("AddItem: Migration in progress, skipping auto-equip");
+                return true;
+            }
+
+            // Don't interfere during inventory load
+            if (_isLoadingInventory)
+            {
+                AzuExtendedPlayerInventoryLogger.LogDebugDebug("AddItem: Inventory loading, skipping auto-equip");
+                return true;
+            }
+
             if (item?.m_shared == null)
             {
                 AzuExtendedPlayerInventoryLogger.LogDebugDebug("AddItem: Item or shared data is null, skipping auto-equip");
@@ -70,6 +96,12 @@ public class InventoryPatches
             if (Player.m_localPlayer == null)
             {
                 AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: No local player, skipping auto-equip");
+                return true;
+            }
+
+            if (Player.m_localPlayer.m_isLoading)
+            {
+                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: Player is loading, skipping auto-equip");
                 return true;
             }
 
@@ -95,41 +127,49 @@ public class InventoryPatches
 
             Vector2i pos = __instance.EpiIndexToGridPos(which);
 
-            bool placed = __instance.AddItem(item, item.m_stack, pos.x, pos.y);
-            if (!placed)
+            try
             {
-                AzuExtendedPlayerInventoryLogger.LogWarningDebug($"AddItem {item.m_shared.m_name}: Failed to place in equipment slot at ({pos.x}, {pos.y})");
-                __result = false;
-                return false;
-            }
+                _inAutoEquipCall = true;
 
-            AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: Successfully placed at ({pos.x}, {pos.y})");
+                bool placed = __instance.AddItem(item, item.m_stack, pos.x, pos.y);
+                if (!placed)
+                {
+                    AzuExtendedPlayerInventoryLogger.LogWarningDebug($"AddItem {item.m_shared.m_name}: Failed to place in equipment slot at ({pos.x}, {pos.y}), letting vanilla handle it");
+                    return true;
+                }
 
-            ItemDrop.ItemData? actualItem = __instance.GetItemAt(pos.x, pos.y);
-            if (actualItem == null)
-            {
-                AzuExtendedPlayerInventoryLogger.LogWarningDebug($"AddItem {item.m_shared.m_name}: Item not found at ({pos.x}, {pos.y}) after placement");
+                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: Successfully placed at ({pos.x}, {pos.y})");
+
+                ItemDrop.ItemData? actualItem = __instance.GetItemAt(pos.x, pos.y);
+                if (actualItem == null)
+                {
+                    AzuExtendedPlayerInventoryLogger.LogWarningDebug($"AddItem {item.m_shared.m_name}: Item not found at ({pos.x}, {pos.y}) after placement");
+                    __instance.Changed();
+                    __result = true;
+                    return false;
+                }
+
+                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: Retrieved item from inventory - IsEquipped={actualItem.m_equipped}, InInventory={__instance.ContainsItem(actualItem)}");
+
+                if (AutoEquip.Value.isOn())
+                {
+                    AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: Calling EquipItem...");
+                    bool equipResult = Player.m_localPlayer.EquipItem(actualItem, false);
+                    AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: EquipItem returned {equipResult}, item.m_equipped={actualItem.m_equipped}");
+                }
+                else
+                {
+                    AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: AutoEquip is OFF, skipping equip");
+                }
+
                 __instance.Changed();
                 __result = true;
                 return false;
             }
-
-            AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: Retrieved item from inventory - IsEquipped={actualItem.m_equipped}, InInventory={__instance.ContainsItem(actualItem)}");
-
-            if (AutoEquip.Value.isOn())
+            finally
             {
-                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: Calling EquipItem...");
-                bool equipResult = Player.m_localPlayer.EquipItem(actualItem, false);
-                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: EquipItem returned {equipResult}, item.m_equipped={actualItem.m_equipped}");
+                _inAutoEquipCall = false;
             }
-            else
-            {
-                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: AutoEquip is OFF, skipping equip");
-            }
-
-            __instance.Changed();
-            __result = true;
-            return false;
         }
     }
 
@@ -143,7 +183,9 @@ public class InventoryPatches
 
             if (!__instance.ShouldProtectInventorySlots()) return true;
 
-            if (Player.m_localPlayer.m_isLoading) return true;
+            if (_isLoadingInventory) return true;
+            if (IsInMigration) return true;
+            if (Player.m_localPlayer != null && Player.m_localPlayer.m_isLoading) return true;
 
             if (__instance.IsHiddenCell(x, y))
             {
@@ -175,6 +217,9 @@ public class InventoryPatches
             if (item?.m_shared == null) return true;
 
             if (!__instance.ShouldProtectInventorySlots()) return true;
+
+            if (_isLoadingInventory) return true;
+            if (IsInMigration) return true;
 
             if (__instance.IsHiddenCell(pos.x, pos.y))
             {
@@ -220,68 +265,84 @@ public class InventoryPatches
     }
 
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.Load))]
-    internal static class Load_FixHiddenItems_Patch
+    internal static class Load_TrackAndFixHiddenItems_Patch
     {
         private static readonly List<ItemDrop.ItemData> _stuckItems = new(16);
+
+        [HarmonyPriority(Priority.First)]
+        private static void Prefix(Inventory __instance) => _isLoadingInventory = true;
 
         [HarmonyPriority(Priority.Last)]
         private static void Postfix(Inventory __instance)
         {
-            if (!__instance.ShouldProtectInventorySlots()) return;
-
-            _stuckItems.Clear();
-            foreach (ItemDrop.ItemData? it in __instance.GetAllItems())
+            try
             {
-                if (__instance.IsHiddenCell(it.m_gridPos.x, it.m_gridPos.y))
+                if (!__instance.ShouldProtectInventorySlots()) return;
+
+                _stuckItems.Clear();
+                foreach (ItemDrop.ItemData? it in __instance.GetAllItems())
                 {
-                    _stuckItems.Add(it);
-                }
-            }
-
-            if (_stuckItems.Count == 0) return;
-
-            foreach (ItemDrop.ItemData? it in _stuckItems)
-            {
-                Vector2i originalPos = it.m_gridPos;
-
-                if (!__instance.RemoveItem(it))
-                {
-                    AzuExtendedPlayerInventoryLogger.LogWarning($"Failed to remove stuck item {it.m_shared.m_name} from hidden cell ({originalPos.x}, {originalPos.y})");
-                    continue;
-                }
-
-                bool added = __instance.AddItem(it);
-
-                if (added && !__instance.m_inventory.Contains(it))
-                {
-                    added = false;
-                    AzuExtendedPlayerInventoryLogger.LogWarning($"AddItem claimed success but {it.m_shared.m_name} not in inventory");
-                }
-
-                if (!added)
-                {
-                    it.m_gridPos = new Vector2i(0, 0);
-                    added = __instance.AddItem(it, it.m_stack, 0, 0);
-
-                    if (added && !__instance.m_inventory.Contains(it))
+                    if (__instance.IsHiddenCell(it.m_gridPos.x, it.m_gridPos.y))
                     {
-                        added = false;
+                        _stuckItems.Add(it);
                     }
                 }
 
-                if (!added)
-                {
-                    AzuExtendedPlayerInventoryLogger.LogError($"CRITICAL: Could not add {it.m_shared.m_name} back to inventory, forcing add at (0,0)");
-                    it.m_gridPos = new Vector2i(0, 0);
-                    __instance.m_inventory.Add(it);
-                }
-                else
-                {
-                    AzuExtendedPlayerInventoryLogger.LogDebug($"Moved {it.m_shared.m_name} from hidden cell ({originalPos.x}, {originalPos.y}) to ({it.m_gridPos.x}, {it.m_gridPos.y})");
-                }
-            }
+                if (_stuckItems.Count == 0) return;
 
-            __instance.Changed();
+                AzuExtendedPlayerInventoryLogger.LogWarning($"Found {_stuckItems.Count} items in hidden cells during load. Relocating...");
+
+                foreach (ItemDrop.ItemData? it in _stuckItems)
+                {
+                    Vector2i originalPos = it.m_gridPos;
+
+                    Vector2i newPos = __instance.FindEmptyQuickAware(topFirst: true);
+
+                    if (newPos.x < 0)
+                    {
+                        ItemDrop.ItemData? stackTarget = it.m_shared.m_maxStackSize > 1
+                            ? __instance.m_inventory.FirstOrDefault(i =>
+                                i != it &&
+                                i.m_shared.m_name == it.m_shared.m_name &&
+                                i.m_worldLevel == it.m_worldLevel &&
+                                i.m_quality == it.m_quality &&
+                                i.m_stack < i.m_shared.m_maxStackSize &&
+                                !__instance.IsHiddenCell(i.m_gridPos.x, i.m_gridPos.y))
+                            : null;
+
+                        if (stackTarget != null)
+                        {
+                            int canAdd = Mathf.Min(it.m_stack, stackTarget.m_shared.m_maxStackSize - stackTarget.m_stack);
+                            stackTarget.m_stack += canAdd;
+                            it.m_stack -= canAdd;
+
+                            AzuExtendedPlayerInventoryLogger.LogDebug($"Merged {canAdd}x {it.m_shared.m_name} from hidden cell ({originalPos.x}, {originalPos.y}) into stack at ({stackTarget.m_gridPos.x}, {stackTarget.m_gridPos.y})");
+
+                            if (it.m_stack <= 0)
+                            {
+                                __instance.m_inventory.Remove(it);
+                                continue;
+                            }
+                            newPos = __instance.FindEmptyQuickAware(topFirst: true);
+                        }
+
+                        if (newPos.x < 0)
+                        {
+                            newPos = new Vector2i(0, 0);
+                            AzuExtendedPlayerInventoryLogger.LogWarning($"No free slot for {it.m_shared.m_name}, placing at (0,0) - may overlap!");
+                        }
+                    }
+
+                    it.m_gridPos = newPos;
+                    AzuExtendedPlayerInventoryLogger.LogDebug($"Moved {it.m_shared.m_name} from hidden cell ({originalPos.x}, {originalPos.y}) to ({newPos.x}, {newPos.y})");
+                }
+
+                __instance.Changed();
+            }
+            finally
+            {
+                _isLoadingInventory = false;
+            }
         }
     }
 
@@ -326,16 +387,18 @@ public class InventoryPatches
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.MoveInventoryToGrave))]
     private static class MoveInventoryToGravePatch
     {
-        private static void Postfix(Inventory __instance, Inventory original)
+        private static void Prefix(Inventory __instance, Inventory original)
         {
             if (original.IsPlayerInventory())
             {
                 original.m_height = API.GetFullHeight(original.GetWidth());
+                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"MoveInventoryToGrave: Set original inventory height to {original.m_height}");
             }
+        }
 
-            AzuExtendedPlayerInventoryLogger.LogDebugDebug("MoveInventoryToGrave");
-
-            AzuExtendedPlayerInventoryLogger.LogDebugDebug($"inv: {__instance.GetHeight()} orig: {original.GetHeight()}");
+        private static void Postfix(Inventory __instance, Inventory original)
+        {
+            AzuExtendedPlayerInventoryLogger.LogDebugDebug($"MoveInventoryToGrave: grave height={__instance.GetHeight()}, original height={original.GetHeight()}");
         }
     }
 

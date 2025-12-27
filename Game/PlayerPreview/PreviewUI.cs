@@ -344,7 +344,8 @@ public class PlayerPreviewManager
         GameObject? src = ZNetScene.instance.GetPrefab("Player");
         ZNetView.m_forceDisableInit = true;
         GameObject clone = Object.Instantiate(src);
-        Player.s_players.Remove(clone.GetComponent<Player>());
+        Player? playerComp = clone.GetComponent<Player>();
+        Player.s_players.Remove(playerComp);
         clone.SetActive(false);
         clone.transform.SetPositionAndRotation(AzuEPICharacterPanel.instance.basePosition - Vector3.up, Quaternion.identity);
 
@@ -376,7 +377,7 @@ public class PlayerPreviewManager
         clone.SetLayerForEntireHierarchy(LayerMask.NameToLayer("UI"));
 
         AzuEPICharacterPanel.playerPreview = clone;
-        AzuEPICharacterPanel.playerPreviewComp = clone.GetComponent<Player>();
+        AzuEPICharacterPanel.playerPreviewComp = playerComp;
 
         return clone;
     }
