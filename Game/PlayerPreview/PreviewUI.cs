@@ -69,7 +69,7 @@ static class HidePlayerPreviewAndPanels
             StatsPanelController.Hide();
 
         if (VanityPanelController.IsVisible())
-            StatsPanelController.Hide();
+            VanityPanelController.SetVisible(false);
 
         PanelUtilities.HideCraftingElements(false);
     }
