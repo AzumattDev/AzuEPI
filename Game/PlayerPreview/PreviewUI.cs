@@ -1,5 +1,8 @@
 ﻿using AzuEPI.Core.Utilities;
 using AzuEPI.Game.Loadout;
+using AzuEPI.Game.Panels;
+using AzuEPI.Game.Panels.Stats;
+using AzuEPI.Game.Panels.Vanity;
 
 namespace AzuEPI.Game.PlayerPreview;
 
@@ -49,7 +52,7 @@ static class UpdatePlayerPreviewVisuals
 }
 
 [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Hide))]
-static class HidePlayerPreview
+static class HidePlayerPreviewAndPanels
 {
     [HarmonyPriority(Priority.Last)]
     static void Postfix(InventoryGui __instance)
@@ -59,6 +62,16 @@ static class HidePlayerPreview
 
         if (AzuEPICharacterPanel.instance?.cam)
             AzuEPICharacterPanel.instance.cam.enabled = false;
+        if (PersonalLoadoutGui.IsVisible())
+            PersonalLoadoutGui.Hide();
+
+        if (StatsPanelController.IsVisible())
+            StatsPanelController.Hide();
+
+        if (VanityPanelController.IsVisible())
+            StatsPanelController.Hide();
+
+        PanelUtilities.HideCraftingElements(false);
     }
 }
 
