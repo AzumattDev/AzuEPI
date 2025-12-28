@@ -172,6 +172,7 @@
         <Compile Include="Game\Compatibility\AdvBackpacks\BoneReorder.cs"/>
         <Compile Include="Game\Compatibility\BetterArchery.cs"/>
         <Compile Include="Game\Compatibility\EAQ.cs"/>
+        <Compile Include="Game\Compatibility\EpicLootCompat.cs" />
         <Compile Include="Game\Compatibility\WeightBase.cs"/>
         <Compile Include="Game\Compatibility\JudesEquipment.cs"/>
         <Compile Include="Game\Compatibility\RustBags.cs"/>

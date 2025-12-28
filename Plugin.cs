@@ -25,7 +25,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     }
 
     internal const string ModName = "AzuExtendedPlayerInventory";
-    internal const string ModVersion = "2.0.2";
+    internal const string ModVersion = "2.0.3";
     internal const string Author = "Azumatt";
     internal const string ModGUID = Author + "." + ModName;
     private static readonly string ConfigFileName = ModGUID + ".cfg";
@@ -258,11 +258,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             //RustyBagsCompat.Init();
             Hunter_LegacyCompat.Init();
             WizardryCompat.Init();
-
-            if (Chainloader.PluginInfos.TryGetValue("randyknapp.mods.epicloot", out PluginInfo? randyEl) && randyEl is not null)
-            {
-                API.AddSlot("$azuepi_fingerslot", new[] { "Andvaranaut", "GoldRubyRing", "SilverRing" });
-            }
+            EpicLootCompat.Init();
         };
 
         ArmoireCompat.CheckForArmoire();
