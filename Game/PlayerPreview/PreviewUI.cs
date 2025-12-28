@@ -115,7 +115,7 @@ public class AzuEPICharacterPanel : MonoBehaviour, TextReceiver
     public Camera cam;
     public RenderTexture renderTexture;
 
-    public readonly Vector3 basePosition = new(0, 50, 1);
+    public readonly Vector3 basePosition = new(0, -1000, 1);
 
     public static GameObject playerPreview;
     public static Player playerPreviewComp;
