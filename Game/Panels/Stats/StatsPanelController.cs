@@ -370,9 +370,13 @@ public static class StatsPanelController
         CreateLiveStatRow("Equipment Movement");
         CreateSpacer("Spacer_EquipmentBonuses");
 
-        /*CreateSectionHeader("Skills", new Color(0.8f, 0.5f, 1f, 1f));
-        CreateDynamicTextRow("Skills");
-        CreateSpacer("Spacer_Skills");*/
+        CreateSectionHeader("Top Skills", new Color(0.8f, 0.5f, 1f, 1f));
+        CreateDynamicTextRow("Top Skills");
+        CreateSpacer("Spacer_Skills");
+
+        CreateSectionHeader("Skill Bonuses", new Color(0.8f, 0.5f, 1f, 1f));
+        CreateDynamicTextRow("Skill Bonuses");
+        CreateSpacer("Spacer_Skills");
 
         CreateSectionHeader("Stealth & Utility", new Color(0.6f, 0.6f, 0.8f, 1f));
         CreateLiveStatRow("Noise Level");
@@ -389,9 +393,9 @@ public static class StatsPanelController
 
         CreateResistancesSection();
 
-        //CreateActiveEffectsSection();
+        CreateActiveEffectsSection();
 
-        //CreateSetBonusesSection();
+        CreateSetBonusesSection();
     }
 
     private static void CreateSectionHeader(string title, Color color)
@@ -520,10 +524,16 @@ public static class StatsPanelController
         text.color = new Color(0.9f, 0.9f, 0.9f, 1f);
         text.raycastTarget = false;
         text.enableWordWrapping = true;
+        text.overflowMode = TextOverflowModes.Overflow;
+
+        ContentSizeFitter sizeFitter = textObj.AddComponent<ContentSizeFitter>();
+        sizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
         LayoutElement textLayout = textObj.AddComponent<LayoutElement>();
-        textLayout.preferredHeight = 16f;
-        textLayout.flexibleHeight = 1f;
+        textLayout.minHeight = 16f;
+        textLayout.preferredHeight = -1;
+        textLayout.flexibleHeight = 0f; // Don't use flexible height
 
         _statElements.Add(new StatElement { Name = id, StatType = (PlayerStatType)(-2), ValueText = text, IsLiveStat = true });
     }
@@ -853,7 +863,7 @@ public static class StatsPanelController
                         element.ValueText.text = $"{current:F0}";
                         break;
                     case "Max Weight":
-                        float max = player.m_maxCarryWeight;
+                        float max = player.GetMaxCarryWeight();
                         element.ValueText.text = $"{max:F0}";
                         break;
                     case "Extra Carry Weight":
@@ -906,8 +916,12 @@ public static class StatsPanelController
                         element.ValueText.text = equipMove != 0 ? $"{equipMove:+0;-0}%" : "0%";
                         break;
 
-                    case "Skills":
+                    case "Top Skills":
                         element.ValueText.text = GetTopSkills(player);
+                        break;
+
+                    case "Skill Bonuses":
+                        element.ValueText.text = GetAddedSkillPoints(player);
                         break;
 
                     case "Noise Level":
@@ -1410,6 +1424,36 @@ public static class StatsPanelController
         }
     }
 
+    private static string GetAddedSkillPoints(Player player)
+    {
+        try
+        {
+            Skills? playerSkills = player.GetSkills();
+            System.Text.StringBuilder sb = new();
+            List<Skills.Skill> skillList = playerSkills.GetSkillList();
+
+            if (skillList.Count == 0)
+                return "None";
+
+            foreach (Skills.Skill skill in skillList)
+            {
+                float skillLevel = playerSkills.GetSkillLevel(skill.m_info.m_skill);
+                bool flag = Math.Abs((double)skillLevel - Mathf.Floor(skill.m_level)) > 0.01f;
+                string skillName = skill.m_info.m_skill.ToString();
+                if (!flag) continue;
+                float num2 = skillLevel - skill.m_level;
+                sb.Append($"• {skillName}: {num2:+0}");
+            }
+
+            return sb.Length > 0 ? sb.ToString() : "None";
+        }
+        catch (Exception ex)
+        {
+            AzuExtendedPlayerInventoryLogger.LogWarning($"Error getting skills: {ex.Message}");
+            return "Error";
+        }
+    }
+
     private static string GetActiveEffects(Player player)
     {
         try
@@ -1508,7 +1552,7 @@ public static class StatsPanelController
                 int required = setSize.TryGetValue(setName, out int size) ? size : 1;
 
                 bool active = count >= required;
-                string activeMarker = active ? "✓" : "✗";
+                string activeMarker = active ? "✓" : "✕";
                 string color = active ? "#00FF00" : "#FF6666";
 
                 sb.Append($"<color={color}>{activeMarker}</color> {setName} ({count}/{required})");
