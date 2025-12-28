@@ -228,6 +228,7 @@
         <Compile Include="API\API.cs"/>
         <Compile Include="API\APIBkCompat.cs"/>
         <Compile Include="Core\Slots\Model.cs"/>
+        <Compile Include="Game\Panels\Stats\LiveStatType.cs" />
         <Compile Include="GlobalUsings.cs"/>
         <None Include="App.config"/>
     </ItemGroup>

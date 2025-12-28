@@ -46,7 +46,6 @@ public static class StatsPanelController
 
     public static ScrollRect? GetScrollRect() => _scroll;
 
-    // TODO: Maybe allow pinning specific stats to player preview again.
     private static readonly Dictionary<PlayerStatType, string> StatIcons = new()
     {
         { PlayerStatType.EnemyKills, "⚔️" },
@@ -142,6 +141,7 @@ public static class StatsPanelController
         PopulateStats();
 
         SelectedPlayerStats.SettingChanged += OnStatsConfigChanged;
+        SelectedLiveStats.SettingChanged += OnStatsConfigChanged;
 
         _panel?.gameObject.SetActive(false);
     }
@@ -317,84 +317,170 @@ public static class StatsPanelController
             CreateSection("Other", otherStats.ToArray());
     }
 
+    private static bool IsLiveStatEnabled(LiveStatType stat)
+    {
+        List<LiveStatType> selectedStats = ParseLiveStatsList(SelectedLiveStats.Value);
+        return selectedStats.Count == 0 || selectedStats.Contains(stat);
+    }
+
     private static void CreateLiveStatsSection()
     {
         if (!_content) return;
 
-        CreateSectionHeader("Attributes", new Color(1f, 0.84f, 0f, 1f));
-        CreateLiveStatRow("Health");
-        CreateLiveStatRow("Stamina");
-        CreateLiveStatRow("Eitr");
-        CreateLiveStatRow("Adrenaline");
-        CreateSpacer("Spacer_Attributes");
+        bool hasAttributeStats = IsLiveStatEnabled(LiveStatType.Health) || IsLiveStatEnabled(LiveStatType.Stamina) ||
+                                 IsLiveStatEnabled(LiveStatType.Eitr) || IsLiveStatEnabled(LiveStatType.Adrenaline);
+        if (hasAttributeStats)
+        {
+            CreateSectionHeader("Attributes", new Color(1f, 0.84f, 0f, 1f));
+            if (IsLiveStatEnabled(LiveStatType.Health)) CreateLiveStatRow("Health");
+            if (IsLiveStatEnabled(LiveStatType.Stamina)) CreateLiveStatRow("Stamina");
+            if (IsLiveStatEnabled(LiveStatType.Eitr)) CreateLiveStatRow("Eitr");
+            if (IsLiveStatEnabled(LiveStatType.Adrenaline)) CreateLiveStatRow("Adrenaline");
+            CreateSpacer("Spacer_Attributes");
+        }
 
-        CreateSectionHeader("Regeneration", new Color(0.4f, 1f, 0.4f, 1f));
-        CreateLiveStatRow("Health Regen");
-        CreateLiveStatRow("Health Regen Multi");
-        CreateLiveStatRow("Food Regen");
-        CreateLiveStatRow("Stamina Regen");
-        CreateLiveStatRow("Stamina Regen Multi");
-        CreateLiveStatRow("Eitr Regen");
-        CreateLiveStatRow("Eitr Regen Multi");
-        CreateSpacer("Spacer_Regen");
+        bool hasRegenStats = IsLiveStatEnabled(LiveStatType.HealthRegen) || IsLiveStatEnabled(LiveStatType.HealthRegenMulti) ||
+                             IsLiveStatEnabled(LiveStatType.FoodRegen) || IsLiveStatEnabled(LiveStatType.StaminaRegen) ||
+                             IsLiveStatEnabled(LiveStatType.StaminaRegenMulti) || IsLiveStatEnabled(LiveStatType.EitrRegen) ||
+                             IsLiveStatEnabled(LiveStatType.EitrRegenMulti);
+        if (hasRegenStats)
+        {
+            CreateSectionHeader("Regeneration", new Color(0.4f, 1f, 0.4f, 1f));
+            if (IsLiveStatEnabled(LiveStatType.HealthRegen)) CreateLiveStatRow("Health Regen");
+            if (IsLiveStatEnabled(LiveStatType.HealthRegenMulti)) CreateLiveStatRow("Health Regen Multi");
+            if (IsLiveStatEnabled(LiveStatType.FoodRegen)) CreateLiveStatRow("Food Regen");
+            if (IsLiveStatEnabled(LiveStatType.StaminaRegen)) CreateLiveStatRow("Stamina Regen");
+            if (IsLiveStatEnabled(LiveStatType.StaminaRegenMulti)) CreateLiveStatRow("Stamina Regen Multi");
+            if (IsLiveStatEnabled(LiveStatType.EitrRegen)) CreateLiveStatRow("Eitr Regen");
+            if (IsLiveStatEnabled(LiveStatType.EitrRegenMulti)) CreateLiveStatRow("Eitr Regen Multi");
+            CreateSpacer("Spacer_Regen");
+        }
 
-        CreateSectionHeader("Combat", new Color(1f, 0.5f, 0f, 1f));
-        CreateLiveStatRow("Attack Speed");
-        CreateLiveStatRow("Damage Modifier");
-        CreateLiveStatRow("Stagger Resist");
-        CreateLiveStatRow("Timed Block Bonus");
-        CreateLiveStatRow("Crit Chance");
-        CreateLiveStatRow("Lifesteal");
-        CreateSpacer("Spacer_Combat");
+        bool hasCombatStats = IsLiveStatEnabled(LiveStatType.AttackSpeed) || IsLiveStatEnabled(LiveStatType.DamageModifier) ||
+                              IsLiveStatEnabled(LiveStatType.StaggerResist) || IsLiveStatEnabled(LiveStatType.TimedBlockBonus) ||
+                              IsLiveStatEnabled(LiveStatType.CritChance) || IsLiveStatEnabled(LiveStatType.Lifesteal);
+        if (hasCombatStats)
+        {
+            CreateSectionHeader("Combat", new Color(1f, 0.5f, 0f, 1f));
+            if (IsLiveStatEnabled(LiveStatType.AttackSpeed)) CreateLiveStatRow("Attack Speed");
+            if (IsLiveStatEnabled(LiveStatType.DamageModifier)) CreateLiveStatRow("Damage Modifier");
+            if (IsLiveStatEnabled(LiveStatType.StaggerResist)) CreateLiveStatRow("Stagger Resist");
+            if (IsLiveStatEnabled(LiveStatType.TimedBlockBonus)) CreateLiveStatRow("Timed Block Bonus");
+            if (IsLiveStatEnabled(LiveStatType.CritChance)) CreateLiveStatRow("Crit Chance");
+            if (IsLiveStatEnabled(LiveStatType.Lifesteal)) CreateLiveStatRow("Lifesteal");
+            CreateSpacer("Spacer_Combat");
+        }
 
-        CreateSectionHeader("Carry Weight", new Color(0.7f, 0.7f, 1f, 1f));
-        CreateLiveStatRow("Current Weight");
-        CreateLiveStatRow("Max Weight");
-        CreateLiveStatRow("Extra Carry Weight");
-        CreateSpacer("Spacer_CarryWeight");
+        bool hasElementalStats = IsLiveStatEnabled(LiveStatType.BluntDamage) || IsLiveStatEnabled(LiveStatType.SlashDamage) ||
+                                 IsLiveStatEnabled(LiveStatType.PierceDamage) || IsLiveStatEnabled(LiveStatType.FireDamage) ||
+                                 IsLiveStatEnabled(LiveStatType.FrostDamage) || IsLiveStatEnabled(LiveStatType.LightningDamage) ||
+                                 IsLiveStatEnabled(LiveStatType.PoisonDamage) || IsLiveStatEnabled(LiveStatType.SpiritDamage);
+        if (hasElementalStats)
+        {
+            CreateSectionHeader("Elemental Damage", new Color(1f, 0.6f, 0.2f, 1f));
+            if (IsLiveStatEnabled(LiveStatType.BluntDamage)) CreateLiveStatRow("Blunt Damage");
+            if (IsLiveStatEnabled(LiveStatType.SlashDamage)) CreateLiveStatRow("Slash Damage");
+            if (IsLiveStatEnabled(LiveStatType.PierceDamage)) CreateLiveStatRow("Pierce Damage");
+            if (IsLiveStatEnabled(LiveStatType.FireDamage)) CreateLiveStatRow("Fire Damage");
+            if (IsLiveStatEnabled(LiveStatType.FrostDamage)) CreateLiveStatRow("Frost Damage");
+            if (IsLiveStatEnabled(LiveStatType.LightningDamage)) CreateLiveStatRow("Lightning Damage");
+            if (IsLiveStatEnabled(LiveStatType.PoisonDamage)) CreateLiveStatRow("Poison Damage");
+            if (IsLiveStatEnabled(LiveStatType.SpiritDamage)) CreateLiveStatRow("Spirit Damage");
+            CreateSpacer("Spacer_ElementalDamage");
+        }
 
-        CreateSectionHeader("Stamina Usage", new Color(1f, 1f, 0.5f, 1f));
-        CreateLiveStatRow("Jump Stamina");
-        CreateLiveStatRow("Attack Stamina");
-        CreateLiveStatRow("Block Stamina");
-        CreateLiveStatRow("Dodge Stamina");
-        CreateLiveStatRow("Swim Stamina");
-        CreateLiveStatRow("Run Stamina");
-        CreateLiveStatRow("Sneak Stamina");
-        CreateLiveStatRow("Home Item Stamina");
-        CreateSpacer("Spacer_StaminaUsage");
+        bool hasWeightStats = IsLiveStatEnabled(LiveStatType.CurrentWeight) || IsLiveStatEnabled(LiveStatType.MaxWeight) ||
+                              IsLiveStatEnabled(LiveStatType.WeightPercentage) || IsLiveStatEnabled(LiveStatType.ExtraCarryWeight);
+        if (hasWeightStats)
+        {
+            CreateSectionHeader("Carry Weight", new Color(0.7f, 0.7f, 1f, 1f));
+            if (IsLiveStatEnabled(LiveStatType.CurrentWeight)) CreateLiveStatRow("Current Weight");
+            if (IsLiveStatEnabled(LiveStatType.MaxWeight)) CreateLiveStatRow("Max Weight");
+            if (IsLiveStatEnabled(LiveStatType.WeightPercentage)) CreateLiveStatRow("Weight Percentage");
+            if (IsLiveStatEnabled(LiveStatType.ExtraCarryWeight)) CreateLiveStatRow("Extra Carry Weight");
+            CreateSpacer("Spacer_CarryWeight");
+        }
 
-        CreateSectionHeader("Equipment Bonuses", new Color(1f, 0.8f, 0.5f, 1f));
-        CreateLiveStatRow("Total Armor");
-        CreateLiveStatRow("Heat Resistance");
-        CreateLiveStatRow("Equipment Movement");
-        CreateSpacer("Spacer_EquipmentBonuses");
+        bool hasStaminaUsageStats = IsLiveStatEnabled(LiveStatType.JumpStamina) || IsLiveStatEnabled(LiveStatType.AttackStamina) ||
+                                    IsLiveStatEnabled(LiveStatType.BlockStamina) || IsLiveStatEnabled(LiveStatType.DodgeStamina) ||
+                                    IsLiveStatEnabled(LiveStatType.SwimStamina) || IsLiveStatEnabled(LiveStatType.RunStamina) ||
+                                    IsLiveStatEnabled(LiveStatType.SneakStamina) || IsLiveStatEnabled(LiveStatType.HomeItemStamina);
+        if (hasStaminaUsageStats)
+        {
+            CreateSectionHeader("Stamina Usage", new Color(1f, 1f, 0.5f, 1f));
+            if (IsLiveStatEnabled(LiveStatType.JumpStamina)) CreateLiveStatRow("Jump Stamina");
+            if (IsLiveStatEnabled(LiveStatType.AttackStamina)) CreateLiveStatRow("Attack Stamina");
+            if (IsLiveStatEnabled(LiveStatType.BlockStamina)) CreateLiveStatRow("Block Stamina");
+            if (IsLiveStatEnabled(LiveStatType.DodgeStamina)) CreateLiveStatRow("Dodge Stamina");
+            if (IsLiveStatEnabled(LiveStatType.SwimStamina)) CreateLiveStatRow("Swim Stamina");
+            if (IsLiveStatEnabled(LiveStatType.RunStamina)) CreateLiveStatRow("Run Stamina");
+            if (IsLiveStatEnabled(LiveStatType.SneakStamina)) CreateLiveStatRow("Sneak Stamina");
+            if (IsLiveStatEnabled(LiveStatType.HomeItemStamina)) CreateLiveStatRow("Home Item Stamina");
+            CreateSpacer("Spacer_StaminaUsage");
+        }
 
-        CreateSectionHeader("Top Skills", new Color(0.8f, 0.5f, 1f, 1f));
-        CreateDynamicTextRow("Top Skills");
-        CreateSpacer("Spacer_Skills");
+        bool hasEquipmentStats = IsLiveStatEnabled(LiveStatType.TotalArmor) || IsLiveStatEnabled(LiveStatType.HeatResistance) ||
+                                 IsLiveStatEnabled(LiveStatType.EquipmentMovement);
+        if (hasEquipmentStats)
+        {
+            CreateSectionHeader("Equipment Bonuses", new Color(1f, 0.8f, 0.5f, 1f));
+            if (IsLiveStatEnabled(LiveStatType.TotalArmor)) CreateLiveStatRow("Total Armor");
+            if (IsLiveStatEnabled(LiveStatType.HeatResistance)) CreateLiveStatRow("Heat Resistance");
+            if (IsLiveStatEnabled(LiveStatType.EquipmentMovement)) CreateLiveStatRow("Equipment Movement");
+            CreateSpacer("Spacer_EquipmentBonuses");
+        }
 
-        CreateSectionHeader("Skill Bonuses", new Color(0.8f, 0.5f, 1f, 1f));
-        CreateDynamicTextRow("Skill Bonuses");
-        CreateSpacer("Spacer_Skills");
+        bool hasSkillStats = IsLiveStatEnabled(LiveStatType.TopSkills) || IsLiveStatEnabled(LiveStatType.SkillBonuses) ||
+                             IsLiveStatEnabled(LiveStatType.SkillRaiseSpeed);
+        if (hasSkillStats)
+        {
+            if (IsLiveStatEnabled(LiveStatType.TopSkills))
+            {
+                CreateSectionHeader("Top Skills", new Color(0.8f, 0.5f, 1f, 1f));
+                CreateDynamicTextRow("Top Skills");
+                CreateSpacer("Spacer_TopSkills");
+            }
 
-        CreateSectionHeader("Stealth & Utility", new Color(0.6f, 0.6f, 0.8f, 1f));
-        CreateLiveStatRow("Noise Level");
-        CreateLiveStatRow("Stealth Level");
-        CreateLiveStatRow("Fall Damage");
-        CreateSpacer("Spacer_Utility");
+            if (IsLiveStatEnabled(LiveStatType.SkillBonuses) || IsLiveStatEnabled(LiveStatType.SkillRaiseSpeed))
+            {
+                CreateSectionHeader("Skill Bonuses", new Color(0.8f, 0.5f, 1f, 1f));
+                if (IsLiveStatEnabled(LiveStatType.SkillBonuses)) CreateDynamicTextRow("Skill Bonuses");
+                if (IsLiveStatEnabled(LiveStatType.SkillRaiseSpeed)) CreateLiveStatRow("Skill Raise Speed");
+                CreateSpacer("Spacer_SkillBonuses");
+            }
+        }
 
-        CreateSectionHeader("Movement", new Color(0.5f, 1f, 0.5f, 1f));
-        CreateLiveStatRow("Movement Speed");
-        CreateLiveStatRow("Run Speed");
-        CreateLiveStatRow("Swim Speed");
-        CreateLiveStatRow("Jump Height");
-        CreateSpacer("Spacer_Movement");
+        bool hasUtilityStats = IsLiveStatEnabled(LiveStatType.NoiseLevel) || IsLiveStatEnabled(LiveStatType.StealthLevel) ||
+                               IsLiveStatEnabled(LiveStatType.CoverPercentage) || IsLiveStatEnabled(LiveStatType.FallDamage) ||
+                               IsLiveStatEnabled(LiveStatType.ComfortLevel);
+        if (hasUtilityStats)
+        {
+            CreateSectionHeader("Stealth & Utility", new Color(0.6f, 0.6f, 0.8f, 1f));
+            if (IsLiveStatEnabled(LiveStatType.NoiseLevel)) CreateLiveStatRow("Noise Level");
+            if (IsLiveStatEnabled(LiveStatType.StealthLevel)) CreateLiveStatRow("Stealth Level");
+            if (IsLiveStatEnabled(LiveStatType.CoverPercentage)) CreateLiveStatRow("Cover Percentage");
+            if (IsLiveStatEnabled(LiveStatType.FallDamage)) CreateLiveStatRow("Fall Damage");
+            if (IsLiveStatEnabled(LiveStatType.ComfortLevel)) CreateLiveStatRow("Comfort Level");
+            CreateSpacer("Spacer_Utility");
+        }
+
+        bool hasMovementStats = IsLiveStatEnabled(LiveStatType.MovementSpeed) || IsLiveStatEnabled(LiveStatType.SpeedModifier) ||
+                                IsLiveStatEnabled(LiveStatType.RunSpeed) || IsLiveStatEnabled(LiveStatType.SwimSpeed) ||
+                                IsLiveStatEnabled(LiveStatType.JumpHeight);
+        if (hasMovementStats)
+        {
+            CreateSectionHeader("Movement", new Color(0.5f, 1f, 0.5f, 1f));
+            if (IsLiveStatEnabled(LiveStatType.MovementSpeed)) CreateLiveStatRow("Movement Speed");
+            if (IsLiveStatEnabled(LiveStatType.SpeedModifier)) CreateLiveStatRow("Speed Modifier");
+            if (IsLiveStatEnabled(LiveStatType.RunSpeed)) CreateLiveStatRow("Run Speed");
+            if (IsLiveStatEnabled(LiveStatType.SwimSpeed)) CreateLiveStatRow("Swim Speed");
+            if (IsLiveStatEnabled(LiveStatType.JumpHeight)) CreateLiveStatRow("Jump Height");
+            CreateSpacer("Spacer_Movement");
+        }
 
         CreateResistancesSection();
-
+        CreateActiveFoodSection();
         CreateActiveEffectsSection();
-
         CreateSetBonusesSection();
     }
 
@@ -441,6 +527,14 @@ public static class StatsPanelController
     {
         if (!_content) return;
 
+        bool hasResistanceStats = IsLiveStatEnabled(LiveStatType.Armor) || IsLiveStatEnabled(LiveStatType.BluntResist) ||
+                                  IsLiveStatEnabled(LiveStatType.SlashResist) || IsLiveStatEnabled(LiveStatType.PierceResist) ||
+                                  IsLiveStatEnabled(LiveStatType.FireResist) || IsLiveStatEnabled(LiveStatType.FrostResist) ||
+                                  IsLiveStatEnabled(LiveStatType.LightningResist) || IsLiveStatEnabled(LiveStatType.PoisonResist) ||
+                                  IsLiveStatEnabled(LiveStatType.SpiritResist);
+
+        if (!hasResistanceStats) return;
+
         GameObject headerObj = new("Section_Resistances", typeof(RectTransform));
         RectTransform headerRect = headerObj.GetComponent<RectTransform>();
         headerRect.SetParent(_content, false);
@@ -463,15 +557,15 @@ public static class StatsPanelController
         headerLayout.preferredHeight = 20f;
         headerLayout.minHeight = 20f;
 
-        CreateLiveStatRow("Armor");
-        CreateLiveStatRow("Blunt Resist");
-        CreateLiveStatRow("Slash Resist");
-        CreateLiveStatRow("Pierce Resist");
-        CreateLiveStatRow("Fire Resist");
-        CreateLiveStatRow("Frost Resist");
-        CreateLiveStatRow("Lightning Resist");
-        CreateLiveStatRow("Poison Resist");
-        CreateLiveStatRow("Spirit Resist");
+        if (IsLiveStatEnabled(LiveStatType.Armor)) CreateLiveStatRow("Armor");
+        if (IsLiveStatEnabled(LiveStatType.BluntResist)) CreateLiveStatRow("Blunt Resist");
+        if (IsLiveStatEnabled(LiveStatType.SlashResist)) CreateLiveStatRow("Slash Resist");
+        if (IsLiveStatEnabled(LiveStatType.PierceResist)) CreateLiveStatRow("Pierce Resist");
+        if (IsLiveStatEnabled(LiveStatType.FireResist)) CreateLiveStatRow("Fire Resist");
+        if (IsLiveStatEnabled(LiveStatType.FrostResist)) CreateLiveStatRow("Frost Resist");
+        if (IsLiveStatEnabled(LiveStatType.LightningResist)) CreateLiveStatRow("Lightning Resist");
+        if (IsLiveStatEnabled(LiveStatType.PoisonResist)) CreateLiveStatRow("Poison Resist");
+        if (IsLiveStatEnabled(LiveStatType.SpiritResist)) CreateLiveStatRow("Spirit Resist");
 
         GameObject spacer = new("Spacer_Resistances", typeof(RectTransform));
         RectTransform spacerRect = spacer.GetComponent<RectTransform>();
@@ -483,10 +577,9 @@ public static class StatsPanelController
 
     private static void CreateActiveEffectsSection()
     {
-        if (!_content) return;
+        if (!_content || !IsLiveStatEnabled(LiveStatType.ActiveEffects)) return;
 
         CreateSectionHeader("Active Effects", new Color(0.5f, 0.8f, 1f, 1f));
-
         CreateDynamicTextRow("ActiveEffects");
 
         CreateSpacer("Spacer_ActiveEffects");
@@ -494,13 +587,24 @@ public static class StatsPanelController
 
     private static void CreateSetBonusesSection()
     {
-        if (!_content) return;
+        if (!_content || !IsLiveStatEnabled(LiveStatType.SetBonuses)) return;
 
         CreateSectionHeader("Active Set Bonuses", new Color(0.8f, 0.6f, 1f, 1f));
 
         CreateDynamicTextRow("SetBonuses");
 
         CreateSpacer("Spacer_SetBonuses");
+    }
+
+    private static void CreateActiveFoodSection()
+    {
+        if (!_content || !IsLiveStatEnabled(LiveStatType.FoodBuffs)) return;
+
+        CreateSectionHeader("Active Food Buffs", new Color(1f, 0.7f, 0.3f, 1f));
+
+        CreateDynamicTextRow("FoodBuffs");
+
+        CreateSpacer("Spacer_FoodBuffs");
     }
 
     private static void CreateDynamicTextRow(string id)
@@ -858,6 +962,39 @@ public static class StatsPanelController
                         element.ValueText.text = lifesteal > 0 ? $"{lifesteal:F1}%" : "0%";
                         break;
 
+                    case "Blunt Damage":
+                        float bluntDamage = CalculateElementalDamageBonus(player, HitData.DamageType.Blunt);
+                        element.ValueText.text = bluntDamage != 0 ? $"{bluntDamage:+0;-0}%" : "0%";
+                        break;
+                    case "Slash Damage":
+                        float slashDamage = CalculateElementalDamageBonus(player, HitData.DamageType.Slash);
+                        element.ValueText.text = slashDamage != 0 ? $"{slashDamage:+0;-0}%" : "0%";
+                        break;
+                    case "Pierce Damage":
+                        float pierceDamage = CalculateElementalDamageBonus(player, HitData.DamageType.Pierce);
+                        element.ValueText.text = pierceDamage != 0 ? $"{pierceDamage:+0;-0}%" : "0%";
+                        break;
+                    case "Fire Damage":
+                        float fireDamage = CalculateElementalDamageBonus(player, HitData.DamageType.Fire);
+                        element.ValueText.text = fireDamage != 0 ? $"{fireDamage:+0;-0}%" : "0%";
+                        break;
+                    case "Frost Damage":
+                        float frostDamage = CalculateElementalDamageBonus(player, HitData.DamageType.Frost);
+                        element.ValueText.text = frostDamage != 0 ? $"{frostDamage:+0;-0}%" : "0%";
+                        break;
+                    case "Lightning Damage":
+                        float lightningDamage = CalculateElementalDamageBonus(player, HitData.DamageType.Lightning);
+                        element.ValueText.text = lightningDamage != 0 ? $"{lightningDamage:+0;-0}%" : "0%";
+                        break;
+                    case "Poison Damage":
+                        float poisonDamage = CalculateElementalDamageBonus(player, HitData.DamageType.Poison);
+                        element.ValueText.text = poisonDamage != 0 ? $"{poisonDamage:+0;-0}%" : "0%";
+                        break;
+                    case "Spirit Damage":
+                        float spiritDamage = CalculateElementalDamageBonus(player, HitData.DamageType.Spirit);
+                        element.ValueText.text = spiritDamage != 0 ? $"{spiritDamage:+0;-0}%" : "0%";
+                        break;
+
                     case "Current Weight":
                         float current = player.GetInventory()?.GetTotalWeight() ?? 0f;
                         element.ValueText.text = $"{current:F0}";
@@ -865,6 +1002,12 @@ public static class StatsPanelController
                     case "Max Weight":
                         float max = player.GetMaxCarryWeight();
                         element.ValueText.text = $"{max:F0}";
+                        break;
+                    case "Weight Percentage":
+                        float currentWeight = player.GetInventory()?.GetTotalWeight() ?? 0f;
+                        float maxWeight = player.GetMaxCarryWeight();
+                        float weightPercentage = maxWeight > 0 ? (currentWeight / maxWeight) * 100f : 0f;
+                        element.ValueText.text = $"{weightPercentage:F0}%";
                         break;
                     case "Extra Carry Weight":
                         float extra = CalculateExtraCarryWeight(player);
@@ -923,6 +1066,10 @@ public static class StatsPanelController
                     case "Skill Bonuses":
                         element.ValueText.text = GetAddedSkillPoints(player);
                         break;
+                    case "Skill Raise Speed":
+                        float skillRaise = CalculateSkillRaiseSpeed(player);
+                        element.ValueText.text = skillRaise != 0 ? $"{skillRaise:+0;-0}%" : "0%";
+                        break;
 
                     case "Noise Level":
                         float noise = CalculateNoiseLevel(player);
@@ -932,12 +1079,24 @@ public static class StatsPanelController
                         float stealth = CalculateStealthLevel(player);
                         element.ValueText.text = stealth != 0 ? $"{stealth:+0;-0}%" : "0%";
                         break;
+                    case "Cover Percentage":
+                        float cover = player.m_coverPercentage;
+                        element.ValueText.text = $"{cover:F0}%";
+                        break;
                     case "Fall Damage":
                         float fallDamage = CalculateFallDamage(player);
                         element.ValueText.text = fallDamage != 0 ? $"{fallDamage:+0;-0}%" : "0%";
                         break;
+                    case "Comfort Level":
+                        int comfort = player.GetComfortLevel();
+                        element.ValueText.text = $"{comfort}";
+                        break;
                     case "Movement Speed":
                         element.ValueText.text = $"{player.GetJogSpeedFactor() * 100:F0}%";
+                        break;
+                    case "Speed Modifier":
+                        float speedMod = CalculateSpeedModifier(player);
+                        element.ValueText.text = speedMod != 0 ? $"{speedMod:+0;-0}%" : "0%";
                         break;
                     case "Run Speed":
                         element.ValueText.text = $"{player.GetRunSpeedFactor() * 100:F0}%";
@@ -976,6 +1135,10 @@ public static class StatsPanelController
                         break;
                     case "Spirit Resist":
                         element.ValueText.text = FormatResistance(GetResistance(player, HitData.DamageType.Spirit));
+                        break;
+
+                    case "FoodBuffs":
+                        element.ValueText.text = GetActiveFoodBuffs(player);
                         break;
 
                     case "ActiveEffects":
@@ -1603,7 +1766,6 @@ public static class StatsPanelController
             }
         }
 
-        // Fallback to raw Unity Input
         if (Mathf.Approximately(scrollInput, 0f))
         {
             try
@@ -1622,6 +1784,99 @@ public static class StatsPanelController
             float scrollDelta = -scrollInput * 1f * Time.deltaTime;
             float newValue = Mathf.Clamp01(scroll.verticalNormalizedPosition + scrollDelta);
             scroll.verticalNormalizedPosition = newValue;
+        }
+    }
+
+    private static float CalculateElementalDamageBonus(Player player, HitData.DamageType damageType)
+    {
+        float bonus = 0f;
+
+        try
+        {
+            if (player.m_seman?.GetStatusEffects() != null)
+            {
+                foreach (StatusEffect effect in player.m_seman.GetStatusEffects())
+                {
+                    if (effect is not SE_Stats seStats) continue;
+
+                    float modifier = damageType switch
+                    {
+                        HitData.DamageType.Blunt => seStats.m_percentigeDamageModifiers.m_blunt,
+                        HitData.DamageType.Slash => seStats.m_percentigeDamageModifiers.m_slash,
+                        HitData.DamageType.Pierce => seStats.m_percentigeDamageModifiers.m_pierce,
+                        HitData.DamageType.Fire => seStats.m_percentigeDamageModifiers.m_fire,
+                        HitData.DamageType.Frost => seStats.m_percentigeDamageModifiers.m_frost,
+                        HitData.DamageType.Lightning => seStats.m_percentigeDamageModifiers.m_lightning,
+                        HitData.DamageType.Poison => seStats.m_percentigeDamageModifiers.m_poison,
+                        HitData.DamageType.Spirit => seStats.m_percentigeDamageModifiers.m_spirit,
+                        _ => 0f
+                    };
+
+                    if (modifier != 0f)
+                        bonus += modifier * 100f;
+                }
+            }
+        }
+        catch
+        {
+            /* Ignore errors */
+        }
+
+        return bonus;
+    }
+
+    private static float CalculateSkillRaiseSpeed(Player player) => CalculateMultiplierModifier(player, seStats => seStats.m_raiseSkillModifier);
+
+    private static float CalculateSpeedModifier(Player player) => CalculateMultiplierModifier(player, seStats => seStats.m_speedModifier);
+
+    private static string GetActiveFoodBuffs(Player player)
+    {
+        try
+        {
+            if (player.m_foods == null || player.m_foods.Count == 0)
+                return "None";
+
+            System.Text.StringBuilder sb = new();
+            int count = 0;
+
+            foreach (Player.Food food in player.m_foods)
+            {
+                if (food?.m_item == null) continue;
+
+                string foodName = food.m_item.m_shared.m_name;
+                float timeLeft = food.m_time;
+                string timeStr = "";
+
+                if (timeLeft > 0)
+                {
+                    if (timeLeft >= 60)
+                        timeStr = $" ({timeLeft / 60:F0}m)";
+                    else
+                        timeStr = $" ({timeLeft:F0}s)";
+                }
+
+                float hp = food.m_item.m_shared.m_food;
+                float stam = food.m_item.m_shared.m_foodStamina;
+                float eitr = food.m_item.m_shared.m_foodEitr;
+
+                string stats = "";
+                if (hp > 0) stats += $" +{hp:F0}HP";
+                if (stam > 0) stats += $" +{stam:F0}Stam";
+                if (eitr > 0) stats += $" +{eitr:F0}Eitr";
+
+                sb.Append($"• {foodName}{stats}{timeStr}");
+                count++;
+
+                if (count < player.m_foods.Count)
+                    sb.AppendLine();
+            }
+
+            return count > 0 ? sb.ToString() : "None";
+        }
+        catch (Exception ex)
+        {
+            AzuExtendedPlayerInventoryLogger.LogWarning($"Error getting food buffs: {ex.Message}");
+            return "Error";
         }
     }
 

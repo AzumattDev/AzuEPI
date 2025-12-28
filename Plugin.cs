@@ -2,6 +2,7 @@
 using AzuEPI.Game.Compatibility;
 using AzuEPI.Game.Compatibility.AdvBackpacks;
 using AzuEPI.Game.Loadout;
+using AzuEPI.Game.Panels.Stats;
 using AzuEPI.Game.Panels.Vanity;
 //using AzuEPI.Game.Moveable;
 using AzuEPI.Game.Slots.QAB;
@@ -99,6 +100,14 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
                 .Select(stat => stat.ToString()));
         SelectedPlayerStats = config("5 - UI Features", "Player Stats to Display", defaultStats,
             new ConfigDescription("Choose which character stats to display in the stats panel (📋 button). Use the config manager UI to select/deselect stats.", null, new ConfigurationManagerAttributes { CustomDrawer = StatsConfigDrawer }),
+            NextOrder, false);
+
+        string defaultLiveStats = string.Join(",",
+            Enum.GetValues(typeof(LiveStatType))
+                .Cast<LiveStatType>()
+                .Select(stat => stat.ToString()));
+        SelectedLiveStats = config("5 - UI Features", "Live Stats to Display", defaultLiveStats,
+            new ConfigDescription("Choose which live character stats to display in the stats panel (📋 button). These include health, damage modifiers, resistances, etc. Use the config manager UI to select/deselect stats.", null, new ConfigurationManagerAttributes { CustomDrawer = LiveStatsConfigDrawer }),
             NextOrder, false);
 
         /* 6 - Equipment Slot Labels */
@@ -388,6 +397,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<Toggle> MakeDropAllButton = null!;
     public static ConfigEntry<Vector2> DropAllButtonPosition = null!;
     public static ConfigEntry<string> SelectedPlayerStats = null!;
+    public static ConfigEntry<string> SelectedLiveStats = null!;
     public static ConfigEntry<int> ExtraRows = null!;
     public static ConfigEntry<string> HelmetText = null!;
     public static ConfigEntry<string> ChestText = null!;
@@ -548,6 +558,83 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         }
 
         return result;
+    }
+
+    private static void LiveStatsConfigDrawer(ConfigEntryBase entry)
+    {
+        LiveStatType[] allStats = (LiveStatType[])Enum.GetValues(typeof(LiveStatType));
+        List<LiveStatType> selectedStats = ParseLiveStatsList(SelectedLiveStats.Value);
+
+        GUILayout.Space(5);
+
+        GUILayout.BeginVertical(GUI.skin.box);
+        GUILayout.Space(5);
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("Select All", GUILayout.ExpandWidth(false)))
+        {
+            SelectedLiveStats.Value = string.Join(",", allStats.Select(s => s.ToString()));
+        }
+
+        if (GUILayout.Button("Clear All", GUILayout.ExpandWidth(false)))
+        {
+            SelectedLiveStats.Value = "";
+        }
+
+        GUILayout.EndHorizontal();
+
+        int columns = 3;
+        int itemsPerColumn = Mathf.CeilToInt(allStats.Length / (float)columns);
+
+        GUILayout.BeginHorizontal();
+        for (int col = 0; col < columns; ++col)
+        {
+            GUILayout.BeginVertical();
+            int startIdx = col * itemsPerColumn;
+            int endIdx = Math.Min(startIdx + itemsPerColumn, allStats.Length);
+
+            for (int i = startIdx; i < endIdx && i < allStats.Length; ++i)
+            {
+                LiveStatType stat = allStats[i];
+                bool isSelected = selectedStats.Contains(stat);
+                bool newValue = GUILayout.Toggle(isSelected, FormatLiveStatName(stat), GUILayout.ExpandWidth(false));
+
+                if (newValue == isSelected) continue;
+                if (newValue)
+                    selectedStats.Add(stat);
+                else
+                    selectedStats.Remove(stat);
+
+                SelectedLiveStats.Value = string.Join(",", selectedStats.Select(s => s.ToString()));
+            }
+
+            GUILayout.EndVertical();
+        }
+
+        GUILayout.EndHorizontal();
+
+        GUILayout.EndVertical();
+    }
+
+    public static List<LiveStatType> ParseLiveStatsList(string statsString)
+    {
+        List<LiveStatType> result = new();
+        if (string.IsNullOrWhiteSpace(statsString))
+            return result;
+
+        string[] statNames = statsString.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (string statName in statNames)
+        {
+            if (Enum.TryParse(statName.Trim(), out LiveStatType stat))
+                result.Add(stat);
+        }
+
+        return result;
+    }
+
+    private static string FormatLiveStatName(LiveStatType stat)
+    {
+        string name = stat.ToString();
+        return System.Text.RegularExpressions.Regex.Replace(name, "([a-z])([A-Z])", "$1 $2");
     }
 
     #endregion
