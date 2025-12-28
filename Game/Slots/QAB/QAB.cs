@@ -188,6 +188,18 @@ internal static class QuickAccessBar
         __instance.m_elements.Clear();
     }
 
+    public static void ForceRefresh()
+    {
+        if (Hud.instance == null) return;
+
+        Transform transform = Hud.instance.transform.Find("hudroot");
+        HotkeyBar? qab = transform?.Find(QabName)?.GetComponent<HotkeyBar>();
+        if (qab != null)
+        {
+            ClearElements(qab, true);
+        }
+    }
+
     public static void SetElementPositions()
     {
         Transform transform = Hud.instance.transform.Find("hudroot");

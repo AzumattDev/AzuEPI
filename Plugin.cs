@@ -191,6 +191,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             {
                 VanityPanelController.VanityButtonGo.gameObject.SetActive(VanityOption.Value.isOn());
             }
+
             SlotHelpers.UpdateEquipmentBackgroundAnchors();
         };
 
@@ -200,6 +201,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             {
                 PersonalLoadoutGui.LoadoutsToggleButton.gameObject.SetActive(LoadoutOption.Value.isOn());
             }
+
             SlotHelpers.UpdateEquipmentBackgroundAnchors();
         };
 
@@ -238,12 +240,26 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     internal void FullRebuild()
     {
-        InventoryGuiPatches.UpdateInventory_Patch.RebuildQuickslots();
-        SlotHelpers.ResizeSlots();
-        Layout.UpdateInventorySize();
-        InventoryHealth.FixHiddenItems();
-        SlotHelpers.UpdateEquipmentBackgroundAnchors();
-        RebuildUI();
+        if (Player.m_localPlayer == null || InventoryGui.instance == null)
+        {
+            AzuExtendedPlayerInventoryLogger.LogDebug("FullRebuild skipped - player or inventory not initialized");
+            return;
+        }
+
+        try
+        {
+            InventoryGuiPatches.UpdateInventory_Patch.RebuildQuickslots();
+            SlotHelpers.ResizeSlots();
+            Layout.UpdateInventorySize();
+            InventoryHealth.FixHiddenItems();
+            SlotHelpers.UpdateEquipmentBackgroundAnchors();
+            RebuildUI();
+            QuickAccessBar.ForceRefresh();
+        }
+        catch (Exception ex)
+        {
+            AzuExtendedPlayerInventoryLogger.LogError($"Error during FullRebuild: {ex.Message}\n{ex.StackTrace}");
+        }
     }
 
     private void Start()
@@ -313,8 +329,10 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
                 $"Custom text to display for quick slot {i + 1} hotkey on the HUD. Leave blank to auto-generate from the hotkey itself.", false);
             HotkeyTexts[i].SettingChanged += (_, _) =>
             {
-                InitializeHotkeys();
-                FullRebuild();
+                if (Player.m_localPlayer != null && InventoryGui.instance != null)
+                {
+                    FullRebuild();
+                }
             };
         }
     }
@@ -476,10 +494,12 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         {
             SelectedPlayerStats.Value = string.Join(",", allStats.Select(s => s.ToString()));
         }
+
         if (GUILayout.Button("Clear All", GUILayout.ExpandWidth(false)))
         {
             SelectedPlayerStats.Value = "";
         }
+
         GUILayout.EndHorizontal();
         int columns = 3;
         int itemsPerColumn = Mathf.CeilToInt(allStats.Length / (float)columns);
@@ -505,8 +525,10 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
                 SelectedPlayerStats.Value = string.Join(",", selectedStats.Select(s => s.ToString()));
             }
+
             GUILayout.EndVertical();
         }
+
         GUILayout.EndHorizontal();
 
         GUILayout.EndVertical();
@@ -524,6 +546,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             if (Enum.TryParse(statName.Trim(), out PlayerStatType stat))
                 result.Add(stat);
         }
+
         return result;
     }
 

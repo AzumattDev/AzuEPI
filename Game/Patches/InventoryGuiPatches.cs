@@ -179,11 +179,29 @@ public class InventoryGuiPatches
 
         internal static void RebuildQuickslots()
         {
+            if (Hotkeys == null || HotkeyTexts == null)
+            {
+                AzuExtendedPlayerInventoryLogger.LogWarning("RebuildQuickslots called with null Hotkeys or HotkeyTexts");
+                return;
+            }
+
+            if (Hotkeys.Length != HotkeyTexts.Length)
+            {
+                AzuExtendedPlayerInventoryLogger.LogWarning($"RebuildQuickslots: Hotkeys.Length ({Hotkeys.Length}) != HotkeyTexts.Length ({HotkeyTexts.Length})");
+                return;
+            }
+
             slots.RemoveAll(s => s is { IsQuickSlot: true });
 
             API.BeforeQuickSlotsAdded();
-            for (int i = 0; i < Hotkeys.Length; ++i)
+            for (int i = 0; i < Hotkeys.Length && i < HotkeyTexts.Length; ++i)
             {
+                if (Hotkeys[i] == null || HotkeyTexts[i] == null)
+                {
+                    AzuExtendedPlayerInventoryLogger.LogWarning($"Skipping quick slot {i} due to null config entry");
+                    continue;
+                }
+
                 slots.Add(new Model.Slot
                 {
                     Name = HotkeyTexts[i].Value.IsNullOrWhiteSpace() ? Hotkeys[i].Value.ToString() : HotkeyTexts[i].Value,
