@@ -690,8 +690,8 @@ internal static class VanityPanelController
             pivot: ToggleBtnPivot,
             anchoredPosition: ToggleBtnPos,
             size: ToggleBtnSize,
-            gamepadKey: "JoyLStick",
-            gamepadKeyCode: KeyCode.JoystickButton8,
+            gamepadKey: PanelUtilities.KeyCodeToZInputKey(VanityToggleGamepadKey.Value),
+            gamepadKeyCode: VanityToggleGamepadKey.Value,
             label: "👕",
             labelFontSize: 20f,
             onClick: () =>

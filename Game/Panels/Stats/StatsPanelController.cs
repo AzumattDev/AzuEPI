@@ -37,7 +37,7 @@ public static class StatsPanelController
     private static RectTransform? _content;
     private static Scrollbar? _vbar;
     private static Button? _toggleBtn;
-    private static Transform? StatsButtonGo;
+    internal static Transform? StatsButtonGo;
     private static TMP_FontAsset? _fontAsset;
     private static Transform? _tabBorderTemplate;
     private static readonly List<StatElement> _statElements = new();
@@ -865,8 +865,8 @@ public static class StatsPanelController
             pivot: ToggleBtnPivot,
             anchoredPosition: new Vector2(-50f, -30f),
             size: ToggleBtnSize,
-            gamepadKey: "JoyTabLeft",
-            gamepadKeyCode: KeyCode.JoystickButton4,
+            gamepadKey: PanelUtilities.KeyCodeToZInputKey(StatsToggleGamepadKey.Value),
+            gamepadKeyCode: StatsToggleGamepadKey.Value,
             label: "📋",
             labelFontSize: 20f,
             onClick: () =>

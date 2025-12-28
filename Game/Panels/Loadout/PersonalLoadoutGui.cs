@@ -204,8 +204,8 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
             pivot: new Vector2(0f, 1f),
             anchoredPosition: new Vector2(-205f, -30f),
             size: new Vector2(120f, 32f),
-            gamepadKey: "JoyRStick",
-            gamepadKeyCode: KeyCode.JoystickButton9,
+            gamepadKey: PanelUtilities.KeyCodeToZInputKey(LoadoutToggleGamepadKey.Value),
+            gamepadKeyCode: LoadoutToggleGamepadKey.Value,
             label: "🎯",
             labelFontSize: 20f,
             onClick: () =>

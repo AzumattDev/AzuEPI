@@ -2,6 +2,7 @@
 using AzuEPI.Game.Compatibility;
 using AzuEPI.Game.Compatibility.AdvBackpacks;
 using AzuEPI.Game.Loadout;
+using AzuEPI.Game.Panels;
 using AzuEPI.Game.Panels.Stats;
 using AzuEPI.Game.Panels.Vanity;
 //using AzuEPI.Game.Moveable;
@@ -125,6 +126,12 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         QuickAccessLocation = config("7 - Quick Slots Customization", "HUD Position", Vector2.one, "Screen position of the quick slots bar. Use the drag keys (default: CTRL+LeftClick) to reposition, or set to (9999, 9999) for automatic positioning.", NextOrder, false);
         QuickslotDragKeys = config("7 - Quick Slots Customization", "Drag to Reposition Keys", new KeyboardShortcut(KeyCode.Mouse0, KeyCode.LeftControl), "Key combination to drag and reposition the quick slots bar on screen. Default: Hold CTRL and drag with left mouse button.", NextOrder, false);
 
+        /* 8.5 - Panel Toggle Keys (Gamepad) */
+        ResetConfigOrder();
+        VanityToggleGamepadKey = config("8.5 - Panel Toggle Keys (Gamepad)", "Vanity Panel Toggle Key", KeyCode.JoystickButton8, "Gamepad button to toggle the Vanity panel. Default: Left Stick Press (JoyLStick).", NextOrder, false);
+        LoadoutToggleGamepadKey = config("8.5 - Panel Toggle Keys (Gamepad)", "Loadout Panel Toggle Key", KeyCode.JoystickButton9, "Gamepad button to toggle the Loadout panel. Default: Right Stick Press (JoyRStick).", NextOrder, false);
+        StatsToggleGamepadKey = config("8.5 - Panel Toggle Keys (Gamepad)", "Stats Panel Toggle Key", KeyCode.JoystickButton4, "Gamepad button to toggle the Stats panel. Default: Left Bumper (JoyTabLeft).", NextOrder, false);
+
         /* 9 - Additional Features */
         ResetConfigOrder();
         MakeDropAllButton = config("9 - Additional Features", "Enable Drop All Button", Off, "Adds a 'Drop All' button to your inventory for quickly dropping all items. USE WITH CAUTION!", NextOrder, false);
@@ -214,6 +221,10 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             SlotHelpers.UpdateEquipmentBackgroundAnchors();
         };
 
+        VanityToggleGamepadKey.SettingChanged += (sender, args) => { RefreshPanelButtonBindings(); };
+        LoadoutToggleGamepadKey.SettingChanged += (sender, args) => { RefreshPanelButtonBindings(); };
+        StatsToggleGamepadKey.SettingChanged += (sender, args) => { RefreshPanelButtonBindings(); };
+
         OldLayout.SettingChanged += (sender, args) =>
         {
             SlotHelpers.ResizeSlots();
@@ -268,6 +279,24 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         catch (Exception ex)
         {
             AzuExtendedPlayerInventoryLogger.LogError($"Error during FullRebuild: {ex.Message}\n{ex.StackTrace}");
+        }
+    }
+
+    internal static void RefreshPanelButtonBindings()
+    {
+        if (VanityPanelController.VanityButtonGo != null)
+        {
+            PanelUtilities.UpdateButtonBinding(VanityPanelController.VanityButtonGo, VanityToggleGamepadKey.Value);
+        }
+
+        if (PersonalLoadoutGui.LoadoutsToggleButton != null)
+        {
+            PanelUtilities.UpdateButtonBinding(PersonalLoadoutGui.LoadoutsToggleButton, LoadoutToggleGamepadKey.Value);
+        }
+
+        if (StatsPanelController.StatsButtonGo != null)
+        {
+            PanelUtilities.UpdateButtonBinding(StatsPanelController.StatsButtonGo, StatsToggleGamepadKey.Value);
         }
     }
 
@@ -423,6 +452,10 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<Toggle> VanityOption = null!;
     public static ConfigEntry<Toggle> LoadoutOption = null!;
     public static ConfigEntry<Toggle> OldLayout = null!;
+
+    public static ConfigEntry<KeyCode> VanityToggleGamepadKey = null!;
+    public static ConfigEntry<KeyCode> LoadoutToggleGamepadKey = null!;
+    public static ConfigEntry<KeyCode> StatsToggleGamepadKey = null!;
 
     private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description, bool synchronizedSetting = true)
     {

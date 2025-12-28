@@ -272,6 +272,48 @@ public static class PanelUtilities
         }
     }
 
+    public static void UpdateButtonBinding(Transform buttonGo, KeyCode newKeyCode)
+    {
+        if (!buttonGo.TryGetComponent(out UIGamePad gp)) return;
+        string zinputKey = KeyCodeToZInputKey(newKeyCode);
+        gp.m_keyCode = newKeyCode;
+        gp.m_zinputKey = zinputKey;
+
+        if (ZInput.instance != null)
+        {
+            gp.m_hint.GetComponentInChildren<TextMeshProUGUI>(true).text =
+                ZInput.instance.GetBoundKeyString(zinputKey, true);
+        }
+    }
+
+    public static string KeyCodeToZInputKey(KeyCode keyCode)
+    {
+        return keyCode switch
+        {
+            KeyCode.JoystickButton0 => "JoyButtonA",
+            KeyCode.JoystickButton1 => "JoyButtonB",
+            KeyCode.JoystickButton2 => "JoyButtonX",
+            KeyCode.JoystickButton3 => "JoyButtonY",
+            KeyCode.JoystickButton4 => "JoyLBumper",
+            KeyCode.JoystickButton5 => "JoyRBumper",
+            KeyCode.JoystickButton6 => "JoyBack",
+            KeyCode.JoystickButton7 => "JoyStart",
+            KeyCode.JoystickButton8 => "JoyLStick",
+            KeyCode.JoystickButton9 => "JoyRStick",
+            KeyCode.JoystickButton10 => "JoyDPadLeft",
+            KeyCode.JoystickButton11 => "JoyDPadRight",
+            KeyCode.JoystickButton12 => "JoyDPadUp",
+            KeyCode.JoystickButton13 => "JoyDPadDown",
+            KeyCode.JoystickButton14 => "JoyLTrigger",
+            KeyCode.JoystickButton15 => "JoyRTrigger",
+            KeyCode.JoystickButton16 => "JoyButtonA",
+            KeyCode.JoystickButton17 => "JoyButtonB",
+            KeyCode.JoystickButton18 => "JoyButtonX",
+            KeyCode.JoystickButton19 => "JoyButtonY",
+            _ => "JoyButtonA"
+        };
+    }
+
     public static void HideCraftingElements(bool hide)
     {
         if (!InventoryGui.instance) return;
