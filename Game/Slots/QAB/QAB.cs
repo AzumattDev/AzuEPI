@@ -1,4 +1,5 @@
-﻿using AzuEPI.Core.Text;
+﻿using AzuEPI.Core.InventoryHandlers;
+using AzuEPI.Core.Text;
 using AzuEPI.EPI;
 
 namespace AzuEPI.Game.Slots.QAB;
@@ -285,9 +286,9 @@ public static class HotkeyBarController
                         hotkeyBar.m_selected = Mathf.Min(hotkeyBar.m_elements.Count - 1, hotkeyBar.m_selected + 1);
                 }
 
-                if (ZInput.GetButtonDown("JoyDPadUp"))
+                if (ZInput.GetButtonDown("JoyDPadUp") || ZInput.GetButtonDown("JoyHotbarUse"))
                 {
-                    if (hotkeyBar.name == "QuickAccessBar" && ShowQuickSlots.Value.isOn())
+                    if (hotkeyBar.name == QabName && ShowQuickSlots.Value.isOn())
                     {
                         Inventory? quickSlotInventory = player.m_inventory;
                         int width = quickSlotInventory.GetWidth();
@@ -297,7 +298,6 @@ public static class HotkeyBarController
                         ItemDrop.ItemData? item = quickSlotInventory.GetItemAt(index % width, index / width);
                         if (item != null)
                         {
-                            AzuExtendedPlayerInventoryLogger.LogInfo($"QuickAccessBar item {item.m_shared.m_name}");
                             player.UseItem(null, item, false);
                         }
                     }
