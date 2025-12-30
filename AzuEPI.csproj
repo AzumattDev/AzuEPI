@@ -14,6 +14,8 @@
         <FileAlignment>512</FileAlignment>
         <LangVersion>10</LangVersion>
         <Nullable>enable</Nullable>
+        <SignAssembly>true</SignAssembly>
+        <AssemblyOriginatorKeyFile>AzuEPI.snk</AssemblyOriginatorKeyFile>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
         <PlatformTarget>AnyCPU</PlatformTarget>
@@ -190,6 +192,7 @@
         <Compile Include="Game\Panels\Loadout\PersonalLoadoutGuiDetails.cs"/>
         <Compile Include="Game\Panels\Loadout\UIDragger.cs"/>
         <Compile Include="Game\Panels\Stats\StatsPanelController.cs"/>
+        <Compile Include="Game\Panels\Stats\LiveStatType.cs" />
         <Compile Include="Game\Panels\Vanity\SlotIconChanges.cs"/>
         <Compile Include="Game\Panels\Vanity\VanityAPI.cs"/>
         <Compile Include="Game\Panels\Vanity\VanityLookup.cs"/>
@@ -228,9 +231,9 @@
         <Compile Include="API\API.cs"/>
         <Compile Include="API\APIBkCompat.cs"/>
         <Compile Include="Core\Slots\Model.cs"/>
-        <Compile Include="Game\Panels\Stats\LiveStatType.cs" />
         <Compile Include="GlobalUsings.cs"/>
         <None Include="App.config"/>
+        <None Include="AzuEPI.snk" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.43">
@@ -241,7 +244,6 @@
     </ItemGroup>
     <ItemGroup>
         <Content Include=".github\workflows\publish-mod.yml"/>
-        <Content Include="NewFile1.txt"/>
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)|$(Platform)' != 'API|AnyCPU'">
         <Folder Include="Core\"/>
