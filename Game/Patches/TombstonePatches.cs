@@ -1,6 +1,4 @@
-﻿using AzuEPI.Core.Input;
-
-namespace AzuEPI.Game.Patches;
+﻿namespace AzuEPI.Game.Patches;
 
 public class TombstonePatches
 {

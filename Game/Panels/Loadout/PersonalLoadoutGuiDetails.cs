@@ -163,7 +163,7 @@ public class PersonalLoadoutGuiDetails : MonoBehaviour
         if (!src) return;
 
         Transform? clone = Instantiate(src, gui.m_crafting);
-        clone.name = "AzuEPILoadoutsToggleButton";
+        clone.name = $"{Prefix}LoadoutsToggleButton";
         clone.SetAsLastSibling();
 
         RectTransform rt = (RectTransform)clone;

@@ -41,6 +41,8 @@ public class Layout
     public static Vector2 SelectedFrameOrigAnchMin;
     public static Vector2 RepairSimpleOrigAnchoredPos;
     public static Vector2 RepairButtonOrigAnchoredPos;
+    public static Vector2 EnchantmentMenuOrigAnchoredPos;
+    public static Vector2 EnchantmentMenuBkgOrigAnchoredPos;
 
     public static void UpdateInventorySize()
     {
@@ -110,6 +112,7 @@ public class Layout
         RectTransform? selectedFrame = instance.m_crafting.Find("selected_frame").GetComponent<RectTransform>();
         RectTransform? repairSimple = instance.m_crafting.Find("RepairSimple").GetComponent<RectTransform>();
         RectTransform? repairButton = instance.m_crafting.Find("RepairButton").GetComponent<RectTransform>();
+        RectTransform? enchantmentMenu = VESCompat.IsVesInstalled ? instance.m_crafting.Find("enchantment_menu").GetComponent<RectTransform>() : null;
         Image? craftingBkg = instance.m_crafting.Find("Bkg").GetComponent<Image>();
 
         if (OldLayout.Value.isOn())
@@ -117,6 +120,7 @@ public class Layout
             selectedFrame.anchorMin = SelectedFrameOrigAnchMin;
             repairSimple.anchoredPosition = RepairSimpleOrigAnchoredPos;
             repairButton.anchoredPosition = RepairButtonOrigAnchoredPos;
+            if(enchantmentMenu)enchantmentMenu.anchoredPosition = EnchantmentMenuOrigAnchoredPos;
             if (!craftingBkg.isActiveAndEnabled) craftingBkg.enabled = true;
             if (!GlgGo) return;
             if (InventoryGui.instance)
@@ -129,6 +133,7 @@ public class Layout
             selectedFrame.anchorMin = PlayerBkgAnchorMin;
             repairSimple.anchoredPosition += RepairMovement;
             repairButton.anchoredPosition += RepairMovement;
+            if(enchantmentMenu)enchantmentMenu.anchoredPosition += RepairMovement;
             if (craftingBkg.isActiveAndEnabled) craftingBkg.enabled = false;
             if (!GlgGo) return;
             if (InventoryGui.instance)
@@ -264,5 +269,7 @@ public class Layout
         if (GUICache._selectedFrameRT) GUICache._selectedFrameRT.anchorMin = PlayerBkgAnchorMin;
         if (GUICache._repairSimpleRT) GUICache._repairSimpleRT.anchoredPosition += RepairMovement;
         if (GUICache._repairButtonRT) GUICache._repairButtonRT.anchoredPosition += RepairMovement;
+        if (GUICache._enchantmentMenuButtonRT) GUICache._enchantmentMenuButtonRT.anchoredPosition += RepairMovement;
+        if (GUICache._enchantmentMenuBkgButtonRT) GUICache._enchantmentMenuBkgButtonRT.anchoredPosition += RepairMovement;
     }
 }

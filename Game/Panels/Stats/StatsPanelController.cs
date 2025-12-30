@@ -1,6 +1,3 @@
-using AzuEPI.Game.Loadout;
-using AzuEPI.Game.Panels.Vanity;
-
 namespace AzuEPI.Game.Panels.Stats;
 
 public static class StatsPanelController

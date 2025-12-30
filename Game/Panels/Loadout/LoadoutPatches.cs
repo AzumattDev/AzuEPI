@@ -128,7 +128,7 @@ static class PlayerSpawnedPatch
         if (!srcBkg) return null;
 
         Transform? loadoutPanel = Object.Instantiate(srcBkg, crafting);
-        loadoutPanel.name = "AzuEPILoadoutPanel";
+        loadoutPanel.name = $"{Prefix}LoadoutPanel";
         RectTransform rt = (RectTransform)loadoutPanel.transform;
         rt.anchorMin = srcBkg.GetComponent<RectTransform>().anchorMin;
         rt.anchorMax = srcBkg.GetComponent<RectTransform>().anchorMax;

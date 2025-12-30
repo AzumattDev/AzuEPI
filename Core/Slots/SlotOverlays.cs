@@ -1,6 +1,4 @@
-﻿using AzuEPI.Game.Panels.Vanity;
-
-namespace AzuEPI.Core.Slots;
+﻿namespace AzuEPI.Core.Slots;
 
 internal static class SlotOverlays
 {

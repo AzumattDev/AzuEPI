@@ -1,8 +1,4 @@
-﻿using AzuEPI.Core.Utilities;
-using AzuEPI.Game.Loadout;
-using AzuEPI.Game.Panels;
-using AzuEPI.Game.Panels.Stats;
-using AzuEPI.Game.Panels.Vanity;
+﻿using AzuEPI.Game.Panels;
 
 namespace AzuEPI.Game.PlayerPreview;
 

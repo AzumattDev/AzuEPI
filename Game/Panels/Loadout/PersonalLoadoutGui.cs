@@ -1,6 +1,4 @@
 ﻿using AzuEPI.Game.Panels;
-using AzuEPI.Game.Panels.Stats;
-using AzuEPI.Game.Panels.Vanity;
 
 namespace AzuEPI.Game.Loadout;
 
@@ -77,19 +75,6 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
         m_instance = null;
     }
 
-    /*private void Update()
-    {
-        if (!m_storeRootPanel.activeSelf || !PanelActive) return;
-        if (ShouldHide() || ShouldClose())
-        {
-            Hide();
-        }
-        else
-        {
-            UpdateUI();
-        }
-    }*/
-
     public void HandleUIUpdates()
     {
         if (ShouldHide() || ShouldClose())
@@ -109,10 +94,7 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
         if (localPlayer == null || localPlayer.IsDead() || localPlayer.InCutscene())
             return true;
 
-        if (!InventoryGui.IsVisible() || Minimap.IsOpen())
-            return true;
-
-        return false;
+        return !InventoryGui.IsVisible() || Minimap.IsOpen();
     }
 
     private static bool ShouldClose()
@@ -120,13 +102,9 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
         Player localPlayer = Player.m_localPlayer;
         bool isUIBlocking = (Chat.instance != null && Chat.instance.HasFocus()) || Console.IsVisible() || Menu.IsVisible() || (TextViewer.instance != null && TextViewer.instance.IsVisible()) || localPlayer.InCutscene();
 
-        if (isUIBlocking && (ZInput.GetButtonDown("JoyButtonB") || Input.GetKeyDown(KeyCode.Escape) || ZInput.GetButtonDown("Use")))
-        {
-            ZInput.ResetButtonStatus("JoyButtonB");
-            return true;
-        }
-
-        return false;
+        if (!isUIBlocking || (!ZInput.GetButtonDown("JoyButtonB") && !Input.GetKeyDown(KeyCode.Escape) && !ZInput.GetButtonDown("Use"))) return false;
+        ZInput.ResetButtonStatus("JoyButtonB");
+        return true;
     }
 
     private void UpdateUI()
@@ -198,7 +176,7 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
     internal static void BuildLoadoutToggleButton(InventoryGui gui)
     {
         PanelUtilities.ButtonConfig config = new(
-            name: "AzuEPILoadoutsToggleButton",
+            name: $"{Prefix}LoadoutsToggleButton",
             anchorMin: new Vector2(0f, 1f),
             anchorMax: new Vector2(0f, 1f),
             pivot: new Vector2(0f, 1f),
@@ -251,11 +229,6 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
     {
         Player player = Player.m_localPlayer;
         if (player == null) return false;
-        /*if (player.m_customData.ContainsKey($"{LoadoutKey}{loadoutName}"))
-        {
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning($"SaveLoadout: Vanity set '{loadoutName}' already exists.");
-            return false;
-        }*/
 
         string key = $"{LoadoutKey}{loadoutName}";
         List<ItemDrop.ItemData> equippedItems = player.GetInventory().GetEquippedItems();
@@ -481,6 +454,7 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
                         renameText.alignment = TextAlignmentOptions.Center;
                         renameText.color = Color.white;
                     }
+
                     PanelUtilities.BindGamePad(renameButtonTransform, "", KeyCode.None);
 
                     UITooltip renameTooltip = renameButtonTransform.GetComponent<UITooltip>();

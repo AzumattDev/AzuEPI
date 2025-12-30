@@ -1,5 +1,4 @@
-﻿using AzuEPI.Core.InventoryHandlers;
-using AzuEPI.Core.Text;
+﻿using AzuEPI.Core.Text;
 using AzuEPI.EPI;
 
 namespace AzuEPI.Game.Slots.QAB;

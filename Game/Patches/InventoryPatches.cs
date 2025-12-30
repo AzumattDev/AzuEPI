@@ -1,5 +1,3 @@
-using ItemDataManager;
-
 namespace AzuEPI.Game.Patches;
 
 public class InventoryPatches

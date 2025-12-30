@@ -1,10 +1,6 @@
 ﻿using APIManager;
-using AzuEPI.Game.Compatibility;
 using AzuEPI.Game.Compatibility.AdvBackpacks;
-using AzuEPI.Game.Loadout;
 using AzuEPI.Game.Panels;
-using AzuEPI.Game.Panels.Stats;
-using AzuEPI.Game.Panels.Vanity;
 //using AzuEPI.Game.Moveable;
 using AzuEPI.Game.Slots.QAB;
 using BepInEx.Logging;

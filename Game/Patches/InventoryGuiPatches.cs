@@ -1,8 +1,4 @@
 ﻿using AzuEPI.Core.Text;
-using AzuEPI.Game.Panels;
-using AzuEPI.Game.Panels.Stats;
-using AzuEPI.Game.Panels.Vanity;
-using UnityEngine.UI;
 
 namespace AzuEPI.Game.Patches;
 
@@ -18,12 +14,16 @@ public class InventoryGuiPatches
             GUICache._selectedFrameRT = __instance.m_crafting.Find("selected_frame").GetComponent<RectTransform>();
             GUICache._repairSimpleRT = __instance.m_crafting.Find("RepairSimple").GetComponent<RectTransform>();
             GUICache._repairButtonRT = __instance.m_crafting.Find("RepairButton").GetComponent<RectTransform>();
+            GUICache._enchantmentMenuButtonRT = VESCompat.IsVesInstalled ? __instance.m_crafting.Find("enchantment_menu").GetComponent<RectTransform>() : null;
+            GUICache._enchantmentMenuBkgButtonRT = VESCompat.IsVesInstalled ? __instance.m_crafting.Find("RepairSimple(Clone)").GetComponent<RectTransform>() : null;
             GUICache._playerBkgRT = __instance.m_player.Find("Bkg").GetComponent<RectTransform>();
             GUICache._playerGridRootRT = __instance.m_playerGrid ? __instance.m_playerGrid.m_gridRoot?.GetComponent<RectTransform>() : null;
 
             Layout.SelectedFrameOrigAnchMin = GUICache._selectedFrameRT.anchorMin;
             Layout.RepairSimpleOrigAnchoredPos = GUICache._repairSimpleRT.anchoredPosition;
             Layout.RepairButtonOrigAnchoredPos = GUICache._repairButtonRT.anchoredPosition;
+            Layout.EnchantmentMenuOrigAnchoredPos = GUICache._enchantmentMenuButtonRT is not null ? GUICache._enchantmentMenuButtonRT.anchoredPosition : new Vector2();
+            Layout.EnchantmentMenuBkgOrigAnchoredPos = GUICache._enchantmentMenuBkgButtonRT is not null ? GUICache._enchantmentMenuBkgButtonRT.anchoredPosition : new Vector2();
 
             if (OldLayout.Value.isOff())
                 Layout.ApplyRepairShift();
@@ -270,8 +270,8 @@ public class InventoryGuiPatches
                 if (slot == null)
                     continue;
 
-                if (!currentChild.name.StartsWith("AzuEPI_Slot_"))
-                    currentChild.name = $"AzuEPI_Slot_{slots[i]?.Name}";
+                if (!currentChild.name.StartsWith($"{Prefix}Slot_"))
+                    currentChild.name = $"{Prefix}Slot_{slots[i]?.Name}";
 
                 // if .m_used assume it's occupied
                 slots[i].Occupied = currentElement.m_used;

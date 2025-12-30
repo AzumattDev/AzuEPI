@@ -1,10 +1,3 @@
-using AzuEPI.Game.Loadout;
-using AzuEPI.Game.Panels.Stats;
-using AzuEPI.Game.Panels.Vanity;
-using TMPro;
-using UnityEngine;
-using UnityEngine.UI;
-
 namespace AzuEPI.Game.Panels;
 
 public static class PanelUtilities
