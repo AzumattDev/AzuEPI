@@ -264,11 +264,12 @@ public class InventoryGuiPatches
                 GameObject currentChild = currentElement.m_go;
                 if (!currentChild)
                     continue;
-                currentChild.SetActive(true);
 
                 Model.Slot? slot = slots[i];
                 if (slot == null)
                     continue;
+
+                currentChild.SetActive(true);
 
                 if (!currentChild.name.StartsWith($"{Prefix}Slot_"))
                     currentChild.name = $"{Prefix}Slot_{slots[i]?.Name}";

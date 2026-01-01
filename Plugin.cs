@@ -85,6 +85,35 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         WishboneSlot = config("4 - Special Equipment Slots", "Enable Wishbone Slot", On, "Adds a dedicated equipment slot specifically for the Wishbone. When equipped here, the Wishbone's detection works without occupying utility slots.", NextOrder);
         WispLightSlot = config("4 - Special Equipment Slots", "Enable Demister Slot", On, "Adds a dedicated equipment slot specifically for the Demister/Wisplight. Keeps the mist clear without using utility slots.", NextOrder);
 
+        /* 4.5 - Equipment Slot Management */
+        ResetConfigOrder();
+
+        _ = config("4.5 - Equipment Slot Management", "Slot Manager (UI)", "",
+            new ConfigDescription("If you are using the Configuration Manager, this will be a custom drawer. Use this for easier slot management with buttons and prefab browser.\n" +
+                                  "If you aren't, edit the configs below directly",
+                null,
+                new ConfigurationManagerAttributes { CustomDrawer = EquipmentSlotsConfigDrawer, Order = NextOrder }),
+            NextOrder);
+
+        RemovedEquipmentSlots = config("4.5 - Equipment Slot Management", "Removed Equipment Slots", "",
+            new ConfigDescription(
+                "Comma or semicolon-separated list of equipment slot names to remove from the game.\n" +
+                "WARNING: Removing slots will unequip items in those slots!\n" +
+                "Example: Head, Utility, Trinket\n" +
+                "Built-in slots: Head, Chest, Legs, Back, Utility, Trinket, Wishbone, Demister",
+                null,
+                new ConfigurationManagerAttributes { Order = NextOrder, Browsable = false }),
+            NextOrder);
+
+        UserAddedSlots = config("4.5 - Equipment Slot Management", "Custom Equipment Slots", "",
+            new ConfigDescription(
+                "Add custom equipment slots. Format: SlotName:PrefabName1,PrefabName2;SlotName2:Prefab3\n" +
+                "Semicolon separates different slots. Colon separates slot name from prefabs. Comma separates multiple prefabs for one slot.\n" +
+                "Example: Ring:RingIron,RingGold;Quiver:QuiverBone,QuiverLeather",
+                null,
+                new ConfigurationManagerAttributes { Order = NextOrder, Browsable = false }),
+            NextOrder);
+
         /* 5 - UI Features */
         ResetConfigOrder();
         OldLayout = config("5 - UI Features", "Use Legacy Layout", Off, "Reverts to the old inventory layout from previous versions. Only enable if you prefer the classic style or have compatibility issues.", NextOrder);
@@ -160,6 +189,18 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
                 if (element.m_go)
                     Destroy(element.m_go);
             qab.m_elements.Clear();
+            FullRebuild();
+        };
+
+        RemovedEquipmentSlots.SettingChanged += (sender, args) =>
+        {
+            ApplySlotChanges();
+            FullRebuild();
+        };
+
+        UserAddedSlots.SettingChanged += (sender, args) =>
+        {
+            ApplySlotChanges();
             FullRebuild();
         };
 
@@ -250,6 +291,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         API.UpdateSlots(index, 1);
         InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(index, new Model.EquipmentSlot { Name = TrinketText.Value, IsQuickSlot = false, Get = player => player.m_trinketItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Trinket });
         SlotHelpers.ResizeSlots();
+
+        ApplySlotChanges();
 
         Localization.OnLanguageChange += new Action(API.RelocalizeSlots);
     }
@@ -414,6 +457,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     public static ConfigEntry<Toggle> WishboneSlot = null!;
     public static ConfigEntry<Toggle> WispLightSlot = null!;
+    public static ConfigEntry<string> RemovedEquipmentSlots = null!;
+    public static ConfigEntry<string> UserAddedSlots = null!;
 
     public static ConfigEntry<Toggle> AddEquipmentRow = null!;
     public static ConfigEntry<Toggle> DisplayEquipmentRowSeparate = null!;
@@ -665,6 +710,329 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         string name = stat.ToString();
         return System.Text.RegularExpressions.Regex.Replace(name, "([a-z])([A-Z])", "$1 $2");
     }
+
+    #region Equipment Slots Config Drawer
+
+    private static string _newSlotName = "";
+    private static string _newSlotPrefabs = "";
+    private static Vector2 _slotsScrollPosition = Vector2.zero;
+    private static Vector2 _prefabScrollPosition = Vector2.zero;
+    private static bool _showPrefabList = false;
+
+    private static void EquipmentSlotsConfigDrawer(ConfigEntryBase entry)
+    {
+        List<string> allSlots = GetAllCurrentSlots();
+        List<string> removedSlots = ParseSlotList(RemovedEquipmentSlots.Value);
+        List<string> builtInSlots = GetBuiltInSlotNames();
+        List<string> userAddedSlotNames = GetUserAddedSlotNames();
+
+        GUILayout.Space(5);
+        GUILayout.BeginVertical(GUI.skin.box);
+
+        GUILayout.Label("REMOVE EQUIPMENT SLOTS", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter });
+        GUILayout.Space(5);
+
+        GUILayout.Label("Click to remove slots (WARNING: unequips items!):", GUILayout.ExpandWidth(true));
+        GUILayout.Space(5);
+
+        _slotsScrollPosition = GUILayout.BeginScrollView(_slotsScrollPosition, GUI.skin.box, GUILayout.Height(200));
+
+        foreach (string slot in allSlots)
+        {
+            bool isRemoved = removedSlots.Contains(slot);
+            bool isBuiltIn = builtInSlots.Contains(slot);
+            bool isUserAdded = userAddedSlotNames.Contains(slot);
+
+            GUILayout.BeginHorizontal();
+
+            Color oldColor = GUI.backgroundColor;
+            if (isRemoved) GUI.backgroundColor = Color.red;
+
+            if (GUILayout.Button(isRemoved ? "✓ Removed" : "Remove", GUILayout.Width(100)))
+            {
+                if (isRemoved)
+                {
+                    removedSlots.Remove(slot);
+                }
+                else
+                {
+                    removedSlots.Add(slot);
+
+                    if (isUserAdded)
+                    {
+                        List<string> userSlots = ParseUserAddedSlots();
+                        userSlots.RemoveAll(s => s.StartsWith(slot.Trim() + ":"));
+                        UserAddedSlots.Value = string.Join(";", userSlots);
+                    }
+                }
+
+                RemovedEquipmentSlots.Value = string.Join(", ", removedSlots);
+            }
+
+            GUI.backgroundColor = oldColor;
+
+            GUILayout.Label($"{slot}", GUILayout.ExpandWidth(false));
+            if (isBuiltIn) GUILayout.Label("(Built-in)", new GUIStyle(GUI.skin.label) { fontSize = 10, fontStyle = FontStyle.Italic }, GUILayout.ExpandWidth(false));
+            else if (isUserAdded) GUILayout.Label("(Your Custom)", new GUIStyle(GUI.skin.label) { fontSize = 10, fontStyle = FontStyle.Italic, normal = new GUIStyleState { textColor = Color.cyan } }, GUILayout.ExpandWidth(false));
+            else GUILayout.Label("(API/Mod)", new GUIStyle(GUI.skin.label) { fontSize = 10 }, GUILayout.ExpandWidth(false));
+
+            GUILayout.EndHorizontal();
+        }
+
+        GUILayout.EndScrollView();
+
+        GUILayout.Space(15);
+
+        GUILayout.Label("ADD CUSTOM EQUIPMENT SLOTS", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter });
+        GUILayout.Space(5);
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Slot Name:", GUILayout.Width(80));
+        _newSlotName = GUILayout.TextField(_newSlotName, GUILayout.ExpandWidth(true));
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Prefab Names:", GUILayout.Width(80));
+        _newSlotPrefabs = GUILayout.TextField(_newSlotPrefabs, GUILayout.ExpandWidth(true));
+        if (GUILayout.Button("?", GUILayout.Width(25)))
+        {
+            _showPrefabList = !_showPrefabList;
+        }
+
+        GUILayout.EndHorizontal();
+
+        GUILayout.Label("(Comma-separated list of item prefab names, e.g., 'HelmetBronze,HelmetIron')", new GUIStyle(GUI.skin.label) { fontSize = 10, fontStyle = FontStyle.Italic });
+
+        if (_showPrefabList)
+        {
+            GUILayout.Space(5);
+            GUILayout.Label("Available Item Prefabs:", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
+            _prefabScrollPosition = GUILayout.BeginScrollView(_prefabScrollPosition, GUI.skin.box, GUILayout.Height(150));
+
+            List<string> prefabs = GetAvailableItemPrefabs();
+            foreach (string prefab in prefabs)
+            {
+                if (!GUILayout.Button(prefab, GUILayout.ExpandWidth(false))) continue;
+                if (string.IsNullOrEmpty(_newSlotPrefabs))
+                    _newSlotPrefabs = prefab;
+                else if (!_newSlotPrefabs.Contains(prefab))
+                    _newSlotPrefabs += ", " + prefab;
+            }
+
+            GUILayout.EndScrollView();
+        }
+
+        GUILayout.Space(5);
+
+        if (GUILayout.Button("Add Slot", GUILayout.Height(30)))
+        {
+            if (!string.IsNullOrWhiteSpace(_newSlotName) && !string.IsNullOrWhiteSpace(_newSlotPrefabs))
+            {
+                string slotEntry = $"{_newSlotName.Trim()}:{_newSlotPrefabs.Trim()}";
+                List<string> userSlots = ParseUserAddedSlots();
+
+                userSlots.RemoveAll(s => s.StartsWith(_newSlotName.Trim() + ":"));
+                userSlots.Add(slotEntry);
+
+                UserAddedSlots.Value = string.Join(";", userSlots);
+
+                if (removedSlots.Contains(_newSlotName.Trim()))
+                {
+                    removedSlots.Remove(_newSlotName.Trim());
+                    RemovedEquipmentSlots.Value = string.Join(", ", removedSlots);
+                }
+
+                _newSlotName = "";
+                _newSlotPrefabs = "";
+            }
+        }
+
+        List<string> currentUserSlots = ParseUserAddedSlots();
+        if (currentUserSlots.Count > 0)
+        {
+            GUILayout.Space(10);
+            GUILayout.Label($"YOUR CUSTOM SLOTS ({currentUserSlots.Count})", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter });
+            GUILayout.Space(3);
+            GUILayout.Label("Valid item prefabs for each custom slot:", new GUIStyle(GUI.skin.label) { fontSize = 10, fontStyle = FontStyle.Italic, alignment = TextAnchor.MiddleCenter });
+            GUILayout.Space(5);
+
+            foreach (string userSlot in currentUserSlots)
+            {
+                string[] parts = userSlot.Split(':');
+                if (parts.Length != 2) continue;
+
+                GUILayout.BeginVertical(GUI.skin.box);
+                GUILayout.Label($"• {parts[0]}", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold });
+                GUILayout.Label($"   Accepts: {parts[1]}", new GUIStyle(GUI.skin.label) { fontSize = 10, normal = new GUIStyleState { textColor = new Color(0.7f, 0.7f, 0.7f) } });
+                GUILayout.EndVertical();
+                GUILayout.Space(2);
+            }
+
+            GUILayout.Space(3);
+            GUILayout.Label("(Use 'Remove Equipment Slots' section above to remove slots)", new GUIStyle(GUI.skin.label) { fontSize = 9, fontStyle = FontStyle.Italic, alignment = TextAnchor.MiddleCenter });
+        }
+
+        GUILayout.Space(5);
+        GUILayout.EndVertical();
+    }
+
+    private static List<string> GetAllCurrentSlots()
+    {
+        List<string> slots = new();
+
+        try
+        {
+            foreach (Model.Slot? slot in InventoryGuiPatches.UpdateInventory_Patch.slots)
+            {
+                if (slot == null || slot.IsQuickSlot) continue;
+                if (slot is not Model.EquipmentSlot equipSlot) continue;
+                string name = equipSlot.OriginalName ?? equipSlot.Name;
+                if (!string.IsNullOrEmpty(name))
+                    slots.Add(name);
+            }
+        }
+        catch (Exception ex)
+        {
+            AzuExtendedPlayerInventoryLogger.LogWarning($"Error getting current slots: {ex.Message}");
+        }
+
+        return slots.Distinct().ToList();
+    }
+
+    private static List<string> GetBuiltInSlotNames()
+    {
+        return new List<string>
+        {
+            "Head", "Chest", "Legs", "Back", "Utility", "Trinket", "Wishbone", "Demister"
+        };
+    }
+
+    private static List<string> GetUserAddedSlotNames()
+    {
+        return ParseUserAddedSlots().Select(s => s.Split(':')[0].Trim())
+            .Where(name => !string.IsNullOrEmpty(name))
+            .ToList();
+    }
+
+    private static List<string> GetAvailableItemPrefabs()
+    {
+        List<string> prefabs = new();
+
+        try
+        {
+            if (ObjectDB.instance != null && ObjectDB.instance.m_items != null)
+            {
+                foreach (GameObject itemPrefab in ObjectDB.instance.m_items)
+                {
+                    if (itemPrefab != null)
+                    {
+                        prefabs.Add(itemPrefab.name);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            AzuExtendedPlayerInventoryLogger.LogWarning($"Error getting item prefabs: {ex.Message}");
+        }
+
+        return prefabs.OrderBy(p => p).ToList();
+    }
+
+    private static List<string> ParseSlotList(string slotsString)
+    {
+        List<string> result = new();
+        if (string.IsNullOrWhiteSpace(slotsString))
+            return result;
+
+        string[] slotNames = slotsString.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (string slotName in slotNames)
+        {
+            string trimmed = slotName.Trim();
+            if (!string.IsNullOrEmpty(trimmed))
+                result.Add(trimmed);
+        }
+
+        return result;
+    }
+
+    private static List<string> ParseUserAddedSlots()
+    {
+        List<string> result = new();
+        if (string.IsNullOrWhiteSpace(UserAddedSlots?.Value))
+            return result;
+
+        string[] entries = UserAddedSlots.Value.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (string entry in entries)
+        {
+            string trimmed = entry.Trim();
+            if (!string.IsNullOrEmpty(trimmed))
+                result.Add(trimmed);
+        }
+
+        return result;
+    }
+
+    private static void ApplySlotChanges()
+    {
+        try
+        {
+            List<string> userSlots = ParseUserAddedSlots();
+            foreach (string userSlot in userSlots)
+            {
+                string[] parts = userSlot.Split(':');
+                if (parts.Length != 2) continue;
+
+                string slotName = parts[0].Trim();
+                string[] prefabs = parts[1].Split(',').Select(p => p.Trim()).Where(p => !string.IsNullOrEmpty(p)).ToArray();
+
+                if (string.IsNullOrEmpty(slotName) || prefabs.Length == 0) continue;
+                if (!API.TryGetSlotIndexByName(slotName, out _, false))
+                {
+                    if (prefabs.Length == 1)
+                        API.AddSlot(slotName, prefabs[0]);
+                    else
+                        API.AddSlot(slotName, prefabs);
+
+                    AzuExtendedPlayerInventoryLogger.LogInfo($"Added user slot: {slotName} with prefabs: {string.Join(", ", prefabs)}");
+                }
+            }
+
+            List<string> removedSlots = ParseSlotList(RemovedEquipmentSlots?.Value ?? "");
+            foreach (string slotName in removedSlots)
+            {
+                bool removed = API.RemoveSlot(slotName);
+
+                if (!removed && Localization.instance != null)
+                {
+                    if (slotName.StartsWith("$"))
+                    {
+                        string localizedName = Localization.instance.Localize(slotName);
+                        if (localizedName != slotName)
+                        {
+                            removed = API.RemoveSlot(localizedName);
+                        }
+                    }
+                    else
+                    {
+                        string tokenName = "$item_" + slotName.ToLower();
+                        removed = API.RemoveSlot(tokenName);
+                    }
+                }
+
+                if (removed)
+                {
+                    AzuExtendedPlayerInventoryLogger.LogInfo($"Removed slot: {slotName}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            AzuExtendedPlayerInventoryLogger.LogError($"Error applying slot changes: {ex.Message}");
+        }
+    }
+
+    #endregion
 
     #endregion
 }
