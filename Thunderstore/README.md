@@ -59,6 +59,10 @@ Left click to set, right click to clear. Controller is A and X respectively.
 - **Rename feature**: Click "R" button on any loadout
 - **One-click swapping** preserves current gear
 - **Visual previews** and item tooltips
+- **Loadout Inventory Grid**: View all items in selected loadout in a dedicated grid
+  - Drag items directly from player inventory into loadouts
+  - Ctrl+Click or Right-Click to remove items from loadout
+  - Full tooltip support showing item details
 - **Persistent**: Saves across sessions
 
 ![Loadout System](https://i.imgur.com/YpgJODf.png)
@@ -132,6 +136,10 @@ place the DLL in `BepInEx/plugins` folder.
 2. Select empty slot (1-10) - saves automatically
 3. **Rename**: Click "R" button (max 20 characters)
 4. **Switch**: Click different loadout to swap instantly
+5. **Manage Items**: Use the inventory grid to the right of loadouts
+   - Drag items from your inventory to add to loadout
+   - Ctrl+Click or Right-Click items in grid to remove
+   - Grid shows all items currently in selected loadout
 
 *Tip: Create loadouts for combat, building, farming, etc.*
 

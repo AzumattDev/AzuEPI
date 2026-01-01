@@ -9,11 +9,7 @@ static class PlayerSpawnedPatch
     {
         try
         {
-            GameObject rootPanel;
-            GameObject ingameGui;
-            Transform augaStoreScreen;
-
-            rootPanel = StoreGui.instance.gameObject;
+            GameObject rootPanel = StoreGui.instance.gameObject;
 
             if (rootPanel == null)
             {
@@ -25,30 +21,6 @@ static class PlayerSpawnedPatch
             Transform backgroundParent = CreateBackground(invGui);
 
             CreateMainPanel(rootPanel, __instance, backgroundParent, out GameObject? newRootPanel, out PersonalLoadoutGui? itemsetGui);
-
-            if (newRootPanel == null || itemsetGui == null)
-            {
-                AzuExtendedPlayerInventoryLogger.LogError("Failed to create main panel, second panel not created");
-                return;
-            }
-
-            Button? craftBtn = invGui?.m_craftButton;
-            Transform parent = newRootPanel.transform;
-
-            /*var dd = AzuRuntimeDropdown.Create(parent, craftBtn, width: 240f, headerHeight: 38f, maxListHeight: 260f);
-            dd.SetOptions(new[] { "Option A", "Option B", "Option C", "Very Long Option That Scrolls" });
-            dd.OnValueChanged.AddListener((idx, text) =>
-            {
-                // Do your thing
-                Debug.Log($"Selected {idx}: {text}");
-            });
-            
-            // Position it
-            var hdr = dd.GetHeaderButton();
-            var hdrRT = (RectTransform)hdr.transform;
-            hdrRT.anchoredPosition = new Vector2(20, -20);*/
-
-            //CreateLoadoutContainer(newRootPanel);
         }
         catch (Exception ex)
         {
@@ -70,7 +42,7 @@ static class PlayerSpawnedPatch
         rt.offsetMin = new Vector2(0, 0);
         rt.offsetMax = new Vector2(0, 0);
         rt.localScale = Vector3.one;
-        rt.anchoredPosition = Vector2.zero;
+        rt.anchoredPosition = new Vector2(-135f, 0f);
 
         PersonalLoadoutGui itemsetGui = newRootPanel.AddComponent<PersonalLoadoutGui>();
         if (itemsetGui == null)
@@ -84,11 +56,12 @@ static class PlayerSpawnedPatch
         PersonalLoadoutGui.m_rootPanel = newRootPanel.gameObject;
         PersonalLoadoutGui.m_storeRootPanel = Utils.FindChild(newRootPanel.transform, "Store").gameObject;
         PersonalLoadoutGui.m_storeRootPanel.GetComponent<RectTransform>().anchoredPosition = new Vector2(166f, -50f);
+
         Utils.FindChild(newRootPanel.transform, "border (1)").gameObject.SetActive(false);
         itemsetGui.m_chooseButton = Utils.FindChild(newRootPanel.transform, "BuyButton").GetComponent<Button>();
         itemsetGui.m_chooseButton.transform.Find("Text").GetComponent<TMP_Text>().text = Localization.instance.Localize("$azu_epi_equipLoadout");
         PanelUtilities.BindGamePad(itemsetGui.m_chooseButton.transform, "JoyButtonA", KeyCode.JoystickButton0);
-        
+
         itemsetGui.m_sellButton = Utils.FindChild(newRootPanel.transform, "SellButton").GetComponent<Button>();
         itemsetGui.m_sellButton.GetComponent<UITooltip>().m_text = Localization.instance.Localize("$azu_epi_equipSelected");
 
@@ -119,6 +92,103 @@ static class PlayerSpawnedPatch
         PersonalLoadoutGui.m_itemlistBaseSize = newRootPanel.GetComponent<StoreGui>().m_itemlistBaseSize;
 
         GameObject.DestroyImmediate(newRootPanel.GetComponent<StoreGui>());
+
+        CreateLoadoutInventoryGrid(newRootPanel, player);
+    }
+
+    private static void CreateLoadoutInventoryGrid(GameObject panel, Player player)
+    {
+        GameObject gridRoot = new GameObject($"{Prefix}LoadoutGridContainer");
+        gridRoot.transform.SetParent(panel.transform, false);
+
+        RectTransform gridRT = gridRoot.AddComponent<RectTransform>();
+        gridRT.anchorMin = new Vector2(1, 0.5f);
+        gridRT.anchorMax = new Vector2(1, 0.5f);
+        gridRT.pivot = new Vector2(0, 0.5f);
+        gridRT.anchoredPosition = new Vector2(-220f, 0f);
+        gridRT.sizeDelta = new Vector2(400f, 400f);
+
+        PersonalLoadoutGui.m_loadoutInventory = new Inventory("Loadout View", null, 4, 8);
+
+        InventoryGrid templateGrid = InventoryGui.instance.m_playerGrid;
+
+        PersonalLoadoutGui.m_loadoutGrid = gridRoot.AddComponent<InventoryGrid>();
+        PersonalLoadoutGui.m_loadoutGrid.m_elementPrefab = templateGrid.m_elementPrefab;
+        PersonalLoadoutGui.m_loadoutGrid.m_gridRoot = gridRoot.GetComponent<RectTransform>();
+        PersonalLoadoutGui.m_loadoutGrid.m_elementSpace = 70f;
+        PersonalLoadoutGui.m_loadoutGrid.m_width = 0;
+        PersonalLoadoutGui.m_loadoutGrid.m_height = 0;
+
+        UIGroupHandler uiGroup = gridRoot.AddComponent<UIGroupHandler>();
+        uiGroup.m_active = false;
+        PersonalLoadoutGui.m_loadoutGrid.m_uiGroup = uiGroup;
+
+        PersonalLoadoutGui.m_loadoutGrid.m_onSelected = OnLoadoutGridItemSelected;
+        PersonalLoadoutGui.m_loadoutGrid.m_onRightClick = OnLoadoutGridItemRightClick;
+
+        PersonalLoadoutGui.m_loadoutGridRoot = gridRoot;
+    }
+
+    private static void OnLoadoutGridItemSelected(InventoryGrid grid, ItemDrop.ItemData item, Vector2i pos, InventoryGrid.Modifier mod)
+    {
+        Player player = Player.m_localPlayer;
+        if (player == null) return;
+
+        InventoryGui inventoryGui = InventoryGui.instance;
+        if (inventoryGui == null) return;
+
+        if (inventoryGui.m_dragGo != null && inventoryGui.m_dragItem != null)
+        {
+            ItemDrop.ItemData dragItem = inventoryGui.m_dragItem;
+            Inventory dragInventory = inventoryGui.m_dragInventory;
+            int dragAmount = inventoryGui.m_dragAmount;
+
+            if (dragInventory == null) return;
+            if (!PersonalLoadoutGui.m_loadoutInventory.AddItem(dragItem, dragAmount, pos.x, pos.y)) return;
+            if (dragItem.m_stack <= 0)
+            {
+                dragInventory.RemoveItem(dragItem);
+            }
+
+            UpdateLoadoutFromInventory();
+            PersonalLoadoutGui.RefreshLoadoutInventory();
+            inventoryGui.SetupDragItem(null, null, 0);
+            return;
+        }
+
+        if (mod != InventoryGrid.Modifier.Move) return;
+        if (item == null) return;
+        if (!player.GetInventory().AddItem(item.Clone())) return;
+        PersonalLoadoutGui.m_loadoutInventory.RemoveItem(item);
+        UpdateLoadoutFromInventory();
+        PersonalLoadoutGui.RefreshLoadoutInventory();
+    }
+
+    private static void OnLoadoutGridItemRightClick(InventoryGrid grid, ItemDrop.ItemData item, Vector2i pos)
+    {
+        if (item == null) return;
+        Player player = Player.m_localPlayer;
+        if (player == null || !player.GetInventory().AddItem(item.Clone())) return;
+        PersonalLoadoutGui.m_loadoutInventory.RemoveItem(item);
+        UpdateLoadoutFromInventory();
+        PersonalLoadoutGui.RefreshLoadoutInventory();
+    }
+
+    private static void UpdateLoadoutFromInventory()
+    {
+        if (string.IsNullOrWhiteSpace(PersonalLoadoutGui.m_selectedItem))
+            return;
+
+        Player player = Player.m_localPlayer;
+        if (player == null) return;
+
+        string key = $"{PersonalLoadoutGui.LoadoutKey}{PersonalLoadoutGui.m_selectedItem}";
+
+        List<ItemDrop.ItemData> items = PersonalLoadoutGui.m_loadoutInventory.GetAllItems();
+        PersonalLoadout loadout = new PersonalLoadout(PersonalLoadoutGui.m_selectedItem, items);
+        player.m_customData[key] = loadout.Serialize();
+
+        PersonalLoadoutGui.FillList();
     }
 
     private static Transform CreateBackground(InventoryGui gui)
@@ -141,69 +211,8 @@ static class PlayerSpawnedPatch
             img.raycastTarget = false;
             img.enabled = true;
         }
+
         loadoutPanel.gameObject.SetActive(false);
         return loadoutPanel;
-    }
-
-    private static void CreateLoadoutContainer(GameObject newRootPanel)
-    {
-        GameObject secondPanel = Object.Instantiate(newRootPanel, newRootPanel.transform);
-        secondPanel.name = "AzuRapidLoadoutsSecondPanel";
-        GameObject.DestroyImmediate(secondPanel.GetComponent<CanvasScaler>());
-        GameObject.DestroyImmediate(secondPanel.GetComponent<GraphicRaycaster>());
-        GameObject.DestroyImmediate(secondPanel.GetComponent<Canvas>());
-        GameObject.DestroyImmediate(secondPanel.GetComponent<GuiScaler>());
-        GameObject.DestroyImmediate(secondPanel.GetComponent<UIDragger>());
-        PersonalLoadoutGuiDetails personalLoadoutGui = newRootPanel.AddComponent<PersonalLoadoutGuiDetails>();
-        if (personalLoadoutGui == null)
-        {
-            AzuExtendedPlayerInventoryLogger.LogWarning("PurchasableLoadoutGui component not found on newRootPanel");
-            return;
-        }
-
-        secondPanel.transform.localScale = Vector3.one;
-
-        PersonalLoadoutGui.m_storeRootPanel = Utils.FindChild(secondPanel.transform, "Store").gameObject;
-        personalLoadoutGui.m_chooseButton = Utils.FindChild(secondPanel.transform, "BuyButton").GetComponent<Button>();
-        personalLoadoutGui.m_chooseButton.onClick.RemoveAllListeners();
-        personalLoadoutGui.m_chooseButton.transform.Find("Text").GetComponent<TMP_Text>().text = Localization.instance.Localize("$azu_rl_emptyItemSet");
-
-        personalLoadoutGui.m_sellButton = Utils.FindChild(newRootPanel.transform, "SellButton").GetComponent<Button>();
-        personalLoadoutGui.m_sellButton.GetComponent<UITooltip>().m_text = Localization.instance.Localize("$azu_rl_equipSelected");
-
-        personalLoadoutGui.m_sellButton.transform.Find("Image").gameObject.SetActive(false);
-
-        personalLoadoutGui.m_sellButton.transform.Find("Image (1)").gameObject.SetActive(true);
-        personalLoadoutGui.m_sellButton.transform.parent.gameObject.SetActive(false);
-
-        RectTransform secondPanelRT = secondPanel.GetComponent<RectTransform>();
-        secondPanelRT.localPosition = new Vector3(250, 0, 0);
-
-        Object.Destroy(Utils.FindChild(secondPanel.transform, "SellPanel").gameObject);
-        Object.Destroy(Utils.FindChild(secondPanel.transform, "border (1)").gameObject);
-        Object.Destroy(Utils.FindChild(secondPanel.transform, "bkg").gameObject);
-
-        PersonalLoadoutGui.m_listRoot = Utils.FindChild(secondPanel.transform, "ListRoot").GetComponent<RectTransform>();
-        PersonalLoadoutGui.m_listElement = Utils.FindChild(secondPanel.transform, "ItemElement").gameObject;
-
-        personalLoadoutGui.m_listScroll = Utils.FindChild(secondPanel.transform, "ItemScroll").GetComponent<Scrollbar>();
-        PersonalLoadoutGui.m_itemEnsureVisible = Utils.FindChild(secondPanel.transform, "Items").GetComponent<ScrollRectEnsureVisible>();
-
-        personalLoadoutGui.m_coinText = secondPanel.transform.Find($"Store/coins/coins").GetComponent<TMP_Text>();
-        personalLoadoutGui.m_coinIcon = secondPanel.transform.Find($"Store/coins/coin icon").GetComponent<Image>();
-
-        secondPanel.transform.Find("Store/coins/coin icon").GetComponent<RectTransform>().anchoredPosition += new Vector2(0, 5);
-        secondPanel.transform.Find("Store/coins").GetComponent<RectTransform>().anchoredPosition += new Vector2(35, 0);
-
-        personalLoadoutGui.m_topicText = Utils.FindChild(secondPanel.transform, "topic").GetComponent<TMP_Text>();
-
-        /*personalLoadoutGui.m_buyEffects = itemsetGui.m_buyEffects;
-        personalLoadoutGui.m_sellEffects = itemsetGui.m_sellEffects;
-        personalLoadoutGui.m_hideDistance = itemsetGui.m_hideDistance;
-        PersonalLoadoutGui.m_itemSpacing = PurchasableLoadoutGui.m_itemSpacing;
-        PersonalLoadoutGui.m_coinPrefab = PurchasableLoadoutGui.m_coinPrefab;
-        PersonalLoadoutGui.m_itemlistBaseSize = PurchasableLoadoutGui.m_itemlistBaseSize;*/
-
-        Utils.FindChild(newRootPanel.transform, "border (1)").GetComponent<RectTransform>().anchorMax = new Vector2(2, 1);
     }
 }

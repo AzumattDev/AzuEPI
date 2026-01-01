@@ -27,6 +27,10 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
 
     public Button m_sellButton = null!;
 
+    public static InventoryGrid m_loadoutGrid = null!;
+    public static Inventory m_loadoutInventory = null!;
+    public static GameObject m_loadoutGridRoot = null!;
+
     public static RectTransform m_listRoot = null!;
     public static GameObject m_listElement = null!;
     public Scrollbar m_listScroll = null!;
@@ -126,8 +130,11 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
         m_rootPanel.transform.parent.gameObject.SetActive(true);
         m_rootPanel.SetActive(true);
         m_storeRootPanel.SetActive(true);
+        if (m_loadoutGridRoot != null)
+            m_loadoutGridRoot.SetActive(true);
         PanelActive = true;
         FillList();
+        RefreshLoadoutInventory();
     }
 
     public static void Hide()
@@ -136,6 +143,8 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
         m_rootPanel.transform.parent.gameObject.SetActive(false);
         m_rootPanel.SetActive(false);
         m_storeRootPanel.SetActive(false);
+        if (m_loadoutGridRoot != null)
+            m_loadoutGridRoot.SetActive(false);
         PanelActive = false;
         InventoryGui.instance.m_dropButton.gameObject.SetActive(true);
     }
@@ -171,6 +180,8 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
         m_buyEffects.Create(transform.position, Quaternion.identity);
 
         FillList();
+
+        RefreshLoadoutInventory();
     }
 
     internal static void BuildLoadoutToggleButton(InventoryGui gui)
@@ -486,6 +497,36 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
     public static void OnSelectedLoadout(GameObject button)
     {
         SelectItem(FindSelectedLoadout(button), false);
+        RefreshLoadoutInventory();
+    }
+
+    public static void RefreshLoadoutInventory()
+    {
+        if (m_loadoutInventory == null || m_loadoutGrid == null || m_loadoutGrid.m_uiGroup == null)
+            return;
+
+        m_loadoutInventory.RemoveAll();
+
+        if (string.IsNullOrWhiteSpace(m_selectedItem))
+            return;
+
+        Player player = Player.m_localPlayer;
+        if (player == null) return;
+
+        string key = $"{LoadoutKey}{m_selectedItem}";
+        if (!player.m_customData.TryGetValue(key, out string serializedData))
+            return;
+
+        PersonalLoadout loadout = PersonalLoadout.Deserialize(m_selectedItem, serializedData);
+        foreach (ItemDrop.ItemData item in loadout.Items)
+        {
+            if (item != null)
+            {
+                m_loadoutInventory.AddItem(item.Clone());
+            }
+        }
+
+        m_loadoutGrid.UpdateInventory(m_loadoutInventory, null, null);
     }
 
     public static int FindSelectedLoadout(GameObject button)
