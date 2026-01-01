@@ -69,6 +69,10 @@ internal static class VanityPanelController
     private static readonly Dictionary<string, ItemDrop> _reusableDropsDict = new(256);
     private static readonly List<ItemDrop.ItemData> _reusableVanityItems = new(128);
 
+    private static int _cachedItemCount = -1;
+    private static int _cachedRecipeCount = -1;
+    private static Player _cachedPlayer = null;
+
     public static void EnsureBuilt(InventoryGui gui)
     {
         if (!gui) return;
@@ -84,9 +88,42 @@ internal static class VanityPanelController
 
         _fontSample = gui.m_craftButton?.GetComponentInChildren<TMP_Text>();
 
-        RefreshGrid();
+        RefreshGridIfNeeded();
 
         SetVisible(_visible);
+    }
+
+    public static void InvalidateCache()
+    {
+        _cachedItemCount = -1;
+        _cachedRecipeCount = -1;
+        _cachedPlayer = null;
+    }
+
+    private static bool NeedsRebuild()
+    {
+        Player? player = Player.m_localPlayer;
+        ObjectDB? odb = ObjectDB.instance;
+
+        if (!player || !odb) return false;
+
+        if (_cachedPlayer != player)
+            return true;
+
+        int currentItemCount = odb.m_items?.Count ?? 0;
+        int currentRecipeCount = odb.m_recipes?.Count ?? 0;
+
+        if (_cachedItemCount != currentItemCount || _cachedRecipeCount != currentRecipeCount)
+            return true;
+
+        return _allCells.Count == 0;
+    }
+
+    public static void RefreshGridIfNeeded()
+    {
+        if (!NeedsRebuild()) return;
+
+        RefreshGrid();
     }
 
     public static bool IsVisible()
@@ -157,6 +194,10 @@ internal static class VanityPanelController
         Player? player = Player.m_localPlayer;
         ObjectDB? odb = ObjectDB.instance;
         if (!player || !odb) return;
+
+        _cachedPlayer = player;
+        _cachedItemCount = odb.m_items?.Count ?? 0;
+        _cachedRecipeCount = odb.m_recipes?.Count ?? 0;
 
         _cellsBySlot.Clear();
         _allCells.Clear();
@@ -983,7 +1024,6 @@ static class Vanity_OnShow
     static void Postfix(InventoryGui __instance)
     {
         VanityPanelController.EnsureBuilt(__instance);
-        VanityPanelController.RefreshGrid();
     }
 }
 

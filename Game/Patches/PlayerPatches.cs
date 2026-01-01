@@ -40,6 +40,8 @@ public class PlayerPatches
             if (Player.m_localPlayer == null || Player.m_localPlayer != __instance)
                 return;
 
+            VanityPanelController.InvalidateCache();
+
             if (!Chainloader.PluginInfos.TryGetValue("randyknapp.mods.equipmentandquickslots", out PluginInfo? RandyEAQ)) Load(__instance);
         }
 
