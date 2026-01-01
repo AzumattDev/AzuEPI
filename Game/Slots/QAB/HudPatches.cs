@@ -60,7 +60,7 @@ public class HudPatches
                 _cachedQuickAccessBarRect = _cachedQuickAccessBarTransform.GetComponent<RectTransform>();
 
             if (InventoryGui.IsVisible()) return;
-            
+
             if (QuickslotDragKeys.Value.IsPressed() && _cachedQuickAccessBarTransform != null)
             {
                 RectTransform quickAccessBarRect = _cachedQuickAccessBarRect;
@@ -91,6 +91,16 @@ public class HudPatches
             ExtendedPlayerInventory.lastMousePos = mousePosition;
 
             API.HudUpdateComplete(__instance);
+        }
+    }
+
+    [HarmonyPatch(typeof(MessageHud), nameof(MessageHud.Awake))]
+    static class LowerTopLeftMessageMessageHudAwakePatch
+    {
+        static void Postfix(MessageHud __instance)
+        {
+            if (__instance.m_messageText.transform.parent.TryGetComponent(out RectTransform parentRT))
+                parentRT.anchoredPosition += new Vector2(0f, -75f);
         }
     }
 }

@@ -147,6 +147,7 @@ static class PlayerSpawnedPatch
             if (!PersonalLoadoutGui.m_loadoutInventory.AddItem(dragItem, dragAmount, pos.x, pos.y)) return;
             if (dragItem.m_stack <= 0)
             {
+                Player.m_localPlayer.UnequipItem(dragItem);
                 dragInventory.RemoveItem(dragItem);
             }
 
