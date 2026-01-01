@@ -12,7 +12,7 @@
         <AssemblyName>AzuExtendedPlayerInventory</AssemblyName>
         <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
         <FileAlignment>512</FileAlignment>
-        <LangVersion>10</LangVersion>
+        <LangVersion>preview</LangVersion>
         <Nullable>enable</Nullable>
         <SignAssembly>true</SignAssembly>
         <AssemblyOriginatorKeyFile>AzuEPI.snk</AssemblyOriginatorKeyFile>
