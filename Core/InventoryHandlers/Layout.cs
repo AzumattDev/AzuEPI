@@ -136,6 +136,7 @@ public class Layout
             repairSimple.anchoredPosition += RepairMovement;
             repairButton.anchoredPosition += RepairMovement;
             if(enchantmentMenu)enchantmentMenu.anchoredPosition += RepairMovement;
+            if(enchantmentMenuBkg)enchantmentMenuBkg.anchoredPosition += RepairMovement;
             if (craftingBkg.isActiveAndEnabled) craftingBkg.enabled = false;
             if (!GlgGo) return;
             if (InventoryGui.instance)
