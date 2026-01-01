@@ -20,7 +20,7 @@ public class EpicLootCompat
     }
 
     [HarmonyPatch("EpicLoot.PlayerExtensions, EpicLoot", "GetEquipment"), HarmonyPostfix, HarmonyPriority(Priority.Last)]
-    public static void AdvBackpackIsBackpackEquipped(ref List<ItemDrop.ItemData> __result)
+    public static void EpicLootGetEquipment(ref List<ItemDrop.ItemData> __result)
     {
         Player? player = Player.m_localPlayer;
         if (player == null || player.GetInventory() == null) return;

@@ -113,6 +113,7 @@ public class Layout
         RectTransform? repairSimple = instance.m_crafting.Find("RepairSimple").GetComponent<RectTransform>();
         RectTransform? repairButton = instance.m_crafting.Find("RepairButton").GetComponent<RectTransform>();
         RectTransform? enchantmentMenu = VESCompat.IsVesInstalled ? instance.m_crafting.Find("enchantment_menu").GetComponent<RectTransform>() : null;
+        RectTransform? enchantmentMenuBkg = VESCompat.IsVesInstalled ? instance.m_crafting.Find("RepairSimple(Clone)").GetComponent<RectTransform>() : null;
         Image? craftingBkg = instance.m_crafting.Find("Bkg").GetComponent<Image>();
 
         if (OldLayout.Value.isOn())
@@ -121,6 +122,7 @@ public class Layout
             repairSimple.anchoredPosition = RepairSimpleOrigAnchoredPos;
             repairButton.anchoredPosition = RepairButtonOrigAnchoredPos;
             if(enchantmentMenu)enchantmentMenu.anchoredPosition = EnchantmentMenuOrigAnchoredPos;
+            if(enchantmentMenuBkg)enchantmentMenuBkg.anchoredPosition = EnchantmentMenuBkgOrigAnchoredPos;
             if (!craftingBkg.isActiveAndEnabled) craftingBkg.enabled = true;
             if (!GlgGo) return;
             if (InventoryGui.instance)
