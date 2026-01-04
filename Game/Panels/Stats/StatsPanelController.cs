@@ -486,6 +486,7 @@ public static class StatsPanelController
         if (!_content) return;
 
         GameObject headerObj = new($"Section_{title}", typeof(RectTransform));
+        headerObj.SafeSetActive(false);
         RectTransform headerRect = headerObj.GetComponent<RectTransform>();
         headerRect.SetParent(_content, false);
 
@@ -495,7 +496,7 @@ public static class StatsPanelController
             headerText.font = _fontAsset;
             headerText.fontSharedMaterial = _fontAsset.material;
         }
-
+        headerObj.SafeSetActive(true);
         headerText.text = title;
         headerText.fontSize = 20f;
         headerText.fontStyle = FontStyles.Bold;
@@ -533,6 +534,7 @@ public static class StatsPanelController
         if (!hasResistanceStats) return;
 
         GameObject headerObj = new("Section_Resistances", typeof(RectTransform));
+        headerObj.SafeSetActive(false);
         RectTransform headerRect = headerObj.GetComponent<RectTransform>();
         headerRect.SetParent(_content, false);
 
@@ -542,7 +544,7 @@ public static class StatsPanelController
             headerText.font = _fontAsset;
             headerText.fontSharedMaterial = _fontAsset.material;
         }
-
+        headerObj.SafeSetActive(true);
         headerText.text = "Resistances";
         headerText.fontSize = 20f;
         headerText.fontStyle = FontStyles.Bold;
@@ -610,6 +612,7 @@ public static class StatsPanelController
 
         GameObject textObj = new($"DynamicText_{id}", typeof(RectTransform));
         RectTransform textRect = textObj.GetComponent<RectTransform>();
+        textObj.SafeSetActive(false);
         textRect.SetParent(_content, false);
 
         TextMeshProUGUI text = textObj.AddComponent<TextMeshProUGUI>();
@@ -618,7 +621,7 @@ public static class StatsPanelController
             text.font = _fontAsset;
             text.fontSharedMaterial = _fontAsset.material;
         }
-
+        textObj.SafeSetActive(true);
         text.text = "";
         text.fontSize = 16f;
         text.alignment = TextAlignmentOptions.TopLeft;
