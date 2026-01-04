@@ -1,4 +1,5 @@
-﻿using APIManager;
+﻿using System.Reflection;
+using APIManager;
 using AzuEPI.Game.Compatibility.AdvBackpacks;
 using AzuEPI.Game.Panels;
 //using AzuEPI.Game.Moveable;
@@ -365,24 +366,70 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     private void OnDestroy()
     {
-        _cfgWatcher.Changed -= (_, __) => _debounce?.Start();
-        _cfgWatcher.Created -= (_, __) => _debounce?.Start();
-        _cfgWatcher.Renamed -= (_, __) => _debounce?.Start();
-        _cfgWatcher.Dispose();
-        _debounce.Elapsed -= (_, __) => ReadConfigValues(null!, null!);
-        _debounce.Dispose();
+        if (_cfgWatcher != null)
+        {
+            _cfgWatcher.EnableRaisingEvents = false;
+            _cfgWatcher.Dispose();
+        }
 
-        WishboneSlot.SettingChanged -= (sender, args) => { };
-        WispLightSlot.SettingChanged -= (sender, args) => { };
-        ExtraRows.SettingChanged -= (sender, args) => { };
-        AddEquipmentRow.SettingChanged -= (sender, args) => { };
-        DisplayEquipmentRowSeparate.SettingChanged -= (sender, args) => { };
-        VanityOption.SettingChanged -= (sender, args) => { };
-        LoadoutOption.SettingChanged -= (sender, args) => { };
-        OldLayout.SettingChanged -= (sender, args) => { };
+        if (_debounce != null)
+        {
+            _debounce.Stop();
+            _debounce.Dispose();
+        }
 
-        Localization.OnLanguageChange -= new Action(API.RelocalizeSlots);
+        try
+        {
+            Localization.OnLanguageChange -= new Action(API.RelocalizeSlots);
+        }
+        catch { /* Already unsubscribed */ }
+
+        // Clear all config SettingChanged events to prevent memory leaks
+        // Note: I can't unsubscribe lambdas directly, so I clear all handlers
+        try
+        {
+            if (QuickSlotsAmount != null) ClearSettingChangedEvent(QuickSlotsAmount);
+            if (ExtraRows != null) ClearSettingChangedEvent(ExtraRows);
+            if (AddEquipmentRow != null) ClearSettingChangedEvent(AddEquipmentRow);
+            if (DisplayEquipmentRowSeparate != null) ClearSettingChangedEvent(DisplayEquipmentRowSeparate);
+            if (ShowQuickSlots != null) ClearSettingChangedEvent(ShowQuickSlots);
+            if (SelectedPlayerStats != null) ClearSettingChangedEvent(SelectedPlayerStats);
+            if (QuickSlotsPerRow != null) ClearSettingChangedEvent(QuickSlotsPerRow);
+            if (RemovedEquipmentSlots != null) ClearSettingChangedEvent(RemovedEquipmentSlots);
+            if (UserAddedSlots != null) ClearSettingChangedEvent(UserAddedSlots);
+            if (WishboneSlot != null) ClearSettingChangedEvent(WishboneSlot);
+            if (WispLightSlot != null) ClearSettingChangedEvent(WispLightSlot);
+            if (VanityOption != null) ClearSettingChangedEvent(VanityOption);
+            if (LoadoutOption != null) ClearSettingChangedEvent(LoadoutOption);
+            if (VanityToggleGamepadKey != null) ClearSettingChangedEvent(VanityToggleGamepadKey);
+            if (LoadoutToggleGamepadKey != null) ClearSettingChangedEvent(LoadoutToggleGamepadKey);
+            if (StatsToggleGamepadKey != null) ClearSettingChangedEvent(StatsToggleGamepadKey);
+            if (OldLayout != null) ClearSettingChangedEvent(OldLayout);
+
+            if (HotkeyTexts != null)
+            {
+                foreach (var hotkeyText in HotkeyTexts)
+                {
+                    if (hotkeyText != null) ClearSettingChangedEvent(hotkeyText);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            AzuExtendedPlayerInventoryLogger.LogWarning($"Error during event cleanup: {ex.Message}");
+        }
+
         Config.Save();
+    }
+
+    private static void ClearSettingChangedEvent<T>(ConfigEntry<T> configEntry)
+    {
+        // Use reflection to clear the SettingChanged event, bypasses c# limitation with lambda unsubscription
+        FieldInfo? eventField = typeof(ConfigEntry<T>).GetField("SettingChanged", BindingFlags.Instance | BindingFlags.Public);
+        if (eventField != null)
+        {
+            eventField.SetValue(configEntry, null);
+        }
     }
 
     private void InitializeHotkeys()
