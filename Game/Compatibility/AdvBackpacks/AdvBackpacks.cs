@@ -20,7 +20,10 @@ public class AdvBackpacksCompat
 
         ResolveAbApi(advbackpackinfo.Instance.GetType().Assembly);
 
-        API.AddSlot("$bp_backpack_slot_name", new List<string>(Backpacks).ToArray());
+        if (!IsSlotMarkedForRemoval("$bp_backpack_slot_name"))
+        {
+            API.AddSlot("$bp_backpack_slot_name", new List<string>(Backpacks).ToArray());
+        }
         context._harmony.PatchAll(typeof(AdvBackpacksCompat));
     }
 

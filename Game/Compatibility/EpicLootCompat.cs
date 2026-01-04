@@ -15,7 +15,10 @@ public class EpicLootCompat
         if (randyEl?.Instance == null)
             return;
 
-        API.AddSlot("$azuepi_fingerslot", new List<string>(EpicLootEquipmentItems).ToArray());
+        if (!IsSlotMarkedForRemoval("$azuepi_fingerslot"))
+        {
+            API.AddSlot("$azuepi_fingerslot", new List<string>(EpicLootEquipmentItems).ToArray());
+        }
         context._harmony.PatchAll(typeof(EpicLootCompat));
     }
 

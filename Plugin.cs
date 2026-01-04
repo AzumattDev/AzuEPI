@@ -23,7 +23,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     }
 
     internal const string ModName = "AzuExtendedPlayerInventory";
-    internal const string ModVersion = "2.1.0";
+    internal const string ModVersion = "2.1.1";
     internal const string Author = "Azumatt";
     internal const string ModGUID = Author + "." + ModName;
     private static readonly string ConfigFileName = ModGUID + ".cfg";
@@ -208,7 +208,10 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         {
             if (WishboneSlot.Value.isOn())
             {
-                API.AddSlot("$item_wishbone", "Wishbone", 5);
+                if (!IsSlotMarkedForRemoval("$item_wishbone"))
+                {
+                    API.AddSlot("$item_wishbone", "Wishbone", 5);
+                }
             }
             else
             {
@@ -225,7 +228,10 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         {
             if (WispLightSlot.Value.isOn())
             {
-                API.AddSlot("$item_demister", "Demister", WishboneSlot.Value.isOn() ? 6 : 5);
+                if (!IsSlotMarkedForRemoval("$item_demister"))
+                {
+                    API.AddSlot("$item_demister", "Demister", WishboneSlot.Value.isOn() ? 6 : 5);
+                }
             }
             else
             {
@@ -277,12 +283,12 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         _harmony.PatchAll();
         InitializeConfigWatcher();
 
-        if (WishboneSlot.Value.isOn())
+        if (WishboneSlot.Value.isOn() && !IsSlotMarkedForRemoval("$item_wishbone"))
         {
             API.AddSlot("$item_wishbone", "Wishbone", 5);
         }
 
-        if (WispLightSlot.Value.isOn())
+        if (WispLightSlot.Value.isOn() && !IsSlotMarkedForRemoval("$item_demister"))
         {
             API.AddSlot("$item_demister", "Demister", WishboneSlot.Value.isOn() ? 6 : 5);
         }
@@ -753,20 +759,24 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
                 if (isRemoved)
                 {
                     removedSlots.Remove(slot);
+                    RemovedEquipmentSlots.Value = string.Join(", ", removedSlots.Distinct().OrderBy(s => s));
                 }
                 else
                 {
-                    removedSlots.Add(slot);
-
                     if (isUserAdded)
                     {
+                        // For user-added slots: just delete them entirely (don't add to removal list)
                         List<string> userSlots = ParseUserAddedSlots();
                         userSlots.RemoveAll(s => s.StartsWith(slot.Trim() + ":"));
-                        UserAddedSlots.Value = string.Join(";", userSlots);
+                        UserAddedSlots.Value = string.Join(";", userSlots.Distinct());
+                    }
+                    else
+                    {
+                        if (!removedSlots.Contains(slot))
+                            removedSlots.Add(slot);
+                        RemovedEquipmentSlots.Value = string.Join(", ", removedSlots.Distinct().OrderBy(s => s));
                     }
                 }
-
-                RemovedEquipmentSlots.Value = string.Join(", ", removedSlots);
             }
 
             GUI.backgroundColor = oldColor;
@@ -828,19 +838,19 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         {
             if (!string.IsNullOrWhiteSpace(_newSlotName) && !string.IsNullOrWhiteSpace(_newSlotPrefabs))
             {
-                string slotEntry = $"{_newSlotName.Trim()}:{_newSlotPrefabs.Trim()}";
+                string trimmedSlotName = _newSlotName.Trim();
+                string slotEntry = $"{trimmedSlotName}:{_newSlotPrefabs.Trim()}";
                 List<string> userSlots = ParseUserAddedSlots();
 
-                userSlots.RemoveAll(s => s.StartsWith(_newSlotName.Trim() + ":"));
-                userSlots.Add(slotEntry);
-
-                UserAddedSlots.Value = string.Join(";", userSlots);
-
-                if (removedSlots.Contains(_newSlotName.Trim()))
+                if (removedSlots.Contains(trimmedSlotName))
                 {
-                    removedSlots.Remove(_newSlotName.Trim());
-                    RemovedEquipmentSlots.Value = string.Join(", ", removedSlots);
+                    removedSlots.Remove(trimmedSlotName);
+                    RemovedEquipmentSlots.Value = string.Join(", ", removedSlots.Distinct().OrderBy(s => s));
                 }
+
+                userSlots.RemoveAll(s => s.StartsWith(trimmedSlotName + ":"));
+                userSlots.Add(slotEntry);
+                UserAddedSlots.Value = string.Join(";", userSlots.Distinct());
 
                 _newSlotName = "";
                 _newSlotPrefabs = "";
@@ -973,31 +983,37 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         return result;
     }
 
+    internal static bool IsSlotMarkedForRemoval(string slotName)
+    {
+        if (string.IsNullOrWhiteSpace(RemovedEquipmentSlots?.Value))
+            return false;
+
+        List<string> removedSlots = ParseSlotList(RemovedEquipmentSlots.Value);
+
+        if (removedSlots.Contains(slotName))
+            return true;
+
+        if (Localization.instance == null) return false;
+        if (slotName.StartsWith("$"))
+        {
+            string localizedName = Localization.instance.Localize(slotName);
+            if (removedSlots.Contains(localizedName))
+                return true;
+        }
+        else
+        {
+            string tokenName = "$item_" + slotName.ToLower();
+            if (removedSlots.Contains(tokenName) || removedSlots.Contains(Localization.instance.Localize(tokenName)))
+                return true;
+        }
+
+        return false;
+    }
+
     private static void ApplySlotChanges()
     {
         try
         {
-            List<string> userSlots = ParseUserAddedSlots();
-            foreach (string userSlot in userSlots)
-            {
-                string[] parts = userSlot.Split(':');
-                if (parts.Length != 2) continue;
-
-                string slotName = parts[0].Trim();
-                string[] prefabs = parts[1].Split(',').Select(p => p.Trim()).Where(p => !string.IsNullOrEmpty(p)).ToArray();
-
-                if (string.IsNullOrEmpty(slotName) || prefabs.Length == 0) continue;
-                if (!API.TryGetSlotIndexByName(slotName, out _, false))
-                {
-                    if (prefabs.Length == 1)
-                        API.AddSlot(slotName, prefabs[0]);
-                    else
-                        API.AddSlot(slotName, prefabs);
-
-                    AzuExtendedPlayerInventoryLogger.LogInfo($"Added user slot: {slotName} with prefabs: {string.Join(", ", prefabs)}");
-                }
-            }
-
             List<string> removedSlots = ParseSlotList(RemovedEquipmentSlots?.Value ?? "");
             foreach (string slotName in removedSlots)
             {
@@ -1023,6 +1039,38 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
                 if (removed)
                 {
                     AzuExtendedPlayerInventoryLogger.LogInfo($"Removed slot: {slotName}");
+                }
+            }
+
+            List<string> userSlots = ParseUserAddedSlots();
+            foreach (string userSlot in userSlots)
+            {
+                string[] parts = userSlot.Split(':');
+                if (parts.Length != 2) continue;
+
+                string slotName = parts[0].Trim();
+                string[] prefabs = parts[1].Split(',').Select(p => p.Trim()).Where(p => !string.IsNullOrEmpty(p)).ToArray();
+
+                if (string.IsNullOrEmpty(slotName) || prefabs.Length == 0) continue;
+
+                if (IsSlotMarkedForRemoval(slotName))
+                {
+                    AzuExtendedPlayerInventoryLogger.LogWarning($"User slot '{slotName}' is in both add and remove lists - skipping addition (remove takes precedence)");
+                    continue;
+                }
+
+                if (!API.TryGetSlotIndexByName(slotName, out _, false))
+                {
+                    if (prefabs.Length == 1)
+                        API.AddSlot(slotName, prefabs[0]);
+                    else
+                        API.AddSlot(slotName, prefabs);
+
+                    AzuExtendedPlayerInventoryLogger.LogInfo($"Added user slot: {slotName} with prefabs: {string.Join(", ", prefabs)}");
+                }
+                else
+                {
+                    AzuExtendedPlayerInventoryLogger.LogDebug($"User slot '{slotName}' already exists, skipping addition");
                 }
             }
         }
