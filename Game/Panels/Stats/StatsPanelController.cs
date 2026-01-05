@@ -317,7 +317,7 @@ public static class StatsPanelController
     private static bool IsLiveStatEnabled(LiveStatType stat)
     {
         List<LiveStatType> selectedStats = ParseLiveStatsList(SelectedLiveStats.Value);
-        return selectedStats.Count == 0 || selectedStats.Contains(stat);
+        return selectedStats.Count > 0 && selectedStats.Contains(stat);
     }
 
     private static void CreateLiveStatsSection()
