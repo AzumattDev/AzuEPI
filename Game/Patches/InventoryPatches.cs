@@ -5,13 +5,24 @@ public class InventoryPatches
     internal static bool IsInMigration = false;
     private static bool _isLoadingInventory = false;
 
+    private static ItemDrop.ItemData? _itemBeingAdded = null;
+
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.FindEmptySlot))]
     private static class FindEmptySlot_FilterHidden_AddQuick_Patch
     {
         private static bool Prefix(Inventory __instance, ref Vector2i __result, bool topFirst)
         {
             if (!__instance.ShouldProtectInventorySlots()) return true;
-            __result = __instance.FindEmptyQuickAware(topFirst);
+
+            if (_itemBeingAdded != null)
+            {
+                __result = __instance.FindEmptyQuickAware(_itemBeingAdded, topFirst);
+            }
+            else
+            {
+                __result = __instance.FindEmptyQuickAware(topFirst);
+            }
+
             return false;
         }
     }
@@ -210,7 +221,7 @@ public class InventoryPatches
     internal static class AddItem_Pos_Guard_Patch
     {
         [HarmonyPriority(Priority.First)]
-        private static bool Prefix(Inventory __instance, ref bool __result, ItemDrop.ItemData item, Vector2i pos)
+        private static bool Prefix(Inventory __instance, ref bool __result, ItemDrop.ItemData item, ref Vector2i pos)
         {
             if (item?.m_shared == null) return true;
 
@@ -227,6 +238,14 @@ public class InventoryPatches
 
             if (API.TryGetSlotIndexAtGridPos(__instance, pos, out int slotIndex) && !API.SlotValidates(slotIndex, item))
             {
+                Vector2i altPos = __instance.FindEmptyQuickAware(item, topFirst: true);
+                if (altPos.x >= 0)
+                {
+                    // Found alternative position, update pos parameter and let vanilla continue
+                    pos = altPos;
+                    return true;
+                }
+
                 __result = false;
                 return false;
             }
@@ -321,6 +340,7 @@ public class InventoryPatches
                                 __instance.m_inventory.Remove(it);
                                 continue;
                             }
+
                             newPos = __instance.FindEmptyQuickAware(topFirst: true);
                         }
 
@@ -415,6 +435,31 @@ public class InventoryPatches
         private static void Postfix(Container __instance, ref bool granted)
         {
             if (granted) InventoryHealth.InventoryFix();
+        }
+    }
+
+    [HarmonyPatch(typeof(Inventory), nameof(Inventory.AddItem), typeof(string), typeof(int), typeof(int), typeof(int), typeof(long), typeof(string), typeof(Vector2i), typeof(bool))]
+    internal static class AddItem_String_TrackItemForUpgrading_Patch
+    {
+        [HarmonyPriority(Priority.First)]
+        private static void Prefix(Inventory __instance, string name, int quality, int variant)
+        {
+            if (!__instance.IsPlayerInventory()) return;
+
+            GameObject itemPrefab = ObjectDB.instance.GetItemPrefab(name);
+            if (itemPrefab == null) return;
+
+            if (!itemPrefab.TryGetComponent(out ItemDrop component)) return;
+
+            _itemBeingAdded = component.m_itemData.Clone();
+            _itemBeingAdded.m_quality = quality;
+            _itemBeingAdded.m_variant = variant;
+        }
+
+        [HarmonyPriority(Priority.Last)]
+        private static void Finalizer()
+        {
+            _itemBeingAdded = null;
         }
     }
 }

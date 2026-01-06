@@ -248,6 +248,53 @@ public static class InventoryExtensions
                     return new Vector2i(x, y);
         }
 
-        return inv.TryFindEmptyQuickCell(out Vector2i q) ? q : new Vector2i(-1, -1);
+        if (inv.TryFindEmptyQuickCell(out Vector2i q))
+            return q;
+
+        return new Vector2i(-1, -1);
+    }
+
+    public static Vector2i FindEmptyQuickAware(this Inventory inv, ItemDrop.ItemData item, bool topFirst)
+    {
+        int width = inv.GetWidth();
+        int normalRows = Layout.NormalRows(inv);
+
+        if (topFirst)
+        {
+            for (int y = 0; y < normalRows; ++y)
+            for (int x = 0; x < width; ++x)
+                if (inv.GetItemAt(x, y) == null)
+                    return new Vector2i(x, y);
+        }
+        else
+        {
+            for (int y = normalRows - 1; y >= 0; --y)
+            for (int x = 0; x < width; ++x)
+                if (inv.GetItemAt(x, y) == null)
+                    return new Vector2i(x, y);
+        }
+
+        if (inv.TryFindEmptyQuickCell(out Vector2i q))
+            return q;
+
+        int height = inv.GetHeight();
+        for (int y = normalRows; y < height; ++y)
+        for (int x = 0; x < width; ++x)
+        {
+            if (inv.GetItemAt(x, y) != null) continue;
+
+            Vector2i pos = new Vector2i(x, y);
+            if (API.TryGetSlotIndexAtGridPos(inv, pos, out int slotIndex))
+            {
+                if (API.SlotValidates(slotIndex, item))
+                    return pos;
+            }
+            else
+            {
+                return pos;
+            }
+        }
+
+        return new Vector2i(-1, -1);
     }
 }
