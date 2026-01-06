@@ -14,7 +14,7 @@ public static class PanelUtilities
         public readonly KeyCode GamepadKeyCode;
         public readonly string Label;
         public readonly float LabelFontSize;
-        public readonly System.Action OnClick;
+        public readonly Action OnClick;
 
         public ButtonConfig(string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot, Vector2 anchoredPosition, Vector2 size, string gamepadKey, KeyCode gamepadKeyCode, string label, float labelFontSize, Action onClick)
         {

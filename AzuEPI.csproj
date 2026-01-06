@@ -178,6 +178,7 @@
         <Compile Include="Game\Compatibility\WeightBase.cs"/>
         <Compile Include="Game\Compatibility\JudesEquipment.cs"/>
         <Compile Include="Game\Compatibility\RustBags.cs"/>
+        <Compile Include="Game\Compatibility\VESCompat.cs" />
         <Compile Include="Game\Managers\ItemDataManager.cs"/>
         <Compile Include="Game\Managers\LocalizationManager.cs"/>
         <Compile Include="Game\Managers\Patcher.cs"/>
@@ -210,6 +211,7 @@
         <Compile Include="Game\PlayerPreview\VisualHandler.cs"/>
         <Compile Include="Game\Slots\QAB\HudPatches.cs"/>
         <Compile Include="Game\Slots\QAB\QAB.cs"/>
+        <Compile Include="Game\Slots\SlotBackupManager.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)|$(Platform)' != 'API|AnyCPU'">
@@ -221,6 +223,41 @@
         </Content>
         <Content Include="README.md"/>
         <EmbeddedResource Include="translations\English.yml"/>
+        <EmbeddedResource Include="translations\Swedish.yml"/>
+        <EmbeddedResource Include="translations\French.yml"/>
+        <EmbeddedResource Include="translations\Italian.yml"/>
+        <EmbeddedResource Include="translations\German.yml"/>
+        <EmbeddedResource Include="translations\Spanish.yml"/>
+        <EmbeddedResource Include="translations\Russian.yml"/>
+        <EmbeddedResource Include="translations\Romanian.yml"/>
+        <EmbeddedResource Include="translations\Bulgarian.yml"/>
+        <EmbeddedResource Include="translations\Macedonian.yml"/>
+        <EmbeddedResource Include="translations\Finnish.yml"/>
+        <EmbeddedResource Include="translations\Danish.yml"/>
+        <EmbeddedResource Include="translations\Norwegian.yml"/>
+        <EmbeddedResource Include="translations\Icelandic.yml"/>
+        <EmbeddedResource Include="translations\Turkish.yml"/>
+        <EmbeddedResource Include="translations\Lithuanian.yml"/>
+        <EmbeddedResource Include="translations\Czech.yml"/>
+        <EmbeddedResource Include="translations\Hungarian.yml"/>
+        <EmbeddedResource Include="translations\Slovak.yml"/>
+        <EmbeddedResource Include="translations\Polish.yml"/>
+        <EmbeddedResource Include="translations\Dutch.yml"/>
+        <EmbeddedResource Include="translations\Portuguese_European.yml"/>
+        <EmbeddedResource Include="translations\Portuguese_Brazilian.yml"/>
+        <EmbeddedResource Include="translations\Chinese.yml"/>
+        <EmbeddedResource Include="translations\Chinese_Trad.yml"/>
+        <EmbeddedResource Include="translations\Japanese.yml"/>
+        <EmbeddedResource Include="translations\Korean.yml"/>
+        <EmbeddedResource Include="translations\Hindi.yml"/>
+        <EmbeddedResource Include="translations\Thai.yml"/>
+        <EmbeddedResource Include="translations\Abenaki.yml"/>
+        <EmbeddedResource Include="translations\Croatian.yml"/>
+        <EmbeddedResource Include="translations\Georgian.yml"/>
+        <EmbeddedResource Include="translations\Greek.yml"/>
+        <EmbeddedResource Include="translations\Serbian.yml"/>
+        <EmbeddedResource Include="translations\Ukrainian.yml"/>
+        <EmbeddedResource Include="translations\Latvian.yml"/>
         <Content Include="Thunderstore\CHANGELOG.md"/>
         <Content Include="Thunderstore\icon.png"/>
         <Content Include="Thunderstore\manifest.json"/>
@@ -231,7 +268,6 @@
         <Compile Include="API\API.cs"/>
         <Compile Include="API\APIBkCompat.cs"/>
         <Compile Include="Core\Slots\Model.cs"/>
-        <Compile Include="Game\Compatibility\VESCompat.cs" />
         <Compile Include="GlobalUsings.cs"/>
         <None Include="App.config"/>
         <None Include="AzuEPI.snk" />

@@ -133,10 +133,10 @@ public class InventoryGuiPatches
     {
         internal static readonly List<Model.Slot?> slots = new()
         {
-            new Model.EquipmentSlot { Name = HelmetText.Value, IsQuickSlot = false, Get = player => player.m_helmetItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Helmet && !SlotAcceptRules.HasDedicatedAPISlot(item) },
-            new Model.EquipmentSlot { Name = ChestText.Value, IsQuickSlot = false, Get = player => player.m_chestItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Chest && !SlotAcceptRules.HasDedicatedAPISlot(item) },
-            new Model.EquipmentSlot { Name = LegsText.Value, IsQuickSlot = false, Get = player => player.m_legItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Legs && !SlotAcceptRules.HasDedicatedAPISlot(item) },
-            new Model.EquipmentSlot { Name = BackText.Value, IsQuickSlot = false, Get = player =>
+            new Model.EquipmentSlot { Name = HelmetText.Value, OriginalName = "$azu_epi_helmet", IsQuickSlot = false, Get = player => player.m_helmetItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Helmet && !SlotAcceptRules.HasDedicatedAPISlot(item) },
+            new Model.EquipmentSlot { Name = ChestText.Value, OriginalName = "$azu_epi_chest", IsQuickSlot = false, Get = player => player.m_chestItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Chest && !SlotAcceptRules.HasDedicatedAPISlot(item) },
+            new Model.EquipmentSlot { Name = LegsText.Value, OriginalName = "$azu_epi_legs", IsQuickSlot = false, Get = player => player.m_legItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Legs && !SlotAcceptRules.HasDedicatedAPISlot(item) },
+            new Model.EquipmentSlot { Name = BackText.Value, OriginalName = "$azu_epi_shoulder", IsQuickSlot = false, Get = player =>
             {
                 ItemDrop.ItemData? shoulderItem = player.m_shoulderItem;
                 // If the shoulder slot contains an item with a dedicated API slot (like a backpack),
@@ -147,7 +147,7 @@ public class InventoryGuiPatches
                 }
                 return shoulderItem;
             }, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder && !SlotAcceptRules.HasDedicatedAPISlot(item) },
-            new Model.EquipmentSlot { Name = UtilityText.Value, IsQuickSlot = false, Get = player =>
+            new Model.EquipmentSlot { Name = UtilityText.Value, OriginalName = "$azu_epi_utility", IsQuickSlot = false, Get = player =>
             {
                 ItemDrop.ItemData? utilityItem = player.m_utilityItem;
                 if (utilityItem != null && SlotAcceptRules.HasDedicatedAPISlot(utilityItem))

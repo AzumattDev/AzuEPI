@@ -80,29 +80,29 @@ public static class StatsPanelController
 
     private static readonly Dictionary<PlayerStatType, string> StatLabels = new()
     {
-        { PlayerStatType.EnemyKills, "Kills" },
-        { PlayerStatType.EnemyHits, "Hits" },
-        { PlayerStatType.HitsTakenEnemies, "Hit Taken" },
-        { PlayerStatType.PlayerKills, "PvP Kills" },
-        { PlayerStatType.PlayerHits, "PvP Hits" },
-        { PlayerStatType.BossKills, "Bosses" },
-        { PlayerStatType.ItemsPickedUp, "Items" },
-        { PlayerStatType.DistanceTraveled, "Distance" },
-        { PlayerStatType.DistanceWalk, "Walked" },
-        { PlayerStatType.DistanceRun, "Run" },
-        { PlayerStatType.DistanceSail, "Sailed" },
-        { PlayerStatType.DistanceAir, "Air" },
-        { PlayerStatType.TreeChops, "Trees" },
-        { PlayerStatType.MineHits, "Mines" },
-        { PlayerStatType.FoodEaten, "Food" },
-        { PlayerStatType.PortalsUsed, "Portals" },
-        { PlayerStatType.TimeInBase, "In Base" },
-        { PlayerStatType.TimeOutOfBase, "Explored" },
-        { PlayerStatType.CraftsOrUpgrades, "Craft/Upgrades" },
-        { PlayerStatType.WorldLoads, "Loads" },
-        { PlayerStatType.CreatureTamed, "Tamed" },
-        { PlayerStatType.DoorsOpened, "Doors" },
-        { PlayerStatType.BeesHarvested, "Bees" },
+        { PlayerStatType.EnemyKills, "$azu_epi_stat_kills" },
+        { PlayerStatType.EnemyHits, "$azu_epi_stat_hits" },
+        { PlayerStatType.HitsTakenEnemies, "$azu_epi_stat_hit_taken" },
+        { PlayerStatType.PlayerKills, "$azu_epi_stat_pvp_kills" },
+        { PlayerStatType.PlayerHits, "$azu_epi_stat_pvp_hits" },
+        { PlayerStatType.BossKills, "$azu_epi_stat_bosses" },
+        { PlayerStatType.ItemsPickedUp, "$azu_epi_stat_items" },
+        { PlayerStatType.DistanceTraveled, "$azu_epi_stat_distance" },
+        { PlayerStatType.DistanceWalk, "$azu_epi_stat_walked" },
+        { PlayerStatType.DistanceRun, "$azu_epi_stat_run" },
+        { PlayerStatType.DistanceSail, "$azu_epi_stat_sailed" },
+        { PlayerStatType.DistanceAir, "$azu_epi_stat_air" },
+        { PlayerStatType.TreeChops, "$azu_epi_stat_trees" },
+        { PlayerStatType.MineHits, "$azu_epi_stat_mines" },
+        { PlayerStatType.FoodEaten, "$azu_epi_stat_food" },
+        { PlayerStatType.PortalsUsed, "$azu_epi_stat_portals" },
+        { PlayerStatType.TimeInBase, "$azu_epi_stat_in_base" },
+        { PlayerStatType.TimeOutOfBase, "$azu_epi_stat_explored" },
+        { PlayerStatType.CraftsOrUpgrades, "$azu_epi_stat_craft_upgrades" },
+        { PlayerStatType.WorldLoads, "$azu_epi_stat_loads" },
+        { PlayerStatType.CreatureTamed, "$azu_epi_stat_tamed" },
+        { PlayerStatType.DoorsOpened, "$azu_epi_stat_doors" },
+        { PlayerStatType.BeesHarvested, "$azu_epi_stat_bees" },
     };
 
     public static bool IsVisible() => _visible;
@@ -168,6 +168,7 @@ public static class StatsPanelController
     private static void BuildPanel(InventoryGui gui)
     {
         _panel = PanelUtilities.BuildPanel(gui, StatsPanelName);
+        _panel.GetOrAddComponent<Localize>();
     }
 
     private static void BuildScrollTree()
@@ -303,15 +304,15 @@ public static class StatsPanelController
         }
 
         if (generalStats.Count > 0)
-            CreateSection("General", generalStats.ToArray());
+            CreateSection(Localization.instance.Localize("$azu_epi_stat_section_general"), generalStats.ToArray());
         if (combatStats.Count > 0)
-            CreateSection("Combat", combatStats.ToArray());
+            CreateSection(Localization.instance.Localize("$azu_epi_stat_section_combat"), combatStats.ToArray());
         if (explorationStats.Count > 0)
-            CreateSection("Exploration", explorationStats.ToArray());
+            CreateSection(Localization.instance.Localize("$azu_epi_stat_section_exploration"), explorationStats.ToArray());
         if (activityStats.Count > 0)
-            CreateSection("Activity", activityStats.ToArray());
+            CreateSection(Localization.instance.Localize("$azu_epi_stat_section_activity"), activityStats.ToArray());
         if (otherStats.Count > 0)
-            CreateSection("Other", otherStats.ToArray());
+            CreateSection(Localization.instance.Localize("$azu_epi_stat_section_other"), otherStats.ToArray());
     }
 
     private static bool IsLiveStatEnabled(LiveStatType stat)
@@ -328,11 +329,11 @@ public static class StatsPanelController
                                  IsLiveStatEnabled(LiveStatType.Eitr) || IsLiveStatEnabled(LiveStatType.Adrenaline);
         if (hasAttributeStats)
         {
-            CreateSectionHeader("Attributes", new Color(1f, 0.84f, 0f, 1f));
-            if (IsLiveStatEnabled(LiveStatType.Health)) CreateLiveStatRow("Health");
-            if (IsLiveStatEnabled(LiveStatType.Stamina)) CreateLiveStatRow("Stamina");
-            if (IsLiveStatEnabled(LiveStatType.Eitr)) CreateLiveStatRow("Eitr");
-            if (IsLiveStatEnabled(LiveStatType.Adrenaline)) CreateLiveStatRow("Adrenaline");
+            CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_attributes"), new Color(1f, 0.84f, 0f, 1f));
+            if (IsLiveStatEnabled(LiveStatType.Health)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_health"));
+            if (IsLiveStatEnabled(LiveStatType.Stamina)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_stamina"));
+            if (IsLiveStatEnabled(LiveStatType.Eitr)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_eitr"));
+            if (IsLiveStatEnabled(LiveStatType.Adrenaline)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_adrenaline"));
             CreateSpacer("Spacer_Attributes");
         }
 
@@ -342,14 +343,14 @@ public static class StatsPanelController
                              IsLiveStatEnabled(LiveStatType.EitrRegenMulti);
         if (hasRegenStats)
         {
-            CreateSectionHeader("Regeneration", new Color(0.4f, 1f, 0.4f, 1f));
-            if (IsLiveStatEnabled(LiveStatType.HealthRegen)) CreateLiveStatRow("Health Regen");
-            if (IsLiveStatEnabled(LiveStatType.HealthRegenMulti)) CreateLiveStatRow("Health Regen Multi");
-            if (IsLiveStatEnabled(LiveStatType.FoodRegen)) CreateLiveStatRow("Food Regen");
-            if (IsLiveStatEnabled(LiveStatType.StaminaRegen)) CreateLiveStatRow("Stamina Regen");
-            if (IsLiveStatEnabled(LiveStatType.StaminaRegenMulti)) CreateLiveStatRow("Stamina Regen Multi");
-            if (IsLiveStatEnabled(LiveStatType.EitrRegen)) CreateLiveStatRow("Eitr Regen");
-            if (IsLiveStatEnabled(LiveStatType.EitrRegenMulti)) CreateLiveStatRow("Eitr Regen Multi");
+            CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_regeneration"), new Color(0.4f, 1f, 0.4f, 1f));
+            if (IsLiveStatEnabled(LiveStatType.HealthRegen)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_health_regen"));
+            if (IsLiveStatEnabled(LiveStatType.HealthRegenMulti)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_health_regen_multi"));
+            if (IsLiveStatEnabled(LiveStatType.FoodRegen)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_food_regen"));
+            if (IsLiveStatEnabled(LiveStatType.StaminaRegen)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_stamina_regen"));
+            if (IsLiveStatEnabled(LiveStatType.StaminaRegenMulti)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_stamina_regen_multi"));
+            if (IsLiveStatEnabled(LiveStatType.EitrRegen)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_eitr_regen"));
+            if (IsLiveStatEnabled(LiveStatType.EitrRegenMulti)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_eitr_regen_multi"));
             CreateSpacer("Spacer_Regen");
         }
 
@@ -358,13 +359,13 @@ public static class StatsPanelController
                               IsLiveStatEnabled(LiveStatType.CritChance) || IsLiveStatEnabled(LiveStatType.Lifesteal);
         if (hasCombatStats)
         {
-            CreateSectionHeader("Combat", new Color(1f, 0.5f, 0f, 1f));
-            if (IsLiveStatEnabled(LiveStatType.AttackSpeed)) CreateLiveStatRow("Attack Speed");
-            if (IsLiveStatEnabled(LiveStatType.DamageModifier)) CreateLiveStatRow("Damage Modifier");
-            if (IsLiveStatEnabled(LiveStatType.StaggerResist)) CreateLiveStatRow("Stagger Resist");
-            if (IsLiveStatEnabled(LiveStatType.TimedBlockBonus)) CreateLiveStatRow("Timed Block Bonus");
-            if (IsLiveStatEnabled(LiveStatType.CritChance)) CreateLiveStatRow("Crit Chance");
-            if (IsLiveStatEnabled(LiveStatType.Lifesteal)) CreateLiveStatRow("Lifesteal");
+            CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_combat"), new Color(1f, 0.5f, 0f, 1f));
+            if (IsLiveStatEnabled(LiveStatType.AttackSpeed)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_attack_speed"));
+            if (IsLiveStatEnabled(LiveStatType.DamageModifier)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_damage_modifier"));
+            if (IsLiveStatEnabled(LiveStatType.StaggerResist)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_stagger_resist"));
+            if (IsLiveStatEnabled(LiveStatType.TimedBlockBonus)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_timed_block_bonus"));
+            if (IsLiveStatEnabled(LiveStatType.CritChance)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_crit_chance"));
+            if (IsLiveStatEnabled(LiveStatType.Lifesteal)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_lifesteal"));
             CreateSpacer("Spacer_Combat");
         }
 
@@ -374,15 +375,15 @@ public static class StatsPanelController
                                  IsLiveStatEnabled(LiveStatType.PoisonDamage) || IsLiveStatEnabled(LiveStatType.SpiritDamage);
         if (hasElementalStats)
         {
-            CreateSectionHeader("Elemental Damage", new Color(1f, 0.6f, 0.2f, 1f));
-            if (IsLiveStatEnabled(LiveStatType.BluntDamage)) CreateLiveStatRow("Blunt Damage");
-            if (IsLiveStatEnabled(LiveStatType.SlashDamage)) CreateLiveStatRow("Slash Damage");
-            if (IsLiveStatEnabled(LiveStatType.PierceDamage)) CreateLiveStatRow("Pierce Damage");
-            if (IsLiveStatEnabled(LiveStatType.FireDamage)) CreateLiveStatRow("Fire Damage");
-            if (IsLiveStatEnabled(LiveStatType.FrostDamage)) CreateLiveStatRow("Frost Damage");
-            if (IsLiveStatEnabled(LiveStatType.LightningDamage)) CreateLiveStatRow("Lightning Damage");
-            if (IsLiveStatEnabled(LiveStatType.PoisonDamage)) CreateLiveStatRow("Poison Damage");
-            if (IsLiveStatEnabled(LiveStatType.SpiritDamage)) CreateLiveStatRow("Spirit Damage");
+            CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_elemental_damage"), new Color(1f, 0.6f, 0.2f, 1f));
+            if (IsLiveStatEnabled(LiveStatType.BluntDamage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_blunt_damage"));
+            if (IsLiveStatEnabled(LiveStatType.SlashDamage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_slash_damage"));
+            if (IsLiveStatEnabled(LiveStatType.PierceDamage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_pierce_damage"));
+            if (IsLiveStatEnabled(LiveStatType.FireDamage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_fire_damage"));
+            if (IsLiveStatEnabled(LiveStatType.FrostDamage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_frost_damage"));
+            if (IsLiveStatEnabled(LiveStatType.LightningDamage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_lightning_damage"));
+            if (IsLiveStatEnabled(LiveStatType.PoisonDamage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_poison_damage"));
+            if (IsLiveStatEnabled(LiveStatType.SpiritDamage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_spirit_damage"));
             CreateSpacer("Spacer_ElementalDamage");
         }
 
@@ -390,11 +391,11 @@ public static class StatsPanelController
                               IsLiveStatEnabled(LiveStatType.WeightPercentage) || IsLiveStatEnabled(LiveStatType.ExtraCarryWeight);
         if (hasWeightStats)
         {
-            CreateSectionHeader("Carry Weight", new Color(0.7f, 0.7f, 1f, 1f));
-            if (IsLiveStatEnabled(LiveStatType.CurrentWeight)) CreateLiveStatRow("Current Weight");
-            if (IsLiveStatEnabled(LiveStatType.MaxWeight)) CreateLiveStatRow("Max Weight");
-            if (IsLiveStatEnabled(LiveStatType.WeightPercentage)) CreateLiveStatRow("Weight Percentage");
-            if (IsLiveStatEnabled(LiveStatType.ExtraCarryWeight)) CreateLiveStatRow("Extra Carry Weight");
+            CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_carry_weight"), new Color(0.7f, 0.7f, 1f, 1f));
+            if (IsLiveStatEnabled(LiveStatType.CurrentWeight)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_current_weight"));
+            if (IsLiveStatEnabled(LiveStatType.MaxWeight)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_max_weight"));
+            if (IsLiveStatEnabled(LiveStatType.WeightPercentage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_weight_percentage"));
+            if (IsLiveStatEnabled(LiveStatType.ExtraCarryWeight)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_extra_carry_weight"));
             CreateSpacer("Spacer_CarryWeight");
         }
 
@@ -404,15 +405,15 @@ public static class StatsPanelController
                                     IsLiveStatEnabled(LiveStatType.SneakStamina) || IsLiveStatEnabled(LiveStatType.HomeItemStamina);
         if (hasStaminaUsageStats)
         {
-            CreateSectionHeader("Stamina Usage", new Color(1f, 1f, 0.5f, 1f));
-            if (IsLiveStatEnabled(LiveStatType.JumpStamina)) CreateLiveStatRow("Jump Stamina");
-            if (IsLiveStatEnabled(LiveStatType.AttackStamina)) CreateLiveStatRow("Attack Stamina");
-            if (IsLiveStatEnabled(LiveStatType.BlockStamina)) CreateLiveStatRow("Block Stamina");
-            if (IsLiveStatEnabled(LiveStatType.DodgeStamina)) CreateLiveStatRow("Dodge Stamina");
-            if (IsLiveStatEnabled(LiveStatType.SwimStamina)) CreateLiveStatRow("Swim Stamina");
-            if (IsLiveStatEnabled(LiveStatType.RunStamina)) CreateLiveStatRow("Run Stamina");
-            if (IsLiveStatEnabled(LiveStatType.SneakStamina)) CreateLiveStatRow("Sneak Stamina");
-            if (IsLiveStatEnabled(LiveStatType.HomeItemStamina)) CreateLiveStatRow("Home Item Stamina");
+            CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_stamina_usage"), new Color(1f, 1f, 0.5f, 1f));
+            if (IsLiveStatEnabled(LiveStatType.JumpStamina)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_jump_stamina"));
+            if (IsLiveStatEnabled(LiveStatType.AttackStamina)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_attack_stamina"));
+            if (IsLiveStatEnabled(LiveStatType.BlockStamina)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_block_stamina"));
+            if (IsLiveStatEnabled(LiveStatType.DodgeStamina)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_dodge_stamina"));
+            if (IsLiveStatEnabled(LiveStatType.SwimStamina)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_swim_stamina"));
+            if (IsLiveStatEnabled(LiveStatType.RunStamina)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_run_stamina"));
+            if (IsLiveStatEnabled(LiveStatType.SneakStamina)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_sneak_stamina"));
+            if (IsLiveStatEnabled(LiveStatType.HomeItemStamina)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_home_item_stamina"));
             CreateSpacer("Spacer_StaminaUsage");
         }
 
@@ -420,10 +421,10 @@ public static class StatsPanelController
                                  IsLiveStatEnabled(LiveStatType.EquipmentMovement);
         if (hasEquipmentStats)
         {
-            CreateSectionHeader("Equipment Bonuses", new Color(1f, 0.8f, 0.5f, 1f));
-            if (IsLiveStatEnabled(LiveStatType.TotalArmor)) CreateLiveStatRow("Total Armor");
-            if (IsLiveStatEnabled(LiveStatType.HeatResistance)) CreateLiveStatRow("Heat Resistance");
-            if (IsLiveStatEnabled(LiveStatType.EquipmentMovement)) CreateLiveStatRow("Equipment Movement");
+            CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_equipment_bonuses"), new Color(1f, 0.8f, 0.5f, 1f));
+            if (IsLiveStatEnabled(LiveStatType.TotalArmor)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_total_armor"));
+            if (IsLiveStatEnabled(LiveStatType.HeatResistance)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_heat_resistance"));
+            if (IsLiveStatEnabled(LiveStatType.EquipmentMovement)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_equipment_movement"));
             CreateSpacer("Spacer_EquipmentBonuses");
         }
 
@@ -433,16 +434,16 @@ public static class StatsPanelController
         {
             if (IsLiveStatEnabled(LiveStatType.TopSkills))
             {
-                CreateSectionHeader("Top Skills", new Color(0.8f, 0.5f, 1f, 1f));
+                CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_top_skills"), new Color(0.8f, 0.5f, 1f, 1f));
                 CreateDynamicTextRow("Top Skills");
                 CreateSpacer("Spacer_TopSkills");
             }
 
             if (IsLiveStatEnabled(LiveStatType.SkillBonuses) || IsLiveStatEnabled(LiveStatType.SkillRaiseSpeed))
             {
-                CreateSectionHeader("Skill Bonuses", new Color(0.8f, 0.5f, 1f, 1f));
+                CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_skill_bonuses"), new Color(0.8f, 0.5f, 1f, 1f));
                 if (IsLiveStatEnabled(LiveStatType.SkillBonuses)) CreateDynamicTextRow("Skill Bonuses");
-                if (IsLiveStatEnabled(LiveStatType.SkillRaiseSpeed)) CreateLiveStatRow("Skill Raise Speed");
+                if (IsLiveStatEnabled(LiveStatType.SkillRaiseSpeed)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_skill_raise_speed"));
                 CreateSpacer("Spacer_SkillBonuses");
             }
         }
@@ -452,12 +453,12 @@ public static class StatsPanelController
                                IsLiveStatEnabled(LiveStatType.ComfortLevel);
         if (hasUtilityStats)
         {
-            CreateSectionHeader("Stealth & Utility", new Color(0.6f, 0.6f, 0.8f, 1f));
-            if (IsLiveStatEnabled(LiveStatType.NoiseLevel)) CreateLiveStatRow("Noise Level");
-            if (IsLiveStatEnabled(LiveStatType.StealthLevel)) CreateLiveStatRow("Stealth Level");
-            if (IsLiveStatEnabled(LiveStatType.CoverPercentage)) CreateLiveStatRow("Cover Percentage");
-            if (IsLiveStatEnabled(LiveStatType.FallDamage)) CreateLiveStatRow("Fall Damage");
-            if (IsLiveStatEnabled(LiveStatType.ComfortLevel)) CreateLiveStatRow("Comfort Level");
+            CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_stealth_utility"), new Color(0.6f, 0.6f, 0.8f, 1f));
+            if (IsLiveStatEnabled(LiveStatType.NoiseLevel)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_noise_level"));
+            if (IsLiveStatEnabled(LiveStatType.StealthLevel)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_stealth_level"));
+            if (IsLiveStatEnabled(LiveStatType.CoverPercentage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_cover_percentage"));
+            if (IsLiveStatEnabled(LiveStatType.FallDamage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_fall_damage"));
+            if (IsLiveStatEnabled(LiveStatType.ComfortLevel)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_comfort_level"));
             CreateSpacer("Spacer_Utility");
         }
 
@@ -466,12 +467,12 @@ public static class StatsPanelController
                                 IsLiveStatEnabled(LiveStatType.JumpHeight);
         if (hasMovementStats)
         {
-            CreateSectionHeader("Movement", new Color(0.5f, 1f, 0.5f, 1f));
-            if (IsLiveStatEnabled(LiveStatType.MovementSpeed)) CreateLiveStatRow("Movement Speed");
-            if (IsLiveStatEnabled(LiveStatType.SpeedModifier)) CreateLiveStatRow("Speed Modifier");
-            if (IsLiveStatEnabled(LiveStatType.RunSpeed)) CreateLiveStatRow("Run Speed");
-            if (IsLiveStatEnabled(LiveStatType.SwimSpeed)) CreateLiveStatRow("Swim Speed");
-            if (IsLiveStatEnabled(LiveStatType.JumpHeight)) CreateLiveStatRow("Jump Height");
+            CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_movement"), new Color(0.5f, 1f, 0.5f, 1f));
+            if (IsLiveStatEnabled(LiveStatType.MovementSpeed)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_movement_speed"));
+            if (IsLiveStatEnabled(LiveStatType.SpeedModifier)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_speed_modifier"));
+            if (IsLiveStatEnabled(LiveStatType.RunSpeed)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_run_speed"));
+            if (IsLiveStatEnabled(LiveStatType.SwimSpeed)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_swim_speed"));
+            if (IsLiveStatEnabled(LiveStatType.JumpHeight)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_jump_height"));
             CreateSpacer("Spacer_Movement");
         }
 
@@ -496,6 +497,7 @@ public static class StatsPanelController
             headerText.font = _fontAsset;
             headerText.fontSharedMaterial = _fontAsset.material;
         }
+
         headerObj.SafeSetActive(true);
         headerText.text = title;
         headerText.fontSize = 20f;
@@ -544,8 +546,9 @@ public static class StatsPanelController
             headerText.font = _fontAsset;
             headerText.fontSharedMaterial = _fontAsset.material;
         }
+
         headerObj.SafeSetActive(true);
-        headerText.text = "Resistances";
+        headerText.text = Localization.instance.Localize("$azu_epi_stat_section_resistances");
         headerText.fontSize = 20f;
         headerText.fontStyle = FontStyles.Bold;
         headerText.alignment = TextAlignmentOptions.Left;
@@ -556,15 +559,15 @@ public static class StatsPanelController
         headerLayout.preferredHeight = 20f;
         headerLayout.minHeight = 20f;
 
-        if (IsLiveStatEnabled(LiveStatType.Armor)) CreateLiveStatRow("Armor");
-        if (IsLiveStatEnabled(LiveStatType.BluntResist)) CreateLiveStatRow("Blunt Resist");
-        if (IsLiveStatEnabled(LiveStatType.SlashResist)) CreateLiveStatRow("Slash Resist");
-        if (IsLiveStatEnabled(LiveStatType.PierceResist)) CreateLiveStatRow("Pierce Resist");
-        if (IsLiveStatEnabled(LiveStatType.FireResist)) CreateLiveStatRow("Fire Resist");
-        if (IsLiveStatEnabled(LiveStatType.FrostResist)) CreateLiveStatRow("Frost Resist");
-        if (IsLiveStatEnabled(LiveStatType.LightningResist)) CreateLiveStatRow("Lightning Resist");
-        if (IsLiveStatEnabled(LiveStatType.PoisonResist)) CreateLiveStatRow("Poison Resist");
-        if (IsLiveStatEnabled(LiveStatType.SpiritResist)) CreateLiveStatRow("Spirit Resist");
+        if (IsLiveStatEnabled(LiveStatType.Armor)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_armor"));
+        if (IsLiveStatEnabled(LiveStatType.BluntResist)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_blunt_resist"));
+        if (IsLiveStatEnabled(LiveStatType.SlashResist)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_slash_resist"));
+        if (IsLiveStatEnabled(LiveStatType.PierceResist)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_pierce_resist"));
+        if (IsLiveStatEnabled(LiveStatType.FireResist)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_fire_resist"));
+        if (IsLiveStatEnabled(LiveStatType.FrostResist)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_frost_resist"));
+        if (IsLiveStatEnabled(LiveStatType.LightningResist)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_lightning_resist"));
+        if (IsLiveStatEnabled(LiveStatType.PoisonResist)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_poison_resist"));
+        if (IsLiveStatEnabled(LiveStatType.SpiritResist)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_spirit_resist"));
 
         GameObject spacer = new("Spacer_Resistances", typeof(RectTransform));
         RectTransform spacerRect = spacer.GetComponent<RectTransform>();
@@ -578,7 +581,7 @@ public static class StatsPanelController
     {
         if (!_content || !IsLiveStatEnabled(LiveStatType.ActiveEffects)) return;
 
-        CreateSectionHeader("Active Effects", new Color(0.5f, 0.8f, 1f, 1f));
+        CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_active_effects"), new Color(0.5f, 0.8f, 1f, 1f));
         CreateDynamicTextRow("ActiveEffects");
 
         CreateSpacer("Spacer_ActiveEffects");
@@ -588,7 +591,7 @@ public static class StatsPanelController
     {
         if (!_content || !IsLiveStatEnabled(LiveStatType.SetBonuses)) return;
 
-        CreateSectionHeader("Active Set Bonuses", new Color(0.8f, 0.6f, 1f, 1f));
+        CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_set_bonuses"), new Color(0.8f, 0.6f, 1f, 1f));
 
         CreateDynamicTextRow("SetBonuses");
 
@@ -599,7 +602,7 @@ public static class StatsPanelController
     {
         if (!_content || !IsLiveStatEnabled(LiveStatType.FoodBuffs)) return;
 
-        CreateSectionHeader("Active Food Buffs", new Color(1f, 0.7f, 0.3f, 1f));
+        CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_food_buffs"), new Color(1f, 0.7f, 0.3f, 1f));
 
         CreateDynamicTextRow("FoodBuffs");
 
@@ -621,6 +624,7 @@ public static class StatsPanelController
             text.font = _fontAsset;
             text.fontSharedMaterial = _fontAsset.material;
         }
+
         textObj.SafeSetActive(true);
         text.text = "";
         text.fontSize = 16f;
@@ -785,7 +789,8 @@ public static class StatsPanelController
 
     private static void CreateStatRow(GameObject parent, string statName, PlayerStatType statType)
     {
-        GameObject rowObj = new($"StatRow_{statName}", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        string localizedName = Localization.instance.Localize(statName);
+        GameObject rowObj = new($"StatRow_{localizedName}", typeof(RectTransform), typeof(HorizontalLayoutGroup));
         RectTransform rowRect = rowObj.GetComponent<RectTransform>();
         rowRect.SetParent(parent.transform, false);
 
@@ -814,7 +819,7 @@ public static class StatsPanelController
         }
 
         labelObj.SafeSetActive(true);
-        labelText.text = statName;
+        labelText.text = localizedName;
         labelText.fontSize = 18f;
         labelText.alignment = TextAlignmentOptions.Left;
         labelText.color = new Color(0.9f, 0.9f, 0.9f, 1f);
@@ -849,7 +854,7 @@ public static class StatsPanelController
         valueLayout.minWidth = 60f;
         valueLayout.preferredWidth = 60f;
 
-        _statElements.Add(new StatElement { Name = statName, StatType = statType, ValueText = valueText });
+        _statElements.Add(new StatElement { Name = localizedName, StatType = statType, ValueText = valueText });
 
         CreateSeparator();
     }
@@ -1534,15 +1539,15 @@ public static class StatsPanelController
     {
         return modifier switch
         {
-            HitData.DamageModifier.Immune => "Immune",
-            HitData.DamageModifier.VeryResistant => "Very Resistant",
-            HitData.DamageModifier.Resistant => "Resistant",
-            HitData.DamageModifier.SlightlyResistant => "Slightly Resistant",
-            HitData.DamageModifier.Normal => "Normal",
-            HitData.DamageModifier.SlightlyWeak => "Slightly Weak",
-            HitData.DamageModifier.Weak => "Weak",
-            HitData.DamageModifier.VeryWeak => "Very Weak",
-            _ => "Unknown"
+            HitData.DamageModifier.Immune => Localization.instance.Localize("$azu_epi_stat_resist_immune"),
+            HitData.DamageModifier.VeryResistant => Localization.instance.Localize("$azu_epi_stat_resist_very_resistant"),
+            HitData.DamageModifier.Resistant => Localization.instance.Localize("$azu_epi_stat_resist_resistant"),
+            HitData.DamageModifier.SlightlyResistant => Localization.instance.Localize("$azu_epi_stat_resist_slightly_resistant"),
+            HitData.DamageModifier.Normal => Localization.instance.Localize("$azu_epi_stat_resist_normal"),
+            HitData.DamageModifier.SlightlyWeak => Localization.instance.Localize("$azu_epi_stat_resist_slightly_weak"),
+            HitData.DamageModifier.Weak => Localization.instance.Localize("$azu_epi_stat_resist_weak"),
+            HitData.DamageModifier.VeryWeak => Localization.instance.Localize("$azu_epi_stat_resist_very_weak"),
+            _ => Localization.instance.Localize("$azu_epi_stat_resist_unknown")
         };
     }
 
@@ -1555,7 +1560,7 @@ public static class StatsPanelController
         try
         {
             if (player.m_skills == null)
-                return "None";
+                return Localization.instance.Localize("$azu_epi_stat_none");
 
             System.Text.StringBuilder sb = new();
             List<Skills.Skill> skillList = player.m_skills.GetSkillList();
@@ -1567,7 +1572,7 @@ public static class StatsPanelController
                 .ToList();
 
             if (topSkills.Count == 0)
-                return "None";
+                return Localization.instance.Localize("$azu_epi_stat_none");
 
             foreach (Skills.Skill skill in topSkills)
             {
@@ -1583,7 +1588,7 @@ public static class StatsPanelController
         catch (Exception ex)
         {
             AzuExtendedPlayerInventoryLogger.LogWarning($"Error getting skills: {ex.Message}");
-            return "Error";
+            return Localization.instance.Localize("$azu_epi_stat_error");
         }
     }
 
@@ -1596,7 +1601,7 @@ public static class StatsPanelController
             List<Skills.Skill> skillList = playerSkills.GetSkillList();
 
             if (skillList.Count == 0)
-                return "None";
+                return Localization.instance.Localize("$azu_epi_stat_none");
 
             foreach (Skills.Skill skill in skillList)
             {
@@ -1608,12 +1613,12 @@ public static class StatsPanelController
                 sb.Append($"• {skillName}: {num2:+0}");
             }
 
-            return sb.Length > 0 ? sb.ToString() : "None";
+            return sb.Length > 0 ? sb.ToString() : Localization.instance.Localize("$azu_epi_stat_none");
         }
         catch (Exception ex)
         {
             AzuExtendedPlayerInventoryLogger.LogWarning($"Error getting skills: {ex.Message}");
-            return "Error";
+            return Localization.instance.Localize("$azu_epi_stat_error");
         }
     }
 
@@ -1622,11 +1627,11 @@ public static class StatsPanelController
         try
         {
             if (player.m_seman?.GetStatusEffects() == null)
-                return "None";
+                return Localization.instance.Localize("$azu_epi_stat_none");
 
             List<StatusEffect> effects = player.m_seman.GetStatusEffects();
             if (effects.Count == 0)
-                return "None";
+                return Localization.instance.Localize("$azu_epi_stat_none");
 
             System.Text.StringBuilder sb = new();
             int count = 0;
@@ -1671,12 +1676,12 @@ public static class StatsPanelController
                 }
             }
 
-            return count > 0 ? sb.ToString() : "None";
+            return count > 0 ? sb.ToString() : Localization.instance.Localize("$azu_epi_stat_none");
         }
         catch (Exception ex)
         {
             AzuExtendedPlayerInventoryLogger.LogWarning($"Error getting active effects: {ex.Message}");
-            return "Error";
+            return Localization.instance.Localize("$azu_epi_stat_error");
         }
     }
 
@@ -1704,7 +1709,7 @@ public static class StatsPanelController
             }
 
             if (setCount.Count == 0)
-                return "None";
+                return Localization.instance.Localize("$azu_epi_stat_none");
 
             System.Text.StringBuilder sb = new();
             int displayCount = 0;
@@ -1737,7 +1742,7 @@ public static class StatsPanelController
         catch (Exception ex)
         {
             AzuExtendedPlayerInventoryLogger.LogWarning($"Error getting set bonuses: {ex.Message}");
-            return "Error";
+            return Localization.instance.Localize("$azu_epi_stat_error");
         }
     }
 
@@ -1834,7 +1839,7 @@ public static class StatsPanelController
         try
         {
             if (player.m_foods == null || player.m_foods.Count == 0)
-                return "None";
+                return Localization.instance.Localize("$azu_epi_stat_none");
 
             System.Text.StringBuilder sb = new();
             int count = 0;
@@ -1871,12 +1876,12 @@ public static class StatsPanelController
                     sb.AppendLine();
             }
 
-            return count > 0 ? sb.ToString() : "None";
+            return count > 0 ? sb.ToString() : Localization.instance.Localize("$azu_epi_stat_none");
         }
         catch (Exception ex)
         {
             AzuExtendedPlayerInventoryLogger.LogWarning($"Error getting food buffs: {ex.Message}");
-            return "Error";
+            return Localization.instance.Localize("$azu_epi_stat_error");
         }
     }
 

@@ -54,6 +54,7 @@ static class PlayerSpawnedPatch
         gui = itemsetGui;
 
         PersonalLoadoutGui.m_rootPanel = newRootPanel.gameObject;
+        PersonalLoadoutGui.m_rootPanel.GetOrAddComponent<Localize>();
         PersonalLoadoutGui.m_storeRootPanel = Utils.FindChild(newRootPanel.transform, "Store").gameObject;
         PersonalLoadoutGui.m_storeRootPanel.GetComponent<RectTransform>().anchoredPosition = new Vector2(166f, -50f);
 

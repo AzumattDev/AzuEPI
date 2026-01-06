@@ -651,6 +651,7 @@ internal static class VanityPanelController
     private static void BuildPanel(InventoryGui gui)
     {
         _panel = PanelUtilities.BuildPanel(gui, VanityPanelName);
+        _panel.GetOrAddComponent<Localize>();
     }
 
     private static void BuildScrollTree()

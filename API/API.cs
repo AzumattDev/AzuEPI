@@ -1,5 +1,6 @@
 ﻿#if !API
 using AzuEPI.Game.PlayerPreview;
+using AzuEPI.Game.Slots;
 
 # else
 using BepInEx.Bootstrap;
@@ -54,10 +55,12 @@ public class API
     public static bool AddSlot(string slotName, Func<Player, ItemDrop.ItemData?> getItem, Func<ItemDrop.ItemData, bool> isValid, int index = -1)
     {
 #if !API
-        AzuExtendedPlayerInventoryLogger.LogDebug("API.AddSlot called, asking to add slot " + slotName);
         if (string.IsNullOrWhiteSpace(slotName) || (getItem == null && isValid == null)) return false;
         
-        if(IsSlotMarkedForRemoval(slotName)) return false;
+        AzuExtendedPlayerInventoryLogger.LogDebug("API.AddSlot called, asking to add slot " + slotName);
+
+        if (IsSlotMarkedForRemoval(slotName)) return false;
+
         AzuExtendedPlayerInventoryLogger.LogDebug("API.AddSlot proceeding to add slot " + slotName);
 
         int existingIdx = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s.Name == slotName || (Localization.instance != null && s.Name == Localization.instance.Localize(slotName)));
@@ -83,6 +86,9 @@ public class API
         UpdateSlots(index, 1);
         InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(index, slot);
         CustomSlots.Add(slot);
+
+        SlotBackupManager.BackupSlot(slot);
+
         SlotHelpers.ResizeSlots();
         SlotHelpers.UpdateEquipmentBackgroundAnchors();
 

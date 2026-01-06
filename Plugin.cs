@@ -2,7 +2,7 @@
 using APIManager;
 using AzuEPI.Game.Compatibility.AdvBackpacks;
 using AzuEPI.Game.Panels;
-//using AzuEPI.Game.Moveable;
+using AzuEPI.Game.Slots;
 using AzuEPI.Game.Slots.QAB;
 using BepInEx.Logging;
 using LocalizationManager;
@@ -69,7 +69,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         /* 2 - Inventory */
         ResetConfigOrder();
-        ExtraRows = config("2 - Inventory", "Extra Inventory Rows", 0, new ConfigDescription("Add extra rows to your inventory (0-6). WARNING: Adding too many rows may overlap with chest windows. Use CTRL+drag to reposition the inventory if needed.", new AcceptableValueRange<int>(0, 6)), NextOrder);
+        ExtraRows = config("2 - Inventory", "Extra Inventory Rows", 0, new ConfigDescription("Add extra rows to your inventory (0-5).", new AcceptableValueRange<int>(0, 5)), NextOrder);
         AddEquipmentRow = config("2 - Inventory", "Enable Equipment Row", On, "Adds a dedicated row for equipped items and quick slots. IMPORTANT: Turn OFF if using Randy Knapp's Equipment and Quick Slots mod to avoid conflicts.", NextOrder);
         DisplayEquipmentRowSeparate = config("2 - Inventory", "Display Equipment in Separate Panel", On, "Shows equipped items and quick slots in their own dedicated panel instead of inline. IMPORTANT: Turn OFF if using Randy Knapp's Equipment and Quick Slots mod.", NextOrder);
         AutoEquip = config("2 - Inventory", "Auto-Equip Items", On, "Automatically equip items when picked up, moved from containers, or recovered from tombstones. Disable if you prefer manual equipping.", NextOrder);
@@ -139,12 +139,12 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         /* 6 - Equipment Slot Labels */
         ResetConfigOrder();
-        HelmetText = config("6 - Equipment Slot Labels", "Head Slot Label", "Head", "Customize the display text for the helmet/head equipment slot.", NextOrder, false);
-        ChestText = config("6 - Equipment Slot Labels", "Chest Slot Label", "Chest", "Customize the display text for the chest armor equipment slot.", NextOrder, false);
-        LegsText = config("6 - Equipment Slot Labels", "Legs Slot Label", "Legs", "Customize the display text for the leg armor equipment slot.", NextOrder, false);
-        BackText = config("6 - Equipment Slot Labels", "Back Slot Label", "Back", "Customize the display text for the cape/back equipment slot.", NextOrder, false);
-        UtilityText = config("6 - Equipment Slot Labels", "Utility Slot Label", "Utility", "Customize the display text for the utility equipment slot.", NextOrder, false);
-        TrinketText = config("6 - Equipment Slot Labels", "Trinket Slot Label", "Trinket", "Customize the display text for the trinket equipment slot.", NextOrder, false);
+        HelmetText = config("6 - Equipment Slot Labels", "Head Slot Label", "$azu_epi_helmet", "Customize the display text for the helmet/head equipment slot. Leave as localization key (starts with $) to use translations, or set custom text.", NextOrder, false);
+        ChestText = config("6 - Equipment Slot Labels", "Chest Slot Label", "$azu_epi_chest", "Customize the display text for the chest armor equipment slot. Leave as localization key (starts with $) to use translations, or set custom text.", NextOrder, false);
+        LegsText = config("6 - Equipment Slot Labels", "Legs Slot Label", "$azu_epi_legs", "Customize the display text for the leg armor equipment slot. Leave as localization key (starts with $) to use translations, or set custom text.", NextOrder, false);
+        BackText = config("6 - Equipment Slot Labels", "Back Slot Label", "$azu_epi_shoulder", "Customize the display text for the cape/back equipment slot. Leave as localization key (starts with $) to use translations, or set custom text.", NextOrder, false);
+        UtilityText = config("6 - Equipment Slot Labels", "Utility Slot Label", "$azu_epi_utility", "Customize the display text for the utility equipment slot. Leave as localization key (starts with $) to use translations, or set custom text.", NextOrder, false);
+        TrinketText = config("6 - Equipment Slot Labels", "Trinket Slot Label", "$azu_epi_trinket", "Customize the display text for the trinket equipment slot. Leave as localization key (starts with $) to use translations, or set custom text.", NextOrder, false);
 
         /* 7 - Quick Slots Customization */
         ResetConfigOrder();
@@ -296,9 +296,10 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         int index = InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length;
         API.UpdateSlots(index, 1);
-        InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(index, new Model.EquipmentSlot { Name = TrinketText.Value, IsQuickSlot = false, Get = player => player.m_trinketItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Trinket });
+        InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(index, new Model.EquipmentSlot { Name = TrinketText.Value, OriginalName = "$azu_epi_trinket", IsQuickSlot = false, Get = player => player.m_trinketItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Trinket });
         SlotHelpers.ResizeSlots();
 
+        SlotBackupManager.InitializeBuiltInSlotBackups();
         ApplySlotChanges();
 
         Localization.OnLanguageChange += new Action(API.RelocalizeSlots);
@@ -382,7 +383,10 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         {
             Localization.OnLanguageChange -= new Action(API.RelocalizeSlots);
         }
-        catch { /* Already unsubscribed */ }
+        catch
+        {
+            /* Already unsubscribed */
+        }
 
         // Clear all config SettingChanged events to prevent memory leaks
         // Note: I can't unsubscribe lambdas directly, so I clear all handlers
@@ -929,6 +933,30 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             GUILayout.Label("(Use 'Remove Equipment Slots' section above to remove slots)", new GUIStyle(GUI.skin.label) { fontSize = 9, fontStyle = FontStyle.Italic, alignment = TextAnchor.MiddleCenter });
         }
 
+        GUILayout.Space(15);
+        GUILayout.BeginVertical(GUI.skin.box);
+        GUILayout.Label("RESET TO DEFAULTS", new GUIStyle(GUI.skin.label) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter });
+        GUILayout.Space(5);
+        GUILayout.Label("This will:", new GUIStyle(GUI.skin.label) { fontSize = 10 });
+        GUILayout.Label("  • Remove all your custom slots", new GUIStyle(GUI.skin.label) { fontSize = 10 });
+        GUILayout.Label("  • Restore all hidden built-in slots", new GUIStyle(GUI.skin.label) { fontSize = 10 });
+        GUILayout.Label("  • Keep API/Mod-added slots (from other mods)", new GUIStyle(GUI.skin.label) { fontSize = 10 });
+        GUILayout.Space(5);
+
+        Color oldBgColor = GUI.backgroundColor;
+        GUI.backgroundColor = new Color(1f, 0.5f, 0.5f);
+        if (GUILayout.Button("Reset to Defaults", GUILayout.Height(30)))
+        {
+            UserAddedSlots.Value = "";
+            RemovedEquipmentSlots.Value = "";
+            _newSlotName = "";
+            _newSlotPrefabs = "";
+            _showPrefabList = false;
+        }
+
+        GUI.backgroundColor = oldBgColor;
+        GUILayout.EndVertical();
+
         GUILayout.Space(5);
         GUILayout.EndVertical();
     }
@@ -1062,6 +1090,35 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         try
         {
             List<string> removedSlots = ParseSlotList(RemovedEquipmentSlots?.Value ?? "");
+
+            foreach (string backupKey in SlotBackupManager.GetBackupKeys())
+            {
+                if (SlotBackupManager._userConfigSlotNames.Contains(backupKey))
+                    continue;
+
+                bool shouldBeRemoved = removedSlots.Contains(backupKey);
+
+                if (!shouldBeRemoved && Localization.instance != null)
+                {
+                    if (backupKey.StartsWith("$"))
+                    {
+                        string localized = Localization.instance.Localize(backupKey);
+                        shouldBeRemoved = removedSlots.Contains(localized);
+                    }
+                    else
+                    {
+                        string tokenName = "$item_" + backupKey.ToLower();
+                        shouldBeRemoved = removedSlots.Contains(tokenName) ||
+                                          removedSlots.Contains(Localization.instance.Localize(tokenName));
+                    }
+                }
+
+                if (!shouldBeRemoved && SlotBackupManager.RestoreSlotFromBackup(backupKey))
+                {
+                    AzuExtendedPlayerInventoryLogger.LogInfo($"Restored slot '{backupKey}' from backup");
+                }
+            }
+
             foreach (string slotName in removedSlots)
             {
                 bool removed = API.RemoveSlot(slotName);
@@ -1090,6 +1147,28 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             }
 
             List<string> userSlots = ParseUserAddedSlots();
+            HashSet<string> newUserSlotNames = new();
+
+            foreach (string userSlot in userSlots)
+            {
+                string[] parts = userSlot.Split(':');
+                if (parts.Length == 2)
+                {
+                    newUserSlotNames.Add(parts[0].Trim());
+                }
+            }
+
+            foreach (string oldSlotName in SlotBackupManager._userConfigSlotNames.ToList())
+            {
+                if (!newUserSlotNames.Contains(oldSlotName) && API.RemoveSlot(oldSlotName))
+                {
+                    AzuExtendedPlayerInventoryLogger.LogInfo($"Removed user slot '{oldSlotName}' (no longer in config)");
+                }
+            }
+
+            SlotBackupManager._userConfigSlotNames.Clear();
+            SlotBackupManager._userConfigSlotNames.UnionWith(newUserSlotNames);
+
             foreach (string userSlot in userSlots)
             {
                 string[] parts = userSlot.Split(':');
