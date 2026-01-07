@@ -137,13 +137,10 @@ public static class StatsPanelController
         BuildScrollTree();
         PopulateStats();
 
-        SelectedPlayerStats.SettingChanged += OnStatsConfigChanged;
-        SelectedLiveStats.SettingChanged += OnStatsConfigChanged;
-
         _panel?.gameObject.SetActive(false);
     }
 
-    private static void OnStatsConfigChanged(object sender, EventArgs e)
+    internal static void OnStatsConfigChanged(object sender, EventArgs e)
     {
         RebuildStats();
     }

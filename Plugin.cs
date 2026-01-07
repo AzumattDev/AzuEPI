@@ -174,11 +174,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         AddEquipmentRow.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
         DisplayEquipmentRowSeparate.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
         ShowQuickSlots.SettingChanged += (sender, args) => { HotkeyBarController.Hud_Update_Patch.DeselectHotkeyBar(); };
-        SelectedPlayerStats.SettingChanged += (sender, args) =>
-        {
-            // if (InventoryGui.instance != null)
-            //     StatsUI.RebuildUI(InventoryGui.instance, PreviewParent?.GetComponent<RectTransform>());
-        };
+        SelectedPlayerStats.SettingChanged += StatsPanelController.OnStatsConfigChanged;
+        SelectedLiveStats.SettingChanged += StatsPanelController.OnStatsConfigChanged;
         QuickSlotsPerRow.SettingChanged += (sender, args) =>
         {
             if (!Hud.instance) return;
@@ -303,6 +300,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         ApplySlotChanges();
 
         Localization.OnLanguageChange += new Action(API.RelocalizeSlots);
+        Localizer.OnLocalizationComplete -= new Action(API.RelocalizeSlots);
     }
 
     internal void FullRebuild()
@@ -322,6 +320,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             SlotHelpers.UpdateEquipmentBackgroundAnchors();
             RebuildUI();
             QuickAccessBar.ForceRefresh();
+            API.RelocalizeSlots();
         }
         catch (Exception ex)
         {
@@ -382,6 +381,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         try
         {
             Localization.OnLanguageChange -= new Action(API.RelocalizeSlots);
+            Localizer.OnLocalizationComplete -= new Action(API.RelocalizeSlots);
         }
         catch
         {
@@ -986,10 +986,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     private static List<string> GetBuiltInSlotNames()
     {
-        return new List<string>
-        {
-            "Head", "Chest", "Legs", "Back", "Utility", "Trinket", "Wishbone", "Demister"
-        };
+        return ["$azu_epi_helmet", "$azu_epi_chest", "$azu_epi_legs", "$azu_epi_shoulder", "$azu_epi_utility", "$azu_epi_trinket", "$item_wishbone", "$item_demister"];
     }
 
     private static List<string> GetUserAddedSlotNames()
