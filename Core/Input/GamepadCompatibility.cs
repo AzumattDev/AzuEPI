@@ -269,7 +269,7 @@ internal static class EpiGridMap
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static int CountEquipmentSlots()
     {
-        List<Model.Slot?> list = InventoryGuiPatches.UpdateInventory_Patch.slots;
+        List<Model.Slot?> list = slots;
         int i = 0;
         while (i < list.Count && list[i] is Model.EquipmentSlot) ++i;
         return i;

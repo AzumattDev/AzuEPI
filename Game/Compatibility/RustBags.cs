@@ -2,15 +2,9 @@
 
 public class RustyBagsCompat
 {
-    public HashSet<string> Backpacks = new()
-    {
-        "LeatherBag_RS", "BarrelBag_RS", "UnbjornBag_RS", "DvergerBag_RS"
-    };
+    public HashSet<string> Backpacks = ["LeatherBag_RS", "BarrelBag_RS", "UnbjornBag_RS", "DvergerBag_RS"];
 
-    public HashSet<string> Quivers = new()
-    {
-        "Quiver_RS", "MountainQuiver_RS"
-    };
+    public HashSet<string> Quivers = ["Quiver_RS", "MountainQuiver_RS"];
 
     public static void Init()
     {

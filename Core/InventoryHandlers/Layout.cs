@@ -88,10 +88,10 @@ public class Layout
     {
         if (OldLayout.Value.isOff())
         {
-            return new(1.13f + Math.Max(Hotkeys.Length, (InventoryGuiPatches.UpdateInventory_Patch.slots.Count - 1) / NewLayoutQuickslotsFirstRow) * tileSize / 570, 1f);
+            return new(1.13f + Math.Max(Hotkeys.Length, (slots.Count - 1) / NewLayoutQuickslotsFirstRow) * tileSize / 570, 1f);
         }
 
-        int totalSlots = InventoryGuiPatches.UpdateInventory_Patch.slots.Count;
+        int totalSlots = slots.Count;
         int regularSlotCount = totalSlots - Hotkeys.Length;
 
         int regularColumns = (regularSlotCount + OldLayoutRegularSlotsPerColumn - 1) / OldLayoutRegularSlotsPerColumn;
@@ -128,7 +128,7 @@ public class Layout
             if (InventoryGui.instance)
                 GlgGo.WithParent(OldLayout.Value.isOff() ? InventoryGui.instance.m_crafting.transform : InventoryGui.instance.m_player.transform, false);
             GlgRt.anchoredPosition = ToggleButtonsGlgAnchoredPosOldVert;
-            GUICache.ButtonGridLayoutGroup.constraintCount = QuickSlotsAmount.Value < 1 && InventoryGuiPatches.UpdateInventory_Patch.slots.Count < 10  ? 2 : 3;
+            GUICache.ButtonGridLayoutGroup.constraintCount = QuickSlotsAmount.Value < 1 && slots.Count < 10  ? 2 : 3;
         }
         else
         {
@@ -162,13 +162,13 @@ public class Layout
         int reservedTailRows = API.GetAddedRows(inventoryWidth);
         int firstTailRow = inventoryHeight - reservedTailRows;
 
-        List<Model.Slot?> allSlots = InventoryGuiPatches.UpdateInventory_Patch.slots;
+        List<Model.Slot?> allSlots = slots;
 
         int equipmentTailStartIndex = GetBaseSlotIndex(playerInventory);
         ItemDrop.ItemData?[] projectedEquippedItemsBySlot = new ItemDrop.ItemData[allSlots.Count];
 
         Dictionary<ItemDrop.ItemData, Vector2i> plannedMoves = new();
-        HashSet<Vector2i> targetPositions = new();
+        HashSet<Vector2i> targetPositions = [];
 
         for (int i = 0; i < allSlots.Count; ++i)
         {
@@ -241,7 +241,7 @@ public class Layout
             equippedItem.m_gridPos = destPos;
         }
 
-        ExtendedPlayerInventory.equipItems = projectedEquippedItemsBySlot;
+        equipItems = projectedEquippedItemsBySlot;
 
         if (AzuEPICharacterPanel.playerPreviewComp && Player.m_localPlayer)
             VECloneSync.MirrorFrom(Player.m_localPlayer, AzuEPICharacterPanel.playerPreviewComp);

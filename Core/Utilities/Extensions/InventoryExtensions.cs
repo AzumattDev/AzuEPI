@@ -34,7 +34,7 @@ public static class InventoryExtensions
     {
         which = -1;
 
-        if (InventoryGuiPatches.UpdateInventory_Patch.slots == null || InventoryGuiPatches.UpdateInventory_Patch.slots.Count == 0)
+        if (slots == null || slots.Count == 0)
         {
             AzuExtendedPlayerInventoryLogger.LogDebugDebug("IsEquipmentSlotFreeAndItemValid: Slots not initialized yet");
             return false;
@@ -43,19 +43,19 @@ public static class InventoryExtensions
         AzuExtendedPlayerInventoryLogger.LogDebugDebug($"IsEquipmentSlotFreeAndItemValid: Checking item '{item.m_shared.m_name}' (Type: {item.m_shared.m_itemType})");
 
         // Prioritize API-added slots over built-in slots to avoid placing items in generic slots when they have dedicated slots
-        which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is Model.EquipmentSlot { Valid: not null, IsAPIAdded: true } slot && slot.Valid(item) && !slot.Occupied);
+        which = slots.FindIndex(s => s is Model.EquipmentSlot { Valid: not null, IsAPIAdded: true } slot && slot.Valid(item) && !slot.Occupied);
 
         if (which >= 0)
         {
-            AzuExtendedPlayerInventoryLogger.LogDebugDebug($"IsEquipmentSlotFreeAndItemValid: Found API-added slot {which} ({InventoryGuiPatches.UpdateInventory_Patch.slots[which]?.Name})");
+            AzuExtendedPlayerInventoryLogger.LogDebugDebug($"IsEquipmentSlotFreeAndItemValid: Found API-added slot {which} ({slots[which]?.Name})");
         }
         else
         {
             AzuExtendedPlayerInventoryLogger.LogDebugDebug($"IsEquipmentSlotFreeAndItemValid: No free API-added slot found, checking built-in slots");
 
-            for (int i = 0; i < InventoryGuiPatches.UpdateInventory_Patch.slots.Count; i++)
+            for (int i = 0; i < slots.Count; i++)
             {
-                Model.Slot? s = InventoryGuiPatches.UpdateInventory_Patch.slots[i];
+                Model.Slot? s = slots[i];
                 if (s is Model.EquipmentSlot { Valid: not null, IsAPIAdded: true } slot)
                 {
                     bool validates = slot.Valid(item);
@@ -67,19 +67,19 @@ public static class InventoryExtensions
 
         if (which < 0)
         {
-            which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is Model.EquipmentSlot { Valid: not null, IsAPIAdded: false } slot && slot.Valid(item) && !slot.Occupied);
+            which = slots.FindIndex(s => s is Model.EquipmentSlot { Valid: not null, IsAPIAdded: false } slot && slot.Valid(item) && !slot.Occupied);
 
             if (which >= 0)
             {
-                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"IsEquipmentSlotFreeAndItemValid: Found built-in slot {which} ({InventoryGuiPatches.UpdateInventory_Patch.slots[which]?.Name})");
+                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"IsEquipmentSlotFreeAndItemValid: Found built-in slot {which} ({slots[which]?.Name})");
             }
             else
             {
                 AzuExtendedPlayerInventoryLogger.LogDebugDebug($"IsEquipmentSlotFreeAndItemValid: No free built-in slot found either");
 
-                for (int i = 0; i < InventoryGuiPatches.UpdateInventory_Patch.slots.Count; i++)
+                for (int i = 0; i < slots.Count; i++)
                 {
-                    Model.Slot? s = InventoryGuiPatches.UpdateInventory_Patch.slots[i];
+                    Model.Slot? s = slots[i];
                     if (s is Model.EquipmentSlot { Valid: not null, IsAPIAdded: false } slot)
                     {
                         bool validates = slot.Valid(item);
@@ -113,7 +113,7 @@ public static class InventoryExtensions
 
     internal static bool IsEquipmentSlotFree(this Inventory inventory, out int which)
     {
-        which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is Model.EquipmentSlot { IsQuickSlot: false, EquipmentSlot: not null, Occupied: false });
+        which = slots.FindIndex(s => s is Model.EquipmentSlot { IsQuickSlot: false, EquipmentSlot: not null, Occupied: false });
 
         if (which < 0)
             return false;
@@ -124,7 +124,7 @@ public static class InventoryExtensions
 
     internal static bool IsQuickSlotFree(this Inventory inventory, out int which)
     {
-        which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is { IsQuickSlot: true, EquipmentSlot: null, Occupied: false });
+        which = slots.FindIndex(s => s is { IsQuickSlot: true, EquipmentSlot: null, Occupied: false });
 
         if (which < 0)
             return false;
@@ -136,7 +136,7 @@ public static class InventoryExtensions
     internal static bool IsAtEquipmentSlot(this Inventory inventory, ItemDrop.ItemData item, out int which)
     {
         int normalRows = Layout.NormalRows(inventory);
-        if (AddEquipmentRow.Value.isOff() || item.m_gridPos.y < normalRows || (item.m_gridPos.y - normalRows) * inventory.GetWidth() + item.m_gridPos.x >= InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length)
+        if (AddEquipmentRow.Value.isOff() || item.m_gridPos.y < normalRows || (item.m_gridPos.y - normalRows) * inventory.GetWidth() + item.m_gridPos.x >= slots.Count - Hotkeys.Length)
         {
             which = -1;
             return false;
@@ -149,7 +149,7 @@ public static class InventoryExtensions
     internal static bool IsAtQuickSlot(this Inventory inventory, ItemDrop.ItemData item, out int which)
     {
         int normalRows = Layout.NormalRows(inventory);
-        if (AddEquipmentRow.Value.isOff() || item.m_gridPos.y < normalRows || (item.m_gridPos.y - normalRows) * inventory.GetWidth() + item.m_gridPos.x < InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length)
+        if (AddEquipmentRow.Value.isOff() || item.m_gridPos.y < normalRows || (item.m_gridPos.y - normalRows) * inventory.GetWidth() + item.m_gridPos.x < slots.Count - Hotkeys.Length)
         {
             which = -1;
             return false;
@@ -162,7 +162,7 @@ public static class InventoryExtensions
     internal static bool IsHiddenCell(this Inventory inv, int x, int y)
     {
         int li = inv.LinearIndexIntoEpiBlock(x, y);
-        return li >= 0 && li >= InventoryGuiPatches.UpdateInventory_Patch.slots.Count;
+        return li >= 0 && li >= slots.Count;
     }
 
     private static int LinearIndexIntoEpiBlock(this Inventory inv, int x, int y)
@@ -182,7 +182,7 @@ public static class InventoryExtensions
         int normalRows = Layout.NormalRows(inv);
 
         int firstLinear = normalRows * width;
-        int total = InventoryGuiPatches.UpdateInventory_Patch.slots.Count;
+        int total = slots.Count;
 
         int quickCount = Hotkeys.Length;
         int quickStart = total - quickCount;
@@ -199,7 +199,7 @@ public static class InventoryExtensions
         int normalRows = Layout.NormalRows(inv);
 
         int firstLinear = normalRows * width;
-        int total = InventoryGuiPatches.UpdateInventory_Patch.slots.Count;
+        int total = slots.Count;
         int quickCount = Hotkeys.Length;
         int equipmentCount = total - quickCount;
 

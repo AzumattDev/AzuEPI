@@ -10,7 +10,7 @@ internal static class SlotAcceptRules
 
         try
         {
-            return InventoryGuiPatches.UpdateInventory_Patch.slots.Any(s => s is Model.EquipmentSlot { IsAPIAdded: true, Valid: not null } slot && slot.Valid(item));
+            return slots.Any(s => s is Model.EquipmentSlot { IsAPIAdded: true, Valid: not null } slot && slot.Valid(item));
         }
         catch
         {

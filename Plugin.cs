@@ -24,7 +24,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     }
 
     internal const string ModName = "AzuExtendedPlayerInventory";
-    internal const string ModVersion = "2.1.1";
+    internal const string ModVersion = "2.2.0";
     internal const string Author = "Azumatt";
     internal const string ModGUID = Author + "." + ModName;
     private static readonly string ConfigFileName = ModGUID + ".cfg";
@@ -54,11 +54,10 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     private void Awake()
     {
         Localizer.Load();
-        Patcher.Patch(new[]
-        {
+        Patcher.Patch([
             "AzuExtendedPlayerInventory",
             "AzuExtendedPlayerInventory.EPI.Patches"
-        });
+        ]);
 
         context = this;
 
@@ -139,12 +138,12 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         /* 6 - Equipment Slot Labels */
         ResetConfigOrder();
-        HelmetText = config("6 - Equipment Slot Labels", "Head Slot Label", "$azu_epi_helmet", "Customize the display text for the helmet/head equipment slot. Leave as localization key (starts with $) to use translations, or set custom text.", NextOrder, false);
-        ChestText = config("6 - Equipment Slot Labels", "Chest Slot Label", "$azu_epi_chest", "Customize the display text for the chest armor equipment slot. Leave as localization key (starts with $) to use translations, or set custom text.", NextOrder, false);
-        LegsText = config("6 - Equipment Slot Labels", "Legs Slot Label", "$azu_epi_legs", "Customize the display text for the leg armor equipment slot. Leave as localization key (starts with $) to use translations, or set custom text.", NextOrder, false);
-        BackText = config("6 - Equipment Slot Labels", "Back Slot Label", "$azu_epi_shoulder", "Customize the display text for the cape/back equipment slot. Leave as localization key (starts with $) to use translations, or set custom text.", NextOrder, false);
-        UtilityText = config("6 - Equipment Slot Labels", "Utility Slot Label", "$azu_epi_utility", "Customize the display text for the utility equipment slot. Leave as localization key (starts with $) to use translations, or set custom text.", NextOrder, false);
-        TrinketText = config("6 - Equipment Slot Labels", "Trinket Slot Label", "$azu_epi_trinket", "Customize the display text for the trinket equipment slot. Leave as localization key (starts with $) to use translations, or set custom text.", NextOrder, false);
+        HelmetText = config("6 - Equipment Slot Labels", "Head Slot Label", "", "Customize the display text for the helmet/head equipment slot. Use a localization key (starts with $) to use translations, or set custom text.", NextOrder, false);
+        ChestText = config("6 - Equipment Slot Labels", "Chest Slot Label", "", "Customize the display text for the chest armor equipment slot. Use a localization key (starts with $) to use translations, or set custom text.", NextOrder, false);
+        LegsText = config("6 - Equipment Slot Labels", "Legs Slot Label", "", "Customize the display text for the leg armor equipment slot. Use a localization key (starts with $) to use translations, or set custom text.", NextOrder, false);
+        BackText = config("6 - Equipment Slot Labels", "Back Slot Label", "", "Customize the display text for the cape/back equipment slot. Use a localization key (starts with $) to use translations, or set custom text.", NextOrder, false);
+        UtilityText = config("6 - Equipment Slot Labels", "Utility Slot Label", "", "Customize the display text for the utility equipment slot. Use a localization key (starts with $) to use translations, or set custom text.", NextOrder, false);
+        TrinketText = config("6 - Equipment Slot Labels", "Trinket Slot Label", "", "Customize the display text for the trinket equipment slot. Use a localization key (starts with $) to use translations, or set custom text.", NextOrder, false);
 
         /* 7 - Quick Slots Customization */
         ResetConfigOrder();
@@ -163,7 +162,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         MakeDropAllButton = config("9 - Additional Features", "Enable Drop All Button", Off, "Adds a 'Drop All' button to your inventory for quickly dropping all items. USE WITH CAUTION!", NextOrder, false);
         DropAllButtonPosition = config("9 - Additional Features", "Drop All Button Position", new Vector2(880.00f, 10.00f), "Position of the Drop All button in the inventory window (X, Y coordinates).", NextOrder, false);
 
-        InitializeHotkeys();
+        InitSlotsAndKeys();
 
         QuickSlotsAmount.SettingChanged += (sender, args) =>
         {
@@ -176,6 +175,12 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         ShowQuickSlots.SettingChanged += (sender, args) => { HotkeyBarController.Hud_Update_Patch.DeselectHotkeyBar(); };
         SelectedPlayerStats.SettingChanged += StatsPanelController.OnStatsConfigChanged;
         SelectedLiveStats.SettingChanged += StatsPanelController.OnStatsConfigChanged;
+        HelmetText.SettingChanged += (sender, args) => { API.RelocalizeSlots(); };
+        ChestText.SettingChanged += (sender, args) => { API.RelocalizeSlots(); };
+        BackText.SettingChanged += (sender, args) => { API.RelocalizeSlots(); };
+        LegsText.SettingChanged += (sender, args) => { API.RelocalizeSlots(); };
+        TrinketText.SettingChanged += (sender, args) => { API.RelocalizeSlots(); };
+        UtilityText.SettingChanged += (sender, args) => { API.RelocalizeSlots(); };
         QuickSlotsPerRow.SettingChanged += (sender, args) =>
         {
             if (!Hud.instance) return;
@@ -291,14 +296,13 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             API.AddSlot("$item_demister", "Demister", WishboneSlot.Value.isOn() ? 6 : 5);
         }
 
-        int index = InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length;
+        int index = slots.Count - Hotkeys.Length;
         API.UpdateSlots(index, 1);
-        InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(index, new Model.EquipmentSlot { Name = TrinketText.Value, OriginalName = "$azu_epi_trinket", IsQuickSlot = false, Get = player => player.m_trinketItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Trinket });
-        SlotHelpers.ResizeSlots();
+        slots.Insert(index, new Model.EquipmentSlot { Name = TrinketText.Value, OriginalName = "$azu_epi_trinket", IsQuickSlot = false, Get = player => player.m_trinketItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Trinket });
 
         SlotBackupManager.InitializeBuiltInSlotBackups();
         ApplySlotChanges();
-
+        API.RelocalizeSlots();
         Localization.OnLanguageChange += new Action(API.RelocalizeSlots);
         Localizer.OnLocalizationComplete -= new Action(API.RelocalizeSlots);
     }
@@ -436,41 +440,6 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         }
     }
 
-    private void InitializeHotkeys()
-    {
-        int count = QuickSlotsAmount.Value;
-        KeyboardShortcut[] defaultKeys = new[]
-        {
-            new KeyboardShortcut(KeyCode.Z, KeyCode.LeftAlt),
-            new KeyboardShortcut(KeyCode.X, KeyCode.LeftAlt),
-            new KeyboardShortcut(KeyCode.C, KeyCode.LeftAlt),
-            new KeyboardShortcut(KeyCode.V, KeyCode.LeftAlt),
-            new KeyboardShortcut(KeyCode.B, KeyCode.LeftAlt),
-            new KeyboardShortcut(KeyCode.N, KeyCode.LeftAlt),
-            new KeyboardShortcut(KeyCode.Alpha1, KeyCode.LeftAlt),
-            new KeyboardShortcut(KeyCode.Alpha2, KeyCode.LeftAlt),
-        };
-
-        Hotkeys = new ConfigEntry<KeyboardShortcut>[count];
-        HotkeyTexts = new ConfigEntry<string>[count];
-
-        for (int i = 0; i < count; ++i)
-        {
-            KeyboardShortcut keyboardShortcut = i < defaultKeys.Length ? defaultKeys[i] : KeyboardShortcut.Empty;
-            Hotkeys[i] = config("8 - Quick Slot Hotkeys", $"Hotkey {i + 1}", keyboardShortcut,
-                $"Keyboard shortcut for quick slot {i + 1}. See https://docs.unity3d.com/Manual/ConventionalGameInput.html for valid key names.", false);
-            HotkeyTexts[i] = config("8 - Quick Slot Hotkeys", $"Hotkey {i + 1} Display Text", $"Alt + {keyboardShortcut.MainKey.ToString().Replace("Alpha", string.Empty)}",
-                $"Custom text to display for quick slot {i + 1} hotkey on the HUD. Leave blank to auto-generate from the hotkey itself.", false);
-            HotkeyTexts[i].SettingChanged += (_, _) =>
-            {
-                if (Player.m_localPlayer != null && InventoryGui.instance != null)
-                {
-                    FullRebuild();
-                }
-            };
-        }
-    }
-
     private void InitializeConfigWatcher()
     {
         _debounce = new System.Timers.Timer(150) { AutoReset = false };
@@ -555,7 +524,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<KeyCode> LoadoutToggleGamepadKey = null!;
     public static ConfigEntry<KeyCode> StatsToggleGamepadKey = null!;
 
-    private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description, bool synchronizedSetting = true)
+    internal ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description, bool synchronizedSetting = true)
     {
         ConfigDescription extendedDescription = new(description.Description + (synchronizedSetting ? " [Synced with Server]" : " [Not Synced with Server]"), description.AcceptableValues, description.Tags);
         ConfigEntry<T> configEntry = Config.Bind(group, name, value, extendedDescription);
@@ -567,15 +536,15 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         return configEntry;
     }
 
-    private ConfigEntry<T> config<T>(string group, string name, T value, string description, bool synchronizedSetting = true)
+    internal ConfigEntry<T> config<T>(string group, string name, T value, string description, bool synchronizedSetting = true)
     {
         return config(group, name, value, new ConfigDescription(description), synchronizedSetting);
     }
 
-    private ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description, int order, bool synchronizedSetting = true)
+    internal ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description, int order, bool synchronizedSetting = true)
     {
         ConfigurationManagerAttributes attributes = new() { Order = order };
-        object[] tags = description.Tags.Length > 0 ? description.Tags.Append(attributes).ToArray() : new object[] { attributes };
+        object[] tags = description.Tags.Length > 0 ? description.Tags.Append(attributes).ToArray() : [attributes];
         ConfigDescription extendedDescription = new(description.Description + (synchronizedSetting ? " [Synced with Server]" : " [Not Synced with Server]"), description.AcceptableValues, tags);
         ConfigEntry<T> configEntry = Config.Bind(group, name, value, extendedDescription);
 
@@ -585,7 +554,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         return configEntry;
     }
 
-    private ConfigEntry<T> config<T>(string group, string name, T value, string description, int order, bool synchronizedSetting = true)
+    internal ConfigEntry<T> config<T>(string group, string name, T value, string description, int order, bool synchronizedSetting = true)
     {
         return config(group, name, value, new ConfigDescription(description), order, synchronizedSetting);
     }
@@ -677,11 +646,11 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     public static List<PlayerStatType> ParseStatsList(string statsString)
     {
-        List<PlayerStatType> result = new();
+        List<PlayerStatType> result = [];
         if (string.IsNullOrWhiteSpace(statsString))
             return result;
 
-        string[] statNames = statsString.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+        string[] statNames = statsString.Split([','], StringSplitOptions.RemoveEmptyEntries);
         foreach (string statName in statNames)
         {
             if (Enum.TryParse(statName.Trim(), out PlayerStatType stat))
@@ -748,11 +717,11 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     public static List<LiveStatType> ParseLiveStatsList(string statsString)
     {
-        List<LiveStatType> result = new();
+        List<LiveStatType> result = [];
         if (string.IsNullOrWhiteSpace(statsString))
             return result;
 
-        string[] statNames = statsString.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+        string[] statNames = statsString.Split([','], StringSplitOptions.RemoveEmptyEntries);
         foreach (string statName in statNames)
         {
             if (Enum.TryParse(statName.Trim(), out LiveStatType stat))
@@ -963,17 +932,17 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     private static List<string> GetAllCurrentSlots()
     {
-        List<string> slots = new();
+        List<string> curslots = [];
 
         try
         {
-            foreach (Model.Slot? slot in InventoryGuiPatches.UpdateInventory_Patch.slots)
+            foreach (Model.Slot? slot in slots)
             {
                 if (slot == null || slot.IsQuickSlot) continue;
                 if (slot is not Model.EquipmentSlot equipSlot) continue;
                 string name = equipSlot.OriginalName ?? equipSlot.Name;
                 if (!string.IsNullOrEmpty(name))
-                    slots.Add(name);
+                    curslots.Add(name);
             }
         }
         catch (Exception ex)
@@ -981,12 +950,12 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             AzuExtendedPlayerInventoryLogger.LogWarning($"Error getting current slots: {ex.Message}");
         }
 
-        return slots.Distinct().ToList();
+        return curslots.Distinct().ToList();
     }
 
-    private static List<string> GetBuiltInSlotNames()
+    public static List<string> GetBuiltInSlotNames()
     {
-        return ["$azu_epi_helmet", "$azu_epi_chest", "$azu_epi_legs", "$azu_epi_shoulder", "$azu_epi_utility", "$azu_epi_trinket", "$item_wishbone", "$item_demister"];
+        return ["$azu_epi_helmet", "$azu_epi_chest", "$azu_epi_legs", "$azu_epi_shoulder", "$azu_epi_utility", "$item_wishbone", "$item_demister", "$azu_epi_trinket"];
     }
 
     private static List<string> GetUserAddedSlotNames()
@@ -998,7 +967,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     private static List<string> GetAvailableItemPrefabs()
     {
-        List<string> prefabs = new();
+        List<string> prefabs = [];
 
         try
         {
@@ -1023,11 +992,11 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     private static List<string> ParseSlotList(string slotsString)
     {
-        List<string> result = new();
+        List<string> result = [];
         if (string.IsNullOrWhiteSpace(slotsString))
             return result;
 
-        string[] slotNames = slotsString.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+        string[] slotNames = slotsString.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries);
         foreach (string slotName in slotNames)
         {
             string trimmed = slotName.Trim();
@@ -1040,11 +1009,11 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     private static List<string> ParseUserAddedSlots()
     {
-        List<string> result = new();
+        List<string> result = [];
         if (string.IsNullOrWhiteSpace(UserAddedSlots?.Value))
             return result;
 
-        string[] entries = UserAddedSlots.Value.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+        string[] entries = UserAddedSlots.Value.Split([';'], StringSplitOptions.RemoveEmptyEntries);
         foreach (string entry in entries)
         {
             string trimmed = entry.Trim();
@@ -1144,7 +1113,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             }
 
             List<string> userSlots = ParseUserAddedSlots();
-            HashSet<string> newUserSlotNames = new();
+            HashSet<string> newUserSlotNames = [];
 
             foreach (string userSlot in userSlots)
             {

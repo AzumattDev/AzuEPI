@@ -60,7 +60,7 @@ internal static class VanityPanelController
     private static bool _visible;
 
     private static VanityCell _selectedCell;
-    private static readonly List<VanityCell> _allCells = new();
+    private static readonly List<VanityCell> _allCells = [];
     private static Image _gamepadSelectionOverlay;
 
     private static readonly Dictionary<VisSlot, List<VanityCell>> _cellsBySlot = new();
@@ -355,7 +355,7 @@ internal static class VanityPanelController
         GridLayoutGroup parentGrid = _selectedCell.transform.parent.GetComponent<GridLayoutGroup>();
         if (!parentGrid) return;
 
-        List<VanityCell> gridCells = new();
+        List<VanityCell> gridCells = [];
         foreach (Transform child in parentGrid.transform)
         {
             if (child.gameObject.activeSelf)
@@ -1011,7 +1011,7 @@ internal static class VanityPanelController
     {
         if (!_cellsBySlot.TryGetValue(slot, out List<VanityCell>? list))
         {
-            list = new List<VanityCell>();
+            list = [];
             _cellsBySlot[slot] = list;
         }
 

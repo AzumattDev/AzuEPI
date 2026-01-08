@@ -154,7 +154,7 @@ public class CustomEquipVisuals
         public readonly string PrefabName;
         public ItemDrop.ItemData Item;
         public string DisplayName = "";
-        public List<GameObject> Instances = new();
+        public List<GameObject> Instances = [];
         public int CurrentHash;
 
         public EquippedEntry(string prefabName) => PrefabName = prefabName;
@@ -300,12 +300,11 @@ public class CustomEquipVisuals
         {
             List<CodeInstruction> list = instrs.ToList();
 
-            list.InsertRange(2, new[]
-            {
+            list.InsertRange(2, [
                 new CodeInstruction(OpCodes.Ldarg_0), // this (Humanoid)
                 new CodeInstruction(OpCodes.Ldloc_0),
-                new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(InjectStatusEffects), nameof(Collect))),
-            });
+                new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(InjectStatusEffects), nameof(Collect)))
+            ]);
             return list;
         }
     }
@@ -466,15 +465,14 @@ public class CustomEquipVisuals
 
             CodeInstruction? labelCarrier = instructions[idx - 2];
 
-            instructions.InsertRange(idx - 2, new[]
-            {
+            instructions.InsertRange(idx - 2, [
                 new CodeInstruction(OpCodes.Ldarg_0) { labels = labelCarrier.labels }, // this (Humanoid)
                 new CodeInstruction(OpCodes.Ldarg_1),
                 new CodeInstruction(OpCodes.Ldarg_2),
-                new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(EquipItemPatch), nameof(OnEquip))),
-            });
+                new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(EquipItemPatch), nameof(OnEquip)))
+            ]);
 
-            labelCarrier.labels = new List<Label>();
+            labelCarrier.labels = [];
             return instructions;
         }
     }
@@ -513,12 +511,11 @@ public class CustomEquipVisuals
             int idx = list.FindIndex(ci => ci.Calls(setupEquipment));
             if (idx < 1) return list;
 
-            list.InsertRange(idx - 1, new[]
-            {
+            list.InsertRange(idx - 1, [
                 new CodeInstruction(OpCodes.Ldarg_0),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(UnequipItemPatch), nameof(OnUnequip))),
-            });
+                new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(UnequipItemPatch), nameof(OnUnequip)))
+            ]);
 
             return list;
         }

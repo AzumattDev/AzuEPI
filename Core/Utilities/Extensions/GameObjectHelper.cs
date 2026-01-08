@@ -79,7 +79,7 @@ public static class GameObjectHelper
 
     private static List<Transform> _GetAllChildTransforms(GameObject gameObject, bool isRoot = false, List<Transform>? transforms = null)
     {
-        transforms = transforms ?? new List<Transform>();
+        transforms = transforms ?? [];
 
         if (!isRoot)
         {

@@ -60,7 +60,7 @@ public static class RemoveDisconnectedPeerFromVerified
 
 public static class RpcHandlers
 {
-    public static readonly List<ZRpc> ValidatedPeers = new();
+    public static readonly List<ZRpc> ValidatedPeers = [];
 
     public static void RPC_AzuEPI_Version(ZRpc rpc, ZPackage pkg)
     {

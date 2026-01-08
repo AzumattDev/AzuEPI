@@ -47,7 +47,7 @@ internal static class QuickAccessBar
                 Inventory inventory = player.GetInventory();
                 int width = inventory.GetWidth();
                 int adjustedHeight = inventory.GetHeight() - API.GetAddedRows(width);
-                int firstHotkeyIndex = adjustedHeight * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length;
+                int firstHotkeyIndex = adjustedHeight * width + slots.Count - Hotkeys.Length;
 
                 for (int i = 0; i < Hotkeys.Length; ++i)
                 {
@@ -222,10 +222,10 @@ public static class HotkeyBarController
         public static void Postfix(Hud __instance)
         {
             Player? player = Player.m_localPlayer;
-            if (ExtendedPlayerInventory.HotkeyBars == null)
+            if (HotkeyBars == null)
                 try
                 {
-                    ExtendedPlayerInventory.HotkeyBars = __instance.transform.parent.GetComponentsInChildren<HotkeyBar>().ToList();
+                    HotkeyBars = __instance.transform.parent.GetComponentsInChildren<HotkeyBar>().ToList();
                 }
                 catch
                 {
@@ -237,7 +237,7 @@ public static class HotkeyBarController
             {
                 if (IsValidHotkeyBarIndex())
                 {
-                    HotkeyBar? currentHotKeyBar = ExtendedPlayerInventory.HotkeyBars[ExtendedPlayerInventory.SelectedHotkeyBarIndex];
+                    HotkeyBar? currentHotKeyBar = HotkeyBars[SelectedHotkeyBarIndex];
                     UpdateHotkeyBarInput(currentHotKeyBar);
                 }
                 else
@@ -246,7 +246,7 @@ public static class HotkeyBarController
                 }
             }
 
-            foreach (HotkeyBar? hotkeyBar in ExtendedPlayerInventory.HotkeyBars)
+            foreach (HotkeyBar? hotkeyBar in HotkeyBars)
                 if (hotkeyBar != null && hotkeyBar.m_elements != null)
                 {
                     ValidateHotkeyBarSelection(hotkeyBar);
@@ -256,7 +256,7 @@ public static class HotkeyBarController
 
         private static bool IsValidHotkeyBarIndex()
         {
-            return ExtendedPlayerInventory.SelectedHotkeyBarIndex >= 0 && ExtendedPlayerInventory.SelectedHotkeyBarIndex < ExtendedPlayerInventory.HotkeyBars.Count;
+            return SelectedHotkeyBarIndex >= 0 && SelectedHotkeyBarIndex < HotkeyBars.Count;
         }
 
         private static void UpdateInitialHotkeyBarInput()
@@ -273,14 +273,14 @@ public static class HotkeyBarController
                 if (ZInput.GetButtonDown("JoyDPadLeft"))
                 {
                     if (hotkeyBar.m_selected == 0 && ShowQuickSlots.Value.isOn())
-                        GotoHotkeyBar(ExtendedPlayerInventory.SelectedHotkeyBarIndex - 1);
+                        GotoHotkeyBar(SelectedHotkeyBarIndex - 1);
                     else
                         hotkeyBar.m_selected = Mathf.Max(0, hotkeyBar.m_selected - 1);
                 }
                 else if (ZInput.GetButtonDown("JoyDPadRight"))
                 {
                     if (hotkeyBar.m_selected == hotkeyBar.m_elements.Count - 1 && ShowQuickSlots.Value.isOn())
-                        GotoHotkeyBar(ExtendedPlayerInventory.SelectedHotkeyBarIndex + 1);
+                        GotoHotkeyBar(SelectedHotkeyBarIndex + 1);
                     else
                         hotkeyBar.m_selected = Mathf.Min(hotkeyBar.m_elements.Count - 1, hotkeyBar.m_selected + 1);
                 }
@@ -292,7 +292,7 @@ public static class HotkeyBarController
                         Inventory? quickSlotInventory = player.m_inventory;
                         int width = quickSlotInventory.GetWidth();
                         int adjustedHeight = quickSlotInventory.GetHeight() - API.GetAddedRows(width);
-                        int index = adjustedHeight * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length + hotkeyBar.m_selected;
+                        int index = adjustedHeight * width + slots.Count - Hotkeys.Length + hotkeyBar.m_selected;
 
                         ItemDrop.ItemData? item = quickSlotInventory.GetItemAt(index % width, index / width);
                         if (item != null)
@@ -318,20 +318,20 @@ public static class HotkeyBarController
 
         public static void GotoHotkeyBar(int newIndex)
         {
-            if (newIndex < 0 || newIndex >= ExtendedPlayerInventory.HotkeyBars.Count) return;
+            if (newIndex < 0 || newIndex >= HotkeyBars.Count) return;
 
-            bool fromRight = newIndex < ExtendedPlayerInventory.SelectedHotkeyBarIndex;
+            bool fromRight = newIndex < SelectedHotkeyBarIndex;
             SelectHotkeyBar(newIndex, fromRight);
         }
 
         public static void SelectHotkeyBar(int index, bool fromRight)
         {
-            if (index < 0 || index >= ExtendedPlayerInventory.HotkeyBars.Count) return;
+            if (index < 0 || index >= HotkeyBars.Count) return;
 
-            ExtendedPlayerInventory.SelectedHotkeyBarIndex = index;
-            for (int i = 0; i < ExtendedPlayerInventory.HotkeyBars.Count; ++i)
+            SelectedHotkeyBarIndex = index;
+            for (int i = 0; i < HotkeyBars.Count; ++i)
             {
-                HotkeyBar? hotkeyBar = ExtendedPlayerInventory.HotkeyBars[i];
+                HotkeyBar? hotkeyBar = HotkeyBars[i];
                 if (i == index)
                     hotkeyBar.m_selected = fromRight ? hotkeyBar.m_elements.Count - 1 : 0;
                 else
@@ -341,8 +341,8 @@ public static class HotkeyBarController
 
         public static void DeselectHotkeyBar()
         {
-            ExtendedPlayerInventory.SelectedHotkeyBarIndex = -1;
-            foreach (HotkeyBar? hotkeyBar in ExtendedPlayerInventory.HotkeyBars) hotkeyBar.m_selected = -1;
+            SelectedHotkeyBarIndex = -1;
+            foreach (HotkeyBar? hotkeyBar in HotkeyBars) hotkeyBar.m_selected = -1;
         }
     }
 
@@ -351,8 +351,8 @@ public static class HotkeyBarController
     {
         public static void Postfix(Hud __instance)
         {
-            ExtendedPlayerInventory.HotkeyBars = null!;
-            ExtendedPlayerInventory.SelectedHotkeyBarIndex = -1;
+            HotkeyBars = null!;
+            SelectedHotkeyBarIndex = -1;
         }
     }
 }

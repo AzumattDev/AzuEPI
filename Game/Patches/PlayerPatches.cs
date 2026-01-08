@@ -32,7 +32,7 @@ public class PlayerPatches
 
         public static T Clone<T>(T input) where T : notnull
         {
-            return (T)MemberwiseCloneMethod.Invoke(input, Array.Empty<object>());
+            return (T)MemberwiseCloneMethod.Invoke(input, []);
         }
 
         private static void Postfix(Player __instance)
@@ -194,7 +194,7 @@ public class PlayerPatches
                 if (!Hotkeys[hotkey].Value.IsKeyDown())
                     continue;
 
-                int index = (Layout.BaseInventoryHeight + ExtraRows.Value) * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length + hotkey;
+                int index = (Layout.BaseInventoryHeight + ExtraRows.Value) * width + slots.Count - Hotkeys.Length + hotkey;
                 ItemDrop.ItemData itemAt = ___m_inventory.GetItemAt(index % width, index / width);
                 if (itemAt != null)
                     __instance.UseItem(null, itemAt, true);

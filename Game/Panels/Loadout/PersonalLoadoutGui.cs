@@ -43,12 +43,12 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
     public float m_hideDistance = 5f;
     public static float m_itemSpacing = 64f;
     public static ItemDrop m_coinPrefab = null!;
-    public static List<GameObject> m_itemList = new();
+    public static List<GameObject> m_itemList = [];
     public static string? m_selectedItem;
     public static Player? m_LocalPlayerRef;
     public static float m_itemlistBaseSize;
-    public List<ItemDrop.ItemData> m_tempItems = new();
-    static List<Humanoid.ItemSet?> availableSets = new();
+    public List<ItemDrop.ItemData> m_tempItems = [];
+    static List<Humanoid.ItemSet?> availableSets = [];
 
     public static bool PanelActive;
     public static PersonalLoadoutGui? instance => m_instance;
@@ -222,9 +222,9 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
     public static List<string> GetAvailableLoadouts()
     {
         Player player = Player.m_localPlayer;
-        if (player == null) return new List<string>();
+        if (player == null) return [];
 
-        List<string> loadouts = new();
+        List<string> loadouts = [];
         foreach (string? key in player.m_customData.Keys)
         {
             if (key.StartsWith(LoadoutKey))

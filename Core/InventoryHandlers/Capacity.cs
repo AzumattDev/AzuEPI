@@ -39,13 +39,13 @@ public class Capacity
     {
         int extendedFreeCells = 0;
 
-        int totalSlots = InventoryGuiPatches.UpdateInventory_Patch.slots.Count;
+        int totalSlots = slots.Count;
         int quickCount = Hotkeys.Length;
         int equipCount = totalSlots - quickCount;
 
         for (int i = 0; i < equipCount; ++i)
         {
-            if (InventoryGuiPatches.UpdateInventory_Patch.slots[i] is not Model.EquipmentSlot es)
+            if (slots[i] is not Model.EquipmentSlot es)
                 continue;
 
             if (es.Valid == null || !es.Valid(item))

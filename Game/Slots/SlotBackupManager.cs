@@ -2,7 +2,7 @@
 
 internal static class SlotBackupManager
 {
-    internal static readonly HashSet<string> _userConfigSlotNames = new();
+    internal static readonly HashSet<string> _userConfigSlotNames = [];
 
     private class SlotBackup
     {
@@ -14,7 +14,7 @@ internal static class SlotBackupManager
 
     internal static void InitializeBuiltInSlotBackups()
     {
-        foreach (Model.Slot? slot in InventoryGuiPatches.UpdateInventory_Patch.slots)
+        foreach (Model.Slot? slot in slots)
         {
             if (slot is Model.EquipmentSlot equipSlot && !equipSlot.IsQuickSlot)
             {
@@ -27,7 +27,7 @@ internal static class SlotBackupManager
     {
         string backupKey = string.IsNullOrWhiteSpace(slot.OriginalName) ? slot.Name : slot.OriginalName;
         if (_slotBackups.ContainsKey(backupKey)) return;
-        int currentIndex = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s == slot);
+        int currentIndex = slots.FindIndex(s => s == slot);
 
         _slotBackups[backupKey] = new SlotBackup
         {
@@ -66,11 +66,11 @@ internal static class SlotBackupManager
 
         Model.EquipmentSlot restoredSlot = RecreateSlotWithDelegates(slotData);
 
-        int quickSlotsStart = InventoryGuiPatches.UpdateInventory_Patch.slots.Count - Hotkeys.Length;
+        int quickSlotsStart = slots.Count - Hotkeys.Length;
         int targetIndex = Math.Max(0, Math.Min(backup.OriginalIndex, quickSlotsStart));
 
         API.UpdateSlots(targetIndex, 1);
-        InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(targetIndex, restoredSlot);
+        slots.Insert(targetIndex, restoredSlot);
 
         if (restoredSlot.IsAPIAdded)
         {

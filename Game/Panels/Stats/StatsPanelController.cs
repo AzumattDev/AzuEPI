@@ -37,7 +37,7 @@ public static class StatsPanelController
     internal static Transform? StatsButtonGo;
     private static TMP_FontAsset? _fontAsset;
     private static Transform? _tabBorderTemplate;
-    private static readonly List<StatElement> _statElements = new();
+    private static readonly List<StatElement> _statElements = [];
 
     public static RectTransform? ToggleButtonParentGlg;
 
@@ -246,11 +246,11 @@ public static class StatsPanelController
         if (selectedStats.Count == 0)
             selectedStats = GetDefaultStats();
 
-        List<PlayerStatType> generalStats = new();
-        List<PlayerStatType> combatStats = new();
-        List<PlayerStatType> explorationStats = new();
-        List<PlayerStatType> activityStats = new();
-        List<PlayerStatType> otherStats = new();
+        List<PlayerStatType> generalStats = [];
+        List<PlayerStatType> combatStats = [];
+        List<PlayerStatType> explorationStats = [];
+        List<PlayerStatType> activityStats = [];
+        List<PlayerStatType> otherStats = [];
 
         foreach (PlayerStatType stat in selectedStats)
         {
@@ -1389,7 +1389,7 @@ public static class StatsPanelController
 
             if (getItemModifier != null)
             {
-                List<ItemDrop.ItemData> equipped = player.GetInventory()?.GetEquippedItems() ?? new List<ItemDrop.ItemData>();
+                List<ItemDrop.ItemData> equipped = player.GetInventory()?.GetEquippedItems() ?? [];
                 foreach (ItemDrop.ItemData item in equipped)
                 {
                     if (item == null) continue;
@@ -1689,7 +1689,7 @@ public static class StatsPanelController
 
         try
         {
-            List<ItemDrop.ItemData> equipped = player.GetInventory()?.GetEquippedItems() ?? new List<ItemDrop.ItemData>();
+            List<ItemDrop.ItemData> equipped = player.GetInventory()?.GetEquippedItems() ?? [];
 
             foreach (ItemDrop.ItemData item in equipped)
             {

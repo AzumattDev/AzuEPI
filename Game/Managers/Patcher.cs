@@ -128,7 +128,7 @@ public static class Patcher
 
 	private class AssemblyLoadInterceptor
 	{
-		private static MethodInfo TargetMethod() => AccessTools.DeclaredMethod(typeof(Assembly), nameof(Assembly.Load), new[] { typeof(byte[]) });
+		private static MethodInfo TargetMethod() => AccessTools.DeclaredMethod(typeof(Assembly), nameof(Assembly.Load), [typeof(byte[])]);
 		private static string? assemblyPath = null;
 
 		private static bool Prefix(ref byte[] __0, ref Assembly? __result)
@@ -259,7 +259,7 @@ public static class Patcher
 			}
 		}
 
-		bool AreSame(TypeReference a, TypeReference b) => (bool)typeof(MetadataResolver).Assembly.GetType("Mono.Cecil.MetadataResolver").GetMethod("AreSame", BindingFlags.Static | BindingFlags.NonPublic, null, new[] { typeof(TypeReference), typeof(TypeReference) }, null)!.Invoke(null, new object[] { a, b });
+		bool AreSame(TypeReference a, TypeReference b) => (bool)typeof(MetadataResolver).Assembly.GetType("Mono.Cecil.MetadataResolver").GetMethod("AreSame", BindingFlags.Static | BindingFlags.NonPublic, null, [typeof(TypeReference), typeof(TypeReference)], null)!.Invoke(null, [a, b]);
 
 		MethodReference? importMethodReference(MethodReference method)
 		{
@@ -616,9 +616,9 @@ public static class Patcher
 	{
 		Harmony harmony = new("org.bepinex.plugins.APIManager");
 		harmony.Patch(AccessTools.DeclaredMethod(typeof(PluginInfo), nameof(PluginInfo.ToString)), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(Patcher), nameof(GrabPluginInfo))));
-		harmony.Patch(AccessTools.DeclaredMethod(typeof(Assembly), nameof(Assembly.LoadFile), new[] { typeof(string) }), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(Patcher), nameof(InterceptAssemblyLoadFile))));
-		harmony.Patch(AccessTools.DeclaredMethod(typeof(Assembly), nameof(Assembly.LoadFile), new[] { typeof(string) }), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(Patcher), nameof(CheckAssemblyLoadFile))));
-		harmony.Patch(AccessTools.DeclaredMethod(typeof(Assembly), nameof(Assembly.LoadFile), new[] { typeof(string) }), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(Patcher), nameof(ReplaceAssemblyLoadWithCache))));
+		harmony.Patch(AccessTools.DeclaredMethod(typeof(Assembly), nameof(Assembly.LoadFile), [typeof(string)]), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(Patcher), nameof(InterceptAssemblyLoadFile))));
+		harmony.Patch(AccessTools.DeclaredMethod(typeof(Assembly), nameof(Assembly.LoadFile), [typeof(string)]), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(Patcher), nameof(CheckAssemblyLoadFile))));
+		harmony.Patch(AccessTools.DeclaredMethod(typeof(Assembly), nameof(Assembly.LoadFile), [typeof(string)]), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(Patcher), nameof(ReplaceAssemblyLoadWithCache))));
 		new PatchClassProcessor(harmony, typeof(AssemblyLoadInterceptor), true).Patch();
 		if (typeof(AssemblyPatcher).Assembly.GetType("BepInEx.Preloader.RuntimeFixes.HarmonyInteropFix") is { } interopFix)
 		{
@@ -635,10 +635,10 @@ public static class Patcher
 			types = e.Types.Where(t => t != null).Select(t => t.GetTypeInfo());
 		}
 		BaseUnityPlugin plugin = (BaseUnityPlugin)Chainloader.ManagerObject.GetComponent(types.First(t => t.IsClass && typeof(BaseUnityPlugin).IsAssignableFrom(t)));
-		redirectedNamespaces = new HashSet<string>(extraNamespaces ?? Array.Empty<string>())
-		{
-			plugin.GetType().Namespace!,
-		};
+		redirectedNamespaces =
+		[
+			..extraNamespaces ?? [], plugin.GetType().Namespace!
+		];
 		modGUID = plugin.Info.Metadata.GUID;
 	}
 }

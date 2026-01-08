@@ -17,7 +17,7 @@ internal static class BoneReorder
     {
         if (!__result || !(__instance.m_helmetItemInstance != null))
             return;
-        ReorderBones(__instance, hash, new List<GameObject> { __instance.m_helmetItemInstance });
+        ReorderBones(__instance, hash, [__instance.m_helmetItemInstance]);
     }
 
     [HarmonyPatch(typeof(VisEquipment), nameof(VisEquipment.SetChestEquipped)), HarmonyPostfix]
@@ -94,7 +94,7 @@ internal static class BoneReorder
 
     private static string[] GetBoneNames(this SkinnedMeshRenderer skinnedMeshRenderer)
     {
-        List<string> stringList = new();
+        List<string> stringList = [];
         foreach (Transform bone in skinnedMeshRenderer.bones)
             stringList.Add(bone.name);
         return stringList.ToArray();

@@ -164,10 +164,10 @@ namespace AzuExtendedPlayerInventory
             AzuEPI.SlotInfo n = AzuEPI.API.GetSlots();
             return new SlotInfo
             {
-                SlotNames = n.SlotNames ?? Array.Empty<string>(),
-                SlotPositions = n.SlotPositions ?? Array.Empty<Vector2>(),
-                GetItemFuncs = n.GetItemFuncs ?? Array.Empty<Func<Player, ItemDrop.ItemData?>?>(),
-                IsValidFuncs = n.IsValidFuncs ?? Array.Empty<Func<ItemDrop.ItemData, bool>?>()
+                SlotNames = n.SlotNames ?? [],
+                SlotPositions = n.SlotPositions ?? [],
+                GetItemFuncs = n.GetItemFuncs ?? [],
+                IsValidFuncs = n.IsValidFuncs ?? []
             };
         }
 
@@ -176,10 +176,10 @@ namespace AzuExtendedPlayerInventory
             AzuEPI.SlotInfo n = AzuEPI.API.GetQuickSlots();
             return new SlotInfo
             {
-                SlotNames = n.SlotNames ?? Array.Empty<string>(),
-                SlotPositions = n.SlotPositions ?? Array.Empty<Vector2>(),
-                GetItemFuncs = n.GetItemFuncs ?? Array.Empty<Func<Player, ItemDrop.ItemData?>?>(),
-                IsValidFuncs = n.IsValidFuncs ?? Array.Empty<Func<ItemDrop.ItemData, bool>?>()
+                SlotNames = n.SlotNames ?? [],
+                SlotPositions = n.SlotPositions ?? [],
+                GetItemFuncs = n.GetItemFuncs ?? [],
+                IsValidFuncs = n.IsValidFuncs ?? []
             };
         }
 
@@ -230,9 +230,9 @@ namespace AzuExtendedPlayerInventory
     [PublicAPI]
     public class SlotInfo
     {
-        public string[] SlotNames { get; set; } = Array.Empty<string>();
-        public Vector2[] SlotPositions { get; set; } = Array.Empty<Vector2>();
-        public Func<Player, ItemDrop.ItemData?>?[] GetItemFuncs { get; set; } = Array.Empty<Func<Player, ItemDrop.ItemData?>?>();
-        public Func<ItemDrop.ItemData, bool>?[] IsValidFuncs { get; set; } = Array.Empty<Func<ItemDrop.ItemData, bool>?>();
+        public string[] SlotNames { get; set; } = [];
+        public Vector2[] SlotPositions { get; set; } = [];
+        public Func<Player, ItemDrop.ItemData?>?[] GetItemFuncs { get; set; } = [];
+        public Func<ItemDrop.ItemData, bool>?[] IsValidFuncs { get; set; } = [];
     }
 }

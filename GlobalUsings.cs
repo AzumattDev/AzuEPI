@@ -18,6 +18,8 @@ global using Object = UnityEngine.Object;
 global using static AzuEPI.AzuExtendedPlayerInventoryPlugin;
 global using static AzuEPI.Core.InventoryHandlers.UIBuilder;
 global using static AzuEPI.AzuExtendedPlayerInventoryPlugin.Toggle;
+global using static AzuEPI.EPI.ExtendedPlayerInventory;
+global using static AzuEPI.Core.Slots.Initializers;
 global using AzuEPI.Core.InventoryHandlers;
 global using AzuEPI.Core.Slots;
 global using AzuEPI.Core.Utilities.Extensions;

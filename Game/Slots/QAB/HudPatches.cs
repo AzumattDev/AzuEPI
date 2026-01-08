@@ -49,8 +49,8 @@ public class HudPatches
             Vector3 mousePosition = Input.mousePosition;
 
             QuickAccessBar.SetElementPositions();
-            if (ExtendedPlayerInventory.lastMousePos == Vector3.zero)
-                ExtendedPlayerInventory.lastMousePos = mousePosition;
+            if (lastMousePos == Vector3.zero)
+                lastMousePos = mousePosition;
 
             if (_cachedHudrootTransform == null)
                 _cachedHudrootTransform = Hud.instance.transform.Find("hudroot");
@@ -70,25 +70,25 @@ public class HudPatches
 
                 Rect rect = new(anchoredPosition.x * scaleFactor, anchoredPosition.y * scaleFactor + Screen.height - sizeDelta.y * scaleFactor * quickAccessScale, (float)(sizeDelta.x * scaleFactor * quickAccessScale * 0.375), sizeDelta.y * scaleFactor * quickAccessScale);
 
-                if (rect.Contains(ExtendedPlayerInventory.lastMousePos) && ExtendedPlayerInventory.currentlyDragging is "" or QabName)
+                if (rect.Contains(lastMousePos) && currentlyDragging is "" or QabName)
                 {
-                    float deltaX = (mousePosition.x - ExtendedPlayerInventory.lastMousePos.x) / scaleFactor;
-                    float deltaY = (mousePosition.y - ExtendedPlayerInventory.lastMousePos.y) / scaleFactor;
+                    float deltaX = (mousePosition.x - lastMousePos.x) / scaleFactor;
+                    float deltaY = (mousePosition.y - lastMousePos.y) / scaleFactor;
 
                     QuickAccessLocation.Value = new Vector2(QuickAccessLocation.Value.x + deltaX, QuickAccessLocation.Value.y + deltaY);
-                    ExtendedPlayerInventory.currentlyDragging = QabName;
+                    currentlyDragging = QabName;
                 }
                 else
                 {
-                    ExtendedPlayerInventory.currentlyDragging = "";
+                    currentlyDragging = "";
                 }
             }
             else
             {
-                ExtendedPlayerInventory.currentlyDragging = "";
+                currentlyDragging = "";
             }
 
-            ExtendedPlayerInventory.lastMousePos = mousePosition;
+            lastMousePos = mousePosition;
 
             API.HudUpdateComplete(__instance);
         }

@@ -12,7 +12,7 @@ public class Localizer
 
     private static readonly ConditionalWeakTable<Localization, string> localizationLanguage = new();
 
-    private static readonly List<WeakReference<Localization>> localizationObjects = new();
+    private static readonly List<WeakReference<Localization>> localizationObjects = [];
 
     private static BaseUnityPlugin? _plugin;
     public static event Action? OnLocalizationComplete;
@@ -40,7 +40,7 @@ public class Localizer
         }
     }
 
-    private static readonly List<string> fileExtensions = new() { ".json", ".yml" };
+    private static readonly List<string> fileExtensions = [".json", ".yml"];
 
     private static void UpdatePlaceholderText(Localization localization, string key)
     {
@@ -77,7 +77,7 @@ public class Localizer
 
     public static void AddText(string key, string text)
     {
-        List<WeakReference<Localization>> remove = new();
+        List<WeakReference<Localization>> remove = [];
         foreach (WeakReference<Localization> reference in localizationObjects)
         {
             if (reference.TryGetTarget(out Localization localization))

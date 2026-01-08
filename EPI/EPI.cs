@@ -2,6 +2,7 @@
 
 internal class ExtendedPlayerInventory
 {
+    internal static readonly List<Model.Slot?> slots = [];
     internal static readonly GameObject _elementPrefab = null!;
 
     internal static ItemDrop.ItemData?[] equipItems = new ItemDrop.ItemData[15];

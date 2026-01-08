@@ -37,7 +37,7 @@ public class AdvBackpacksCompat
         try
         {
             Type? apiType = abAssembly.GetType("AdventureBackpacks.API.ABAPI");
-            MethodInfo? mi = AccessTools.Method(apiType, "IsBackpack", new[] { typeof(ItemDrop.ItemData) });
+            MethodInfo? mi = AccessTools.Method(apiType, "IsBackpack", [typeof(ItemDrop.ItemData)]);
             if (mi != null)
                 _abApiIsBackpack = (Func<ItemDrop.ItemData, bool>)Delegate.CreateDelegate(typeof(Func<ItemDrop.ItemData, bool>), mi);
         }

@@ -2,7 +2,7 @@
 
 public static class Formatting
 {
-    private static readonly string[] wbSuffixes = { "", "k", "m", "b" };
+    private static readonly string[] wbSuffixes = ["", "k", "m", "b"];
 
     internal static string FormatNumberSimpleNoDecimal(float number)
     {

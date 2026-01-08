@@ -37,7 +37,7 @@ public abstract class ItemData
 			return;
 		}
 
-		List<object> obj = new();
+		List<object> obj = [];
 		foreach (string part in Value.Split('|'))
 		{
 			string[] keyVal = part.Split(':');
@@ -50,7 +50,7 @@ public abstract class ItemData
 			ParameterInfo param = (ParameterInfo)FormatterServices.GetUninitializedObject(typeof(ParameterInfo));
 			parameterInfoClassImpl.SetValue(param, field.FieldType);
 			obj.Clear();
-			ZRpc.Deserialize(new[] { null, param }, pkg, ref obj);
+			ZRpc.Deserialize([null, param], pkg, ref obj);
 			if (obj.Count > 0)
 			{
 				field.SetValue(this, obj[0]);
@@ -70,7 +70,7 @@ public abstract class ItemData
 		foreach (FieldInfo field in fields.Values)
 		{
 			ZPackage pkg = new();
-			ZRpc.Serialize(new[] { field.GetValue(this) }, ref pkg);
+			ZRpc.Serialize([field.GetValue(this)], ref pkg);
 			toSave.Append(field.Name);
 			toSave.Append(':');
 			toSave.Append(pkg.GetBase64());
@@ -108,7 +108,7 @@ public sealed class StringItemData : ItemData
 [PublicAPI]
 public class ItemInfo : IEnumerable<ItemData>
 {
-	public static HashSet<Type> ForceLoadTypes = new();
+	public static HashSet<Type> ForceLoadTypes = [];
 
 	internal static string? _modGuid;
 
@@ -128,7 +128,7 @@ public class ItemInfo : IEnumerable<ItemData>
 	}))();
 
 	private static Dictionary<Type, HashSet<Type>> typeInheritorsCache = new();
-	private static HashSet<string> knownTypes = new();
+	private static HashSet<string> knownTypes = [];
 
 	public string Mod => modGuid;
 	public ItemDrop.ItemData ItemData { get; private set; }
@@ -136,13 +136,13 @@ public class ItemInfo : IEnumerable<ItemData>
 	private Dictionary<string, ItemData> data = new();
 	private WeakReference<ItemInfo>? selfReference = null;
 
-	internal HashSet<string> isCloned = new();
+	internal HashSet<string> isCloned = [];
 	private static ItemDrop.ItemData? awakeningItem = null;
 
 	private static Assembly primaryAssembly = Assembly.GetExecutingAssembly();
 	private static Dictionary<Assembly, string> assemblyNameCache = new();
 	private static Dictionary<Type, string> classKeyCache = new();
-	private HashSet<string> fetchedClassKeys = new();
+	private HashSet<string> fetchedClassKeys = [];
 
 	internal static void addTypeToInheritorsCache(Type type, string typeKey)
 	{
@@ -152,7 +152,7 @@ public class ItemInfo : IEnumerable<ItemData>
 			{
 				if (!typeInheritorsCache.TryGetValue(baseType, out HashSet<Type> itemDataTypes))
 				{
-					itemDataTypes = typeInheritorsCache[baseType] = new HashSet<Type>();
+					itemDataTypes = typeInheritorsCache[baseType] = [];
 				}
 
 				itemDataTypes.Add(type);
@@ -214,7 +214,7 @@ public class ItemInfo : IEnumerable<ItemData>
 			if (key.StartsWith(prefix))
 			{
 				string unprefixedKey = key.Substring(prefix.Length);
-				string[] keyParts = unprefixedKey.Split(new[] { '#' }, 2);
+				string[] keyParts = unprefixedKey.Split(['#'], 2);
 				if (!knownTypes.Contains(keyParts[0]) && Type.GetType(keyParts[0]) is { } type && typeof(ItemData).IsAssignableFrom(type))
 				{
 					addTypeToInheritorsCache(type, keyParts[0]);
@@ -315,12 +315,12 @@ public class ItemInfo : IEnumerable<ItemData>
 			return Remove<T>(itemData.Key);
 		}
 
-		return (bool)removeMethod.MakeGenericMethod(itemData.GetType()).Invoke(this, new object[] { itemData.Key });
+		return (bool)removeMethod.MakeGenericMethod(itemData.GetType()).Invoke(this, [itemData.Key]);
 	}
 
 	private ItemData? constructDataObj(string fullkey, string key)
 	{
-		string[] keyParts = key.Split(new[] { '#' }, 2);
+		string[] keyParts = key.Split(['#'], 2);
 		if (Type.GetType(keyParts[0]) is not { } type || !typeof(ItemData).IsAssignableFrom(type))
 		{
 			return null;
@@ -475,7 +475,7 @@ public class ItemInfo : IEnumerable<ItemData>
 	{
 		if (__instance.m_itemData.m_dropPrefab is { } prefab && ItemExtensions.itemInfo.TryGetValue(prefab.GetComponent<ItemDrop>().m_itemData, out ItemInfo info))
 		{
-			__instance.m_itemData.Data().isCloned = new HashSet<string>(info.data.Values.Select(i => i.CustomDataKey));
+			__instance.m_itemData.Data().isCloned = [..info.data.Values.Select(i => i.CustomDataKey)];
 		}
 	}
 
@@ -493,7 +493,7 @@ public class ItemInfo : IEnumerable<ItemData>
 	{
 		if (ItemExtensions.itemInfo.TryGetValue(__instance, out ItemInfo info))
 		{
-			__result.Data().isCloned = new HashSet<string>(info.data.Values.Select(i => i.CustomDataKey));
+			__result.Data().isCloned = [..info.data.Values.Select(i => i.CustomDataKey)];
 		}
 	}
 
@@ -692,7 +692,7 @@ public class ItemInfo : IEnumerable<ItemData>
 
 	private static IEnumerable<CodeInstruction> TransferCustomItemDataOnUpgrade(IEnumerable<CodeInstruction> instructions, ILGenerator ilg)
 	{
-		MethodInfo itemDeleter = AccessTools.DeclaredMethod(typeof(Inventory), nameof(Inventory.RemoveItem), new[] { typeof(ItemDrop.ItemData) });
+		MethodInfo itemDeleter = AccessTools.DeclaredMethod(typeof(Inventory), nameof(Inventory.RemoveItem), [typeof(ItemDrop.ItemData)]);
 		foreach (CodeInstruction instruction in instructions)
 		{
 			if (instruction.opcode == OpCodes.Callvirt && instruction.OperandIs(itemDeleter))
@@ -779,11 +779,11 @@ public class ItemInfo : IEnumerable<ItemData>
 			harmony.Patch(method, prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(SavePrefix)), Priority.First));
 		}
 
-		harmony.Patch(AccessTools.DeclaredMethod(typeof(Inventory), nameof(Inventory.AddItem), new[] { typeof(ItemDrop.ItemData), typeof(int), typeof(int), typeof(int) }), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(CheckItemDataStackableAddItem))), postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(ApplyCustomItemDataStackableAddItem))));
+		harmony.Patch(AccessTools.DeclaredMethod(typeof(Inventory), nameof(Inventory.AddItem), [typeof(ItemDrop.ItemData), typeof(int), typeof(int), typeof(int)]), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(CheckItemDataStackableAddItem))), postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(ApplyCustomItemDataStackableAddItem))));
 
-		harmony.Patch(AccessTools.DeclaredMethod(typeof(Inventory), nameof(Inventory.CanAddItem), new[] { typeof(ItemDrop.ItemData), typeof(int) }), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(SaveCheckingForStackableItemData))), finalizer: new HarmonyMethod(typeof(ItemInfo), nameof(ResetCheckingForStackableItemData)));
-		harmony.Patch(AccessTools.DeclaredMethod(typeof(Inventory), nameof(Inventory.AddItem), new[] { typeof(ItemDrop.ItemData) }), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(SaveCheckingForStackableItemData))), finalizer: new HarmonyMethod(typeof(ItemInfo), nameof(ResetCheckingForStackableItemData)));
-		harmony.Patch(AccessTools.DeclaredMethod(typeof(Inventory), nameof(Inventory.AddItem), new[] { typeof(ItemDrop.ItemData), typeof(Vector2i) }), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(SaveCheckingForStackableItemData))), finalizer: new HarmonyMethod(typeof(ItemInfo), nameof(ResetCheckingForStackableItemData)));
+		harmony.Patch(AccessTools.DeclaredMethod(typeof(Inventory), nameof(Inventory.CanAddItem), [typeof(ItemDrop.ItemData), typeof(int)]), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(SaveCheckingForStackableItemData))), finalizer: new HarmonyMethod(typeof(ItemInfo), nameof(ResetCheckingForStackableItemData)));
+		harmony.Patch(AccessTools.DeclaredMethod(typeof(Inventory), nameof(Inventory.AddItem), [typeof(ItemDrop.ItemData)]), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(SaveCheckingForStackableItemData))), finalizer: new HarmonyMethod(typeof(ItemInfo), nameof(ResetCheckingForStackableItemData)));
+		harmony.Patch(AccessTools.DeclaredMethod(typeof(Inventory), nameof(Inventory.AddItem), [typeof(ItemDrop.ItemData), typeof(Vector2i)]), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(SaveCheckingForStackableItemData))), finalizer: new HarmonyMethod(typeof(ItemInfo), nameof(ResetCheckingForStackableItemData)));
 
 		harmony.Patch(AccessTools.DeclaredMethod(typeof(Inventory), nameof(Inventory.FindFreeStackSpace)), transpiler: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(CheckStackableInFindFreeStackMethods))));
 		harmony.Patch(AccessTools.DeclaredMethod(typeof(Inventory), nameof(Inventory.FindFreeStackItem)), transpiler: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(CheckStackableInFindFreeStackMethods))), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(ResetNewValuesOnStackable))), postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(ApplyNewValuesOnStackable))));
@@ -798,7 +798,7 @@ public class ItemInfo : IEnumerable<ItemData>
 		}
 		// Note: Inventory load implicitly handled by ItemData.Clone() handling within AddItem
 		harmony.Patch(AccessTools.DeclaredMethod(typeof(Player), nameof(Player.Load)), postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(RegisterForceLoadedTypesOnPlayerLoaded)), Priority.VeryHigh));
-		harmony.Patch(AccessTools.DeclaredMethod(typeof(Inventory), nameof(Inventory.AddItem), new[] { typeof(string), typeof(int), typeof(int), typeof(int), typeof(long), typeof(string), typeof(Vector2i), typeof(bool) }), postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(RegisterForceLoadedTypesAddItem)), Priority.First));
+		harmony.Patch(AccessTools.DeclaredMethod(typeof(Inventory), nameof(Inventory.AddItem), [typeof(string), typeof(int), typeof(int), typeof(int), typeof(long), typeof(string), typeof(Vector2i), typeof(bool)]), postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(RegisterForceLoadedTypesAddItem)), Priority.First));
 		harmony.Patch(AccessTools.DeclaredMethod(typeof(ItemDrop), nameof(ItemDrop.Awake)), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(TrackAwakeningItem))), transpiler: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(ImportCustomDataOnUpgrade)), Priority.First), postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(ItemDropAwake)), Priority.First));
 		harmony.Patch(AccessTools.DeclaredMethod(typeof(ItemDrop), nameof(ItemDrop.Awake)), postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(ItemDropAwakeDelayed)), Priority.First - 1));
 		harmony.Patch(AccessTools.DeclaredMethod(typeof(ItemDrop.ItemData), nameof(ItemDrop.ItemData.Clone)), prefix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(ItemDataClonePrefix))), postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(ItemDataClonePostfix)), Priority.HigherThanNormal));
@@ -818,7 +818,7 @@ public class ForeignItemInfo : IEnumerable<object>
 	{
 		get
 		{
-			if (foreignItemInfo.GetType().InvokeMember("Item", BindingFlags.Public | BindingFlags.Instance | BindingFlags.GetProperty, null, foreignItemInfo, new object[] { key }) is { } stringData)
+			if (foreignItemInfo.GetType().InvokeMember("Item", BindingFlags.Public | BindingFlags.Instance | BindingFlags.GetProperty, null, foreignItemInfo, [key]) is { } stringData)
 			{
 				return (string?)stringData.GetType().GetProperty("Value")?.GetValue(stringData);
 			}
@@ -827,7 +827,7 @@ public class ForeignItemInfo : IEnumerable<object>
 		}
 		set
 		{
-			foreignItemInfo.GetType().GetMethod("set_Item", BindingFlags.Public | BindingFlags.Instance)?.Invoke(foreignItemInfo, new object?[] { key, value });
+			foreignItemInfo.GetType().GetMethod("set_Item", BindingFlags.Public | BindingFlags.Instance)?.Invoke(foreignItemInfo, [key, value]);
 		}
 	}
 
@@ -857,22 +857,22 @@ public class ForeignItemInfo : IEnumerable<object>
 		return null;
 	}
 
-	public T? Add<T>(string key = "") where T : class, new() => call(nameof(Add), new object[] { key }, new[] { typeof(string) }, typeof(T)) as T;
+	public T? Add<T>(string key = "") where T : class, new() => call(nameof(Add), [key], [typeof(string)], typeof(T)) as T;
 
-	public T? Get<T>(string key = "") where T : class => call(nameof(Get), new object[] { key }, new[] { typeof(string) }, typeof(T)) as T;
+	public T? Get<T>(string key = "") where T : class => call(nameof(Get), [key], [typeof(string)], typeof(T)) as T;
 
-	public Dictionary<string, T> GetAll<T>() where T : class => call(nameof(GetAll), Array.Empty<object?>(), Array.Empty<Type?>(), typeof(T)) as T as Dictionary<string, T> ?? new Dictionary<string, T>();
+	public Dictionary<string, T> GetAll<T>() where T : class => call(nameof(GetAll), [], [], typeof(T)) as T as Dictionary<string, T> ?? new Dictionary<string, T>();
 
-	public bool Remove(string key = "") => call(nameof(Add), new object[] { key }, new[] { typeof(string) }) as bool? ?? false;
+	public bool Remove(string key = "") => call(nameof(Add), [key], [typeof(string)]) as bool? ?? false;
 
-	public bool Remove<T>(string key = "") where T : class => call(nameof(Remove), new object[] { key }, new[] { typeof(string) }, typeof(T)) as bool? ?? false;
+	public bool Remove<T>(string key = "") where T : class => call(nameof(Remove), [key], [typeof(string)], typeof(T)) as bool? ?? false;
 
-	public bool Remove<T>(T itemData) where T : class => call(nameof(Remove), new object[] { itemData }, new Type?[] { null }, typeof(T)) as bool? ?? false;
+	public bool Remove<T>(T itemData) where T : class => call(nameof(Remove), [itemData], [null], typeof(T)) as bool? ?? false;
 
-	public void Save() => call(nameof(Save), Array.Empty<object?>(), Array.Empty<Type?>());
-	public void LoadAll() => call(nameof(LoadAll), Array.Empty<object?>(), Array.Empty<Type?>());
+	public void Save() => call(nameof(Save), [], []);
+	public void LoadAll() => call(nameof(LoadAll), [], []);
 
-	public IEnumerator<object> GetEnumerator() => call(nameof(GetEnumerator), Array.Empty<object?>(), Array.Empty<Type?>()) as IEnumerator<object> ?? new List<object>().GetEnumerator();
+	public IEnumerator<object> GetEnumerator() => call(nameof(GetEnumerator), [], []) as IEnumerator<object> ?? new List<object>().GetEnumerator();
 
 	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
@@ -907,7 +907,7 @@ public static class ItemExtensions
 			return null;
 		}
 
-		if (plugin.Instance.GetType().Assembly.GetType(className)?.GetMethod(nameof(Data), BindingFlags.Static | BindingFlags.Public, null, new[] { typeof(ItemDrop.ItemData) }, Array.Empty<ParameterModifier>())?.Invoke(null, new object[] { item }) is { } foreignItemData)
+		if (plugin.Instance.GetType().Assembly.GetType(className)?.GetMethod(nameof(Data), BindingFlags.Static | BindingFlags.Public, null, [typeof(ItemDrop.ItemData)], [])?.Invoke(null, [item]) is { } foreignItemData)
 		{
 			return foreignInfos[mod] = new ForeignItemInfo(item, foreignItemData);
 		}

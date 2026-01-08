@@ -131,51 +131,11 @@ public class InventoryGuiPatches
     [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.UpdateInventory))]
     internal static class UpdateInventory_Patch
     {
-        internal static readonly List<Model.Slot?> slots = new()
-        {
-            new Model.EquipmentSlot { Name = HelmetText.Value, OriginalName = "$azu_epi_helmet", IsQuickSlot = false, Get = player => player.m_helmetItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Helmet && !SlotAcceptRules.HasDedicatedAPISlot(item) },
-            new Model.EquipmentSlot { Name = ChestText.Value, OriginalName = "$azu_epi_chest", IsQuickSlot = false, Get = player => player.m_chestItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Chest && !SlotAcceptRules.HasDedicatedAPISlot(item) },
-            new Model.EquipmentSlot { Name = LegsText.Value, OriginalName = "$azu_epi_legs", IsQuickSlot = false, Get = player => player.m_legItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Legs && !SlotAcceptRules.HasDedicatedAPISlot(item) },
-            new Model.EquipmentSlot { Name = BackText.Value, OriginalName = "$azu_epi_shoulder", IsQuickSlot = false, Get = player =>
-            {
-                ItemDrop.ItemData? shoulderItem = player.m_shoulderItem;
-                // If the shoulder slot contains an item with a dedicated API slot (like a backpack),
-                if (shoulderItem != null && SlotAcceptRules.HasDedicatedAPISlot(shoulderItem))
-                {
-                    return player.GetInventory()?.GetEquippedItems()
-                        ?.FirstOrDefault(i => i != null && i != shoulderItem && i.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder && !SlotAcceptRules.HasDedicatedAPISlot(i));
-                }
-                return shoulderItem;
-            }, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder && !SlotAcceptRules.HasDedicatedAPISlot(item) },
-            new Model.EquipmentSlot { Name = UtilityText.Value, OriginalName = "$azu_epi_utility", IsQuickSlot = false, Get = player =>
-            {
-                ItemDrop.ItemData? utilityItem = player.m_utilityItem;
-                if (utilityItem != null && SlotAcceptRules.HasDedicatedAPISlot(utilityItem))
-                {
-                    return player.GetInventory()?.GetEquippedItems()
-                        ?.FirstOrDefault(i => i != null && i != utilityItem && i.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility && !SlotAcceptRules.HasDedicatedAPISlot(i));
-                }
-                return utilityItem;
-            }, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility && !SlotAcceptRules.HasDedicatedAPISlot(item) },
-        };
-
         private static RectTransform _cachedBkgRect;
         private static Transform _cachedPlayerScrollCheck;
         private static RectTransform _cachedPlayerGridRect;
         private static Transform _cachedEquipmentBkg;
         private static InventoryGui _lastInstance;
-
-        static UpdateInventory_Patch()
-        {
-            API.BeforeQuickSlotsAdded();
-            for (int i = 0; i < Hotkeys.Length; ++i)
-                slots.Add(new Model.Slot
-                {
-                    Name = HotkeyTexts[i].Value.IsNullOrWhiteSpace() ? Hotkeys[i].Value.ToString() : HotkeyTexts[i].Value,
-                    IsQuickSlot = true,
-                });
-            API.QuickSlotsAdded();
-        }
 
         internal static void RebuildQuickslots()
         {

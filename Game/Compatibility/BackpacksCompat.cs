@@ -21,7 +21,7 @@ public static class BackpacksCompatBlockInteractInput
         if (inventory == null) return;
 
         int baseIndex = Layout.GetBaseSlotIndex(inventory);
-        List<Model.Slot?> slots = InventoryGuiPatches.UpdateInventory_Patch.slots;
+        List<Model.Slot?> slots = EPI.ExtendedPlayerInventory.slots;
 
         for (int i = 0; i < slots.Count; ++i)
         {

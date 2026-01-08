@@ -7,8 +7,8 @@ public class InventoryHealth
         if (Player.m_localPlayer == null)
             return;
         Inventory? playerInventory = Player.m_localPlayer.GetInventory();
-        HashSet<Vector2i> curPositions = new();
-        List<ItemDrop.ItemData> itemsToFix = new();
+        HashSet<Vector2i> curPositions = [];
+        List<ItemDrop.ItemData> itemsToFix = [];
         if (playerInventory == null) return;
         if (playerInventory?.m_inventory != null)
             for (int index = 0; index < playerInventory.m_inventory.Count; ++index)
@@ -41,7 +41,7 @@ public class InventoryHealth
         Inventory? inventory = Player.m_localPlayer.GetInventory();
         if (inventory == null || !inventory.ShouldProtectInventorySlots()) return;
 
-        List<ItemDrop.ItemData> stuck = new();
+        List<ItemDrop.ItemData> stuck = [];
         foreach (ItemDrop.ItemData? it in inventory.GetAllItems())
         {
             if (inventory.IsHiddenCell(it.m_gridPos.x, it.m_gridPos.y))
