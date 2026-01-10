@@ -267,10 +267,10 @@ internal static class VanityPanelController
 
                 string headerLocKey = itemType switch
                 {
-                    ItemDrop.ItemData.ItemType.Helmet => "$item_helmet",
-                    ItemDrop.ItemData.ItemType.Chest => "$item_chest",
-                    ItemDrop.ItemData.ItemType.Legs => "$item_legs",
-                    ItemDrop.ItemData.ItemType.Shoulder => "$item_shoulder",
+                    ItemDrop.ItemData.ItemType.Helmet => "$azu_epi_helmet",
+                    ItemDrop.ItemData.ItemType.Chest => "$azu_epi_chest",
+                    ItemDrop.ItemData.ItemType.Legs => "$azu_epi_legs",
+                    ItemDrop.ItemData.ItemType.Shoulder => "$azu_epi_shoulder",
                     ItemDrop.ItemData.ItemType.Utility => "$item_utility",
                     _ => itemType.ToString()
                 };
