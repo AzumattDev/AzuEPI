@@ -24,7 +24,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     }
 
     internal const string ModName = "AzuExtendedPlayerInventory";
-    internal const string ModVersion = "2.2.0";
+    internal const string ModVersion = "2.2.1";
     internal const string Author = "Azumatt";
     internal const string ModGUID = Author + "." + ModName;
     private static readonly string ConfigFileName = ModGUID + ".cfg";
@@ -299,6 +299,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         int index = slots.Count - Hotkeys.Length;
         API.UpdateSlots(index, 1);
         slots.Insert(index, new Model.EquipmentSlot { Name = TrinketText.Value, OriginalName = "$azu_epi_trinket", IsQuickSlot = false, Get = player => player.m_trinketItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Trinket });
+        SlotHelpers.ResizeSlots();
 
         SlotBackupManager.InitializeBuiltInSlotBackups();
         ApplySlotChanges();
