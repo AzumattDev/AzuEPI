@@ -211,7 +211,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         {
             if (WishboneSlot.Value.isOn())
             {
-                if (!IsSlotMarkedForRemoval("$item_wishbone"))
+                // Don't add slot if Jewelcrafting has Wishbone configured as a gem
+                if (!IsSlotMarkedForRemoval("$item_wishbone") && !JewelcraftingCompat.IsWishboneAGem())
                 {
                     API.AddSlot("$item_wishbone", "Wishbone", 5);
                 }
@@ -231,9 +232,11 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         {
             if (WispLightSlot.Value.isOn())
             {
-                if (!IsSlotMarkedForRemoval("$item_demister"))
+                // Don't add slot if Jewelcrafting has Wisplight configured as a gem
+                if (!IsSlotMarkedForRemoval("$item_demister") && !JewelcraftingCompat.IsWisplightAGem())
                 {
-                    API.AddSlot("$item_demister", "Demister", WishboneSlot.Value.isOn() ? 6 : 5);
+                    int index = WishboneSlot.Value.isOn() && !JewelcraftingCompat.IsWishboneAGem() ? 6 : 5;
+                    API.AddSlot("$item_demister", "Demister", index);
                 }
             }
             else
@@ -364,6 +367,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             Hunter_LegacyCompat.Init();
             WizardryCompat.Init();
             EpicLootCompat.Init();
+            JewelcraftingCompat.Init();
         };
 
         ArmoireCompat.CheckForArmoire();
@@ -392,6 +396,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         {
             /* Already unsubscribed */
         }
+
+        JewelcraftingCompat.Cleanup();
 
         // Clear all config SettingChanged events to prevent memory leaks
         // Note: I can't unsubscribe lambdas directly, so I clear all handlers
