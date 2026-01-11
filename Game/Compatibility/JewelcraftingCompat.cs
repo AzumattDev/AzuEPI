@@ -123,6 +123,11 @@ public static class JewelcraftingCompat
         bool isGem = IsWisplightAGem();
         AzuExtendedPlayerInventoryLogger.LogDebug($"JewelcraftingCompat: wisplightGem changed to {(isGem ? "On (gem)" : "Off (utility)")}");
 
+        if (Player.m_localPlayer == null)
+        {
+            return;
+        }
+
         if (isGem)
         {
             API.RemoveSlot("$item_demister");
@@ -145,6 +150,11 @@ public static class JewelcraftingCompat
     {
         bool isGem = IsWishboneAGem();
         AzuExtendedPlayerInventoryLogger.LogDebug($"JewelcraftingCompat: wishboneGem changed to {(isGem ? "On (gem)" : "Off (utility)")}");
+
+        if (Player.m_localPlayer == null)
+        {
+            return;
+        }
 
         if (isGem)
         {

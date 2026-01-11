@@ -852,9 +852,16 @@ public class API
         Inventory inv = Player.m_localPlayer.m_inventory;
         int width = inv.GetWidth();
         int baseRows = Layout.BaseInventoryHeight + ExtraRows.Value;
+
+#if DEBUG
+        AzuExtendedPlayerInventoryLogger.LogDebug($"UpdateSlots: index={index}, shift={shift}, baseRows={baseRows}, width={width}, slots.Count={slots.Count}");
+#endif
         foreach (ItemDrop.ItemData item in inv.m_inventory)
-            if ((item.m_gridPos.y - baseRows) * width + item.m_gridPos.x >= index)
+        {
+            int slotIndex = (item.m_gridPos.y - baseRows) * width + item.m_gridPos.x;
+            if (slotIndex >= index)
             {
+                Vector2i oldPos = item.m_gridPos;
                 item.m_gridPos.x += shift;
                 if (item.m_gridPos.x < 0)
                 {
@@ -867,7 +874,11 @@ public class API
                     item.m_gridPos.x = 0;
                     ++item.m_gridPos.y;
                 }
+#if DEBUG
+                AzuExtendedPlayerInventoryLogger.LogDebug($"UpdateSlots: Shifted '{item.m_shared.m_name}' from slot {slotIndex} ({oldPos.x},{oldPos.y}) to ({item.m_gridPos.x},{item.m_gridPos.y})");
+#endif
             }
+        }
 
         inv.m_height = baseRows + Mathf.CeilToInt((float)(slots.Count + shift) / width);
     }
