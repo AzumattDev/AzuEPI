@@ -238,7 +238,15 @@ public static class HotkeyBarController
                 if (IsValidHotkeyBarIndex())
                 {
                     HotkeyBar? currentHotKeyBar = HotkeyBars[SelectedHotkeyBarIndex];
-                    UpdateHotkeyBarInput(currentHotKeyBar);
+                    if (currentHotKeyBar.m_elements == null || currentHotKeyBar.m_elements.Count == 0)
+                    {
+                        DeselectHotkeyBar();
+                        UpdateInitialHotkeyBarInput();
+                    }
+                    else
+                    {
+                        UpdateHotkeyBarInput(currentHotKeyBar);
+                    }
                 }
                 else
                 {
@@ -261,7 +269,13 @@ public static class HotkeyBarController
 
         private static void UpdateInitialHotkeyBarInput()
         {
-            if (ZInput.GetButtonDown("JoyDPadLeft") || ZInput.GetButtonDown("JoyDPadRight")) SelectHotkeyBar(0, false);
+            if (!ZInput.GetButtonDown("JoyDPadLeft") && !ZInput.GetButtonDown("JoyDPadRight")) return;
+            for (int i = 0; i < HotkeyBars.Count; ++i)
+            {
+                if (HotkeyBars[i].m_elements == null || HotkeyBars[i].m_elements.Count <= 0) continue;
+                SelectHotkeyBar(i, false);
+                return;
+            }
         }
 
         public static void UpdateHotkeyBarInput(HotkeyBar hotkeyBar)
@@ -272,17 +286,27 @@ public static class HotkeyBarController
             {
                 if (ZInput.GetButtonDown("JoyDPadLeft"))
                 {
-                    if (hotkeyBar.m_selected == 0 && ShowQuickSlots.Value.isOn())
-                        GotoHotkeyBar(SelectedHotkeyBarIndex - 1);
+                    if (hotkeyBar.m_selected == 0)
+                    {
+                        if (ShowQuickSlots.Value.isOn())
+                            GotoHotkeyBar(SelectedHotkeyBarIndex - 1, true);
+                        else if (hotkeyBar.m_elements.Count > 1)
+                            hotkeyBar.m_selected = hotkeyBar.m_elements.Count - 1;
+                    }
                     else
-                        hotkeyBar.m_selected = Mathf.Max(0, hotkeyBar.m_selected - 1);
+                        hotkeyBar.m_selected--;
                 }
                 else if (ZInput.GetButtonDown("JoyDPadRight"))
                 {
-                    if (hotkeyBar.m_selected == hotkeyBar.m_elements.Count - 1 && ShowQuickSlots.Value.isOn())
-                        GotoHotkeyBar(SelectedHotkeyBarIndex + 1);
+                    if (hotkeyBar.m_selected == hotkeyBar.m_elements.Count - 1)
+                    {
+                        if (ShowQuickSlots.Value.isOn())
+                            GotoHotkeyBar(SelectedHotkeyBarIndex + 1, false);
+                        else if (hotkeyBar.m_elements.Count > 1)
+                            hotkeyBar.m_selected = 0;
+                    }
                     else
-                        hotkeyBar.m_selected = Mathf.Min(hotkeyBar.m_elements.Count - 1, hotkeyBar.m_selected + 1);
+                        hotkeyBar.m_selected++;
                 }
 
                 if (ZInput.GetButtonDown("JoyDPadUp") || ZInput.GetButtonDown("JoyHotbarUse"))
@@ -316,12 +340,29 @@ public static class HotkeyBarController
             if (hotkeyBar.m_elements != null && hotkeyBar.m_selected > hotkeyBar.m_elements.Count - 1) hotkeyBar.m_selected = Mathf.Max(0, hotkeyBar.m_elements.Count - 1);
         }
 
-        public static void GotoHotkeyBar(int newIndex)
+        public static void GotoHotkeyBar(int newIndex, bool fromRight)
         {
-            if (newIndex < 0 || newIndex >= HotkeyBars.Count) return;
+            if (HotkeyBars.Count == 0) return;
 
-            bool fromRight = newIndex < SelectedHotkeyBarIndex;
-            SelectHotkeyBar(newIndex, fromRight);
+            int direction = fromRight ? -1 : 1;
+            int attempts = 0;
+
+            while (attempts < HotkeyBars.Count)
+            {
+                if (newIndex < 0)
+                    newIndex = HotkeyBars.Count - 1;
+                else if (newIndex >= HotkeyBars.Count)
+                    newIndex = 0;
+
+                if (HotkeyBars[newIndex].m_elements != null && HotkeyBars[newIndex].m_elements.Count > 0)
+                {
+                    SelectHotkeyBar(newIndex, fromRight);
+                    return;
+                }
+
+                newIndex += direction;
+                attempts++;
+            }
         }
 
         public static void SelectHotkeyBar(int index, bool fromRight)
@@ -333,7 +374,10 @@ public static class HotkeyBarController
             {
                 HotkeyBar? hotkeyBar = HotkeyBars[i];
                 if (i == index)
-                    hotkeyBar.m_selected = fromRight ? hotkeyBar.m_elements.Count - 1 : 0;
+                {
+                    int elementCount = hotkeyBar.m_elements?.Count ?? 0;
+                    hotkeyBar.m_selected = fromRight ? Mathf.Max(0, elementCount - 1) : 0;
+                }
                 else
                     hotkeyBar.m_selected = -1;
             }
