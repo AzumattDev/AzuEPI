@@ -15,19 +15,41 @@ internal static class EpiDropRouter
             if (playerInv == null)
                 return true;
 
-            if (!ReferenceEquals(playerInv, fromInventory) || !ReferenceEquals(playerInv, grid.m_inventory))
+            bool isFromPlayer = ReferenceEquals(playerInv, fromInventory);
+            bool isToPlayer = ReferenceEquals(playerInv, grid.m_inventory);
+
+            if (isFromPlayer && !isToPlayer)
+            {
+                bool sourceIsSlot = TryResolveSlot(playerInv, dragged.m_gridPos, out int srcSlotIndex, out SlotDescriptor srcSlot);
+                if (!sourceIsSlot)
+                    return true;
+
+                ItemDrop.ItemData destItem = grid.m_inventory.GetItemAt(destPos.x, destPos.y);
+                if (destItem == null)
+                    return true;
+
+                // Check if vanilla would swap (not stack)
+                if (!WillVanillaSwap(dragged, draggedAmount, destItem))
+                    return true;
+
+                if (API.SlotValidates(srcSlotIndex, destItem)) return true;
+                AzuExtendedPlayerInventoryLogger.LogDebug($"Blocked drop to container: '{destItem.m_shared.m_name}' cannot swap back to EPI slot '{srcSlot.OriginalName}'.");
+                return false;
+            }
+
+            if (!isFromPlayer || !isToPlayer)
                 return true;
 
             if (dragged.m_gridPos == destPos)
                 return true;
 
-            bool sourceIsSlot = TryResolveSlot(playerInv, dragged.m_gridPos, out int srcSlotIndex, out SlotDescriptor srcSlot);
+            bool sourceIsSlotP2P = TryResolveSlot(playerInv, dragged.m_gridPos, out int srcSlotIndexP2P, out SlotDescriptor srcSlotP2P);
             bool destIsSlot = TryResolveSlot(playerInv, destPos, out int dstSlotIndex, out SlotDescriptor dstSlot);
 
-            if (!sourceIsSlot && !destIsSlot)
+            if (!sourceIsSlotP2P && !destIsSlot)
                 return true;
 
-            ItemDrop.ItemData destItem = playerInv.GetItemAt(destPos.x, destPos.y);
+            ItemDrop.ItemData destItemP2P = playerInv.GetItemAt(destPos.x, destPos.y);
 
             if (destIsSlot && !API.SlotValidates(dstSlotIndex, dragged))
             {
@@ -35,19 +57,19 @@ internal static class EpiDropRouter
                 return false;
             }
 
-            if (destItem == null || !WillVanillaSwap(dragged, draggedAmount, destItem))
+            if (destItemP2P == null || !WillVanillaSwap(dragged, draggedAmount, destItemP2P))
                 return true;
 
-            if (destIsSlot && sourceIsSlot)
+            if (destIsSlot && sourceIsSlotP2P)
             {
-                if (API.SlotValidates(srcSlotIndex, destItem)) return true;
-                AzuExtendedPlayerInventoryLogger.LogDebug($"Blocked swap: '{destItem.m_shared.m_name}' in slot '{dstSlot.OriginalName}' cannot relocate to source slot '{srcSlot.OriginalName}'.");
+                if (API.SlotValidates(srcSlotIndexP2P, destItemP2P)) return true;
+                AzuExtendedPlayerInventoryLogger.LogDebug($"Blocked swap: '{destItemP2P.m_shared.m_name}' in slot '{dstSlot.OriginalName}' cannot relocate to source slot '{srcSlotP2P.OriginalName}'.");
                 return false;
             }
 
-            if (destIsSlot || !sourceIsSlot) return true;
-            if (API.SlotValidates(srcSlotIndex, destItem)) return true;
-            AzuExtendedPlayerInventoryLogger.LogDebug($"Blocked swap: '{destItem.m_shared.m_name}' at {DescribeSlotOrPos(dstSlot, destPos, destIsSlot)} cannot swap into source slot '{srcSlot.OriginalName}'.");
+            if (destIsSlot || !sourceIsSlotP2P) return true;
+            if (API.SlotValidates(srcSlotIndexP2P, destItemP2P)) return true;
+            AzuExtendedPlayerInventoryLogger.LogDebug($"Blocked swap: '{destItemP2P.m_shared.m_name}' at {DescribeSlotOrPos(dstSlot, destPos, destIsSlot)} cannot swap into source slot '{srcSlotP2P.OriginalName}'.");
             return false;
         }
         catch (Exception e)

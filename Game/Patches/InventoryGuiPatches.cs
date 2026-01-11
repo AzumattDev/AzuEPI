@@ -69,10 +69,10 @@ public class InventoryGuiPatches
             Player localPlayer = Player.m_localPlayer;
             if (localPlayer.IsTeleporting())
                 return;
-            if (item == null) return;
+            if (__instance.m_dragItem == null) return;
             if (__instance.m_dragGo && localPlayer.IsItemEquiped(__instance.m_dragItem))
             {
-                if (grid.m_inventory.IsAtEquipmentSlot(__instance.m_dragItem, out _))
+                if (__instance.m_dragInventory != null && __instance.m_dragInventory.IsAtEquipmentSlot(__instance.m_dragItem, out _))
                 {
                     localPlayer.UnequipItem(__instance.m_dragItem, false);
                 }

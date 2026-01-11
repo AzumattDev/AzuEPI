@@ -352,7 +352,7 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
                     }
                     else
                     {
-                        AzuExtendedPlayerInventoryLogger.LogError($"Could not find {targetName} in inventory after adding!");
+                        //AzuExtendedPlayerInventoryLogger.LogError($"Could not find {targetName} in inventory after adding!");
                     }
                 }
                 else
