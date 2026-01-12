@@ -152,3 +152,8 @@ azu_epi_stat_resist_unknown: "Unknown"
 # Stats Panel - Common
 azu_epi_stat_none: "None"
 azu_epi_stat_error: "Error"
+
+# Stats Panel - Remote Player
+azu_epi_stat_player_label: "Player:"
+azu_epi_stat_self: "Myself"
+azu_epi_stat_unavailable: "Player unavailable"

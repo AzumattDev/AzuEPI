@@ -174,5 +174,125 @@ internal static class TerminalInitTerminalPatch
                     args.Context.AddString("You don't have any free quickslots");
                 }
             }, true);
+
+#if DEBUG
+        Terminal.ConsoleCommand TestFakeStats = new("azuepi.fakestats", "Simulate receiving stats from a fake player (for testing)",
+            args =>
+            {
+                string? playerName = args.Args.Length > 1 ? string.Join(" ", args.Args.Skip(1)) : null;
+                Panels.Stats.FakePlayerStats.SimulateReceiveStats(playerName);
+                args.Context.AddString($"Simulated receiving stats from fake player{(playerName != null ? $": {playerName}" : "")}");
+            });
+
+        Terminal.ConsoleCommand ResetStats = new("azuepi.resetstats", "Reset stats panel to show local player stats",
+            args =>
+            {
+                Panels.Stats.StatsPanelController.SetVisible(false);
+                Panels.Stats.StatsPanelController.SetVisible(true);
+                args.Context.AddString("Stats panel reset to local player");
+            });
+
+        Terminal.ConsoleCommand TestCompression = new("azuepi.testcompression", "Test the stats compression/decompression",
+            args =>
+            {
+                bool success = Panels.Stats.FakePlayerStats.TestCompression();
+                args.Context.AddString(success ? "Compression test PASSED" : "Compression test FAILED - check log for details");
+            });
+
+        Terminal.ConsoleCommand TestRpcSelf = new("azuepi.testrpc", "Test full RPC round-trip by sending stats request to yourself",
+            args =>
+            {
+                if (Player.m_localPlayer == null)
+                {
+                    args.Context.AddString("No local player found, please make sure you're in-game");
+                    return;
+                }
+
+                if (ZRoutedRpc.instance == null)
+                {
+                    args.Context.AddString("ZRoutedRpc not available - are you connected to a world?");
+                    return;
+                }
+
+                long myUid = ZNet.GetUID();
+                args.Context.AddString($"Sending RPC stats request to self (UID: {myUid})...");
+
+                Panels.Stats.StatsPanelController.EnableTestMode();
+
+                Panels.Stats.RemoteStatsRPC.RequestStats(myUid);
+
+                args.Context.AddString("RPC sent! Open your inventory and check the stats panel.");
+                args.Context.AddString("The dropdown should now be visible and stats should update.");
+            });
+
+        Terminal.ConsoleCommand TestRpcPlayer = new("azuepi.testrpcplayer", "Test RPC by requesting stats from another player by name",
+            args =>
+            {
+                if (Player.m_localPlayer == null)
+                {
+                    args.Context.AddString("No local player found, please make sure you're in-game");
+                    return;
+                }
+
+                if (ZNet.instance == null || ZRoutedRpc.instance == null)
+                {
+                    args.Context.AddString("Not connected to a world");
+                    return;
+                }
+
+                if (args.Args.Length < 2)
+                {
+                    args.Context.AddString("Usage: azuepi.testrpcplayer <player name>");
+                    args.Context.AddString("Available players:");
+                    foreach (ZNet.PlayerInfo playerInfo in ZNet.instance.GetPlayerList())
+                    {
+                        args.Context.AddString($"  - {playerInfo.m_name} (UID: {playerInfo.m_characterID.UserID})");
+                    }
+                    return;
+                }
+
+                string targetName = string.Join(" ", args.Args.Skip(1)).ToLowerInvariant();
+                ZNet.PlayerInfo? target = null;
+
+                foreach (ZNet.PlayerInfo playerInfo in ZNet.instance.GetPlayerList())
+                {
+                    if (playerInfo.m_name.ToLowerInvariant().Contains(targetName))
+                    {
+                        target = playerInfo;
+                        break;
+                    }
+                }
+
+                if (target == null)
+                {
+                    args.Context.AddString($"Player '{targetName}' not found");
+                    return;
+                }
+
+                long targetUid = target.Value.m_characterID.UserID;
+                args.Context.AddString($"Sending RPC stats request to {target.Value.m_name} (UID: {targetUid})...");
+
+                Panels.Stats.StatsPanelController.EnableTestMode(targetUid);
+                Panels.Stats.RemoteStatsRPC.RequestStats(targetUid);
+
+                args.Context.AddString("RPC sent! Open your inventory and check the stats panel.");
+            });
+
+        Terminal.ConsoleCommand AddFakePlayer = new("azuepi.addfakeplayer", "Add a fake player to the stats dropdown for testing",
+            args =>
+            {
+                string playerName = args.Args.Length > 1 ? string.Join(" ", args.Args.Skip(1)) : "Viking Test";
+                Panels.Stats.StatsPanelController.AddFakePlayerToDropdown(playerName);
+                args.Context.AddString($"Added fake player '{playerName}' to dropdown.");
+                args.Context.AddString("Open your inventory and select them from the stats panel dropdown.");
+            });
+
+        Terminal.ConsoleCommand ClearFakePlayers = new("azuepi.clearfakeplayers", "Remove all fake players from the stats dropdown",
+            args =>
+            {
+                Panels.Stats.StatsPanelController.ClearFakePlayers();
+                args.Context.AddString("Cleared all fake players from dropdown.");
+            });
+#endif
     }
 }

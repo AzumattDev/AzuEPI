@@ -39,6 +39,15 @@ public static class StatsPanelController
     private static Transform? _tabBorderTemplate;
     private static readonly List<StatElement> _statElements = [];
 
+    private static TMP_Dropdown? _playerDropdown;
+    private static RectTransform? _dropdownContainer;
+    private static bool _isViewingRemotePlayer;
+    private static long _viewingPlayerId;
+    private static RemotePlayerStats? _currentRemoteStats;
+    private static readonly Dictionary<long, RemotePlayerStats> _remoteStatsCache = new();
+    private static bool _isLoadingRemoteStats;
+    private static readonly List<ZNet.PlayerInfo> _playerList = [];
+
     public static RectTransform? ToggleButtonParentGlg;
 
     public static ScrollRect? GetScrollRect() => _scroll;
@@ -106,17 +115,41 @@ public static class StatsPanelController
     };
 
     public static bool IsVisible() => _visible;
+    public static bool IsViewingRemotePlayer() => _isViewingRemotePlayer;
 
     public static void SetVisible(bool visible)
     {
         _visible = visible;
         if (_panel) _panel.gameObject.SetActive(visible);
-        if (!visible || !_panel) return;
+
+        if (!visible)
+        {
+            ResetToLocalPlayer();
+            return;
+        }
+
+        if (!_panel) return;
         _panel.SetAsLastSibling();
+
+        RefreshPlayerDropdownOptions();
+
         if (Player.m_localPlayer != null)
         {
-            UpdateStats(Player.m_localPlayer);
+            if (_isViewingRemotePlayer && _currentRemoteStats != null)
+                UpdateStatsFromRemoteData(_currentRemoteStats);
+            else
+                UpdateStats(Player.m_localPlayer);
         }
+    }
+
+    private static void ResetToLocalPlayer()
+    {
+        _isViewingRemotePlayer = false;
+        _currentRemoteStats = null;
+        _viewingPlayerId = 0;
+        _isLoadingRemoteStats = false;
+        if (_playerDropdown != null)
+            _playerDropdown.SetValueWithoutNotify(0);
     }
 
     public static void Hide() => SetVisible(false);
@@ -240,6 +273,7 @@ public static class StatsPanelController
 
         _statElements.Clear();
 
+        CreatePlayerDropdown();
         CreateLiveStatsSection();
 
         List<PlayerStatType> selectedStats = ParseStatsList(SelectedPlayerStats.Value);
@@ -1889,4 +1923,458 @@ public static class StatsPanelController
         public TextMeshProUGUI ValueText { get; set; } = null!;
         public bool IsLiveStat { get; set; }
     }
+
+    #region Remote Player Stats
+
+    private static void CreatePlayerDropdown()
+    {
+        if (!_content || _playerDropdown != null) return;
+
+        GameObject containerGo = new("PlayerDropdownContainer", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        containerGo.transform.SetParent(_content, false);
+        containerGo.transform.SetAsFirstSibling();
+
+        _dropdownContainer = (RectTransform)containerGo.transform;
+        _dropdownContainer.sizeDelta = new Vector2(0, 36);
+
+        HorizontalLayoutGroup hlg = containerGo.GetComponent<HorizontalLayoutGroup>();
+        hlg.childAlignment = TextAnchor.MiddleLeft;
+        hlg.childControlWidth = true;
+        hlg.childControlHeight = true;
+        hlg.childForceExpandWidth = true;
+        hlg.childForceExpandHeight = false;
+        hlg.spacing = 8;
+        hlg.padding = new RectOffset(0, 0, 4, 4);
+
+        LayoutElement containerLE = containerGo.AddComponent<LayoutElement>();
+        containerLE.minHeight = 36;
+        containerLE.preferredHeight = 36;
+
+        GameObject labelGo = new("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+        labelGo.transform.SetParent(containerGo.transform, false);
+
+        TextMeshProUGUI label = labelGo.GetComponent<TextMeshProUGUI>();
+        label.text = Localization.instance.Localize("$azu_epi_stat_player_label");
+        label.fontSize = 16;
+        label.fontStyle = FontStyles.Bold;
+        label.color = Color.white;
+        label.alignment = TextAlignmentOptions.MidlineLeft;
+        if (_fontAsset != null) label.font = _fontAsset;
+
+        LayoutElement labelLE = labelGo.AddComponent<LayoutElement>();
+        labelLE.minWidth = 60;
+        labelLE.preferredWidth = 60;
+        labelLE.flexibleWidth = 0;
+
+        TMP_Dropdown? templateDropdown = Resources.FindObjectsOfTypeAll<TMP_Dropdown>().FirstOrDefault();
+
+        GameObject dropdownGo;
+        if (templateDropdown != null)
+        {
+            dropdownGo = Object.Instantiate(templateDropdown.gameObject, containerGo.transform);
+            dropdownGo.name = "PlayerDropdown";
+            dropdownGo.SetActive(true);
+            _playerDropdown = dropdownGo.GetComponent<TMP_Dropdown>();
+
+            Transform? template = dropdownGo.transform.Find("Template");
+            if (template != null)
+            {
+                _playerDropdown.template = template.GetComponent<RectTransform>();
+                template.gameObject.SetActive(false); 
+                
+                Transform? itemLabel = template.Find("Viewport/Content/Item/Item Label");
+                if (itemLabel != null)
+                {
+                    _playerDropdown.itemText = itemLabel.GetComponent<TextMeshProUGUI>();
+                }
+            }
+
+            Transform? captionLabel = dropdownGo.transform.Find("Label");
+            if (captionLabel != null)
+            {
+                _playerDropdown.captionText = captionLabel.GetComponent<TextMeshProUGUI>();
+            }
+        }
+        else
+        {
+            dropdownGo = new GameObject("PlayerDropdown", typeof(RectTransform), typeof(TMP_Dropdown), typeof(Image));
+            dropdownGo.transform.SetParent(containerGo.transform, false);
+            _playerDropdown = dropdownGo.GetComponent<TMP_Dropdown>();
+
+            Image bgImage = dropdownGo.GetComponent<Image>();
+            bgImage.color = new Color(0.1f, 0.1f, 0.1f, 0.8f);
+        }
+
+        LayoutElement dropdownLE = dropdownGo.GetOrAddComponent<LayoutElement>();
+        dropdownLE.flexibleWidth = 1;
+        dropdownLE.minHeight = 28;
+        dropdownLE.preferredHeight = 28;
+
+        _playerDropdown.interactable = true;
+
+        // Disable navigation to prevent gamepad issues
+        Navigation nav = _playerDropdown.navigation;
+        nav.mode = Navigation.Mode.None;
+        _playerDropdown.navigation = nav;
+
+        _playerDropdown.ClearOptions();
+        _playerDropdown.onValueChanged.RemoveAllListeners();
+
+        _playerDropdown.onValueChanged.AddListener(new UnityEngine.Events.UnityAction<int>(OnPlayerDropdownValueChanged));
+
+        AzuExtendedPlayerInventoryLogger.LogDebug($"Player dropdown created, template={_playerDropdown.template != null}, captionText={_playerDropdown.captionText != null}");
+
+        RefreshPlayerDropdownOptions();
+
+        CreateSpacer("Spacer_PlayerDropdown");
+    }
+
+    private static void RefreshPlayerDropdownOptions()
+    {
+        if (_playerDropdown == null) return;
+
+        _playerList.Clear();
+        if (ZNet.instance != null)
+            _playerList.AddRange(ZNet.instance.GetPlayerList());
+
+        List<TMP_Dropdown.OptionData> options = new()
+        {
+            new TMP_Dropdown.OptionData(Localization.instance.Localize("$azu_epi_stat_self"))
+        };
+
+        long myUid = ZNet.instance != null ? ZNet.GetUID() : 0;
+        foreach (ZNet.PlayerInfo playerInfo in _playerList)
+        {
+            if (playerInfo.m_characterID.UserID == myUid) continue;
+            string playerName = CensorShittyWords.FilterUGC(playerInfo.m_name, UGCType.CharacterName, playerInfo.m_userInfo.m_id);
+            options.Add(new TMP_Dropdown.OptionData(playerName));
+        }
+
+        foreach ((long id, string name) in _fakePlayersForTesting)
+        {
+            options.Add(new TMP_Dropdown.OptionData($"{name} (Test)"));
+        }
+
+        int previousValue = _playerDropdown.value;
+        _playerDropdown.ClearOptions();
+        _playerDropdown.AddOptions(options);
+
+        bool isMultiplayer = ZNet.instance != null && !ZNet.instance.IsDedicated() && _playerList.Count > 1;
+        bool hasFakePlayers = _fakePlayersForTesting.Count > 0;
+        bool showDropdown = isMultiplayer || hasFakePlayers;
+
+        if (_dropdownContainer != null)
+            _dropdownContainer.gameObject.SetActive(showDropdown);
+
+        if (previousValue < options.Count)
+            _playerDropdown.SetValueWithoutNotify(previousValue);
+        else
+        {
+            _playerDropdown.SetValueWithoutNotify(0);
+            _isViewingRemotePlayer = false;
+            _currentRemoteStats = null;
+        }
+    }
+
+    public static void OnPlayerListChanged()
+    {
+        if (_playerDropdown == null) return;
+
+        AzuExtendedPlayerInventoryLogger.LogDebug("Player list changed, refreshing dropdown");
+        RefreshPlayerDropdownOptions();
+    }
+
+    private static void OnPlayerDropdownValueChanged(int index)
+    {
+        AzuExtendedPlayerInventoryLogger.LogDebug($"OnPlayerDropdownValueChanged fired with index: {index}");
+        OnPlayerDropdownChanged(index);
+    }
+
+    private static void OnPlayerDropdownChanged(int index)
+    {
+        AzuExtendedPlayerInventoryLogger.LogDebug($"OnPlayerDropdownChanged processing index: {index}");
+        if (index == 0)
+        {
+            ResetToLocalPlayer();
+            if (Player.m_localPlayer != null)
+                UpdateStats(Player.m_localPlayer);
+            return;
+        }
+
+        long fakePlayerId = GetFakePlayerIdAtDropdownIndex(index);
+        if (fakePlayerId != 0)
+        {
+            AzuExtendedPlayerInventoryLogger.LogDebug($"Fake player selected at index {index}, ID: {fakePlayerId}");
+            SimulateFakePlayerStats(fakePlayerId);
+            return;
+        }
+
+        long myUid = ZNet.GetUID();
+        int remoteIndex = 0;
+        long targetPlayerId = 0;
+
+        foreach (ZNet.PlayerInfo playerInfo in _playerList)
+        {
+            if (playerInfo.m_characterID.UserID == myUid) continue;
+            remoteIndex++;
+            if (remoteIndex == index)
+            {
+                targetPlayerId = playerInfo.m_characterID.UserID;
+                break;
+            }
+        }
+
+        if (targetPlayerId == 0) return;
+
+        _isViewingRemotePlayer = true;
+        _viewingPlayerId = targetPlayerId;
+
+        if (_remoteStatsCache.TryGetValue(targetPlayerId, out RemotePlayerStats? cached))
+        {
+            long age = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - cached.Timestamp;
+            if (age < 30)
+            {
+                _currentRemoteStats = cached;
+                UpdateStatsFromRemoteData(cached);
+                return;
+            }
+        }
+
+        _isLoadingRemoteStats = true;
+        ShowLoadingState();
+        RemoteStatsRPC.RequestStats(targetPlayerId);
+    }
+
+    public static void OnRemoteStatsReceived(RemotePlayerStats? stats)
+    {
+        _isLoadingRemoteStats = false;
+
+        if (stats == null)
+        {
+            ShowErrorState(Localization.instance.Localize("$azu_epi_stat_unavailable"));
+            return;
+        }
+
+        _remoteStatsCache[stats.PlayerId] = stats;
+
+        if (!_isViewingRemotePlayer || _viewingPlayerId != stats.PlayerId) return;
+        _currentRemoteStats = stats;
+        UpdateStatsFromRemoteData(stats);
+    }
+
+    public static void ForceDisplayRemoteStats(RemotePlayerStats stats)
+    {
+        _isViewingRemotePlayer = true;
+        _viewingPlayerId = stats.PlayerId;
+        _currentRemoteStats = stats;
+        _remoteStatsCache[stats.PlayerId] = stats;
+
+        if (_dropdownContainer != null)
+            _dropdownContainer.gameObject.SetActive(true);
+
+        UpdateStatsFromRemoteData(stats);
+    }
+
+    public static void EnableTestMode(long targetPlayerId = 0)
+    {
+        if (_dropdownContainer != null)
+            _dropdownContainer.gameObject.SetActive(true);
+
+        _isViewingRemotePlayer = true;
+        _viewingPlayerId = targetPlayerId > 0 ? targetPlayerId : ZNet.GetUID();
+        _isLoadingRemoteStats = true;
+
+        if (_visible)
+            ShowLoadingState();
+
+        AzuExtendedPlayerInventoryLogger.LogDebug($"Test mode enabled - waiting for RPC response from player {_viewingPlayerId}");
+    }
+
+    private static readonly List<(long id, string name)> _fakePlayersForTesting = [];
+
+    public static void AddFakePlayerToDropdown(string playerName)
+    {
+        long fakeId = -1000 - _fakePlayersForTesting.Count;
+        _fakePlayersForTesting.Add((fakeId, playerName));
+
+        RefreshPlayerDropdownOptions();
+
+        AzuExtendedPlayerInventoryLogger.LogInfo($"Added fake player '{playerName}' (ID: {fakeId}) to dropdown");
+    }
+
+    public static void ClearFakePlayers()
+    {
+        _fakePlayersForTesting.Clear();
+        RefreshPlayerDropdownOptions();
+        AzuExtendedPlayerInventoryLogger.LogInfo("Cleared all fake players from dropdown");
+    }
+
+    private static long GetFakePlayerIdAtDropdownIndex(int index)
+    {
+        if (_fakePlayersForTesting.Count == 0) return 0;
+
+        long myUid = ZNet.instance != null ? ZNet.GetUID() : 0;
+        int realPlayerCount = _playerList.Count(p => p.m_characterID.UserID != myUid);
+        int fakeStartIndex = 1 + realPlayerCount;
+
+        if (index >= fakeStartIndex && index < fakeStartIndex + _fakePlayersForTesting.Count)
+        {
+            return _fakePlayersForTesting[index - fakeStartIndex].id;
+        }
+
+        return 0;
+    }
+
+    private static void SimulateFakePlayerStats(long fakePlayerId)
+    {
+        string? fakeName = _fakePlayersForTesting.FirstOrDefault(f => f.id == fakePlayerId).name;
+        if (fakeName == null) return;
+
+        _isViewingRemotePlayer = true;
+        _viewingPlayerId = fakePlayerId;
+        _isLoadingRemoteStats = true;
+
+        if (_visible)
+            ShowLoadingState();
+
+        AzuExtendedPlayerInventoryLogger.LogDebug($"Simulating RPC for fake player '{fakeName}'...");
+
+        RemotePlayerStats fakeStats = FakePlayerStats.Generate(fakePlayerId, fakeName);
+        OnRemoteStatsReceived(fakeStats);
+        AzuExtendedPlayerInventoryLogger.LogInfo($"Fake stats delivered for '{fakeName}'");
+    }
+
+    private static void ShowLoadingState()
+    {
+        foreach (StatElement element in _statElements)
+        {
+            element.ValueText.text = "...";
+        }
+    }
+
+    private static void ShowErrorState(string message)
+    {
+        foreach (StatElement element in _statElements)
+        {
+            element.ValueText.text = "-";
+        }
+    }
+
+    private static void UpdateStatsFromRemoteData(RemotePlayerStats stats)
+    {
+        if (_statElements.Count == 0) return;
+
+        foreach (StatElement element in _statElements)
+        {
+            if (element.IsLiveStat)
+            {
+                switch (element.Name)
+                {
+                    case "Health":
+                        element.ValueText.text = $"? / {stats.MaxHealth:F0}";
+                        break;
+                    case "Stamina":
+                        element.ValueText.text = $"? / {stats.MaxStamina:F0}";
+                        break;
+                    case "Eitr":
+                        element.ValueText.text = $"? / {stats.MaxEitr:F0}";
+                        break;
+                    case "Total Armor":
+                    case "Armor":
+                        element.ValueText.text = $"{stats.BodyArmor:F0}";
+                        break;
+                    case "FoodBuffs":
+                        element.ValueText.text = FormatRemoteFoods(stats.ActiveFoods);
+                        break;
+                    case "ActiveEffects":
+                        element.ValueText.text = FormatRemoteEffects(stats.ActiveEffectNames);
+                        break;
+                    default:
+                        element.ValueText.text = "N/A";
+                        break;
+                }
+                continue;
+            }
+
+            if (stats.PlayerStats.TryGetValue(element.StatType, out float statValue))
+            {
+                switch (element.StatType)
+                {
+                    case PlayerStatType.DistanceTraveled:
+                    case PlayerStatType.DistanceWalk:
+                    case PlayerStatType.DistanceRun:
+                    case PlayerStatType.DistanceSail:
+                    case PlayerStatType.DistanceAir:
+                        element.ValueText.text = statValue >= 1000f ? $"{(statValue / 1000f):F1}km" : $"{statValue:F0}m";
+                        break;
+
+                    case PlayerStatType.TimeInBase:
+                    case PlayerStatType.TimeOutOfBase:
+                    case PlayerStatType.Sleep:
+                        if (statValue >= 86400)
+                            element.ValueText.text = $"{(statValue / 86400f):F1}d";
+                        else if (statValue >= 3600)
+                            element.ValueText.text = $"{(statValue / 3600f):F1}h";
+                        else if (statValue >= 60)
+                            element.ValueText.text = $"{(statValue / 60f):F0}m";
+                        else
+                            element.ValueText.text = $"{statValue:F0}s";
+                        break;
+
+                    default:
+                        if (statValue >= 1000000)
+                            element.ValueText.text = $"{statValue / 1000000f:F1}M";
+                        else if (statValue >= 10000)
+                            element.ValueText.text = $"{statValue / 1000f:F1}k";
+                        else
+                            element.ValueText.text = $"{statValue:F0}";
+                        break;
+                }
+            }
+            else
+            {
+                element.ValueText.text = "0";
+            }
+        }
+    }
+
+    private static string FormatRemoteFoods(List<FoodSnapshot> foods)
+    {
+        if (foods.Count == 0) return Localization.instance.Localize("$azu_epi_stat_none");
+
+        System.Text.StringBuilder sb = new();
+        for (int i = 0; i < foods.Count && i < 5; i++)
+        {
+            FoodSnapshot food = foods[i];
+            float remaining = food.RemainingTime / 60f;
+            sb.Append($"• {food.Name} ({remaining:F0}m)");
+            if (i < foods.Count - 1 && i < 4)
+                sb.AppendLine();
+        }
+
+        if (foods.Count > 5)
+            sb.Append($"\n+{foods.Count - 5} more...");
+
+        return sb.ToString();
+    }
+
+    private static string FormatRemoteEffects(List<string> effects)
+    {
+        if (effects.Count == 0) return Localization.instance.Localize("$azu_epi_stat_none");
+
+        System.Text.StringBuilder sb = new();
+        for (int i = 0; i < effects.Count && i < 5; i++)
+        {
+            sb.Append($"• {effects[i]}");
+            if (i < effects.Count - 1 && i < 4)
+                sb.AppendLine();
+        }
+
+        if (effects.Count > 5)
+            sb.Append($"\n+{effects.Count - 5} more...");
+
+        return sb.ToString();
+    }
+
+    #endregion
 }

@@ -309,7 +309,7 @@ public class InventoryGuiPatches
                     break;
             }
 
-            if (StatsPanelController.IsVisible() && player != null && Time.frameCount % 10 == 0)
+            if (StatsPanelController.IsVisible() && player != null && Time.frameCount % 10 == 0 && !StatsPanelController.IsViewingRemotePlayer())
                 StatsPanelController.UpdateStats(player);
 
             UpdateInvalidDropOverlays(__instance, ___m_playerGrid, player);
