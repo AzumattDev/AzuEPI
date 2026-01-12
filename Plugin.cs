@@ -164,125 +164,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         InitSlotsAndKeys();
 
-        QuickSlotsAmount.SettingChanged += (sender, args) =>
-        {
-            InitializeHotkeys();
-            FullRebuild();
-        };
-        ExtraRows.SettingChanged += (sender, args) => { FullRebuild(); };
-        AddEquipmentRow.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
-        DisplayEquipmentRowSeparate.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
-        ShowQuickSlots.SettingChanged += (sender, args) => { HotkeyBarController.Hud_Update_Patch.DeselectHotkeyBar(); };
-        SelectedPlayerStats.SettingChanged += StatsPanelController.OnStatsConfigChanged;
-        SelectedLiveStats.SettingChanged += StatsPanelController.OnStatsConfigChanged;
-        HelmetText.SettingChanged += (sender, args) => { API.RelocalizeSlots(); };
-        ChestText.SettingChanged += (sender, args) => { API.RelocalizeSlots(); };
-        BackText.SettingChanged += (sender, args) => { API.RelocalizeSlots(); };
-        LegsText.SettingChanged += (sender, args) => { API.RelocalizeSlots(); };
-        TrinketText.SettingChanged += (sender, args) => { API.RelocalizeSlots(); };
-        UtilityText.SettingChanged += (sender, args) => { API.RelocalizeSlots(); };
-        QuickSlotsPerRow.SettingChanged += (sender, args) =>
-        {
-            if (!Hud.instance) return;
-            Transform hudroot = Hud.instance.transform.Find("hudroot");
-            if (!hudroot) return;
-            Transform qabTransform = hudroot.Find(QabName);
-            if (!qabTransform || !qabTransform.TryGetComponent<HotkeyBar>(out HotkeyBar? qab)) return;
-            foreach (HotkeyBar.ElementData? element in qab.m_elements)
-                if (element.m_go)
-                    Destroy(element.m_go);
-            qab.m_elements.Clear();
-            FullRebuild();
-        };
-
-        RemovedEquipmentSlots.SettingChanged += (sender, args) =>
-        {
-            ApplySlotChanges();
-            FullRebuild();
-        };
-
-        UserAddedSlots.SettingChanged += (sender, args) =>
-        {
-            ApplySlotChanges();
-            FullRebuild();
-        };
-
-        WishboneSlot.SettingChanged += (sender, args) =>
-        {
-            if (WishboneSlot.Value.isOn())
-            {
-                // Don't add slot if Jewelcrafting has Wishbone configured as a gem
-                if (!IsSlotMarkedForRemoval("$item_wishbone") && !JewelcraftingCompat.IsWishboneAGem())
-                {
-                    API.AddSlot("$item_wishbone", "Wishbone", 5);
-                }
-            }
-            else
-            {
-                API.RemoveSlot("$item_wishbone");
-                if (Localization.instance != null)
-                    API.RemoveSlot(Localization.instance.Localize("$item_wishbone"));
-                InventoryHealth.FixHiddenItems();
-            }
-
-            FullRebuild();
-        };
-
-        WispLightSlot.SettingChanged += (sender, args) =>
-        {
-            if (WispLightSlot.Value.isOn())
-            {
-                // Don't add slot if Jewelcrafting has Wisplight configured as a gem
-                if (!IsSlotMarkedForRemoval("$item_demister") && !JewelcraftingCompat.IsWisplightAGem())
-                {
-                    int index = WishboneSlot.Value.isOn() && !JewelcraftingCompat.IsWishboneAGem() ? 6 : 5;
-                    API.AddSlot("$item_demister", "Demister", index);
-                }
-            }
-            else
-            {
-                API.RemoveSlot("$item_demister");
-                if (Localization.instance != null)
-                    API.RemoveSlot(Localization.instance.Localize("$item_demister"));
-                InventoryHealth.FixHiddenItems();
-            }
-
-            FullRebuild();
-        };
-
-        VanityOption.SettingChanged += (sender, args) =>
-        {
-            if (VanityPanelController.VanityButtonGo)
-            {
-                VanityPanelController.VanityButtonGo.gameObject.SetActive(VanityOption.Value.isOn());
-            }
-
-            SlotHelpers.UpdateEquipmentBackgroundAnchors();
-        };
-
-        LoadoutOption.SettingChanged += (sender, args) =>
-        {
-            if (PersonalLoadoutGui.LoadoutsToggleButton)
-            {
-                PersonalLoadoutGui.LoadoutsToggleButton.gameObject.SetActive(LoadoutOption.Value.isOn());
-            }
-
-            SlotHelpers.UpdateEquipmentBackgroundAnchors();
-        };
-
-        VanityToggleGamepadKey.SettingChanged += (sender, args) => { RefreshPanelButtonBindings(); };
-        LoadoutToggleGamepadKey.SettingChanged += (sender, args) => { RefreshPanelButtonBindings(); };
-        StatsToggleGamepadKey.SettingChanged += (sender, args) => { RefreshPanelButtonBindings(); };
-
-        OldLayout.SettingChanged += (sender, args) =>
-        {
-            SlotHelpers.ResizeSlots();
-            Layout.UpdateInventorySize();
-            Layout.ApplyLayoutCorrections();
-            RebuildUI();
-            FullRebuild();
-            SlotHelpers.UpdateEquipmentBackgroundAnchors();
-        };
+        SetupEventHandlers();
 
         BetterArchery.CheckBetterArchery();
 
@@ -306,9 +188,9 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         SlotBackupManager.InitializeBuiltInSlotBackups();
         ApplySlotChanges();
-        API.RelocalizeSlots();
+        //API.RelocalizeSlots();
         Localization.OnLanguageChange += new Action(API.RelocalizeSlots);
-        Localizer.OnLocalizationComplete -= new Action(API.RelocalizeSlots);
+        Localizer.OnLocalizationComplete += new Action(API.RelocalizeSlots);
     }
 
     internal void FullRebuild()
@@ -1058,7 +940,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         return false;
     }
 
-    private static void ApplySlotChanges()
+    internal static void ApplySlotChanges()
     {
         try
         {
