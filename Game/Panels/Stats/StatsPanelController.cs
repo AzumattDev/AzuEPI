@@ -2329,17 +2329,47 @@ public static class StatsPanelController
                 switch (element.Name)
                 {
                     case "Health":
-                        element.ValueText.text = $"? / {stats.MaxHealth:F0}";
+                        element.ValueText.text = $"{stats.CurrentHealth:F0} / {stats.MaxHealth:F0}";
                         break;
                     case "Stamina":
-                        element.ValueText.text = $"? / {stats.MaxStamina:F0}";
+                        element.ValueText.text = $"{stats.CurrentStamina:F0} / {stats.MaxStamina:F0}";
                         break;
                     case "Eitr":
-                        element.ValueText.text = $"? / {stats.MaxEitr:F0}";
+                        element.ValueText.text = $"{stats.CurrentEitr:F0} / {stats.MaxEitr:F0}";
                         break;
                     case "Total Armor":
                     case "Armor":
                         element.ValueText.text = $"{stats.BodyArmor:F0}";
+                        break;
+                    case "Current Weight":
+                        element.ValueText.text = $"{stats.CurrentCarryWeight:F0}";
+                        break;
+                    case "Max Weight":
+                        element.ValueText.text = $"{stats.MaxCarryWeight:F0}";
+                        break;
+                    case "Weight Percentage":
+                        float weightPercentage = stats.MaxCarryWeight > 0 ? (stats.CurrentCarryWeight / stats.MaxCarryWeight) * 100f : 0f;
+                        element.ValueText.text = $"{weightPercentage:F0}%";
+                        break;
+                    case "Health Regen":
+                        element.ValueText.text = $"{stats.HealthRegen:F1}/tick";
+                        break;
+                    case "Stamina Regen":
+                        element.ValueText.text = $"{stats.StaminaRegen:F1}/s";
+                        break;
+                    case "Eitr Regen":
+                        element.ValueText.text = $"{stats.EitrRegen:F1}/s";
+                        break;
+                    case "Attack Speed":
+                        element.ValueText.text = $"{stats.AttackSpeedModifier * 100f:F0}%";
+                        break;
+                    case "Damage Modifier":
+                        float damageMod = (stats.DamageModifier - 1f) * 100f;
+                        element.ValueText.text = damageMod != 0 ? $"{damageMod:+0;-0}%" : "0%";
+                        break;
+                    case "Movement Speed":
+                        float moveMod = (stats.MovementSpeedModifier - 1f) * 100f;
+                        element.ValueText.text = moveMod != 0 ? $"{moveMod:+0;-0}%" : "0%";
                         break;
                     case "FoodBuffs":
                         element.ValueText.text = FormatRemoteFoods(stats.ActiveFoods);
@@ -2386,7 +2416,7 @@ public static class StatsPanelController
                         else if (statValue >= 10000)
                             element.ValueText.text = $"{statValue / 1000f:F1}k";
                         else
-                            element.ValueText.text = $"{statValue:F0}";
+                            element.ValueText.text = statValue.ToString("N0");
                         break;
                 }
             }
