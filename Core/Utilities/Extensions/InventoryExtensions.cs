@@ -283,7 +283,7 @@ public static class InventoryExtensions
         {
             if (inv.GetItemAt(x, y) != null) continue;
 
-            Vector2i pos = new Vector2i(x, y);
+            Vector2i pos = new(x, y);
             if (API.TryGetSlotIndexAtGridPos(inv, pos, out int slotIndex))
             {
                 if (API.SlotValidates(slotIndex, item))

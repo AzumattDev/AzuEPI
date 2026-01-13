@@ -1285,81 +1285,21 @@ public static class StatsPanelController
         return foodRegen;
     }
 
-    private static float CalculateMultiplierModifier(Player player, Func<SE_Stats, float> getMultiplier)
-    {
-        float bonusPercent = 0f;
-
-        try
-        {
-            if (player.m_seman?.GetStatusEffects() != null)
-            {
-                foreach (StatusEffect effect in player.m_seman.GetStatusEffects())
-                {
-                    if (effect is not SE_Stats seStats) continue;
-                    float value = getMultiplier(seStats);
-                    if (value != 1f)
-                        bonusPercent += (value - 1f) * 100f;
-                }
-            }
-        }
-        catch
-        {
-            /* Ignore errors */
-        }
-
-        return bonusPercent;
-    }
+    private static float CalculateMultiplierModifier(Player player, Func<SE_Stats, float> getMultiplier) => PlayerStatsCalculator.CalculateMultiplierModifierPercent(player.m_seman, getMultiplier);
 
     private static float CalculateAdrenaline(Player player) => CalculateModifiers(player, seStats => seStats.m_adrenalineModifier);
 
-    private static float CalculateHealthRegenMultiplier(Player player) => CalculateMultiplierModifier(player, seStats => seStats.m_healthRegenMultiplier);
+    private static float CalculateHealthRegenMultiplier(Player player) => PlayerStatsCalculator.CalculateHealthRegenMultiplier(player);
 
-    private static float CalculateStaminaRegenMultiplier(Player player) => CalculateMultiplierModifier(player, seStats => seStats.m_staminaRegenMultiplier);
+    private static float CalculateStaminaRegenMultiplier(Player player) => PlayerStatsCalculator.CalculateStaminaRegenMultiplier(player);
 
-    private static float CalculateEitrRegenMultiplier(Player player) => CalculateMultiplierModifier(player, seStats => seStats.m_eitrRegenMultiplier);
+    private static float CalculateEitrRegenMultiplier(Player player) => PlayerStatsCalculator.CalculateEitrRegenMultiplier(player);
 
-    private static float CalculateAttackSpeed(Player player)
-    {
-        float attackSpeed = 100f;
+    private static float CalculateAttackSpeed(Player player) => PlayerStatsCalculator.CalculateAttackSpeed(player);
 
-        try
-        {
-            attackSpeed = player.GetAttackSpeedFactorMovement() * 100f;
-        }
-        catch
-        {
-            /* Ignore errors */
-        }
+    private static float CalculateDamageModifier(Player player) => PlayerStatsCalculator.CalculateDamageModifier(player);
 
-        return attackSpeed;
-    }
-
-    private static float CalculateDamageModifier(Player player) => CalculateMultiplierModifier(player, seStats => seStats.m_damageModifier);
-
-    private static float CalculateStaggerResist(Player player)
-    {
-        float stagger = 0f;
-
-        try
-        {
-            if (player.m_seman?.GetStatusEffects() != null)
-            {
-                foreach (StatusEffect effect in player.m_seman.GetStatusEffects())
-                {
-                    if (effect is SE_Stats seStats && seStats.m_staggerModifier != 0f)
-                    {
-                        stagger -= seStats.m_staggerModifier * 100f;
-                    }
-                }
-            }
-        }
-        catch
-        {
-            /* Ignore errors */
-        }
-
-        return stagger;
-    }
+    private static float CalculateStaggerResist(Player player) => PlayerStatsCalculator.CalculateStaggerResist(player);
 
     private static float CalculateTimedBlockBonus(Player player) => CalculateModifiers(player, seStats => seStats.m_timedBlockBonus);
 
@@ -1523,30 +1463,7 @@ public static class StatsPanelController
         return lifesteal;
     }
 
-    private static float CalculateJumpModifier(Player player)
-    {
-        float jumpModifier = 0f;
-
-        try
-        {
-            if (player.m_seman?.GetStatusEffects() != null)
-            {
-                foreach (StatusEffect effect in player.m_seman.GetStatusEffects())
-                {
-                    if (effect is SE_Stats seStats)
-                    {
-                        jumpModifier += seStats.m_jumpStaminaUseModifier * 100f;
-                    }
-                }
-            }
-        }
-        catch
-        {
-            /* Ignore errors */
-        }
-
-        return jumpModifier;
-    }
+    private static float CalculateJumpModifier(Player player) => PlayerStatsCalculator.CalculateJumpModifier(player);
 
     private static HitData.DamageModifier GetResistance(Player player, HitData.DamageType damageType)
     {
@@ -1966,7 +1883,7 @@ public static class StatsPanelController
         labelLE.preferredWidth = 60;
         labelLE.flexibleWidth = 0;
 
-        TMP_Dropdown? templateDropdown = Resources.FindObjectsOfTypeAll<TMP_Dropdown>().FirstOrDefault();
+        TMP_Dropdown? templateDropdown = null; //Resources.FindObjectsOfTypeAll<TMP_Dropdown>().FirstOrDefault();
 
         GameObject dropdownGo;
         if (templateDropdown != null)
@@ -1980,8 +1897,8 @@ public static class StatsPanelController
             if (template != null)
             {
                 _playerDropdown.template = template.GetComponent<RectTransform>();
-                template.gameObject.SetActive(false); 
-                
+                template.gameObject.SetActive(false);
+
                 Transform? itemLabel = template.Find("Viewport/Content/Item/Item Label");
                 if (itemLabel != null)
                 {
@@ -2003,6 +1920,147 @@ public static class StatsPanelController
 
             Image bgImage = dropdownGo.GetComponent<Image>();
             bgImage.color = new Color(0.1f, 0.1f, 0.1f, 0.8f);
+
+            GameObject captionGo = new("Label", typeof(RectTransform));
+            captionGo.transform.SetParent(dropdownGo.transform, false);
+            captionGo.SafeSetActive(false);
+            RectTransform captionRect = captionGo.GetComponent<RectTransform>();
+            captionRect.anchorMin = Vector2.zero;
+            captionRect.anchorMax = Vector2.one;
+            captionRect.offsetMin = new Vector2(10, 2);
+            captionRect.offsetMax = new Vector2(-25, -2);
+            TextMeshProUGUI captionText = captionGo.AddComponent<TextMeshProUGUI>();
+            if (_fontAsset != null)
+            {
+                captionText.font = _fontAsset;
+                captionText.fontSharedMaterial = _fontAsset.material;
+            }
+
+            captionGo.SafeSetActive(true);
+            captionText.alignment = TextAlignmentOptions.MidlineLeft;
+            captionText.fontSize = 16;
+            captionText.color = new Color(1f, 0.84f, 0f, 1f);
+            captionText.fontStyle = FontStyles.Bold;
+            captionText.raycastTarget = false;
+            _playerDropdown.captionText = captionText;
+
+            GameObject arrowGo = new("Arrow", typeof(RectTransform));
+            arrowGo.transform.SetParent(dropdownGo.transform, false);
+            arrowGo.SafeSetActive(false);
+            RectTransform arrowRect = arrowGo.GetComponent<RectTransform>();
+            arrowRect.anchorMin = new Vector2(1, 0.5f);
+            arrowRect.anchorMax = new Vector2(1, 0.5f);
+            arrowRect.pivot = new Vector2(1, 0.5f);
+            arrowRect.anchoredPosition = new Vector2(-6, 0);
+            arrowRect.sizeDelta = new Vector2(20, 20);
+            TextMeshProUGUI arrowText = arrowGo.AddComponent<TextMeshProUGUI>();
+            if (_fontAsset != null)
+            {
+                arrowText.font = _fontAsset;
+                arrowText.fontSharedMaterial = _fontAsset.material;
+            }
+
+            arrowGo.SafeSetActive(true);
+            arrowText.text = "\u25BC";
+            arrowText.fontSize = 12;
+            arrowText.alignment = TextAlignmentOptions.Center;
+            arrowText.color = new Color(1f, 0.84f, 0f, 1f);
+            arrowText.raycastTarget = false;
+
+            GameObject templateGo = new("Template", typeof(RectTransform), typeof(Image), typeof(ScrollRect));
+            templateGo.transform.SetParent(dropdownGo.transform, false);
+            RectTransform templateRect = templateGo.GetComponent<RectTransform>();
+            templateRect.anchorMin = new Vector2(0, 0);
+            templateRect.anchorMax = new Vector2(1, 0);
+            templateRect.pivot = new Vector2(0.5f, 1);
+            templateRect.anchoredPosition = Vector2.zero;
+            templateRect.sizeDelta = new Vector2(0, 150);
+            Image templateBg = templateGo.GetComponent<Image>();
+            templateBg.color = new Color(0.05f, 0.05f, 0.05f, 0.95f);
+
+            GameObject viewportGo = new("Viewport", typeof(RectTransform), typeof(Mask), typeof(Image));
+            viewportGo.transform.SetParent(templateGo.transform, false);
+            RectTransform viewportRect = viewportGo.GetComponent<RectTransform>();
+            viewportRect.anchorMin = Vector2.zero;
+            viewportRect.anchorMax = Vector2.one;
+            viewportRect.offsetMin = Vector2.zero;
+            viewportRect.offsetMax = Vector2.zero;
+            viewportGo.GetComponent<Image>().color = Color.white;
+            viewportGo.GetComponent<Mask>().showMaskGraphic = false;
+
+            GameObject contentGo = new("Content", typeof(RectTransform));
+            contentGo.transform.SetParent(viewportGo.transform, false);
+            RectTransform contentRect = contentGo.GetComponent<RectTransform>();
+            contentRect.anchorMin = new Vector2(0, 1);
+            contentRect.anchorMax = new Vector2(1, 1);
+            contentRect.pivot = new Vector2(0.5f, 1);
+            contentRect.anchoredPosition = Vector2.zero;
+            contentRect.sizeDelta = new Vector2(0, 28);
+
+            ScrollRect scrollRect = templateGo.GetComponent<ScrollRect>();
+            scrollRect.content = contentRect;
+            scrollRect.viewport = viewportRect;
+            scrollRect.horizontal = false;
+            scrollRect.vertical = true;
+            scrollRect.movementType = ScrollRect.MovementType.Clamped;
+
+            GameObject itemGo = new("Item", typeof(RectTransform), typeof(UnityEngine.UI.Toggle), typeof(Image));
+            itemGo.transform.SetParent(contentGo.transform, false);
+            RectTransform itemRect = itemGo.GetComponent<RectTransform>();
+            itemRect.anchorMin = new Vector2(0, 0.5f);
+            itemRect.anchorMax = new Vector2(1, 0.5f);
+            itemRect.sizeDelta = new Vector2(0, 30);
+            UnityEngine.UI.Toggle itemToggle = itemGo.GetComponent<UnityEngine.UI.Toggle>();
+            Image itemBg = itemGo.GetComponent<Image>();
+            itemBg.color = new Color(0.08f, 0.08f, 0.08f, 0.9f);
+
+            GameObject itemBgGo = new("Item Background", typeof(RectTransform), typeof(Image));
+            itemBgGo.transform.SetParent(itemGo.transform, false);
+            RectTransform itemBgRect = itemBgGo.GetComponent<RectTransform>();
+            itemBgRect.anchorMin = Vector2.zero;
+            itemBgRect.anchorMax = Vector2.one;
+            itemBgRect.offsetMin = Vector2.zero;
+            itemBgRect.offsetMax = Vector2.zero;
+            Image highlightImage = itemBgGo.GetComponent<Image>();
+            highlightImage.color = new Color(0.2f, 0.2f, 0.2f, 0.8f);
+            itemToggle.targetGraphic = highlightImage;
+
+            GameObject checkmarkGo = new("Item Checkmark", typeof(RectTransform), typeof(Image));
+            checkmarkGo.transform.SetParent(itemGo.transform, false);
+            RectTransform checkRect = checkmarkGo.GetComponent<RectTransform>();
+            checkRect.anchorMin = new Vector2(0, 0.5f);
+            checkRect.anchorMax = new Vector2(0, 0.5f);
+            checkRect.pivot = new Vector2(0, 0.5f);
+            checkRect.anchoredPosition = new Vector2(8, 0);
+            checkRect.sizeDelta = new Vector2(14, 14);
+            Image checkImage = checkmarkGo.GetComponent<Image>();
+            checkImage.color = new Color(1f, 0.84f, 0f, 1f);
+            itemToggle.graphic = checkImage;
+
+            GameObject itemLabelGo = new("Item Label", typeof(RectTransform));
+            itemLabelGo.transform.SetParent(itemGo.transform, false);
+            itemLabelGo.SafeSetActive(false);
+            RectTransform itemLabelRect = itemLabelGo.GetComponent<RectTransform>();
+            itemLabelRect.anchorMin = Vector2.zero;
+            itemLabelRect.anchorMax = Vector2.one;
+            itemLabelRect.offsetMin = new Vector2(28, 2);
+            itemLabelRect.offsetMax = new Vector2(-10, -2);
+            TextMeshProUGUI itemText = itemLabelGo.AddComponent<TextMeshProUGUI>();
+            if (_fontAsset != null)
+            {
+                itemText.font = _fontAsset;
+                itemText.fontSharedMaterial = _fontAsset.material;
+            }
+
+            itemLabelGo.SafeSetActive(true);
+            itemText.alignment = TextAlignmentOptions.MidlineLeft;
+            itemText.fontSize = 15;
+            itemText.color = new Color(1f, 0.84f, 0f, 1f);
+            itemText.raycastTarget = false;
+            _playerDropdown.itemText = itemText;
+
+            _playerDropdown.template = templateRect;
+            templateGo.SetActive(false);
         }
 
         LayoutElement dropdownLE = dropdownGo.GetOrAddComponent<LayoutElement>();
@@ -2059,7 +2117,7 @@ public static class StatsPanelController
         _playerDropdown.ClearOptions();
         _playerDropdown.AddOptions(options);
 
-        bool isMultiplayer = ZNet.instance != null && !ZNet.instance.IsDedicated() && _playerList.Count > 1;
+        bool isMultiplayer = true;
         bool hasFakePlayers = _fakePlayersForTesting.Count > 0;
         bool showDropdown = isMultiplayer || hasFakePlayers;
 
@@ -2293,6 +2351,7 @@ public static class StatsPanelController
                         element.ValueText.text = "N/A";
                         break;
                 }
+
                 continue;
             }
 

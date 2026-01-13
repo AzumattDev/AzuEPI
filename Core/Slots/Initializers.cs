@@ -67,14 +67,14 @@ public static class Initializers
         int count = QuickSlotsAmount.Value;
         KeyboardShortcut[] defaultKeys =
         [
-            new KeyboardShortcut(KeyCode.Z, KeyCode.LeftAlt),
-            new KeyboardShortcut(KeyCode.X, KeyCode.LeftAlt),
-            new KeyboardShortcut(KeyCode.C, KeyCode.LeftAlt),
-            new KeyboardShortcut(KeyCode.V, KeyCode.LeftAlt),
-            new KeyboardShortcut(KeyCode.B, KeyCode.LeftAlt),
-            new KeyboardShortcut(KeyCode.N, KeyCode.LeftAlt),
-            new KeyboardShortcut(KeyCode.Alpha1, KeyCode.LeftAlt),
-            new KeyboardShortcut(KeyCode.Alpha2, KeyCode.LeftAlt)
+            new(KeyCode.Z, KeyCode.LeftAlt),
+            new(KeyCode.X, KeyCode.LeftAlt),
+            new(KeyCode.C, KeyCode.LeftAlt),
+            new(KeyCode.V, KeyCode.LeftAlt),
+            new(KeyCode.B, KeyCode.LeftAlt),
+            new(KeyCode.N, KeyCode.LeftAlt),
+            new(KeyCode.Alpha1, KeyCode.LeftAlt),
+            new(KeyCode.Alpha2, KeyCode.LeftAlt)
         ];
 
         Hotkeys = new ConfigEntry<KeyboardShortcut>[count];

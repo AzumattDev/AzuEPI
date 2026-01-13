@@ -99,7 +99,7 @@ static class PlayerSpawnedPatch
 
     private static void CreateLoadoutInventoryGrid(GameObject panel, Player player)
     {
-        GameObject gridRoot = new GameObject($"{Prefix}LoadoutGridContainer");
+        GameObject gridRoot = new($"{Prefix}LoadoutGridContainer");
         gridRoot.transform.SetParent(panel.transform, false);
 
         RectTransform gridRT = gridRoot.AddComponent<RectTransform>();
@@ -187,7 +187,7 @@ static class PlayerSpawnedPatch
         string key = $"{PersonalLoadoutGui.LoadoutKey}{PersonalLoadoutGui.m_selectedItem}";
 
         List<ItemDrop.ItemData> items = PersonalLoadoutGui.m_loadoutInventory.GetAllItems();
-        PersonalLoadout loadout = new PersonalLoadout(PersonalLoadoutGui.m_selectedItem, items);
+        PersonalLoadout loadout = new(PersonalLoadoutGui.m_selectedItem, items);
         player.m_customData[key] = loadout.Serialize();
 
         PersonalLoadoutGui.FillList();

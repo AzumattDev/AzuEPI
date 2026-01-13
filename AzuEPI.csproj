@@ -160,6 +160,7 @@
         <Compile Include="Core\InventoryHandlers\UIBuilder.cs"/>
         <Compile Include="Core\InventoryHandlers\GUICache.cs"/>
         <Compile Include="Core\Slots\EpiDropRouter.cs"/>
+        <Compile Include="Core\Slots\Initializers.cs" />
         <Compile Include="Core\Slots\Rules.cs"/>
         <Compile Include="Core\Slots\SlotHelpers.cs"/>
         <Compile Include="Core\Slots\SlotOverlays.cs"/>
@@ -180,6 +181,7 @@
         <Compile Include="Game\Compatibility\EpicLootCompat.cs" />
         <Compile Include="Game\Compatibility\WeightBase.cs"/>
         <Compile Include="Game\Compatibility\JudesEquipment.cs"/>
+        <Compile Include="Game\Compatibility\JewelcraftingCompat.cs" />
         <Compile Include="Game\Compatibility\RustBags.cs"/>
         <Compile Include="Game\Compatibility\VESCompat.cs" />
         <Compile Include="Game\Managers\ItemDataManager.cs"/>
@@ -197,6 +199,10 @@
         <Compile Include="Game\Panels\Loadout\UIDragger.cs"/>
         <Compile Include="Game\Panels\Stats\StatsPanelController.cs"/>
         <Compile Include="Game\Panels\Stats\LiveStatType.cs" />
+        <Compile Include="Game\Panels\Stats\PlayerStatsCalculator.cs" />
+        <Compile Include="Game\Panels\Stats\FakePlayerStats.cs" />
+        <Compile Include="Game\Panels\Stats\RemotePlayerStats.cs" />
+        <Compile Include="Game\Panels\Stats\RemoteStatsRPC.cs" />
         <Compile Include="Game\Panels\Vanity\SlotIconChanges.cs"/>
         <Compile Include="Game\Panels\Vanity\VanityAPI.cs"/>
         <Compile Include="Game\Panels\Vanity\VanityLookup.cs"/>
@@ -270,12 +276,7 @@
     <ItemGroup>
         <Compile Include="API\API.cs"/>
         <Compile Include="API\APIBkCompat.cs"/>
-        <Compile Include="Core\Slots\Initializers.cs" />
         <Compile Include="Core\Slots\Model.cs"/>
-        <Compile Include="Game\Compatibility\JewelcraftingCompat.cs" />
-        <Compile Include="Game\Panels\Stats\FakePlayerStats.cs" />
-        <Compile Include="Game\Panels\Stats\RemotePlayerStats.cs" />
-        <Compile Include="Game\Panels\Stats\RemoteStatsRPC.cs" />
         <Compile Include="GlobalUsings.cs"/>
         <None Include="App.config"/>
         <None Include="AzuEPI.snk" />
