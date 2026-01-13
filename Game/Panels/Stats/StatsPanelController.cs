@@ -933,117 +933,94 @@ public static class StatsPanelController
                 switch (element.Name)
                 {
                     case "Health":
-                        element.ValueText.text = $"{player.GetHealth():F0} / {player.GetMaxHealth():F0}";
+                        element.ValueText.text = FormatCurrentMax(player.GetHealth(), player.GetMaxHealth());
                         break;
                     case "Stamina":
-                        element.ValueText.text = $"{player.GetStamina():F0} / {player.GetMaxStamina():F0}";
+                        element.ValueText.text = FormatCurrentMax(player.GetStamina(), player.GetMaxStamina());
                         break;
                     case "Eitr":
-                        element.ValueText.text = $"{player.GetEitr():F0} / {player.GetMaxEitr():F0}";
+                        element.ValueText.text = FormatCurrentMax(player.GetEitr(), player.GetMaxEitr());
                         break;
                     case "Adrenaline":
-                        float adrenaline = CalculateAdrenaline(player);
-                        element.ValueText.text = adrenaline > 0 ? $"{adrenaline:F0}%" : "0%";
+                        element.ValueText.text = FormatPercent(CalculateAdrenaline(player));
                         break;
 
                     case "Health Regen":
-                        float healthRegen = CalculateHealthRegen(player);
-                        element.ValueText.text = $"{healthRegen:F1}/tick";
+                        element.ValueText.text = FormatRegen(CalculateHealthRegen(player), "/tick");
                         break;
                     case "Health Regen Multi":
-                        float healthRegenMulti = CalculateHealthRegenMultiplier(player);
-                        element.ValueText.text = healthRegenMulti != 0 ? $"{healthRegenMulti:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateHealthRegenMultiplier(player));
                         break;
                     case "Food Regen":
-                        float foodRegen = CalculateFoodRegen(player);
-                        element.ValueText.text = $"{foodRegen:F1}/s";
+                        element.ValueText.text = FormatRegen(CalculateFoodRegen(player), "/s");
                         break;
                     case "Stamina Regen":
-                        element.ValueText.text = $"{player.m_staminaRegen:F1}/s";
+                        element.ValueText.text = FormatRegen(player.m_staminaRegen, "/s");
                         break;
                     case "Stamina Regen Multi":
-                        float staminaRegenMulti = CalculateStaminaRegenMultiplier(player);
-                        element.ValueText.text = staminaRegenMulti != 0 ? $"{staminaRegenMulti:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateStaminaRegenMultiplier(player));
                         break;
                     case "Eitr Regen":
-                        element.ValueText.text = $"{player.m_eiterRegen:F1}/s";
+                        element.ValueText.text = FormatRegen(player.m_eiterRegen, "/s");
                         break;
                     case "Eitr Regen Multi":
-                        float eitrRegenMulti = CalculateEitrRegenMultiplier(player);
-                        element.ValueText.text = eitrRegenMulti != 0 ? $"{eitrRegenMulti:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateEitrRegenMultiplier(player));
                         break;
 
                     case "Attack Speed":
-                        float attackSpeed = CalculateAttackSpeed(player);
-                        element.ValueText.text = $"{attackSpeed:F0}%";
+                        element.ValueText.text = FormatPercent(CalculateAttackSpeed(player));
                         break;
                     case "Damage Modifier":
-                        float damageMod = CalculateDamageModifier(player);
-                        element.ValueText.text = damageMod != 0 ? $"{damageMod:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateDamageModifier(player));
                         break;
                     case "Stagger Resist":
-                        float staggerResist = CalculateStaggerResist(player);
-                        element.ValueText.text = staggerResist != 0 ? $"{staggerResist:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateStaggerResist(player));
                         break;
                     case "Timed Block Bonus":
-                        float blockBonus = CalculateTimedBlockBonus(player);
-                        element.ValueText.text = blockBonus != 0 ? $"{blockBonus:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateTimedBlockBonus(player));
                         break;
                     case "Crit Chance":
-                        float critChance = CalculateCritChance(player);
-                        element.ValueText.text = critChance > 0 ? $"{critChance:F1}%" : "0%";
+                        element.ValueText.text = FormatPercent(CalculateCritChance(player));
                         break;
                     case "Lifesteal":
-                        float lifesteal = CalculateLifesteal(player);
-                        element.ValueText.text = lifesteal > 0 ? $"{lifesteal:F1}%" : "0%";
+                        element.ValueText.text = FormatPercent(CalculateLifesteal(player));
                         break;
 
                     case "Blunt Damage":
-                        float bluntDamage = CalculateElementalDamageBonus(player, HitData.DamageType.Blunt);
-                        element.ValueText.text = bluntDamage != 0 ? $"{bluntDamage:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateElementalDamageBonus(player, HitData.DamageType.Blunt));
                         break;
                     case "Slash Damage":
-                        float slashDamage = CalculateElementalDamageBonus(player, HitData.DamageType.Slash);
-                        element.ValueText.text = slashDamage != 0 ? $"{slashDamage:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateElementalDamageBonus(player, HitData.DamageType.Slash));
                         break;
                     case "Pierce Damage":
-                        float pierceDamage = CalculateElementalDamageBonus(player, HitData.DamageType.Pierce);
-                        element.ValueText.text = pierceDamage != 0 ? $"{pierceDamage:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateElementalDamageBonus(player, HitData.DamageType.Pierce));
                         break;
                     case "Fire Damage":
-                        float fireDamage = CalculateElementalDamageBonus(player, HitData.DamageType.Fire);
-                        element.ValueText.text = fireDamage != 0 ? $"{fireDamage:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateElementalDamageBonus(player, HitData.DamageType.Fire));
                         break;
                     case "Frost Damage":
-                        float frostDamage = CalculateElementalDamageBonus(player, HitData.DamageType.Frost);
-                        element.ValueText.text = frostDamage != 0 ? $"{frostDamage:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateElementalDamageBonus(player, HitData.DamageType.Frost));
                         break;
                     case "Lightning Damage":
-                        float lightningDamage = CalculateElementalDamageBonus(player, HitData.DamageType.Lightning);
-                        element.ValueText.text = lightningDamage != 0 ? $"{lightningDamage:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateElementalDamageBonus(player, HitData.DamageType.Lightning));
                         break;
                     case "Poison Damage":
-                        float poisonDamage = CalculateElementalDamageBonus(player, HitData.DamageType.Poison);
-                        element.ValueText.text = poisonDamage != 0 ? $"{poisonDamage:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateElementalDamageBonus(player, HitData.DamageType.Poison));
                         break;
                     case "Spirit Damage":
-                        float spiritDamage = CalculateElementalDamageBonus(player, HitData.DamageType.Spirit);
-                        element.ValueText.text = spiritDamage != 0 ? $"{spiritDamage:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateElementalDamageBonus(player, HitData.DamageType.Spirit));
                         break;
 
                     case "Current Weight":
-                        float current = player.GetInventory()?.GetTotalWeight() ?? 0f;
-                        element.ValueText.text = $"{current:F0}";
+                        element.ValueText.text = $"{player.GetInventory()?.GetTotalWeight() ?? 0f:F0}";
                         break;
                     case "Max Weight":
-                        float max = player.GetMaxCarryWeight();
-                        element.ValueText.text = $"{max:F0}";
+                        element.ValueText.text = $"{player.GetMaxCarryWeight():F0}";
                         break;
                     case "Weight Percentage":
                         float currentWeight = player.GetInventory()?.GetTotalWeight() ?? 0f;
                         float maxWeight = player.GetMaxCarryWeight();
-                        float weightPercentage = maxWeight > 0 ? (currentWeight / maxWeight) * 100f : 0f;
-                        element.ValueText.text = $"{weightPercentage:F0}%";
+                        element.ValueText.text = FormatPercent(maxWeight > 0 ? (currentWeight / maxWeight) * 100f : 0f);
                         break;
                     case "Extra Carry Weight":
                         float extra = CalculateExtraCarryWeight(player);
@@ -1051,102 +1028,39 @@ public static class StatsPanelController
                         break;
 
                     case "Jump Stamina":
-                        float jumpStamina = CalculateJumpStaminaUsage(player);
-                        element.ValueText.text = jumpStamina != 0 ? $"{jumpStamina:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateJumpStaminaUsage(player));
                         break;
                     case "Attack Stamina":
-                        float attackStamina = CalculateAttackStaminaUsage(player);
-                        element.ValueText.text = attackStamina != 0 ? $"{attackStamina:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateAttackStaminaUsage(player));
                         break;
                     case "Block Stamina":
-                        float blockStamina = CalculateBlockStaminaUsage(player);
-                        element.ValueText.text = blockStamina != 0 ? $"{blockStamina:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateBlockStaminaUsage(player));
                         break;
                     case "Dodge Stamina":
-                        float dodgeStamina = CalculateDodgeStaminaUsage(player);
-                        element.ValueText.text = dodgeStamina != 0 ? $"{dodgeStamina:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateDodgeStaminaUsage(player));
                         break;
                     case "Swim Stamina":
-                        float swimStamina = CalculateSwimStaminaUsage(player);
-                        element.ValueText.text = swimStamina != 0 ? $"{swimStamina:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateSwimStaminaUsage(player));
                         break;
                     case "Run Stamina":
-                        float runStamina = CalculateRunStaminaUsage(player);
-                        element.ValueText.text = runStamina != 0 ? $"{runStamina:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateRunStaminaUsage(player));
                         break;
                     case "Sneak Stamina":
-                        float sneakStamina = CalculateSneakStaminaUsage(player);
-                        element.ValueText.text = sneakStamina != 0 ? $"{sneakStamina:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateSneakStaminaUsage(player));
                         break;
                     case "Home Item Stamina":
-                        float homeStamina = CalculateHomeItemStaminaUsage(player);
-                        element.ValueText.text = homeStamina != 0 ? $"{homeStamina:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateHomeItemStaminaUsage(player));
                         break;
 
                     case "Total Armor":
+                    case "Armor":
                         element.ValueText.text = $"{player.GetBodyArmor():F0}";
                         break;
                     case "Heat Resistance":
-                        float heatResist = CalculateHeatResistance(player);
-                        element.ValueText.text = heatResist != 0 ? $"{heatResist:+0;-0}%" : "0%";
+                        element.ValueText.text = FormatPercentModifier(CalculateHeatResistance(player));
                         break;
                     case "Equipment Movement":
-                        float equipMove = CalculateEquipmentMovement(player);
-                        element.ValueText.text = equipMove != 0 ? $"{equipMove:+0;-0}%" : "0%";
-                        break;
-
-                    case "Top Skills":
-                        element.ValueText.text = GetTopSkills(player);
-                        break;
-
-                    case "Skill Bonuses":
-                        element.ValueText.text = GetAddedSkillPoints(player);
-                        break;
-                    case "Skill Raise Speed":
-                        float skillRaise = CalculateSkillRaiseSpeed(player);
-                        element.ValueText.text = skillRaise != 0 ? $"{skillRaise:+0;-0}%" : "0%";
-                        break;
-
-                    case "Noise Level":
-                        float noise = CalculateNoiseLevel(player);
-                        element.ValueText.text = noise != 0 ? $"{noise:+0;-0}%" : "0%";
-                        break;
-                    case "Stealth Level":
-                        float stealth = CalculateStealthLevel(player);
-                        element.ValueText.text = stealth != 0 ? $"{stealth:+0;-0}%" : "0%";
-                        break;
-                    case "Cover Percentage":
-                        float cover = player.m_coverPercentage;
-                        element.ValueText.text = $"{cover:F0}%";
-                        break;
-                    case "Fall Damage":
-                        float fallDamage = CalculateFallDamage(player);
-                        element.ValueText.text = fallDamage != 0 ? $"{fallDamage:+0;-0}%" : "0%";
-                        break;
-                    case "Comfort Level":
-                        int comfort = player.GetComfortLevel();
-                        element.ValueText.text = $"{comfort}";
-                        break;
-                    case "Movement Speed":
-                        element.ValueText.text = $"{player.GetJogSpeedFactor() * 100:F0}%";
-                        break;
-                    case "Speed Modifier":
-                        float speedMod = CalculateSpeedModifier(player);
-                        element.ValueText.text = speedMod != 0 ? $"{speedMod:+0;-0}%" : "0%";
-                        break;
-                    case "Run Speed":
-                        element.ValueText.text = $"{player.GetRunSpeedFactor() * 100:F0}%";
-                        break;
-                    case "Swim Speed":
-                        element.ValueText.text = $"{player.m_swimSpeed * player.GetAttackSpeedFactorMovement():F0}%";
-                        break;
-                    case "Jump Height":
-                        float jumpMod = CalculateJumpModifier(player);
-                        element.ValueText.text = jumpMod > 0 ? $"+{jumpMod:F0}%" : jumpMod < 0 ? $"{jumpMod:F0}%" : "100%";
-                        break;
-
-                    case "Armor":
-                        element.ValueText.text = $"{player.GetBodyArmor():F0}";
+                        element.ValueText.text = FormatPercentModifier(CalculateEquipmentMovement(player));
                         break;
                     case "Blunt Resist":
                         element.ValueText.text = FormatResistance(GetResistance(player, HitData.DamageType.Blunt));
@@ -1173,14 +1087,54 @@ public static class StatsPanelController
                         element.ValueText.text = FormatResistance(GetResistance(player, HitData.DamageType.Spirit));
                         break;
 
+                    case "Top Skills":
+                        element.ValueText.text = GetTopSkills(player);
+                        break;
+                    case "Skill Bonuses":
+                        element.ValueText.text = GetAddedSkillPoints(player);
+                        break;
+                    case "Skill Raise Speed":
+                        element.ValueText.text = FormatPercentModifier(CalculateSkillRaiseSpeed(player));
+                        break;
+
+                    case "Noise Level":
+                        element.ValueText.text = FormatPercentModifier(CalculateNoiseLevel(player));
+                        break;
+                    case "Stealth Level":
+                        element.ValueText.text = FormatPercentModifier(CalculateStealthLevel(player));
+                        break;
+                    case "Cover Percentage":
+                        element.ValueText.text = FormatPercent(player.m_coverPercentage);
+                        break;
+                    case "Fall Damage":
+                        element.ValueText.text = FormatPercentModifier(CalculateFallDamage(player));
+                        break;
+                    case "Comfort Level":
+                        element.ValueText.text = $"{player.GetComfortLevel()}";
+                        break;
+                    case "Movement Speed":
+                        element.ValueText.text = FormatPercent(player.GetJogSpeedFactor() * 100);
+                        break;
+                    case "Speed Modifier":
+                        element.ValueText.text = FormatPercentModifier(CalculateSpeedModifier(player));
+                        break;
+                    case "Run Speed":
+                        element.ValueText.text = FormatPercent(player.GetRunSpeedFactor() * 100);
+                        break;
+                    case "Swim Speed":
+                        element.ValueText.text = FormatPercent(player.m_swimSpeed * player.GetAttackSpeedFactorMovement());
+                        break;
+                    case "Jump Height":
+                        float jumpMod = CalculateJumpModifier(player);
+                        element.ValueText.text = jumpMod > 0 ? $"+{jumpMod:F0}%" : jumpMod < 0 ? $"{jumpMod:F0}%" : "100%";
+                        break;
+
                     case "FoodBuffs":
                         element.ValueText.text = GetActiveFoodBuffs(player);
                         break;
-
                     case "ActiveEffects":
                         element.ValueText.text = GetActiveEffects(player);
                         break;
-
                     case "SetBonuses":
                         element.ValueText.text = GetActiveSetBonuses(player);
                         break;
@@ -1190,39 +1144,7 @@ public static class StatsPanelController
             }
 
             float statValue = profile.m_playerStats[element.StatType];
-
-            switch (element.StatType)
-            {
-                case PlayerStatType.DistanceTraveled:
-                case PlayerStatType.DistanceWalk:
-                case PlayerStatType.DistanceRun:
-                case PlayerStatType.DistanceSail:
-                case PlayerStatType.DistanceAir:
-                    element.ValueText.text = statValue >= 1000f ? $"{(statValue / 1000f):F1}km" : $"{statValue:F0}m";
-                    break;
-
-                case PlayerStatType.TimeInBase:
-                case PlayerStatType.TimeOutOfBase:
-                case PlayerStatType.Sleep:
-                    if (statValue >= 86400)
-                        element.ValueText.text = $"{(statValue / 86400f):F1}d";
-                    else if (statValue >= 3600)
-                        element.ValueText.text = $"{(statValue / 3600f):F1}h";
-                    else if (statValue >= 60)
-                        element.ValueText.text = $"{(statValue / 60f):F0}m";
-                    else
-                        element.ValueText.text = $"{statValue:F0}s";
-                    break;
-
-                default:
-                    if (statValue >= 1000000)
-                        element.ValueText.text = $"{statValue / 1000000f:F1}M";
-                    else if (statValue >= 10000)
-                        element.ValueText.text = $"{statValue / 1000f:F1}k";
-                    else
-                        element.ValueText.text = statValue.ToString("N0");
-                    break;
-            }
+            element.ValueText.text = FormatHistoricalStat(element.StatType, statValue);
         }
     }
 
@@ -1833,6 +1755,51 @@ public static class StatsPanelController
         }
     }
 
+    #region Stat Formatting Helpers
+
+    private static string FormatHistoricalStat(PlayerStatType statType, float statValue)
+    {
+        return statType switch
+        {
+            PlayerStatType.DistanceTraveled or
+                PlayerStatType.DistanceWalk or
+                PlayerStatType.DistanceRun or
+                PlayerStatType.DistanceSail or
+                PlayerStatType.DistanceAir => statValue >= 1000f ? $"{statValue / 1000f:F1}km" : $"{statValue:F0}m",
+
+            PlayerStatType.TimeInBase or
+                PlayerStatType.TimeOutOfBase or
+                PlayerStatType.Sleep => FormatTime(statValue),
+
+            _ => FormatLargeNumber(statValue)
+        };
+    }
+
+    private static string FormatTime(float seconds)
+    {
+        if (seconds >= 86400) return $"{seconds / 86400f:F1}d";
+        if (seconds >= 3600) return $"{seconds / 3600f:F1}h";
+        if (seconds >= 60) return $"{seconds / 60f:F0}m";
+        return $"{seconds:F0}s";
+    }
+
+    private static string FormatLargeNumber(float value)
+    {
+        if (value >= 1000000) return $"{value / 1000000f:F1}M";
+        if (value >= 10000) return $"{value / 1000f:F1}k";
+        return value.ToString("N0");
+    }
+
+    private static string FormatCurrentMax(float current, float max) => $"{current:F0} / {max:F0}";
+
+    private static string FormatPercentModifier(float value) => value != 0 ? $"{value:+0;-0}%" : "0%";
+
+    private static string FormatRegen(float value, string suffix) => $"{value:F1}{suffix}";
+
+    private static string FormatPercent(float value) => $"{value:F0}%";
+
+    #endregion
+
     private class StatElement
     {
         public string Name { get; set; } = string.Empty;
@@ -2326,104 +2293,38 @@ public static class StatsPanelController
         {
             if (element.IsLiveStat)
             {
-                switch (element.Name)
+                element.ValueText.text = element.Name switch
                 {
-                    case "Health":
-                        element.ValueText.text = $"{stats.CurrentHealth:F0} / {stats.MaxHealth:F0}";
-                        break;
-                    case "Stamina":
-                        element.ValueText.text = $"{stats.CurrentStamina:F0} / {stats.MaxStamina:F0}";
-                        break;
-                    case "Eitr":
-                        element.ValueText.text = $"{stats.CurrentEitr:F0} / {stats.MaxEitr:F0}";
-                        break;
-                    case "Total Armor":
-                    case "Armor":
-                        element.ValueText.text = $"{stats.BodyArmor:F0}";
-                        break;
-                    case "Current Weight":
-                        element.ValueText.text = $"{stats.CurrentCarryWeight:F0}";
-                        break;
-                    case "Max Weight":
-                        element.ValueText.text = $"{stats.MaxCarryWeight:F0}";
-                        break;
-                    case "Weight Percentage":
-                        float weightPercentage = stats.MaxCarryWeight > 0 ? (stats.CurrentCarryWeight / stats.MaxCarryWeight) * 100f : 0f;
-                        element.ValueText.text = $"{weightPercentage:F0}%";
-                        break;
-                    case "Health Regen":
-                        element.ValueText.text = $"{stats.HealthRegen:F1}/tick";
-                        break;
-                    case "Stamina Regen":
-                        element.ValueText.text = $"{stats.StaminaRegen:F1}/s";
-                        break;
-                    case "Eitr Regen":
-                        element.ValueText.text = $"{stats.EitrRegen:F1}/s";
-                        break;
-                    case "Attack Speed":
-                        element.ValueText.text = $"{stats.AttackSpeedModifier * 100f:F0}%";
-                        break;
-                    case "Damage Modifier":
-                        float damageMod = (stats.DamageModifier - 1f) * 100f;
-                        element.ValueText.text = damageMod != 0 ? $"{damageMod:+0;-0}%" : "0%";
-                        break;
-                    case "Movement Speed":
-                        float moveMod = (stats.MovementSpeedModifier - 1f) * 100f;
-                        element.ValueText.text = moveMod != 0 ? $"{moveMod:+0;-0}%" : "0%";
-                        break;
-                    case "FoodBuffs":
-                        element.ValueText.text = FormatRemoteFoods(stats.ActiveFoods);
-                        break;
-                    case "ActiveEffects":
-                        element.ValueText.text = FormatRemoteEffects(stats.ActiveEffectNames);
-                        break;
-                    default:
-                        element.ValueText.text = "N/A";
-                        break;
-                }
+                    "Health" => FormatCurrentMax(stats.CurrentHealth, stats.MaxHealth),
+                    "Stamina" => FormatCurrentMax(stats.CurrentStamina, stats.MaxStamina),
+                    "Eitr" => FormatCurrentMax(stats.CurrentEitr, stats.MaxEitr),
 
+                    "Total Armor" or "Armor" => $"{stats.BodyArmor:F0}",
+                    "Current Weight" => $"{stats.CurrentCarryWeight:F0}",
+                    "Max Weight" => $"{stats.MaxCarryWeight:F0}",
+                    "Weight Percentage" => FormatPercent(stats.MaxCarryWeight > 0 ? (stats.CurrentCarryWeight / stats.MaxCarryWeight) * 100f : 0f),
+
+                    "Health Regen" => FormatRegen(stats.HealthRegen, "/tick"),
+                    "Stamina Regen" => FormatRegen(stats.StaminaRegen, "/s"),
+                    "Eitr Regen" => FormatRegen(stats.EitrRegen, "/s"),
+
+                    "Attack Speed" => FormatPercent(stats.AttackSpeedModifier * 100f),
+                    "Damage Modifier" => FormatPercentModifier((stats.DamageModifier - 1f) * 100f),
+                    "Speed Modifier" or "Movement Speed" => FormatPercentModifier((stats.MovementSpeedModifier - 1f) * 100f),
+                    "Jump Height" => FormatPercentModifier(stats.JumpModifier * 100f),
+                    "Comfort Level" => $"{stats.ComfortLevel}",
+
+                    "FoodBuffs" => FormatRemoteFoods(stats.ActiveFoods),
+                    "ActiveEffects" => FormatRemoteEffects(stats.ActiveEffectNames),
+
+                    _ => "N/A"
+                };
                 continue;
             }
 
-            if (stats.PlayerStats.TryGetValue(element.StatType, out float statValue))
-            {
-                switch (element.StatType)
-                {
-                    case PlayerStatType.DistanceTraveled:
-                    case PlayerStatType.DistanceWalk:
-                    case PlayerStatType.DistanceRun:
-                    case PlayerStatType.DistanceSail:
-                    case PlayerStatType.DistanceAir:
-                        element.ValueText.text = statValue >= 1000f ? $"{(statValue / 1000f):F1}km" : $"{statValue:F0}m";
-                        break;
-
-                    case PlayerStatType.TimeInBase:
-                    case PlayerStatType.TimeOutOfBase:
-                    case PlayerStatType.Sleep:
-                        if (statValue >= 86400)
-                            element.ValueText.text = $"{(statValue / 86400f):F1}d";
-                        else if (statValue >= 3600)
-                            element.ValueText.text = $"{(statValue / 3600f):F1}h";
-                        else if (statValue >= 60)
-                            element.ValueText.text = $"{(statValue / 60f):F0}m";
-                        else
-                            element.ValueText.text = $"{statValue:F0}s";
-                        break;
-
-                    default:
-                        if (statValue >= 1000000)
-                            element.ValueText.text = $"{statValue / 1000000f:F1}M";
-                        else if (statValue >= 10000)
-                            element.ValueText.text = $"{statValue / 1000f:F1}k";
-                        else
-                            element.ValueText.text = statValue.ToString("N0");
-                        break;
-                }
-            }
-            else
-            {
-                element.ValueText.text = "0";
-            }
+            element.ValueText.text = stats.PlayerStats.TryGetValue(element.StatType, out float statValue)
+                ? FormatHistoricalStat(element.StatType, statValue)
+                : "0";
         }
     }
 
