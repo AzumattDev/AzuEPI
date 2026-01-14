@@ -9,9 +9,11 @@ public static class InventoryExtensions
 
     public static void TryAddItemToInventory(this Inventory inventory, ItemDrop.ItemData itemData)
     {
-        if (inventory.CanAddItem(itemData))
+        Vector2i newPos = inventory.FindEmptyQuickAware(itemData, true);
+        if (newPos.x >= 0 && newPos.y >= 0)
         {
             Player.m_localPlayer.GetInventory().RemoveItem(itemData);
+            itemData.m_gridPos = newPos;
             inventory.AddItem(itemData);
         }
         else

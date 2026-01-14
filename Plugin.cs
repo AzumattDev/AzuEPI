@@ -183,7 +183,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         int index = slots.Count - Hotkeys.Length;
         API.UpdateSlots(index, 1);
-        slots.Insert(index, new Model.EquipmentSlot { Name = TrinketText.Value, OriginalName = "$azu_epi_trinket", IsQuickSlot = false, Get = player => player.m_trinketItem, Valid = item => item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Trinket });
+        slots.Insert(index, new Model.EquipmentSlot { Name = TrinketText.Value, OriginalName = "$azu_epi_trinket", IsQuickSlot = false, Get = player => player.m_trinketItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Trinket });
         SlotHelpers.ResizeSlots();
 
         SlotBackupManager.InitializeBuiltInSlotBackups();
@@ -253,6 +253,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         };
 
         ArmoireCompat.CheckForArmoire();
+        ZenUICompat.DisableEquipmentSlots();
     }
 
     private void OnDestroy()
@@ -945,6 +946,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         try
         {
             List<string> removedSlots = ParseSlotList(RemovedEquipmentSlots?.Value ?? "");
+            HashSet<string> slotsToRemove = [];
 
             foreach (string backupKey in SlotBackupManager.GetBackupKeys())
             {
@@ -968,14 +970,38 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
                     }
                 }
 
-                if (!shouldBeRemoved && SlotBackupManager.RestoreSlotFromBackup(backupKey))
+                if (!shouldBeRemoved)
+                {
+                    Model.Slot? existingSlot = slots.FirstOrDefault(s =>
+                        (s is Model.EquipmentSlot es && es.OriginalName == backupKey) || s?.Name == backupKey);
+                    if (existingSlot != null && removedSlots.Contains(existingSlot.Name))
+                    {
+                        shouldBeRemoved = true;
+                    }
+                }
+
+                if (shouldBeRemoved)
+                {
+                    slotsToRemove.Add(backupKey);
+                }
+                else if (SlotBackupManager.RestoreSlotFromBackup(backupKey))
                 {
                     AzuExtendedPlayerInventoryLogger.LogInfo($"Restored slot '{backupKey}' from backup");
                 }
             }
 
+            foreach (string backupKey in slotsToRemove)
+            {
+                if (API.RemoveSlot(backupKey))
+                {
+                    AzuExtendedPlayerInventoryLogger.LogInfo($"Removed slot: {backupKey}");
+                }
+            }
+
             foreach (string slotName in removedSlots)
             {
+                if (slotsToRemove.Contains(slotName)) continue;
+
                 bool removed = API.RemoveSlot(slotName);
 
                 if (!removed && Localization.instance != null)

@@ -196,9 +196,32 @@ public class API
     public static bool RemoveSlot(string slotName)
     {
 #if !API
-        if (slots.FindIndex(s => s.Name == slotName) is { } slotIndex and >= 0 && slots[slotIndex] is Model.EquipmentSlot slot)
+        if (slots.FindIndex(s => s.Name == slotName || (s is Model.EquipmentSlot es && es.OriginalName == slotName)) is { } slotIndex and >= 0 && slots[slotIndex] is Model.EquipmentSlot slot)
         {
             if (Player.m_localPlayer && slot.Get?.Invoke(Player.m_localPlayer) is { } item) Player.m_localPlayer.UnequipItem(item);
+
+            if (Player.m_localPlayer)
+            {
+                Inventory inv = Player.m_localPlayer.GetInventory();
+                Vector2i slotPos = inv.EpiIndexToGridPos(slotIndex);
+                ItemDrop.ItemData? itemInSlot = inv.GetItemAt(slotPos.x, slotPos.y);
+                if (itemInSlot != null)
+                {
+                    inv.RemoveItem(itemInSlot);
+                    Vector2i newPos = inv.FindEmptyQuickAware(true);
+                    if (newPos is { x: >= 0, y: >= 0 })
+                    {
+                        itemInSlot.m_gridPos = newPos;
+                        inv.AddItem(itemInSlot);
+                        AzuExtendedPlayerInventoryLogger.LogInfo($"Relocated {Localization.instance.Localize(itemInSlot.m_shared.m_name)} from removed slot to ({newPos.x}, {newPos.y})");
+                    }
+                    else
+                    {
+                        AzuExtendedPlayerInventoryLogger.LogWarning($"No room for {Localization.instance.Localize(itemInSlot.m_shared.m_name)} after slot removal, dropping item.");
+                        Player.m_localPlayer.DropItem(inv, itemInSlot, itemInSlot.m_stack);
+                    }
+                }
+            }
 
             UpdateSlots(slotIndex, -1);
 

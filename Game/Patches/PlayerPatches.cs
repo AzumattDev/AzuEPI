@@ -139,10 +139,12 @@ public class PlayerPatches
 
         public static void TryAddItemToInventory(Player player, ItemDrop.ItemData itemData, Inventory fromInventory, bool useItem = true)
         {
-            if (player.m_inventory.CanAddItem(itemData))
+            Vector2i newPos = player.m_inventory.FindEmptyQuickAware(itemData, true);
+            if (newPos.x >= 0 && newPos.y >= 0)
             {
                 AzuExtendedPlayerInventoryLogger.LogInfo($"Adding {Localization.instance.Localize(itemData.m_shared.m_name)} to inventory");
                 fromInventory.RemoveItem(itemData);
+                itemData.m_gridPos = newPos;
                 player.m_inventory.AddItem(itemData);
 
                 if (useItem) player.UseItem(player.GetInventory(), itemData, false);
