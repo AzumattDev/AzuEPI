@@ -11,5 +11,18 @@ public static class ZenUICompat
         if (!tryGetEntry || !entry.Value) return;
         entry.Value = false;
         ZenUI.Instance.Config.Save();
+        context._harmony.PatchAll(typeof(ZenUICompat));
+    }
+    
+    [HarmonyPatch("ZenUI.Section.InventoryEquip, ZenUI", "Humanoid_EquipItem"), HarmonyPrefix]
+    public static bool PreventItemSort()
+    {
+        return false;
+    }
+    
+    [HarmonyPatch("ZenUI.Section.InventoryEquip, ZenUI", "InventoryGrid_DropItem"), HarmonyPrefix]
+    public static bool PreventItemSort2()
+    {
+        return false;
     }
 }
