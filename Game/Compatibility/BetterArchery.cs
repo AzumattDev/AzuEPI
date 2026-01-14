@@ -17,3 +17,12 @@ public class BetterArchery
         betterArchery.Instance.Config.Save();
     }
 }
+
+[HarmonyPatch(typeof(FejdStartup), nameof(FejdStartup.Start))]
+static class FejdStartupStartPatch
+{
+    static void Postfix(FejdStartup __instance)
+    {
+        BetterArchery.CheckBetterArchery();
+    }
+}

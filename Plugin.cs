@@ -166,8 +166,6 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         SetupEventHandlers();
 
-        BetterArchery.CheckBetterArchery();
-
         _harmony.PatchAll();
         InitializeConfigWatcher();
 
