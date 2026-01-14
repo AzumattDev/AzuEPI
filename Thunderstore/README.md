@@ -3,7 +3,7 @@
 
 - **Vanity System** - Change armor appearance without losing stats
 - **Loadout System** - Save & swap 10 equipment sets with custom names
-- **Player Stats** - 40+ customizable stats with smart formatting
+- **Player Stats** - 40+ customizable stats with smart formatting, in multiplayer you can view others stats also!
 - **Player Preview** - Real-time 3D character view matching your vanity
 - **Quick Slots Expansion** - Now 0-8 slots (up from 3) with full customization
 
@@ -21,6 +21,9 @@
 customization, and loadout management.
 
 Mods that add slots using the API will either create the slot, or extend the slot if it already exists. Meaning, AdventureBackpacks will share the Backpack slot with Smoothbrain's Backpacks. Hunter Legacy will share the quiver slot with BowsBeforeHoes & Rusty Bags.
+
+## Disclaimer, if you don't like the new layout you can use the configuration file to use the old layout (with improvements added)!
+![](https://i.imgur.com/cAHSdmP.png)
 
 ### Inventory & Equipment
 
@@ -74,6 +77,7 @@ Left click to set, right click to clear. Controller is A and X respectively.
     - Distances: "5.2km" or "500m"
     - Time: "2d 5h" or "45m 30s"
     - Numbers: "1.5M" or "500k"
+    - in multiplayer you can view others stats also!
 - **Access**: Click 📋 button or hover over character name
 - **Fully customizable**: Choose which stats to display
 
