@@ -36,6 +36,7 @@ public class InventoryGuiPatches
             SetupPreviewPanel();
 
             BuildToggleButtonGlg(__instance);
+            BuildCraftingToggleButton(__instance);
             Layout.FixPlayerPreview();
             EnsureVanityPanelBuilt(__instance);
             VanityPanelController.SetVisible(false);

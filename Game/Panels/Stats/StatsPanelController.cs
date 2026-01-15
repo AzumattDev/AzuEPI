@@ -903,8 +903,8 @@ public static class StatsPanelController
             size: ToggleBtnSize,
             gamepadKey: PanelUtilities.KeyCodeToZInputKey(StatsToggleGamepadKey.Value),
             gamepadKeyCode: StatsToggleGamepadKey.Value,
-            label: "📋",
-            labelFontSize: 20f,
+            label: "📊",
+            labelFontSize: UIBuilder.ToggleButtonFontSize,
             onClick: () =>
             {
                 _visible = !_visible;

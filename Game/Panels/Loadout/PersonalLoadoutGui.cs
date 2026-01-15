@@ -195,8 +195,8 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
             size: new Vector2(120f, 32f),
             gamepadKey: PanelUtilities.KeyCodeToZInputKey(LoadoutToggleGamepadKey.Value),
             gamepadKeyCode: LoadoutToggleGamepadKey.Value,
-            label: "🎯",
-            labelFontSize: 20f,
+            label: "📋",
+            labelFontSize: UIBuilder.ToggleButtonFontSize,
             onClick: () =>
             {
                 ToggleUI();

@@ -137,7 +137,7 @@ internal static class SlotOverlays
     public static void SetVanityOverlayVisible(GameObject slotGo, VanityState vs)
     {
         if (!slotGo) return;
-        
+
         if (!VanityStateByGo.TryGetValue(slotGo, out GameObject? root) || !root)
             root = EnsureVanityStateOverlay(slotGo);
 
@@ -160,5 +160,14 @@ internal static class SlotOverlays
             root.SetActive(anyVisible);
 
         if (rootImage) rootImage.enabled = showHidden;
+    }
+
+    public static void HideAllVanityOverlays()
+    {
+        foreach (KeyValuePair<GameObject, GameObject> kvp in VanityStateByGo)
+        {
+            if (kvp.Value && kvp.Value.activeSelf)
+                kvp.Value.SetActive(false);
+        }
     }
 }

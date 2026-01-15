@@ -239,6 +239,8 @@ public static class VanityAPI
     {
         sprite = null;
 
+        if (!VanityPanelController.IsVisible()) return false;
+
         Player? player = Player.m_localPlayer;
         if (!player || item == null || item.m_shared == null) return false;
 

@@ -1,4 +1,5 @@
-﻿using AzuEPI.Game.PlayerPreview;
+﻿using AzuEPI.Game.Panels;
+using AzuEPI.Game.PlayerPreview;
 
 namespace AzuEPI.Core.InventoryHandlers;
 
@@ -11,6 +12,7 @@ public class UIBuilder
     public const string DropAllButtonName = $"{Prefix}DropAllButton";
     public const string ToggleButtonsGlgName = $"{Prefix}ToggleButtonsGlg";
     public const string RuntimePanelName = $"{Prefix}RuntimePanel";
+    public const string CraftingToggleButtonName = $"{Prefix}CraftingToggleButton";
     public const string PlayerPreviewName = $"{Prefix}PlayerPreview";
     public const string PlayerPreviewImageName = $"{Prefix}PlayerPreviewImg";
     public const string CharacterName = $"{Prefix}CharacterName";
@@ -23,12 +25,22 @@ public class UIBuilder
     public static Transform CharName = null!;
     public static GameObject GlgGo = null!;
     public static RectTransform GlgRt = null!;
+    public static Transform CraftingButtonGo = null!;
+    private static Button _craftingToggleBtn = null!;
 
     public const int columns = 2;
     public const int gapTiles = 4;
     public const float padding = 0.6f;
     public const float extraTiles = columns + gapTiles + padding;
     public const float totalWidth = 570f;
+
+    public const int ToggleButtonColumns = 4;
+    public const float ToggleButtonCellSize = 50f;
+    public static float ToggleButtonSpacing = OldLayout.Value.isOff() ? 18f : 25f;
+    public const float ToggleButtonFontSize = 36f;
+    public static readonly Vector2 ToggleButtonContainerSize = new(320f, 75f);
+
+    public const float ToggleButtonCellSizeOld = 40f;
 
     public static void RebuildUI()
     {
@@ -39,9 +51,9 @@ public class UIBuilder
         PreviewParent.SafeSetActive(OldLayout.Value.isOff());
         PlayerPreviewImage.SafeSetActive(OldLayout.Value.isOff());
         CharName.SafeSetActive(OldLayout.Value.isOff());
-        GUICache.ButtonGridLayoutGroup.constraintCount = OldLayout.Value.isOff() ? 3 : QuickSlotsAmount.Value < 1 && slots.Count < 10 ? 2 : 3;
+        GUICache.ButtonGridLayoutGroup.constraintCount = OldLayout.Value.isOff() ? ToggleButtonColumns : QuickSlotsAmount.Value < 1 && slots.Count < 10 ? ToggleButtonColumns - 1 : ToggleButtonColumns;
         GUICache.ButtonGridLayoutGroup.childAlignment = OldLayout.Value.isOff() ? TextAnchor.MiddleCenter : TextAnchor.MiddleLeft;
-        GUICache.ButtonGridLayoutGroup.cellSize = OldLayout.Value.isOff() ? new Vector2(122f, 32f) : new Vector2(90f, 32f);
+        GUICache.ButtonGridLayoutGroup.cellSize = OldLayout.Value.isOff() ? new Vector2(ToggleButtonCellSize, ToggleButtonCellSize) : new Vector2(ToggleButtonCellSizeOld, ToggleButtonCellSizeOld);
     }
 
     public static void BuildEquipmentBkg(InventoryGui invGui, RectTransform bkgRect)
@@ -81,19 +93,58 @@ public class UIBuilder
         GlgRt.WithAnchors(new Vector2(0f, 1f), new Vector2(0f, 1f))
             .WithPivot(new Vector2(0.5f, 1f))
             .WithAnchoredPosition(OldLayout.Value.isOff() ? Layout.ToggleButtonsGlgAnchoredPos : Layout.ToggleButtonsGlgAnchoredPosOldVert)
-            .WithSizeDelta(new Vector2(320f, 32f));
+            .WithSizeDelta(ToggleButtonContainerSize);
 
         GridLayoutGroup? glg = GlgGo.GetComponent<GridLayoutGroup>();
         glg.childAlignment = TextAnchor.MiddleCenter;
         glg.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        glg.constraintCount = 3;
-        glg.spacing = new Vector2(25f, 5f);
-        glg.cellSize = new Vector2(122f, 32f);
+        glg.constraintCount = ToggleButtonColumns;
+        glg.spacing = new Vector2(ToggleButtonSpacing, 5f);
+        glg.cellSize = new Vector2(ToggleButtonCellSize, ToggleButtonCellSize);
 
         GUICache.ButtonGridLayoutGroup = glg;
         VanityPanelController.ToggleButtonParentGlg = GlgRt;
         PersonalLoadoutGui.ToggleButtonParentGlg = GlgRt;
         StatsPanelController.ToggleButtonParentGlg = GlgRt;
+    }
+
+    public static void BuildCraftingToggleButton(InventoryGui gui)
+    {
+        if (_craftingToggleBtn) return;
+
+        PanelUtilities.ButtonConfig config = new(
+            name: CraftingToggleButtonName,
+            anchorMin: new Vector2(0f, 1f),
+            anchorMax: new Vector2(0f, 1f),
+            pivot: new Vector2(0f, 1f),
+            anchoredPosition: Vector2.zero,
+            size: new Vector2(70f, 70f),
+            gamepadKey: "",
+            gamepadKeyCode: KeyCode.None,
+            label: "🔨",
+            labelFontSize: ToggleButtonFontSize,
+            onClick: ReturnToCrafting
+        );
+
+        (CraftingButtonGo, _craftingToggleBtn) = PanelUtilities.BuildToggleButton(gui, GlgRt, config);
+
+        // Remove gamepad binding since we don't want one
+        if (CraftingButtonGo.TryGetComponent(out UIGamePad gp))
+        {
+            if (gp.m_hint) gp.m_hint.gameObject.SetActive(false);
+            Object.Destroy(gp);
+        }
+
+        CraftingButtonGo.SetAsFirstSibling();
+    }
+
+    public static void ReturnToCrafting()
+    {
+        if (VanityPanelController.IsVisible()) VanityPanelController.SetVisible(false);
+        if (PersonalLoadoutGui.IsVisible()) PersonalLoadoutGui.Hide();
+        if (StatsPanelController.IsVisible()) StatsPanelController.SetVisible(false);
+
+        PanelUtilities.HideCraftingElements(false);
     }
 
     public static void EnsureVanityPanelBuilt(InventoryGui invGui)
@@ -163,7 +214,7 @@ public class UIBuilder
         AzuEPICharacterPanel.instance.renderRawImage = raw;
         _epiPreviewRect = rt;
     }
-    
+
     public static void SetupPreviewPanel()
     {
         PlayerPreviewManager.Initialize();

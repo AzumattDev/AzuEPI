@@ -65,6 +65,11 @@ internal static class VanityPanelController
 
     private static readonly Dictionary<VisSlot, List<VanityCell>> _cellsBySlot = new();
 
+    private static readonly Dictionary<VisSlot, TextMeshProUGUI> _headersBySlot = new();
+    private static readonly Dictionary<TextMeshProUGUI, (string baseLabel, VisSlot slot)> _headerInfo = new();
+    private static readonly Dictionary<VisSlot, GameObject> _resetButtonsBySlot = new();
+    private static readonly Dictionary<VisSlot, RectTransform> _headerRectsBySlot = new();
+
     private static readonly List<GameObject> _reusableGameObjectList = new(256);
     private static readonly Dictionary<string, ItemDrop> _reusableDropsDict = new(256);
     private static readonly List<ItemDrop.ItemData> _reusableVanityItems = new(128);
@@ -138,6 +143,10 @@ internal static class VanityPanelController
         if (visible && _panel)
         {
             _panel.SetAsLastSibling();
+
+            foreach (VisSlot slot in _cellsBySlot.Keys)
+                UpdateSelectedVisuals(slot);
+
             if (ZInput.IsGamepadActive())
             {
                 ExpandAllSections();
@@ -156,6 +165,8 @@ internal static class VanityPanelController
                 if (cell && cell.EquippedBorder)
                     cell.EquippedBorder.SetActive(false);
             }
+
+            SlotOverlays.HideAllVanityOverlays();
         }
     }
 
@@ -175,10 +186,9 @@ internal static class VanityPanelController
                 {
                     Transform header = _content.GetChild(i - 1);
                     TextMeshProUGUI txt = header.GetComponent<TextMeshProUGUI>();
-                    if (txt)
+                    if (txt && _headerInfo.TryGetValue(txt, out (string baseLabel, VisSlot slot) info))
                     {
-                        string label = txt.text.Split(' ')[0];
-                        ApplyHeaderStyle(txt, label, isExpanded: true);
+                        ApplyHeaderStyle(txt, info.baseLabel, info.slot, isExpanded: true);
                     }
                 }
             }
@@ -200,6 +210,10 @@ internal static class VanityPanelController
         _cachedRecipeCount = odb.m_recipes?.Count ?? 0;
 
         _cellsBySlot.Clear();
+        _headersBySlot.Clear();
+        _headerInfo.Clear();
+        _resetButtonsBySlot.Clear();
+        _headerRectsBySlot.Clear();
         _allCells.Clear();
         _selectedCell = null;
         PanelUtilities.ClearChildren(_content);
@@ -276,7 +290,8 @@ internal static class VanityPanelController
                 };
 
                 string? headerLabel = Localization.instance.Localize(headerLocKey);
-                AddHeader(headerLabel);
+                VisSlot slot = MapItemTypeToVisSlot(itemType);
+                AddHeader(headerLabel, slot);
                 currentGrid = AddGrid(headerLabel);
 
                 CreateNoneCell(slotPrefab, currentGrid, MapItemTypeToVisSlot(itemType));
@@ -511,10 +526,9 @@ internal static class VanityPanelController
             {
                 Transform header = _content.GetChild(headerIndex);
                 TextMeshProUGUI txt = header.GetComponent<TextMeshProUGUI>();
-                if (txt)
+                if (txt && _headerInfo.TryGetValue(txt, out (string baseLabel, VisSlot slot) info))
                 {
-                    string label = txt.text.Split(' ')[0];
-                    ApplyHeaderStyle(txt, label, isExpanded: true);
+                    ApplyHeaderStyle(txt, info.baseLabel, info.slot, isExpanded: true);
                 }
             }
 
@@ -557,6 +571,8 @@ internal static class VanityPanelController
 
     internal static void UpdateSelectedVisuals(VisSlot slot)
     {
+        UpdateHeaderLabel(slot);
+
         // When gamepad is active, don't update selected badges automatically
         if (ZInput.IsGamepadActive() && _visible)
         {
@@ -733,7 +749,7 @@ internal static class VanityPanelController
             gamepadKey: PanelUtilities.KeyCodeToZInputKey(VanityToggleGamepadKey.Value),
             gamepadKeyCode: VanityToggleGamepadKey.Value,
             label: "👕",
-            labelFontSize: 20f,
+            labelFontSize: ToggleButtonFontSize,
             onClick: () =>
             {
                 _visible = !_visible;
@@ -764,36 +780,151 @@ internal static class VanityPanelController
         _resetVanitiesBtn = btn;
     }
 
-    private static RectTransform AddHeader(string label)
+    private static RectTransform AddHeader(string label, VisSlot slot)
     {
-        GameObject go = new($"Header_{label}", typeof(RectTransform));
-        RectTransform rt = (RectTransform)go.transform;
-        rt.SetParent(_content, false);
-        rt.anchorMin = new Vector2(0, 1);
-        rt.anchorMax = new Vector2(1, 1);
-        rt.pivot = new Vector2(0, 1);
+        GameObject containerGo = new($"HeaderRow_{label}", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
+        RectTransform containerRt = (RectTransform)containerGo.transform;
+        containerRt.SetParent(_content, false);
 
-        TextMeshProUGUI? txt = go.AddComponent<TextMeshProUGUI>();
-        ApplyHeaderStyle(txt, label, isExpanded: false);
+        HorizontalLayoutGroup hlg = containerGo.GetComponent<HorizontalLayoutGroup>();
+        hlg.childAlignment = TextAnchor.MiddleLeft;
+        hlg.childControlWidth = true;
+        hlg.childControlHeight = true;
+        hlg.childForceExpandWidth = false;
+        hlg.childForceExpandHeight = false;
+        hlg.spacing = 10f;
+        hlg.padding = new RectOffset(0, 0, 0, 0);
 
-        Button? headerButton = go.AddComponent<Button>();
+        LayoutElement containerLe = containerGo.GetComponent<LayoutElement>();
+        containerLe.minHeight = 26f;
+        containerLe.preferredHeight = 26f;
+        containerLe.flexibleWidth = 1;
+
+        CreateSlotResetButton(containerRt, slot);
+
+        GameObject textGo = new($"Header_{label}", typeof(RectTransform), typeof(LayoutElement));
+        RectTransform textRt = (RectTransform)textGo.transform;
+        textRt.SetParent(containerRt, false);
+
+        LayoutElement textLe = textGo.GetComponent<LayoutElement>();
+        textLe.flexibleWidth = 1;
+        textLe.minHeight = 24f;
+        textLe.preferredHeight = 24f;
+
+        TextMeshProUGUI? txt = textGo.AddComponent<TextMeshProUGUI>();
+        ApplyHeaderStyle(txt, label, slot, isExpanded: false);
+
+        _headersBySlot[slot] = txt;
+        _headerInfo[txt] = (label, slot);
+        _headerRectsBySlot[slot] = containerRt;
+
+        Button? headerButton = textGo.AddComponent<Button>();
         headerButton.onClick.AddListener(() =>
         {
-            int myIndex = rt.GetSiblingIndex();
+            int myIndex = containerRt.GetSiblingIndex();
             if (myIndex + 1 >= _content.childCount) return;
 
             Transform? next = _content.GetChild(myIndex + 1);
             bool newActive = !next.gameObject.activeSelf;
             next.gameObject.SetActive(newActive);
 
-            ApplyHeaderStyle(txt, label, isExpanded: newActive);
+            ApplyHeaderStyle(txt, label, slot, isExpanded: newActive);
             LayoutRebuilder.ForceRebuildLayoutImmediate(_content);
         });
 
-        return rt;
+        return containerRt;
     }
 
-    private static void ApplyHeaderStyle(TextMeshProUGUI txt, string label, bool isExpanded)
+    private static void CreateSlotResetButton(RectTransform parent, VisSlot slot)
+    {
+        InventoryGui? gui = InventoryGui.instance;
+        Transform? src = gui?.m_takeAllButton?.transform ?? gui?.m_craftButton?.transform;
+        if (!src) return;
+
+        Transform clone = Object.Instantiate(src, parent);
+        clone.name = $"ResetBtn_{slot}";
+
+        RectTransform btnRt = (RectTransform)clone;
+
+        LayoutElement le = clone.gameObject.GetComponent<LayoutElement>() ?? clone.gameObject.AddComponent<LayoutElement>();
+        le.ignoreLayout = false;
+        le.minWidth = 50f;
+        le.preferredWidth = 50f;
+        le.minHeight = 22f;
+        le.preferredHeight = 22f;
+        le.flexibleWidth = 0;
+        le.flexibleHeight = 0;
+
+        UIGamePad? gp = clone.GetComponent<UIGamePad>();
+        if (gp)
+        {
+            if (gp.m_hint) gp.m_hint.gameObject.SetActive(false);
+            Object.Destroy(gp);
+        }
+
+        Button? btn = clone.GetComponent<Button>();
+        if (btn)
+        {
+            btn.onClick.RemoveAllListeners();
+            btn.onClick.AddListener(() => ResetSlotVanity(slot));
+        }
+
+        TMP_Text? label = clone.GetComponentInChildren<TMP_Text>();
+        if (label)
+        {
+            label.text = "X";
+            label.fontSize = 14f;
+        }
+
+        _resetButtonsBySlot[slot] = clone.gameObject;
+
+        clone.gameObject.SetActive(false);
+    }
+
+    private static void ResetSlotVanity(VisSlot slot)
+    {
+        Player? player = Player.m_localPlayer;
+        if (!player) return;
+        VisEquipment? ve = player.m_visEquipment;
+        if (!ve) return;
+
+        VanityAPI.ClearVanity(ve, slot);
+        UpdateSelectedVisuals(slot);
+
+        VECloneSync.ResetStamp();
+        VECloneSync.MirrorFrom(player, AzuEPICharacterPanel.playerPreviewComp);
+    }
+
+    private static void UpdateResetButtonVisibility(VisSlot slot)
+    {
+        if (!_resetButtonsBySlot.TryGetValue(slot, out GameObject? btn) || !btn) return;
+
+        Player? player = Player.m_localPlayer;
+        if (!player)
+        {
+            btn.SetActive(false);
+            return;
+        }
+
+        VisEquipment? ve = player.m_visEquipment;
+        if (!ve)
+        {
+            btn.SetActive(false);
+            return;
+        }
+
+        VanityState vs = VanitySlots.GetState(ve, slot);
+        bool hasVanityOrHidden = vs.HasVanity || vs.IsHidden;
+        btn.SetActive(hasVanityOrHidden);
+    }
+
+    private static void UpdateAllResetButtonVisibility()
+    {
+        foreach (VisSlot slot in _resetButtonsBySlot.Keys)
+            UpdateResetButtonVisibility(slot);
+    }
+
+    private static void ApplyHeaderStyle(TextMeshProUGUI txt, string label, VisSlot slot, bool isExpanded)
     {
         if (_fontSample)
         {
@@ -812,7 +943,56 @@ internal static class VanityPanelController
         }
 
         string tri = isExpanded ? DownTriangle : UpTriangle;
-        txt.text = $"{label} {HeaderTriangleSizeTag}{tri}</size>";
+        string vanityItemName = GetCurrentVanityItemName(slot);
+        if (!string.IsNullOrEmpty(vanityItemName))
+            txt.text = $"{label}: {vanityItemName} {HeaderTriangleSizeTag}{tri}</size>";
+        else
+            txt.text = $"{label} {HeaderTriangleSizeTag}{tri}</size>";
+    }
+
+    private static string GetCurrentVanityItemName(VisSlot slot)
+    {
+        Player? player = Player.m_localPlayer;
+        if (!player) return null;
+
+        VisEquipment? ve = player.m_visEquipment;
+        if (!ve) return null;
+
+        VanityState vs = VanitySlots.GetState(ve, slot);
+
+        if (vs.IsHidden)
+            return Localization.instance?.Localize("$azuepi_hidden") ?? "Hidden";
+
+        if (!vs.HasVanity || vs.Hash == 0)
+            return null;
+
+        if (VanityLookup.TryGetByHash(vs.Hash, out _, out ItemDrop itemDrop) && itemDrop?.m_itemData?.m_shared != null)
+            return Localization.instance?.Localize(itemDrop.m_itemData.m_shared.m_name) ?? itemDrop.m_itemData.m_shared.m_name;
+
+        return null;
+    }
+
+    private static void UpdateHeaderLabel(VisSlot slot)
+    {
+        if (!_headersBySlot.TryGetValue(slot, out TextMeshProUGUI txt) || !txt) return;
+        if (!_headerInfo.TryGetValue(txt, out (string baseLabel, VisSlot slot) info)) return;
+
+        bool isExpanded = txt.text.Contains(DownTriangle);
+        ApplyHeaderStyle(txt, info.baseLabel, slot, isExpanded);
+
+        UpdateResetButtonVisibility(slot);
+    }
+
+    public static void UpdateAllHeaderLabels()
+    {
+        foreach (KeyValuePair<TextMeshProUGUI, (string baseLabel, VisSlot slot)> kvp in _headerInfo)
+        {
+            if (!kvp.Key) continue;
+
+            bool isExpanded = kvp.Key.text.Contains(DownTriangle);
+
+            ApplyHeaderStyle(kvp.Key, kvp.Value.baseLabel, kvp.Value.slot, isExpanded);
+        }
     }
 
     private static GridLayoutGroup AddGrid(string headerLabel)

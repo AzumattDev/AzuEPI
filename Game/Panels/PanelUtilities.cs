@@ -224,7 +224,7 @@ public static class PanelUtilities
 
         Transform buttonGo = CloneButton(src, parent, config.Name, config.AnchorMin, config.AnchorMax, config.Pivot, config.AnchoredPosition, config.Size);
 
-        BindGamePad(buttonGo, config.GamepadKey, config.GamepadKeyCode);
+        BindGamePad(buttonGo, config.GamepadKey, config.GamepadKeyCode, gui);
 
         Button btn = buttonGo.GetComponent<Button>();
         btn.onClick.RemoveAllListeners();
@@ -237,6 +237,7 @@ public static class PanelUtilities
         if (!label) return (buttonGo, btn);
         label.text = config.Label;
         label.fontSize = config.LabelFontSize;
+        label.fontSizeMax = config.LabelFontSize;
 
         return (buttonGo, btn);
     }
@@ -245,7 +246,7 @@ public static class PanelUtilities
 
     #region UI Helpers
 
-    public static void BindGamePad(Transform buttonGo, string GamepadKey, KeyCode GamepadKeyCode)
+    public static void BindGamePad(Transform buttonGo, string GamepadKey, KeyCode GamepadKeyCode, InventoryGui gui = null)
     {
         if (buttonGo.TryGetComponent(out UIGamePad gp))
         {
@@ -262,6 +263,11 @@ public static class PanelUtilities
 
             gp.m_zinputKey = GamepadKey;
             gp.m_keyCode = GamepadKeyCode;
+            if (gui != null)
+            {
+                if (gui.m_crafting.TryGetComponent<UIGroupHandler>(out UIGroupHandler? group))
+                    gp.m_group = group;
+            }
         }
     }
 

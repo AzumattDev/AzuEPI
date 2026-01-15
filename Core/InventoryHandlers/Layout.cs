@@ -29,9 +29,9 @@ public class Layout
     internal static readonly Vector2 PreviewSizeDelta = new(-297f, 0f);
     internal static readonly Vector2 PreviewAnchoredPos = new(-507f, 0f);
     internal static readonly Vector2 PlayerPreviewImageSize = new(500f, 630f);
-    internal static readonly Vector2 ToggleButtonsGlgAnchoredPos = new(-222.5f, -30f);
+    internal static readonly Vector2 ToggleButtonsGlgAnchoredPos = new(-222.5f, -5f);
     internal static readonly Vector2 ToggleButtonsHlgAnchoredPosOld = new(-552.5f, -145f);
-    internal static readonly Vector2 ToggleButtonsGlgAnchoredPosOldVert = new(810f, -231f);
+    internal static readonly Vector2 ToggleButtonsGlgAnchoredPosOldVert = new(810f, -221f);
 
     internal static readonly Vector2 DropAllSize = new(100f, 30f);
     internal static readonly Vector2 DropAllAnchorMin = new(0.0f, 1.0f);
