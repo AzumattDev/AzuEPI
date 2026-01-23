@@ -285,7 +285,7 @@ internal static class EpiGridMap
         int extraRows = ExtraRows.Value;
 
         int equipCount = CountEquipmentSlots();
-        int quickCount = Hotkeys.Length;
+        int quickCount = QuickSlotsAmount.Value;
 
         if (OldLayout.Value.isOn())
         {

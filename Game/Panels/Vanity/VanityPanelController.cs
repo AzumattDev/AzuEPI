@@ -103,6 +103,7 @@ internal static class VanityPanelController
         _cachedItemCount = -1;
         _cachedRecipeCount = -1;
         _cachedPlayer = null;
+        VanityLookup.InvalidateCache();
     }
 
     private static bool NeedsRebuild()
@@ -249,6 +250,9 @@ internal static class VanityPanelController
         }
 
         _reusableVanityItems.Clear();
+#if DEBUG
+        int rejectedNoAttach = 0;
+#endif
         foreach (ItemDrop? drop in _reusableDropsDict.Values)
         {
             ItemDrop.ItemData? d = drop.m_itemData;
@@ -259,7 +263,20 @@ internal static class VanityPanelController
             {
                 _reusableVanityItems.Add(d);
             }
+#if DEBUG
+            else if (d is { m_shared.m_icons.Length: > 0, m_dropPrefab: not null } &&
+                     string.IsNullOrWhiteSpace(d.m_shared.m_dlc) &&
+                     d.m_shared.m_itemType is ItemDrop.ItemData.ItemType.Helmet or ItemDrop.ItemData.ItemType.Chest or ItemDrop.ItemData.ItemType.Legs or ItemDrop.ItemData.ItemType.Shoulder or ItemDrop.ItemData.ItemType.Utility &&
+                     !(d.m_dropPrefab.HasChildWithNameThatContains("attach") || d.m_dropPrefab.HasChildWithNameThatContains("log")))
+            {
+                rejectedNoAttach++;
+                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"Vanity: Rejected '{d.m_shared.m_name}' - no attach/log child in prefab '{d.m_dropPrefab.name}'");
+            }
+#endif
         }
+#if DEBUG
+        AzuExtendedPlayerInventoryLogger.LogDebugDebug($"Vanity panel: Found {_reusableVanityItems.Count} valid items, {rejectedNoAttach} rejected for missing attach/log");
+#endif
 
         _reusableVanityItems.Sort((a, b) =>
         {

@@ -219,7 +219,7 @@ public static class PanelUtilities
 
     public static (Transform buttonGo, Button button) BuildToggleButton(InventoryGui gui, Transform parent, ButtonConfig config)
     {
-        Transform src = gui.m_takeAllButton?.transform ?? gui.m_craftButton?.transform;
+        Transform src = gui.m_craftButton?.transform ?? gui.m_takeAllButton?.transform;
         if (!src) return (null, null);
 
         Transform buttonGo = CloneButton(src, parent, config.Name, config.AnchorMin, config.AnchorMax, config.Pivot, config.AnchoredPosition, config.Size);
@@ -231,6 +231,14 @@ public static class PanelUtilities
         if (config.OnClick != null)
         {
             btn.onClick.AddListener(() => config.OnClick());
+        }
+
+        foreach (Transform child in btn.GetComponentsInChildren<Transform>())
+        {
+            if (child.name.Contains("AAAMaxCraftAmountText"))
+            {
+                Object.Destroy(child.gameObject);
+            }
         }
 
         TMP_Text label = buttonGo.GetComponentInChildren<TMP_Text>();
@@ -252,8 +260,7 @@ public static class PanelUtilities
         {
             if (ZInput.instance != null)
             {
-                gp.m_hint.GetComponentInChildren<TextMeshProUGUI>(true).text =
-                    ZInput.instance.GetBoundKeyString(GamepadKey, true);
+                gp.m_hint.GetComponentInChildren<TextMeshProUGUI>(true).text = ZInput.instance.GetBoundKeyString(GamepadKey, true);
             }
             else
             {

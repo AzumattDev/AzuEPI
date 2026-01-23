@@ -88,17 +88,17 @@ public class Layout
     {
         if (OldLayout.Value.isOff())
         {
-            return new(1.13f + Math.Max(Hotkeys.Length, (slots.Count - 1) / NewLayoutQuickslotsFirstRow) * tileSize / 570, 1f);
+            return new(1.13f + Math.Max(QuickSlotsAmount.Value, (slots.Count - 1) / NewLayoutQuickslotsFirstRow) * tileSize / 570, 1f);
         }
 
         int totalSlots = slots.Count;
-        int regularSlotCount = totalSlots - Hotkeys.Length;
+        int regularSlotCount = totalSlots - QuickSlotsAmount.Value;
 
         int regularColumns = (regularSlotCount + OldLayoutRegularSlotsPerColumn - 1) / OldLayoutRegularSlotsPerColumn;
 
         float totalColumns;
 
-        int quickslotColumns = (Hotkeys.Length + OldLayoutQuickslotsPerColumn - 1) / OldLayoutQuickslotsPerColumn;
+        int quickslotColumns = (QuickSlotsAmount.Value + OldLayoutQuickslotsPerColumn - 1) / OldLayoutQuickslotsPerColumn;
         totalColumns = regularColumns + 0.5f + quickslotColumns;
 
         float extraWidth = totalColumns * tileSize / 570;

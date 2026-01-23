@@ -53,7 +53,8 @@ public static class Initializers
     public static void InitializeQuickslots()
     {
         API.BeforeQuickSlotsAdded();
-        for (int i = 0; i < Hotkeys.Length; ++i)
+        int count = QuickSlotsAmount.Value;
+        for (int i = 0; i < count; ++i)
             slots.Add(new Model.Slot
             {
                 Name = HotkeyTexts[i].Value.IsNullOrWhiteSpace() ? Hotkeys[i].Value.ToString() : HotkeyTexts[i].Value,
@@ -62,9 +63,14 @@ public static class Initializers
         API.QuickSlotsAdded();
     }
 
+    private const int MaxQuickSlots = 8;
+    private static bool _hotkeysInitialized;
+
     internal static void InitializeHotkeys()
     {
-        int count = QuickSlotsAmount.Value;
+        if (_hotkeysInitialized) return;
+        _hotkeysInitialized = true;
+
         KeyboardShortcut[] defaultKeys =
         [
             new(KeyCode.Z, KeyCode.LeftAlt),
@@ -77,12 +83,12 @@ public static class Initializers
             new(KeyCode.Alpha2, KeyCode.LeftAlt)
         ];
 
-        Hotkeys = new ConfigEntry<KeyboardShortcut>[count];
-        HotkeyTexts = new ConfigEntry<string>[count];
+        Hotkeys = new ConfigEntry<KeyboardShortcut>[MaxQuickSlots];
+        HotkeyTexts = new ConfigEntry<string>[MaxQuickSlots];
 
-        for (int i = 0; i < count; ++i)
+        for (int i = 0; i < MaxQuickSlots; ++i)
         {
-            KeyboardShortcut keyboardShortcut = i < defaultKeys.Length ? defaultKeys[i] : KeyboardShortcut.Empty;
+            KeyboardShortcut keyboardShortcut = defaultKeys[i];
             Hotkeys[i] = context.config("8 - Quick Slot Hotkeys", $"Hotkey {i + 1}", keyboardShortcut,
                 $"Keyboard shortcut for quick slot {i + 1}. See https://docs.unity3d.com/Manual/ConventionalGameInput.html for valid key names.", false);
             HotkeyTexts[i] = context.config("8 - Quick Slot Hotkeys", $"Hotkey {i + 1} Display Text", $"Alt + {keyboardShortcut.MainKey.ToString().Replace("Alpha", string.Empty)}",
@@ -101,7 +107,6 @@ public static class Initializers
     {
         QuickSlotsAmount.SettingChanged += (sender, args) =>
         {
-            InitializeHotkeys();
             context.FullRebuild();
         };
         ExtraRows.SettingChanged += (sender, args) => { context.FullRebuild(); };

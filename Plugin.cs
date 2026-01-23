@@ -24,7 +24,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     }
 
     internal const string ModName = "AzuExtendedPlayerInventory";
-    internal const string ModVersion = "2.2.2";
+    internal const string ModVersion = "2.2.3";
     internal const string Author = "Azumatt";
     internal const string ModGUID = Author + "." + ModName;
     private static readonly string ConfigFileName = ModGUID + ".cfg";
@@ -155,7 +155,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         ResetConfigOrder();
         VanityToggleGamepadKey = config("8.5 - Panel Toggle Keys (Gamepad)", "Vanity Panel Toggle Key", KeyCode.JoystickButton8, "Gamepad button to toggle the Vanity panel. Default: Left Stick Press (JoyLStick).", NextOrder, false);
         LoadoutToggleGamepadKey = config("8.5 - Panel Toggle Keys (Gamepad)", "Loadout Panel Toggle Key", KeyCode.JoystickButton9, "Gamepad button to toggle the Loadout panel. Default: Right Stick Press (JoyRStick).", NextOrder, false);
-        StatsToggleGamepadKey = config("8.5 - Panel Toggle Keys (Gamepad)", "Stats Panel Toggle Key", KeyCode.JoystickButton4, "Gamepad button to toggle the Stats panel. Default: Left Bumper (JoyTabLeft).", NextOrder, false);
+        StatsToggleGamepadKey = config("8.5 - Panel Toggle Keys (Gamepad)", "Stats Panel Toggle Key", KeyCode.JoystickButton3, "Gamepad button to toggle the Stats panel. Default: Y (JoyButtonY).", NextOrder, false);
 
         /* 9 - Additional Features */
         ResetConfigOrder();
@@ -179,7 +179,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             API.AddSlot("$item_demister", "Demister", WishboneSlot.Value.isOn() ? 6 : 5);
         }
 
-        int index = slots.Count - Hotkeys.Length;
+        int index = slots.Count - QuickSlotsAmount.Value;
         API.UpdateSlots(index, 1);
         slots.Insert(index, new Model.EquipmentSlot { Name = TrinketText.Value, OriginalName = "$azu_epi_trinket", IsQuickSlot = false, Get = player => player.m_trinketItem, Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Trinket });
         SlotHelpers.ResizeSlots();

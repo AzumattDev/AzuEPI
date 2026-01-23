@@ -43,7 +43,7 @@ public class SlotHelpers
             const int expectedRegularSlots = 9;
 
             int totalSlots = slots.Count;
-            int regularSlotCount = totalSlots - Hotkeys.Length;
+            int regularSlotCount = totalSlots - QuickSlotsAmount.Value;
 
             for (int i = 0; i < regularSlotCount; ++i)
             {
@@ -56,7 +56,7 @@ public class SlotHelpers
                 int lastSlotRowIndex = (regularSlotCount - 1) % Layout.OldLayoutRegularSlotsPerColumn;
                 int currentRowIsBeyondLastSlot = rowIndex > lastSlotRowIndex ? 1 : 0;
 
-                int totalExpectedSlots = expectedRegularSlots + Hotkeys.Length;
+                int totalExpectedSlots = expectedRegularSlots + QuickSlotsAmount.Value;
                 int emptySlotCount = Math.Max(totalExpectedSlots - totalSlots - 1, 0);
                 int emptyColumnCount = emptySlotCount / Layout.OldLayoutRegularSlotsPerColumn;
 
@@ -68,7 +68,7 @@ public class SlotHelpers
             int totalColumns = (regularSlotCount + Layout.OldLayoutRegularSlotsPerColumn - 1) / Layout.OldLayoutRegularSlotsPerColumn;
             float quickslotStartX = LeftOffsetOld + (totalColumns + 0.5f) * Layout.tileSize;
 
-            for (int i = 0; i < Hotkeys.Length; ++i)
+            for (int i = 0; i < QuickSlotsAmount.Value; ++i)
             {
                 int slotIndex = regularSlotCount + i;
                 int quickslotColumn = i / Layout.OldLayoutQuickslotsPerColumn;

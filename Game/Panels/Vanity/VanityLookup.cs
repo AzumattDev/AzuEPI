@@ -22,6 +22,12 @@ internal static class VanityLookup
     private static int _buildFrame = -1;
     private static readonly List<ItemDrop> _tempDrops = new(32);
 
+    public static void InvalidateCache()
+    {
+        _byHash.Clear();
+        _buildFrame = -1;
+    }
+
     private static IEnumerable<ItemDrop> AllItemDrops(ObjectDB odb)
     {
         if (odb == null) yield break;

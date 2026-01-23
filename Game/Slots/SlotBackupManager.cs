@@ -66,7 +66,7 @@ internal static class SlotBackupManager
 
         Model.EquipmentSlot restoredSlot = RecreateSlotWithDelegates(slotData);
 
-        int quickSlotsStart = slots.Count - Hotkeys.Length;
+        int quickSlotsStart = slots.Count - QuickSlotsAmount.Value;
         int targetIndex = Math.Max(0, Math.Min(backup.OriginalIndex, quickSlotsStart));
 
         API.UpdateSlots(targetIndex, 1);

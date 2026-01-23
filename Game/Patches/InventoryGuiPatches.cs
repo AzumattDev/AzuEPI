@@ -155,7 +155,8 @@ public class InventoryGuiPatches
             slots.RemoveAll(s => s is { IsQuickSlot: true });
 
             API.BeforeQuickSlotsAdded();
-            for (int i = 0; i < Hotkeys.Length && i < HotkeyTexts.Length; ++i)
+            int count = QuickSlotsAmount.Value;
+            for (int i = 0; i < count && i < Hotkeys.Length && i < HotkeyTexts.Length; ++i)
             {
                 if (Hotkeys[i] == null || HotkeyTexts[i] == null)
                 {

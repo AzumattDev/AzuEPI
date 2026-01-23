@@ -80,8 +80,8 @@ public class API
             IsAPIAdded = true
         };
 
-        if (index < 0 || index > slots.Count - Hotkeys.Length)
-            index = slots.Count - Hotkeys.Length;
+        if (index < 0 || index > slots.Count - QuickSlotsAmount.Value)
+            index = slots.Count - QuickSlotsAmount.Value;
 
         UpdateSlots(index, 1);
         slots.Insert(index, slot);
@@ -175,8 +175,8 @@ public class API
             IsQuickSlot = true
         };
 
-        if (index < 0 || index > slots.Count - Hotkeys.Length)
-            index = slots.Count - Hotkeys.Length;
+        if (index < 0 || index > slots.Count - QuickSlotsAmount.Value)
+            index = slots.Count - QuickSlotsAmount.Value;
 
         UpdateSlots(index, 1);
         slots.Insert(index, slot);

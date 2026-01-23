@@ -188,15 +188,15 @@ public class PlayerPatches
                 tombstoneContainer.m_height = height;
             }
 
-            if (InventoryHealth.IgnoreKeyPresses(true) || AddEquipmentRow.Value.isOff() || Hotkeys.Length == 0)
+            if (InventoryHealth.IgnoreKeyPresses(true) || AddEquipmentRow.Value.isOff() || QuickSlotsAmount.Value == 0)
                 return;
 
-            for (int hotkey = 0; hotkey < Hotkeys.Length; ++hotkey)
+            for (int hotkey = 0; hotkey < QuickSlotsAmount.Value; ++hotkey)
             {
                 if (!Hotkeys[hotkey].Value.IsKeyDown())
                     continue;
 
-                int index = (Layout.BaseInventoryHeight + ExtraRows.Value) * width + slots.Count - Hotkeys.Length + hotkey;
+                int index = (Layout.BaseInventoryHeight + ExtraRows.Value) * width + slots.Count - QuickSlotsAmount.Value + hotkey;
                 ItemDrop.ItemData itemAt = ___m_inventory.GetItemAt(index % width, index / width);
                 if (itemAt != null)
                     __instance.UseItem(null, itemAt, true);

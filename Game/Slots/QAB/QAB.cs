@@ -47,9 +47,9 @@ internal static class QuickAccessBar
                 Inventory inventory = player.GetInventory();
                 int width = inventory.GetWidth();
                 int adjustedHeight = inventory.GetHeight() - API.GetAddedRows(width);
-                int firstHotkeyIndex = adjustedHeight * width + slots.Count - Hotkeys.Length;
+                int firstHotkeyIndex = adjustedHeight * width + slots.Count - QuickSlotsAmount.Value;
 
-                for (int i = 0; i < Hotkeys.Length; ++i)
+                for (int i = 0; i < QuickSlotsAmount.Value; ++i)
                 {
                     int index = firstHotkeyIndex + i;
                     if (inventory.GetItemAt(index % width, index / width) is { } item) __instance.m_items.Add(item);
@@ -60,7 +60,7 @@ internal static class QuickAccessBar
                 int amountToShow = 0;
                 if (AlwaysShowQuickSlotsInUI.Value.isOn())
                 {
-                    amountToShow = Hotkeys.Length;
+                    amountToShow = QuickSlotsAmount.Value;
                 }
                 else
                 {
@@ -316,7 +316,7 @@ public static class HotkeyBarController
                         Inventory? quickSlotInventory = player.m_inventory;
                         int width = quickSlotInventory.GetWidth();
                         int adjustedHeight = quickSlotInventory.GetHeight() - API.GetAddedRows(width);
-                        int index = adjustedHeight * width + slots.Count - Hotkeys.Length + hotkeyBar.m_selected;
+                        int index = adjustedHeight * width + slots.Count - QuickSlotsAmount.Value + hotkeyBar.m_selected;
 
                         ItemDrop.ItemData? item = quickSlotInventory.GetItemAt(index % width, index / width);
                         if (item != null)

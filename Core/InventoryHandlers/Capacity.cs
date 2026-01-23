@@ -40,7 +40,7 @@ public class Capacity
         int extendedFreeCells = 0;
 
         int totalSlots = slots.Count;
-        int quickCount = Hotkeys.Length;
+        int quickCount = QuickSlotsAmount.Value;
         int equipCount = totalSlots - quickCount;
 
         for (int i = 0; i < equipCount; ++i)

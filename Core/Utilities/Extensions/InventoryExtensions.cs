@@ -138,7 +138,7 @@ public static class InventoryExtensions
     internal static bool IsAtEquipmentSlot(this Inventory inventory, ItemDrop.ItemData item, out int which)
     {
         int normalRows = Layout.NormalRows(inventory);
-        if (AddEquipmentRow.Value.isOff() || item.m_gridPos.y < normalRows || (item.m_gridPos.y - normalRows) * inventory.GetWidth() + item.m_gridPos.x >= slots.Count - Hotkeys.Length)
+        if (AddEquipmentRow.Value.isOff() || item.m_gridPos.y < normalRows || (item.m_gridPos.y - normalRows) * inventory.GetWidth() + item.m_gridPos.x >= slots.Count - QuickSlotsAmount.Value)
         {
             which = -1;
             return false;
@@ -151,7 +151,7 @@ public static class InventoryExtensions
     internal static bool IsAtQuickSlot(this Inventory inventory, ItemDrop.ItemData item, out int which)
     {
         int normalRows = Layout.NormalRows(inventory);
-        if (AddEquipmentRow.Value.isOff() || item.m_gridPos.y < normalRows || (item.m_gridPos.y - normalRows) * inventory.GetWidth() + item.m_gridPos.x < slots.Count - Hotkeys.Length)
+        if (AddEquipmentRow.Value.isOff() || item.m_gridPos.y < normalRows || (item.m_gridPos.y - normalRows) * inventory.GetWidth() + item.m_gridPos.x < slots.Count - QuickSlotsAmount.Value)
         {
             which = -1;
             return false;
@@ -186,7 +186,7 @@ public static class InventoryExtensions
         int firstLinear = normalRows * width;
         int total = slots.Count;
 
-        int quickCount = Hotkeys.Length;
+        int quickCount = QuickSlotsAmount.Value;
         int quickStart = total - quickCount;
         for (int i = quickStart; i < total; ++i)
         {
@@ -202,7 +202,7 @@ public static class InventoryExtensions
 
         int firstLinear = normalRows * width;
         int total = slots.Count;
-        int quickCount = Hotkeys.Length;
+        int quickCount = QuickSlotsAmount.Value;
         int equipmentCount = total - quickCount;
 
         for (int i = 0; i < equipmentCount; ++i)

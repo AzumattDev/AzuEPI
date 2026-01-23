@@ -55,6 +55,7 @@ internal static class LoadVanityOnCharacterPreview
         if (previewPlayer != null)
         {
             CharacterSelectionVanity.LoadFromPlayer(previewPlayer);
+            previewPlayer.m_visEquipment?.UpdateVisuals();
         }
         else
         {

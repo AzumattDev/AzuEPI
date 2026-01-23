@@ -296,10 +296,16 @@ public class InventoryPatches
             {
                 if (!__instance.ShouldProtectInventorySlots()) return;
 
+                int width = __instance.GetWidth();
+                int height = __instance.GetHeight();
+
                 _stuckItems.Clear();
                 foreach (ItemDrop.ItemData? it in __instance.GetAllItems())
                 {
-                    if (__instance.IsHiddenCell(it.m_gridPos.x, it.m_gridPos.y))
+                    bool isOutOfBounds = it.m_gridPos.x < 0 || it.m_gridPos.x >= width || it.m_gridPos.y < 0 || it.m_gridPos.y >= height;
+                    bool isHidden = __instance.IsHiddenCell(it.m_gridPos.x, it.m_gridPos.y);
+
+                    if (isOutOfBounds || isHidden)
                     {
                         _stuckItems.Add(it);
                     }
@@ -307,7 +313,7 @@ public class InventoryPatches
 
                 if (_stuckItems.Count == 0) return;
 
-                AzuExtendedPlayerInventoryLogger.LogWarning($"Found {_stuckItems.Count} items in hidden cells during load. Relocating...");
+                AzuExtendedPlayerInventoryLogger.LogWarning($"Found {_stuckItems.Count} items in hidden/out-of-bounds cells during load. Relocating...");
 
                 foreach (ItemDrop.ItemData? it in _stuckItems)
                 {
@@ -324,7 +330,9 @@ public class InventoryPatches
                                 i.m_worldLevel == it.m_worldLevel &&
                                 i.m_quality == it.m_quality &&
                                 i.m_stack < i.m_shared.m_maxStackSize &&
-                                !__instance.IsHiddenCell(i.m_gridPos.x, i.m_gridPos.y))
+                                !__instance.IsHiddenCell(i.m_gridPos.x, i.m_gridPos.y) &&
+                                i.m_gridPos.x >= 0 && i.m_gridPos.x < width &&
+                                i.m_gridPos.y >= 0 && i.m_gridPos.y < height)
                             : null;
 
                         if (stackTarget != null)
