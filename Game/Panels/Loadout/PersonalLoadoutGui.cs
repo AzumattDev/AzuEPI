@@ -135,6 +135,8 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
         PanelActive = true;
         FillList();
         RefreshLoadoutInventory();
+        m_listRoot.sizeDelta = Vector2.zero;
+        m_listRoot.parent.GetComponent<RectTransform>().sizeDelta = new Vector2(0f,1f);
     }
 
     public static void Hide()

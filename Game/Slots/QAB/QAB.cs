@@ -132,7 +132,27 @@ internal static class QuickAccessBar
                         }
 
                         element.m_equiped.SetActive(itemData.m_equipped);
-                        element.m_queued.SetActive(player.IsEquipActionQueued(itemData));
+
+                        float queuedProgress = InventoryGridQueuedFillPatch.GetEquipProgress(player, itemData, out bool isActivelyEquipping, out bool isQueuedWaiting);
+                        bool isQueued = isActivelyEquipping || isQueuedWaiting;
+                        element.m_queued.SetActive(isQueued);
+
+                        if (isQueued)
+                        {
+                            Image? queuedImage = element.m_queued.GetComponent<Image>();
+                            if (queuedImage != null)
+                            {
+                                if (queuedImage.type != Image.Type.Filled)
+                                {
+                                    queuedImage.type = Image.Type.Filled;
+                                    queuedImage.fillMethod = Image.FillMethod.Vertical;
+                                    queuedImage.fillOrigin = (int)Image.OriginVertical.Bottom;
+                                }
+
+                                queuedImage.fillAmount = isActivelyEquipping ? queuedProgress : 1f;
+                            }
+                        }
+
                         if (itemData.m_shared.m_maxStackSize > 1)
                         {
                             element.m_amount.gameObject.SetActive(true);
@@ -159,6 +179,12 @@ internal static class QuickAccessBar
                     element.m_durability.gameObject.SetActive(false);
                     element.m_equiped.SetActive(false);
                     element.m_queued.SetActive(false);
+
+                    // Reset fill amount when not used to prevent stuck fill
+                    Image? queuedImage = element.m_queued.GetComponent<Image>();
+                    if (queuedImage != null)
+                        queuedImage.fillAmount = 0f;
+
                     element.m_amount.gameObject.SetActive(false);
                 }
             }
@@ -182,6 +208,12 @@ internal static class QuickAccessBar
                 element.m_durability.gameObject.SetActive(false);
                 element.m_equiped.SetActive(false);
                 element.m_queued.SetActive(false);
+
+                // Reset fill amount to prevent stuck fill
+                Image? queuedImage = element.m_queued.GetComponent<Image>();
+                if (queuedImage != null)
+                    queuedImage.fillAmount = 0f;
+
                 element.m_amount.gameObject.SetActive(false);
             }
 

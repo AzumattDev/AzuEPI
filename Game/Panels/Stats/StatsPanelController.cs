@@ -1531,7 +1531,7 @@ public static class StatsPanelController
                         timeStr = $" {remaining:F0}s";
                 }
 
-                sb.Append($"• {effect.m_name}{timeStr}");
+                sb.Append($"• {Localization.instance.Localize(effect.m_name)}{timeStr}");
                 count++;
 
                 if (count < effects.Count - skipped)
@@ -1566,9 +1566,9 @@ public static class StatsPanelController
 
             foreach (ItemDrop.ItemData item in equipped)
             {
-                if (item == null || string.IsNullOrEmpty(item.m_shared.m_setName)) continue;
+                if (item == null || item.m_shared?.m_setStatusEffect == null ||  string.IsNullOrEmpty(item.m_shared.m_setStatusEffect.m_name)) continue;
 
-                string setName = item.m_shared.m_setName;
+                string setName = item.m_shared.m_setStatusEffect.m_name;
                 if (!setCount.ContainsKey(setName))
                 {
                     setCount[setName] = 0;
@@ -1590,10 +1590,10 @@ public static class StatsPanelController
                 int required = setSize.TryGetValue(setName, out int size) ? size : 1;
 
                 bool active = count >= required;
-                string activeMarker = active ? "✓" : "✕";
+                string activeMarker = active ? "✓" : "x";
                 string color = active ? "#00FF00" : "#FF6666";
 
-                sb.Append($"<color={color}>{activeMarker}</color> {setName} ({count}/{required})");
+                sb.Append($"<color={color}>{activeMarker}</color> {Localization.instance.Localize(setName)} ({count}/{required})");
 
                 displayCount++;
 
@@ -1739,7 +1739,7 @@ public static class StatsPanelController
                 if (stam > 0) stats += $" +{stam:F0}Stam";
                 if (eitr > 0) stats += $" +{eitr:F0}Eitr";
 
-                sb.Append($"• {foodName}{stats}{timeStr}");
+                sb.Append($"• {Localization.instance.Localize(foodName)}{stats}{timeStr}");
                 count++;
 
                 if (count < player.m_foods.Count)

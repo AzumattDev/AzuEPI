@@ -356,7 +356,7 @@ internal static class VanityPanelController
         {
             _selectedCell?.OnRightClick(null);
         }
-        else if (ZInput.GetButtonDown("JoyLTrigger") || ZInput.GetButtonDown("JoyRTrigger"))
+        else if (ZInput.GetButtonDown("JoyLTrigger"))
         {
             ToggleCurrentSection();
         }
@@ -787,6 +787,9 @@ internal static class VanityPanelController
         if (!src || !_panel) return;
 
         Transform clone = PanelUtilities.CloneButton(src, _panel, ResetAllVanityButtonName, ResetBtnAnchorMin, ResetBtnAnchorMax, ResetBtnPivot, ResetBtnPos, ResetBtnSize);
+        
+        PanelUtilities.BindGamePad(clone, PanelUtilities.KeyCodeToZInputKey(KeyCode.JoystickButton15), KeyCode.None, gui);
+        
         Button? btn = clone.GetComponent<Button>();
         btn.onClick.RemoveAllListeners();
         btn.onClick.AddListener(ResetAllVanities);
