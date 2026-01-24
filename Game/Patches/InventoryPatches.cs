@@ -75,6 +75,11 @@ public class InventoryPatches
         [HarmonyPriority(Priority.First)]
         private static bool Prefix(Inventory __instance, ref bool __result, ItemDrop.ItemData item)
         {
+            if (__instance.ShouldProtectInventorySlots() && item?.m_shared != null)
+            {
+                _itemBeingAdded = item;
+            }
+
             // Prevent recursion
             if (_inAutoEquipCall)
             {
@@ -179,6 +184,12 @@ public class InventoryPatches
             {
                 _inAutoEquipCall = false;
             }
+        }
+
+        [HarmonyPriority(Priority.Last)]
+        private static void Finalizer()
+        {
+            _itemBeingAdded = null;
         }
     }
 

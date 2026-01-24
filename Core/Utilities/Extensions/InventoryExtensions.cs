@@ -12,13 +12,17 @@ public static class InventoryExtensions
         Vector2i newPos = inventory.FindEmptyQuickAware(itemData, true);
         if (newPos.x >= 0 && newPos.y >= 0)
         {
-            Player.m_localPlayer.GetInventory().RemoveItem(itemData);
-            itemData.m_gridPos = newPos;
-            inventory.AddItem(itemData);
+            int stack = itemData.m_stack;
+            inventory.RemoveItem(itemData);
+            if (!inventory.AddItem(itemData, stack, newPos.x, newPos.y))
+            {
+                AzuExtendedPlayerInventoryLogger.LogWarning($"Failed to relocate {Localization.instance.Localize(itemData.m_shared.m_name)} to ({newPos.x},{newPos.y}), dropping item.");
+                Player.m_localPlayer.DropItem(inventory, itemData, stack);
+            }
         }
         else
         {
-            AzuExtendedPlayerInventoryLogger.LogInfo($"Dropping {Localization.instance.Localize(itemData.m_shared.m_name)} in TryAddItemToInventory");
+            AzuExtendedPlayerInventoryLogger.LogInfo($"No empty slot for {Localization.instance.Localize(itemData.m_shared.m_name)}, dropping item.");
             Player.m_localPlayer.DropItem(inventory, itemData, itemData.m_stack);
         }
     }
@@ -286,12 +290,7 @@ public static class InventoryExtensions
             if (inv.GetItemAt(x, y) != null) continue;
 
             Vector2i pos = new(x, y);
-            if (API.TryGetSlotIndexAtGridPos(inv, pos, out int slotIndex))
-            {
-                if (API.SlotValidates(slotIndex, item))
-                    return pos;
-            }
-            else
+            if (API.TryGetSlotIndexAtGridPos(inv, pos, out int slotIndex) && API.SlotValidates(slotIndex, item))
             {
                 return pos;
             }

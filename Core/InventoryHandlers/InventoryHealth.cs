@@ -39,31 +39,32 @@ public class InventoryHealth
         if (Player.m_localPlayer == null) return;
 
         Inventory? inventory = Player.m_localPlayer.GetInventory();
-        if (inventory == null || !inventory.ShouldProtectInventorySlots()) return;
+        if (inventory == null) return;
 
+        int width = inventory.GetWidth();
+        int normalRows = Layout.NormalRows(inventory);
+        bool hasExtendedSlots = AddEquipmentRow.Value.isOn() && slots.Count > 0;
+
+        // 3. Items in equipment slots that don't validate for those slots
         List<ItemDrop.ItemData> stuck = [];
         foreach (ItemDrop.ItemData? it in inventory.GetAllItems())
         {
-            if (inventory.IsHiddenCell(it.m_gridPos.x, it.m_gridPos.y))
+            bool isInExtendedArea = it.m_gridPos.y >= normalRows;
+
+            if (!isInExtendedArea) continue;
+            if (!hasExtendedSlots || inventory.IsHiddenCell(it.m_gridPos.x, it.m_gridPos.y) || API.TryGetSlotIndexAtGridPos(inventory, it.m_gridPos, out int slotIndex) && !API.SlotValidates(slotIndex, it))
+            {
                 stuck.Add(it);
+            }
         }
 
         if (stuck.Count == 0) return;
 
-        AzuExtendedPlayerInventoryLogger.LogWarning($"Found {stuck.Count} items in hidden cells after slot configuration change. Relocating...");
+        AzuExtendedPlayerInventoryLogger.LogWarning($"Found {stuck.Count} items in hidden/orphaned cells after slot configuration change. Relocating...");
 
-        foreach (ItemDrop.ItemData? it in stuck)
+        foreach (ItemDrop.ItemData it in stuck)
         {
-            /*// Try to pull it out and re-add via normal pipeline (stack → normal → quick)
-            if (inventory.RemoveItem(it))
-            {
-                // Vanilla AddItem(ItemData) now uses FindEmptySlot (quick-aware)
-                if (!inventory.AddItem(it))
-                {*/
-                    AzuExtendedPlayerInventoryLogger.LogWarning($"No room for {Localization.instance.Localize(it.m_shared.m_name)}, dropping item.");
-                    Player.m_localPlayer.DropItem(inventory, it, it.m_stack);
-                /*}
-            }*/
+            inventory.TryAddItemToInventory(it);
         }
 
         inventory.Changed();
