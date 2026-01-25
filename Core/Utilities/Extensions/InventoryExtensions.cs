@@ -1,10 +1,34 @@
-﻿namespace AzuEPI.Core.InventoryHandlers;
+﻿using AzuEPI.Game.Compatibility.AdvBackpacks;
+
+namespace AzuEPI.Core.InventoryHandlers;
 
 public static class InventoryExtensions
 {
     public static bool IsPlayerInventory(this Inventory inv)
     {
         return inv != null && Player.m_localPlayer && inv == Player.m_localPlayer.GetInventory();
+    }
+
+    public static List<ItemDrop.ItemData> GetEquippedItemsFiltered(this Inventory inv)
+    {
+        List<ItemDrop.ItemData> equippedItems = new List<ItemDrop.ItemData>();
+        foreach (ItemDrop.ItemData itemData in inv.m_inventory)
+        {
+            if (itemData.m_equipped &&
+                itemData.m_shared.m_teleportable
+                && itemData.m_dropPrefab && (
+                    !AdvBackpacksCompat.Backpacks.Contains(itemData.m_dropPrefab.name) 
+                    && !RustyBagsCompat.Backpacks.Contains(itemData.m_dropPrefab.name) 
+                    && itemData.m_dropPrefab.name != "bp_explorer" 
+                    && itemData.m_dropPrefab.name != "JC_Gem_Bag")
+               )
+            {
+
+                equippedItems.Add(itemData);
+            }
+        }
+
+        return equippedItems;
     }
 
     public static void TryAddItemToInventory(this Inventory inventory, ItemDrop.ItemData itemData)

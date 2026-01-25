@@ -244,7 +244,7 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
         if (player == null) return false;
 
         string key = $"{LoadoutKey}{loadoutName}";
-        List<ItemDrop.ItemData> equippedItems = player.GetInventory().GetEquippedItems();
+        List<ItemDrop.ItemData> equippedItems = player.GetInventory().GetEquippedItemsFiltered();
         AzuExtendedPlayerInventoryLogger.LogInfo($"SaveLoadout: Saving loadout '{loadoutName}' with {equippedItems.Count} items.");
         foreach (ItemDrop.ItemData? item in equippedItems)
         {
@@ -259,7 +259,7 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
 
     private static void SaveEquippedItems(Player player, Inventory inventory)
     {
-        List<ItemDrop.ItemData>? equippedItems = player.GetInventory().GetEquippedItems();
+        List<ItemDrop.ItemData>? equippedItems = player.GetInventory().GetEquippedItemsFiltered();
         if (equippedItems is { Count: > 0 })
         {
             for (int index = 0; index < equippedItems.Count; ++index)
@@ -372,7 +372,7 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
 
     private static void UnequipAndRemoveCurrentItems(Player player)
     {
-        List<ItemDrop.ItemData>? list = player.GetInventory().GetEquippedItems();
+        List<ItemDrop.ItemData>? list = player.GetInventory().GetEquippedItemsFiltered();
         for (int index = 0; index < list.Count; ++index)
         {
             ItemDrop.ItemData? item = list[index];
@@ -384,7 +384,7 @@ public class PersonalLoadoutGui : MonoBehaviour, TextReceiver
 
     private static void UnequipToBags(Player player)
     {
-        List<ItemDrop.ItemData>? equipped = player.GetInventory().GetEquippedItems();
+        List<ItemDrop.ItemData>? equipped = player.GetInventory().GetEquippedItemsFiltered();
         foreach (ItemDrop.ItemData? it in equipped)
         {
             player.UnequipItem(it);

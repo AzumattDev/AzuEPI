@@ -1,4 +1,5 @@
-﻿using AzuEPI.Game.Panels;
+﻿using AzuEPI.Game.Compatibility.AdvBackpacks;
+using AzuEPI.Game.Panels;
 
 namespace AzuEPI.Game.Loadout;
 
@@ -145,10 +146,19 @@ static class PlayerSpawnedPatch
             int dragAmount = inventoryGui.m_dragAmount;
 
             if (dragInventory == null) return;
+            if (!dragItem.m_shared.m_teleportable) {player.Message(MessageHud.MessageType.Center, Localization.instance?.Localize("$msg_blocked $item_noteleport"));
+                return;
+            }
+
+            if (dragItem.m_dropPrefab && (AdvBackpacksCompat.Backpacks.Contains(dragItem.m_dropPrefab.name) || RustyBagsCompat.Backpacks.Contains(dragItem.m_dropPrefab.name) || dragItem.m_dropPrefab.name == "bp_explorer" || dragItem.m_dropPrefab.name == "JC_Gem_Bag"))
+            {
+                player.Message(MessageHud.MessageType.Center, Localization.instance?.Localize("$msg_blocked $piece_armorstand_cantattach"));
+                return;
+            }
             if (!PersonalLoadoutGui.m_loadoutInventory.AddItem(dragItem, dragAmount, pos.x, pos.y)) return;
             if (dragItem.m_stack <= 0)
             {
-                Player.m_localPlayer.UnequipItem(dragItem);
+                player.UnequipItem(dragItem);
                 dragInventory.RemoveItem(dragItem);
             }
 

@@ -2,7 +2,7 @@
 
 public class AdvBackpacksCompat
 {
-    private static readonly HashSet<string> Backpacks = new(StringComparer.Ordinal)
+    internal static readonly HashSet<string> Backpacks = new(StringComparer.Ordinal)
     {
         "BackpackMeadows", "BackpackBlackForest", "BackpackSwamp", "BackpackMountains", "BackpackPlains", "BackpackMistlands", "CapeSilverBackpack", "CapeIronBackpack"
     };
