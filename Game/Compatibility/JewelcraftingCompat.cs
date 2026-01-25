@@ -35,12 +35,13 @@ public static class JewelcraftingCompat
 
         // Find config entries by iterating - can't use TryGetEntry<T> since we don't have access to Jewelcrafting's Toggle type
         ConfigFile jcConfig = jcInfo.Instance.Config;
+        string sectionName = jcInfo.Metadata.Version >= new System.Version("2.0.0") ? "7 - Other" : "6 - Other";
         foreach (ConfigDefinition key in jcConfig.Keys)
         {
-            string sectionName = jcInfo.Metadata.Version >= new System.Version("2.0.0") ? "7 - Other" : "6 - Other"; 
-            if (key.Section == sectionName && key.Key == "Wisplight Gem")
+            if (key.Section != sectionName) continue;
+            if (key.Key == "Wisplight Gem")
                 _wisplightGemConfig = jcConfig[key];
-            else if (key.Section == sectionName && key.Key == "Wishbone Gem")
+            else if (key.Key == "Wishbone Gem")
                 _wishboneGemConfig = jcConfig[key];
         }
 
