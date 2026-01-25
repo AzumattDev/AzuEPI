@@ -37,9 +37,10 @@ public static class JewelcraftingCompat
         ConfigFile jcConfig = jcInfo.Instance.Config;
         foreach (ConfigDefinition key in jcConfig.Keys)
         {
-            if (key.Section == "6 - Other" && key.Key == "Wisplight Gem")
+            string sectionName = jcInfo.Metadata.Version >= new System.Version("2.0.0") ? "7 - Other" : "6 - Other"; 
+            if (key.Section == sectionName && key.Key == "Wisplight Gem")
                 _wisplightGemConfig = jcConfig[key];
-            else if (key.Section == "6 - Other" && key.Key == "Wishbone Gem")
+            else if (key.Section == sectionName && key.Key == "Wishbone Gem")
                 _wishboneGemConfig = jcConfig[key];
         }
 

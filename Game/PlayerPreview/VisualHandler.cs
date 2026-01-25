@@ -33,6 +33,14 @@ public class CustomEquipVisuals
 
     internal static bool IsManaged(ItemDrop.ItemData item) => item?.m_dropPrefab != null && _managed.ContainsKey(item.m_dropPrefab.name);
 
+    internal static bool HasActiveSlot(ItemDrop.ItemData item)
+    {
+        if (item?.m_dropPrefab == null) return false;
+        if (!_managed.TryGetValue(item.m_dropPrefab.name, out (string slot, bool bypass, string visual) meta)) return true;
+        if (string.IsNullOrEmpty(meta.slot)) return true;
+        return API.TryGetSlotIndexByName(meta.slot, out _);
+    }
+
     private static readonly HashSet<string> _registered = new(StringComparer.Ordinal);
     internal static readonly Dictionary<VisEquipment, State> _states = new();
 
@@ -316,7 +324,7 @@ public class CustomEquipVisuals
         {
             if (__instance?.m_dropPrefab == null) return;
             string name = __instance.m_dropPrefab.name;
-            if (_registered.Contains(name))
+            if (_registered.Contains(name) && HasActiveSlot(__instance))
             {
                 __result = true;
             }
@@ -360,6 +368,7 @@ public class CustomEquipVisuals
         {
             if (__instance is not Player || item?.m_dropPrefab == null) return;
             if (!IsManaged(item)) return;
+            if (!HasActiveSlot(item)) return;
             if (!IsReserved(item.m_shared.m_itemType)) return;
             if (__instance.IsItemEquiped(item)) return;
 
