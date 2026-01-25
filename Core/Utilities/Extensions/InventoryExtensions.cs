@@ -16,13 +16,13 @@ public static class InventoryExtensions
             inventory.RemoveItem(itemData);
             if (!inventory.AddItem(itemData, stack, newPos.x, newPos.y))
             {
-                AzuExtendedPlayerInventoryLogger.LogWarning($"Failed to relocate {Localization.instance.Localize(itemData.m_shared.m_name)} to ({newPos.x},{newPos.y}), dropping item.");
+                AzuExtendedPlayerInventoryLogger.LogWarning($"Failed to relocate {Localization.instance?.Localize(itemData.m_shared.m_name) ?? itemData.m_shared.m_name} to ({newPos.x},{newPos.y}), dropping item.");
                 Player.m_localPlayer.DropItem(inventory, itemData, stack);
             }
         }
         else
         {
-            AzuExtendedPlayerInventoryLogger.LogInfo($"No empty slot for {Localization.instance.Localize(itemData.m_shared.m_name)}, dropping item.");
+            AzuExtendedPlayerInventoryLogger.LogInfo($"No empty slot for {Localization.instance?.Localize(itemData.m_shared.m_name) ?? itemData.m_shared.m_name}, dropping item.");
             Player.m_localPlayer.DropItem(inventory, itemData, itemData.m_stack);
         }
     }

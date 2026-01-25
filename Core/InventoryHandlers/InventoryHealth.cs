@@ -64,7 +64,14 @@ public class InventoryHealth
 
         foreach (ItemDrop.ItemData it in stuck)
         {
-            inventory.TryAddItemToInventory(it);
+            try
+            {
+                inventory.TryAddItemToInventory(it);
+            }
+            catch (Exception ex)
+            {
+                AzuExtendedPlayerInventoryLogger.LogError($"Error relocating item {it.m_shared?.m_name}: {ex}");
+            }
         }
 
         inventory.Changed();

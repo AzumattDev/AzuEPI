@@ -68,9 +68,9 @@ public class Layout
 
     public static int NormalRows(Inventory inv)
     {
-        int width = inv.GetWidth();
         int height = inv.GetHeight();
-        int addedRows = API.GetAddedRows(width);
+        if (AddEquipmentRow.Value.isOff()) return height;
+        int addedRows = API.GetAddedRows(inv.GetWidth());
         return height - addedRows;
     }
 
