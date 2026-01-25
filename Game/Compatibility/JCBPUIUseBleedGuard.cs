@@ -9,18 +9,31 @@ internal static class JCBPUIUseBleedGuard
     private static float _gateExpireTime;
     private static float _warpUntilTime;
     private static CursorLockMode _previousLockState = CursorLockMode.None;
+    private static bool? _shouldActivate;
 
     private const float GateDurationSeconds = 0.3f;
     private const float WarpDurationSeconds = 0.15f;
+
+    private static bool ShouldActivate()
+    {
+        _shouldActivate ??= Chainloader.PluginInfos.ContainsKey("org.bepinex.plugins.jewelcrafting") ||
+                           Chainloader.PluginInfos.ContainsKey("org.bepinex.plugins.backpacks");
+        return _shouldActivate.Value;
+    }
 
     private static bool InWarpWindow => Time.unscaledTime < _warpUntilTime;
     private static bool InGateWindow => _gateActive && Time.unscaledTime <= _gateExpireTime && InventoryGui.IsVisible();
     private static bool IsUseName(string name) => name is "Use" or "JoyUse";
 
-    private static void StartWarpWindow() => _warpUntilTime = Time.unscaledTime + WarpDurationSeconds;
+    private static void StartWarpWindow()
+    {
+        if (!ShouldActivate()) return;
+        _warpUntilTime = Time.unscaledTime + WarpDurationSeconds;
+    }
 
     private static void ArmGate()
     {
+        if (!ShouldActivate()) return;
         _gateActive = true;
         _gateExpireTime = Time.unscaledTime + GateDurationSeconds;
     }
@@ -41,8 +54,7 @@ internal static class JCBPUIUseBleedGuard
 
     private static void TryWarpCursor()
     {
-        bool proceed = false;
-        if (!Chainloader.PluginInfos.ContainsKey("org.bepinex.plugins.jewelcrafting") && !Chainloader.PluginInfos.TryGetValue("org.bepinex.plugins.backpacks", out PluginInfo backpackInfo)) return;
+        if (!ShouldActivate()) return;
         if (!InWarpWindow || !InventoryGui.IsVisible()) return;
 
         AzuEPICharacterPanel panel = AzuEPICharacterPanel.instance;
@@ -124,6 +136,8 @@ internal static class JCBPUIUseBleedGuard
     [HarmonyBefore("org.bepinex.plugins.jewelcrafting")]
     private static bool ZInput_GetButton_Prefix(string name, ref bool __result)
     {
+        if (!ShouldActivate()) return true;
+
         if (ShouldSuppressUseButton(name, out bool checkGate))
         {
             __result = false;
@@ -165,7 +179,7 @@ internal static class JCBPUIUseBleedGuard
     [HarmonyPriority(Priority.First)]
     private static bool InventoryGrid_GetItem_Prefix(ref ItemDrop.ItemData __result)
     {
-        if (!InWarpWindow) return true;
+        if (!ShouldActivate() || !InWarpWindow) return true;
         __result = null;
         return false;
     }
@@ -188,7 +202,7 @@ internal static class JCBPUIUseBleedGuard
 
         TryWarpCursor();
 
-        if (_previousLockState == CursorLockMode.Locked && currentLockState == CursorLockMode.None && InventoryGui.IsVisible())
+        if (ShouldActivate() && _previousLockState == CursorLockMode.Locked && currentLockState == CursorLockMode.None && InventoryGui.IsVisible())
         {
             _warpUntilTime = Mathf.Max(_warpUntilTime, Time.unscaledTime + WarpDurationSeconds);
             TryWarpCursor();
