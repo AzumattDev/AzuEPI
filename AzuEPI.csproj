@@ -180,7 +180,7 @@
         <Compile Include="Game\Compatibility\EAQ.cs"/>
         <Compile Include="Game\Compatibility\EpicLootCompat.cs"/>
         <Compile Include="Game\Compatibility\WeightBase.cs"/>
-        <Compile Include="Game\Compatibility\ZenUIUseBleedGuard.cs" />
+        <Compile Include="Game\Compatibility\JCBPUIUseBleedGuard.cs" />
         <Compile Include="Game\Compatibility\JudesEquipment.cs"/>
         <Compile Include="Game\Compatibility\JewelcraftingCompat.cs"/>
         <Compile Include="Game\Compatibility\RustBags.cs"/>

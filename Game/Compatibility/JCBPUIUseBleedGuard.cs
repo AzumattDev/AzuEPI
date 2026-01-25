@@ -3,7 +3,7 @@
 namespace AzuEPI.Game.Compatibility;
 
 [HarmonyPatch]
-internal static class ZenUIUseBleedGuard
+internal static class JCBPUIUseBleedGuard
 {
     private static bool _gateActive;
     private static float _gateExpireTime;
@@ -42,16 +42,8 @@ internal static class ZenUIUseBleedGuard
     private static void TryWarpCursor()
     {
         bool proceed = false;
-        if (!Chainloader.PluginInfos.ContainsKey("org.bepinex.plugins.jewelcrafting") || !Chainloader.PluginInfos.TryGetValue("ZenDragon.ZenUI", out PluginInfo zenInfo)) return;
-        if (zenInfo != null && zenInfo.Instance)
-        {
-            zenInfo.Instance.Config.TryGetEntry("General", "Enable Slide Animation", out ConfigEntry<bool> entry);
-            if (entry is { Value: false })
-            {
-                proceed = true;
-            }
-        }
-        if (!proceed || !InWarpWindow || !InventoryGui.IsVisible()) return;
+        if (!Chainloader.PluginInfos.ContainsKey("org.bepinex.plugins.jewelcrafting") && !Chainloader.PluginInfos.TryGetValue("org.bepinex.plugins.backpacks", out PluginInfo backpackInfo)) return;
+        if (!InWarpWindow || !InventoryGui.IsVisible()) return;
 
         AzuEPICharacterPanel panel = AzuEPICharacterPanel.instance;
         if (panel?.render == null) return;
