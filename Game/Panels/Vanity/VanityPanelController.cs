@@ -74,9 +74,8 @@ internal static class VanityPanelController
     private static readonly Dictionary<string, ItemDrop> _reusableDropsDict = new(256);
     private static readonly List<ItemDrop.ItemData> _reusableVanityItems = new(128);
 
-    private static int _cachedItemCount = -1;
-    private static int _cachedRecipeCount = -1;
     private static Player _cachedPlayer = null;
+    private static bool _hasCompleteBuild = false;
 
     public static void EnsureBuilt(InventoryGui gui)
     {
@@ -100,9 +99,8 @@ internal static class VanityPanelController
 
     public static void InvalidateCache()
     {
-        _cachedItemCount = -1;
-        _cachedRecipeCount = -1;
         _cachedPlayer = null;
+        _hasCompleteBuild = false;
         VanityLookup.InvalidateCache();
     }
 
@@ -116,13 +114,13 @@ internal static class VanityPanelController
         if (_cachedPlayer != player)
             return true;
 
-        int currentItemCount = odb.m_items?.Count ?? 0;
-        int currentRecipeCount = odb.m_recipes?.Count ?? 0;
-
-        if (_cachedItemCount != currentItemCount || _cachedRecipeCount != currentRecipeCount)
+        if (_allCells.Count == 0)
             return true;
 
-        return _allCells.Count == 0;
+        if (!_hasCompleteBuild && _allCells.Count < 15)
+            return true;
+
+        return false;
     }
 
     public static void RefreshGridIfNeeded()
@@ -207,8 +205,6 @@ internal static class VanityPanelController
         if (!player || !odb) return;
 
         _cachedPlayer = player;
-        _cachedItemCount = odb.m_items?.Count ?? 0;
-        _cachedRecipeCount = odb.m_recipes?.Count ?? 0;
 
         _cellsBySlot.Clear();
         _headersBySlot.Clear();
@@ -256,27 +252,33 @@ internal static class VanityPanelController
         foreach (ItemDrop? drop in _reusableDropsDict.Values)
         {
             ItemDrop.ItemData? d = drop.m_itemData;
-            if (d is { m_shared.m_icons.Length: > 0 } && d.m_dropPrefab &&
-                (d.m_dropPrefab.HasChildWithNameThatContains("attach") || d.m_dropPrefab.HasChildWithNameThatContains("log")) &&
+            GameObject prefab = d?.m_dropPrefab ? d.m_dropPrefab : drop.gameObject;
+
+            if (d is { m_shared.m_icons.Length: > 0 } && prefab &&
+                (prefab.HasChildWithNameThatContains("attach") || prefab.HasChildWithNameThatContains("log")) &&
                 string.IsNullOrWhiteSpace(d.m_shared.m_dlc) &&
                 d.m_shared.m_itemType is ItemDrop.ItemData.ItemType.Helmet or ItemDrop.ItemData.ItemType.Chest or ItemDrop.ItemData.ItemType.Legs or ItemDrop.ItemData.ItemType.Shoulder or ItemDrop.ItemData.ItemType.Utility)
             {
+                if (d.m_dropPrefab == null) d.m_dropPrefab = drop.gameObject;
                 _reusableVanityItems.Add(d);
             }
 #if DEBUG
-            else if (d is { m_shared.m_icons.Length: > 0, m_dropPrefab: not null } &&
+            else if (d is { m_shared.m_icons.Length: > 0 } && prefab &&
                      string.IsNullOrWhiteSpace(d.m_shared.m_dlc) &&
                      d.m_shared.m_itemType is ItemDrop.ItemData.ItemType.Helmet or ItemDrop.ItemData.ItemType.Chest or ItemDrop.ItemData.ItemType.Legs or ItemDrop.ItemData.ItemType.Shoulder or ItemDrop.ItemData.ItemType.Utility &&
-                     !(d.m_dropPrefab.HasChildWithNameThatContains("attach") || d.m_dropPrefab.HasChildWithNameThatContains("log")))
+                     !(prefab.HasChildWithNameThatContains("attach") || prefab.HasChildWithNameThatContains("log")))
             {
                 rejectedNoAttach++;
-                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"Vanity: Rejected '{d.m_shared.m_name}' - no attach/log child in prefab '{d.m_dropPrefab.name}'");
+                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"Vanity: Rejected '{d.m_shared.m_name}' - no attach/log child in prefab '{prefab.name}'");
             }
 #endif
         }
 #if DEBUG
         AzuExtendedPlayerInventoryLogger.LogDebugDebug($"Vanity panel: Found {_reusableVanityItems.Count} valid items, {rejectedNoAttach} rejected for missing attach/log");
 #endif
+
+        if (_reusableVanityItems.Count >= 15)
+            _hasCompleteBuild = true;
 
         _reusableVanityItems.Sort((a, b) =>
         {
