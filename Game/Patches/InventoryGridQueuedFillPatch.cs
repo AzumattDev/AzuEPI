@@ -3,7 +3,7 @@ namespace AzuEPI.Game.Patches;
 [HarmonyPatch(typeof(InventoryGrid), nameof(InventoryGrid.UpdateGui))]
 internal static class InventoryGridQueuedFillPatch
 {
-    private static readonly HashSet<Image> ConfiguredImages = [];
+    private static readonly Dictionary<GameObject, Image> FillOverlays = new();
 
     [HarmonyPriority(Priority.Last)]
     private static void Postfix(InventoryGrid __instance, Player player)
@@ -14,50 +14,77 @@ internal static class InventoryGridQueuedFillPatch
         {
             if (!element.m_queued) continue;
 
-            ConfigureQueuedImageForFill(element.m_queued);
-
-            if (!element.m_used)
-            {
-                element.m_queued.fillAmount = 0f;
-                continue;
-            }
-
-            ItemDrop.ItemData? item = __instance.m_inventory?.GetItemAt(element.m_pos.x, element.m_pos.y);
-            if (item == null)
-            {
-                element.m_queued.fillAmount = 0f;
-                continue;
-            }
-
-            float progress = GetEquipProgress(player, item, out bool isActivelyEquipping, out bool isQueuedWaiting);
-
-            if (isActivelyEquipping)
-            {
-                element.m_queued.fillAmount = progress;
-                element.m_queued.enabled = true;
-            }
-            else if (isQueuedWaiting)
-            {
-                element.m_queued.fillAmount = 1f;
-                element.m_queued.enabled = true;
-            }
-            else
-            {
-                element.m_queued.fillAmount = 0f;
-            }
+            ItemDrop.ItemData? item = element.m_used ? __instance.m_inventory?.GetItemAt(element.m_pos.x, element.m_pos.y) : null;
+            UpdateFillOverlay(element.m_queued.gameObject, element.m_queued, player, item);
         }
     }
 
-    private static void ConfigureQueuedImageForFill(Image image)
+    public static void UpdateFillOverlay(GameObject queuedGo, Image? sourceImage, Player player, ItemDrop.ItemData? item)
     {
-        if (ConfiguredImages.Contains(image)) return;
+        if (queuedGo == null) return;
+        sourceImage ??= queuedGo.GetComponent<Image>();
+        if (sourceImage == null) return;
 
-        image.type = Image.Type.Filled;
-        image.fillMethod = Image.FillMethod.Vertical;
-        image.fillOrigin = (int)Image.OriginVertical.Bottom;
-        image.fillAmount = 0f;
+        Image fillOverlay = GetOrCreateFillOverlay(queuedGo, sourceImage);
 
-        ConfiguredImages.Add(image);
+        if (item == null)
+        {
+            fillOverlay.fillAmount = 0f;
+            fillOverlay.enabled = false;
+            return;
+        }
+
+        float progress = GetEquipProgress(player, item, out bool isActivelyEquipping, out bool isQueuedWaiting);
+
+        if (isActivelyEquipping)
+        {
+            sourceImage.enabled = false;
+            fillOverlay.fillAmount = progress;
+            fillOverlay.enabled = true;
+        }
+        else if (isQueuedWaiting)
+        {
+            sourceImage.enabled = false;
+            fillOverlay.fillAmount = 1f;
+            fillOverlay.enabled = true;
+        }
+        else
+        {
+            fillOverlay.fillAmount = 0f;
+            fillOverlay.enabled = false;
+        }
+    }
+
+    private static Image GetOrCreateFillOverlay(GameObject queuedGo, Image sourceImage)
+    {
+        if (FillOverlays.TryGetValue(queuedGo, out Image? existing) && existing != null)
+            return existing;
+
+        GameObject overlayGo = new GameObject("FillOverlay", typeof(RectTransform), typeof(Image));
+        overlayGo.transform.SetParent(queuedGo.transform.parent, false);
+
+        RectTransform queuedRect = queuedGo.GetComponent<RectTransform>();
+        RectTransform overlayRect = overlayGo.GetComponent<RectTransform>();
+        overlayRect.anchorMin = queuedRect.anchorMin;
+        overlayRect.anchorMax = queuedRect.anchorMax;
+        overlayRect.anchoredPosition = queuedRect.anchoredPosition;
+        overlayRect.sizeDelta = queuedRect.sizeDelta;
+        overlayRect.pivot = queuedRect.pivot;
+
+        overlayGo.transform.SetSiblingIndex(queuedGo.transform.GetSiblingIndex() + 1);
+
+        Image fillImage = overlayGo.GetComponent<Image>();
+        fillImage.sprite = sourceImage.sprite;
+        fillImage.color = sourceImage.color;
+        fillImage.type = Image.Type.Filled;
+        fillImage.fillMethod = Image.FillMethod.Vertical;
+        fillImage.fillOrigin = (int)Image.OriginVertical.Bottom;
+        fillImage.fillAmount = 0f;
+        fillImage.raycastTarget = false;
+        fillImage.enabled = false;
+
+        FillOverlays[queuedGo] = fillImage;
+        return fillImage;
     }
 
     public static float GetEquipProgress(Player player, ItemDrop.ItemData item, out bool isActivelyEquipping, out bool isQueuedWaiting)
@@ -88,14 +115,16 @@ internal static class InventoryGridQueuedFillPatch
         return 0f;
     }
 
-    public static float GetEquipProgress(Player player, ItemDrop.ItemData item)
-    {
-        return GetEquipProgress(player, item, out _, out _);
-    }
+    public static float GetEquipProgress(Player player, ItemDrop.ItemData item) => GetEquipProgress(player, item, out _, out _);
 
     public static void ClearCache()
     {
-        ConfiguredImages.Clear();
+        foreach (Image? overlay in FillOverlays.Values)
+        {
+            if (overlay != null && overlay.gameObject != null)
+                Object.Destroy(overlay.gameObject);
+        }
+        FillOverlays.Clear();
     }
 }
 
@@ -136,7 +165,7 @@ static class HudUpdateActionProgressPatch
         Player? player = Player.m_localPlayer;
         if (!player || player.m_actionQueue.Count <= 0) return;
         if (HudAwakePatch.actionBarChildren.Count <= 0) return;
-        
+
         if (player.m_actionQueue[0].m_type is Player.MinorActionData.ActionType.Equip or Player.MinorActionData.ActionType.Unequip)
         {
             foreach (GameObject actionBarChild in HudAwakePatch.actionBarChildren)
@@ -155,122 +184,35 @@ static class HudUpdateActionProgressPatch
 }
 
 [HarmonyPatch(typeof(HotkeyBar), nameof(HotkeyBar.UpdateIcons))]
-internal static class HotkeyBarQueuedFillPatch
+static class VanillaHotkeyBarFillPatch
 {
-    private const string FillOverlayName = "EPI_QueuedFillOverlay";
-    private static readonly Dictionary<GameObject, Image> FillOverlayByQueued = new();
-
     [HarmonyPriority(Priority.Last)]
-    private static void Postfix(HotkeyBar __instance, Player player)
+    static void Postfix(HotkeyBar __instance, Player player)
     {
+        if (__instance.name == "QuickAccessBar") return;
         if (!player) return;
-
-        if (__instance.name == QabName) return;
-        
-        List<ItemDrop.ItemData> boundItems = [];
-        player.GetInventory().GetBoundItems(boundItems);
 
         foreach (HotkeyBar.ElementData element in __instance.m_elements)
         {
-            if (element.m_queued == null) continue;
-
-            // Get or create the fill overlay (separate from original queued image to avoid MaterialMan conflicts)
-            Image fillOverlay = EnsureFillOverlay(element.m_queued);
-
-            if (!element.m_used)
-            {
-                fillOverlay.fillAmount = 0f;
-                fillOverlay.enabled = false;
-                continue;
-            }
-
             ItemDrop.ItemData? item = null;
-            foreach (ItemDrop.ItemData boundItem in boundItems)
+            if (element.m_used)
             {
-                int elementIndex = __instance.m_elements.IndexOf(element);
-                if (boundItem.m_gridPos.x != elementIndex) continue;
-                item = boundItem;
-                break;
+                int index = __instance.m_elements.IndexOf(element);
+                foreach (ItemDrop.ItemData itemData in __instance.m_items)
+                {
+                    if (itemData.m_gridPos.x != index || itemData.m_gridPos.y != 0) continue;
+                    item = itemData;
+                    break;
+                }
             }
 
-            if (item == null)
-            {
-                fillOverlay.fillAmount = 0f;
-                fillOverlay.enabled = false;
-                continue;
-            }
-
-            float progress = InventoryGridQueuedFillPatch.GetEquipProgress(player, item, out bool isActivelyEquipping, out bool isQueuedWaiting);
-
-            if (isActivelyEquipping)
-            {
-                fillOverlay.fillAmount = progress;
-                fillOverlay.enabled = true;
-                // Hide vanilla queued indicator since we're showing progress
-                element.m_queued.SetActive(false);
-            }
-            else if (isQueuedWaiting)
-            {
-                // Item is queued but waiting - let vanilla handle the solid indicator
-                fillOverlay.fillAmount = 0f;
-                fillOverlay.enabled = false;
-                element.m_queued.SetActive(true);
-            }
-            else
-            {
-                fillOverlay.fillAmount = 0f;
-                fillOverlay.enabled = false;
-                element.m_queued.SetActive(false);
-            }
+            InventoryGridQueuedFillPatch.UpdateFillOverlay(element.m_queued, null, player, item);
         }
-    }
-
-    private static Image EnsureFillOverlay(GameObject queuedGo)
-    {
-        if (FillOverlayByQueued.TryGetValue(queuedGo, out Image? existing) && existing)
-            return existing;
-
-        Image? originalImage = queuedGo.GetComponent<Image>();
-
-        GameObject overlayGo = new(FillOverlayName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-        RectTransform overlayRT = (RectTransform)overlayGo.transform;
-        overlayRT.SetParent(queuedGo.transform, false);
-
-        overlayRT.anchorMin = Vector2.zero;
-        overlayRT.anchorMax = Vector2.one;
-        overlayRT.offsetMin = Vector2.zero;
-        overlayRT.offsetMax = Vector2.zero;
-        overlayRT.pivot = new Vector2(0.5f, 0.5f);
-
-        Image fillImage = overlayGo.GetComponent<Image>();
-        fillImage.raycastTarget = false;
-        fillImage.type = Image.Type.Filled;
-        fillImage.fillMethod = Image.FillMethod.Vertical;
-        fillImage.fillOrigin = (int)Image.OriginVertical.Bottom;
-        fillImage.fillAmount = 0f;
-        fillImage.enabled = false;
-
-        if (originalImage)
-        {
-            fillImage.sprite = originalImage.sprite;
-            fillImage.color = originalImage.color;
-        }
-
-        FillOverlayByQueued[queuedGo] = fillImage;
-        return fillImage;
-    }
-
-    public static void ClearCache()
-    {
-        FillOverlayByQueued.Clear();
     }
 }
 
 [HarmonyPatch(typeof(Hud), nameof(Hud.OnDestroy))]
-internal static class HudOnDestroyQueuedFillPatch
+static class HudOnDestroyFillCachePatch
 {
-    private static void Postfix()
-    {
-        HotkeyBarQueuedFillPatch.ClearCache();
-    }
+    static void Postfix() => InventoryGridQueuedFillPatch.ClearCache();
 }
