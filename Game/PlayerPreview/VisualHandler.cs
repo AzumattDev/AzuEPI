@@ -1,4 +1,5 @@
 ﻿using System.Reflection.Emit;
+using AzuEPI.Game.Compatibility;
 using AzuEPI.Game.Compatibility.AdvBackpacks;
 
 namespace AzuEPI.Game.PlayerPreview;
@@ -38,7 +39,19 @@ public class CustomEquipVisuals
         if (item?.m_dropPrefab == null) return false;
         if (!_managed.TryGetValue(item.m_dropPrefab.name, out (string slot, bool bypass, string visual) meta)) return true;
         if (string.IsNullOrEmpty(meta.slot)) return true;
-        return API.TryGetSlotIndexByName(meta.slot, out _);
+        if (API.TryGetSlotIndexByName(meta.slot, out _)) return true;
+        if (IsJewelcraftingGem(item)) return false;
+        // Otherwise assume slot exists (timing issue during load)
+        return true;
+    }
+
+    private static bool IsJewelcraftingGem(ItemDrop.ItemData item)
+    {
+        if (item?.m_dropPrefab == null) return false;
+        string prefabName = item.m_dropPrefab.name;
+        if (prefabName == "Wishbone") return JewelcraftingCompat.IsWishboneAGem();
+        if (prefabName == "Demister") return JewelcraftingCompat.IsWisplightAGem();
+        return false;
     }
 
     private static readonly HashSet<string> _registered = new(StringComparer.Ordinal);
