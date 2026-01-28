@@ -17,31 +17,34 @@ public static class GameObjectHelper
         return new GameObject(name, allComponents);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static GameObject WithActive(this GameObject go, bool active)
+    extension(GameObject go)
     {
-        go.SetActive(active);
-        return go;
-    }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public GameObject WithActive(bool active)
+        {
+            go.SetActive(active);
+            return go;
+        }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static GameObject WithParent(this GameObject go, Transform parent, bool worldPositionStays = true)
-    {
-        go.transform.SetParent(parent, worldPositionStays);
-        return go;
-    }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public GameObject WithParent(Transform parent, bool worldPositionStays = true)
+        {
+            go.transform.SetParent(parent, worldPositionStays);
+            return go;
+        }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static GameObject WithSiblingIndex(this GameObject go, int index)
-    {
-        go.transform.SetSiblingIndex(index);
-        return go;
-    }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public GameObject WithSiblingIndex(int index)
+        {
+            go.transform.SetSiblingIndex(index);
+            return go;
+        }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void SafeSetActive(this GameObject go, bool active)
-    {
-        if (go) go.SetActive(active);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SafeSetActive(bool active)
+        {
+            if (go) go.SetActive(active);
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -50,31 +53,34 @@ public static class GameObjectHelper
         if (transform) transform.gameObject.SetActive(active);
     }
 
-    public static void SetLayerForEntireHierarchy(this GameObject gameObject, int layer, int depth = 0)
+    extension(GameObject gameObject)
     {
-        if (depth >= 50)
+        public void SetLayerForEntireHierarchy(int layer, int depth = 0)
         {
-            return;
+            if (depth >= 50)
+            {
+                return;
+            }
+
+            gameObject.layer = layer;
+
+            foreach (Transform child in gameObject.transform)
+            {
+                SetLayerForEntireHierarchy(child.gameObject, layer, depth + 1);
+            }
         }
 
-        gameObject.layer = layer;
-
-        foreach (Transform child in gameObject.transform)
+        public bool HasChildWithNameThatContains(string name)
         {
-            SetLayerForEntireHierarchy(child.gameObject, layer, depth + 1);
+            List<Transform> children = gameObject.GetAllChildTransforms();
+
+            return children.Any(child => child.name.Contains(name));
         }
-    }
 
-    public static bool HasChildWithNameThatContains(this GameObject gameObject, string name)
-    {
-        List<Transform> children = gameObject.GetAllChildTransforms();
-
-        return children.Any(child => child.name.Contains(name));
-    }
-
-    public static List<Transform> GetAllChildTransforms(this GameObject gameObject)
-    {
-        return _GetAllChildTransforms(gameObject, true);
+        public List<Transform> GetAllChildTransforms()
+        {
+            return _GetAllChildTransforms(gameObject, true);
+        }
     }
 
     private static List<Transform> _GetAllChildTransforms(GameObject gameObject, bool isRoot = false, List<Transform>? transforms = null)

@@ -2,13 +2,16 @@
 
 public static class ToggleExtensions
 {
-    public static bool isOn(this AzuExtendedPlayerInventoryPlugin.Toggle toggle)
+    extension(AzuExtendedPlayerInventoryPlugin.Toggle toggle)
     {
-        return toggle == On;
-    }
+        public bool isOn()
+        {
+            return toggle == On;
+        }
 
-    public static bool isOff(this AzuExtendedPlayerInventoryPlugin.Toggle toggle)
-    {
-        return toggle == Off;
+        public bool isOff()
+        {
+            return toggle == Off;
+        }
     }
 }

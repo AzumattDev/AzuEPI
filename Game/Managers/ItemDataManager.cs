@@ -885,34 +885,37 @@ public static class ItemExtensions
 	internal static readonly ConditionalWeakTable<ItemDrop.ItemData, ItemInfo> itemInfo = new();
 	private static readonly ConditionalWeakTable<ItemDrop.ItemData, Dictionary<string, ForeignItemInfo?>> foreignItemInfo = new();
 
-	public static ItemInfo Data(this ItemDrop.ItemData item)
+	extension(ItemDrop.ItemData item)
 	{
-		if (itemInfo.TryGetValue(item, out ItemInfo info))
+		public ItemInfo Data()
 		{
+			if (itemInfo.TryGetValue(item, out ItemInfo info))
+			{
+				return info;
+			}
+			itemInfo.Add(item, info = new ItemInfo(item));
 			return info;
 		}
-		itemInfo.Add(item, info = new ItemInfo(item));
-		return info;
-	}
 
-	public static ForeignItemInfo? Data(this ItemDrop.ItemData item, string mod)
-	{
-		Dictionary<string, ForeignItemInfo?> foreignInfos = foreignItemInfo.GetOrCreateValue(item);
-		if (foreignInfos.TryGetValue(mod, out ForeignItemInfo? modObject))
+		public ForeignItemInfo? Data(string mod)
 		{
-			return modObject;
-		}
-		if (!Chainloader.PluginInfos.TryGetValue(mod, out PluginInfo plugin))
-		{
-			return null;
-		}
+			Dictionary<string, ForeignItemInfo?> foreignInfos = foreignItemInfo.GetOrCreateValue(item);
+			if (foreignInfos.TryGetValue(mod, out ForeignItemInfo? modObject))
+			{
+				return modObject;
+			}
+			if (!Chainloader.PluginInfos.TryGetValue(mod, out PluginInfo plugin))
+			{
+				return null;
+			}
 
-		if (plugin.Instance.GetType().Assembly.GetType(className)?.GetMethod(nameof(Data), BindingFlags.Static | BindingFlags.Public, null, [typeof(ItemDrop.ItemData)], [])?.Invoke(null, [item]) is { } foreignItemData)
-		{
-			return foreignInfos[mod] = new ForeignItemInfo(item, foreignItemData);
-		}
+			if (plugin.Instance.GetType().Assembly.GetType(className)?.GetMethod(nameof(Data), BindingFlags.Static | BindingFlags.Public, null, [typeof(ItemDrop.ItemData)], [])?.Invoke(null, [item]) is { } foreignItemData)
+			{
+				return foreignInfos[mod] = new ForeignItemInfo(item, foreignItemData);
+			}
 
-		Debug.LogWarning($"Mod {mod} has an {className} class, but no Data(ItemDrop.ItemData) method could be called on it.");
-		return foreignInfos[mod] = null;
+			Debug.LogWarning($"Mod {mod} has an {className} class, but no Data(ItemDrop.ItemData) method could be called on it.");
+			return foreignInfos[mod] = null;
+		}
 	}
 }

@@ -83,21 +83,24 @@ internal static class BoneReorder
         }
     }
 
-    private static void SetBones(this SkinnedMeshRenderer skinnedMeshRenderer, string[] boneNames, Transform skeletonRoot)
+    extension(SkinnedMeshRenderer skinnedMeshRenderer)
     {
-        Transform[] transformArray = new Transform[skinnedMeshRenderer.bones.Length];
-        for (int index = 0; index < transformArray.Length; ++index)
-            transformArray[index] = FindInChildren(skeletonRoot, boneNames[index]);
-        skinnedMeshRenderer.bones = transformArray;
-        skinnedMeshRenderer.rootBone = skeletonRoot;
-    }
+        private void SetBones(string[] boneNames, Transform skeletonRoot)
+        {
+            Transform[] transformArray = new Transform[skinnedMeshRenderer.bones.Length];
+            for (int index = 0; index < transformArray.Length; ++index)
+                transformArray[index] = FindInChildren(skeletonRoot, boneNames[index]);
+            skinnedMeshRenderer.bones = transformArray;
+            skinnedMeshRenderer.rootBone = skeletonRoot;
+        }
 
-    private static string[] GetBoneNames(this SkinnedMeshRenderer skinnedMeshRenderer)
-    {
-        List<string> stringList = [];
-        foreach (Transform bone in skinnedMeshRenderer.bones)
-            stringList.Add(bone.name);
-        return stringList.ToArray();
+        private string[] GetBoneNames()
+        {
+            List<string> stringList = [];
+            foreach (Transform bone in skinnedMeshRenderer.bones)
+                stringList.Add(bone.name);
+            return stringList.ToArray();
+        }
     }
 
     private static Transform FindInChildren(Transform transform, string name)
