@@ -186,6 +186,7 @@
         <Compile Include="Game\Compatibility\RustBags.cs"/>
         <Compile Include="Game\Compatibility\VESCompat.cs"/>
         <Compile Include="Game\Compatibility\ZenUICompat.cs"/>
+        <Compile Include="Game\Compatibility\ValheimPlusCompat.cs"/>
         <Compile Include="Game\Managers\ItemDataManager.cs"/>
         <Compile Include="Game\Managers\LocalizationManager.cs"/>
         <Compile Include="Game\Managers\Patcher.cs"/>

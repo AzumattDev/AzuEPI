@@ -255,6 +255,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         ArmoireCompat.CheckForArmoire();
         ZenUICompat.DisableEquipmentSlots();
+        ValheimPlusCompat.Initialize();
     }
 
     private void OnDestroy()
