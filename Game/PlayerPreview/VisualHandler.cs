@@ -273,6 +273,99 @@ public class CustomEquipVisuals
         }
     }
 
+    [HarmonyPatch(typeof(Player), nameof(Player.GetBodyArmor))]
+    static class EPIAddArmor_GetBodyArmorPatch
+    {
+        static void Postfix(Player __instance, ref float __result)
+        {
+            if (EPISlotsAddArmor.Value.isOff()) return;
+            if (__instance != Player.m_localPlayer)
+                return;
+            VisEquipment? ve = __instance.m_visEquipment;
+            if (!ve) return;
+            if (!_states.TryGetValue(ve, out State? st)) return;
+
+            float extraArmor = 0f;
+            foreach (EquippedEntry? entry in st.Equipped.Values)
+            {
+                ItemDrop.ItemData? item = entry.Item;
+                if (item is not { m_equipped: true }) continue;
+                if (item.m_shared.m_itemType != ItemDrop.ItemData.ItemType.Utility || UtilityEPIAddArmor.Value.isOn() && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility)
+                    extraArmor += item.GetArmor();
+            }
+
+            __result += extraArmor;
+        }
+    }
+
+    [HarmonyPatch(typeof(Player), nameof(Player.GetEquipmentEitrRegenModifier))]
+    private static class Player_GetEquipmentEitrRegenModifier_ExtraUtility
+    {
+        private static void Postfix(Player __instance, ref float __result)
+        {
+            if (__instance != Player.m_localPlayer)
+                return;
+
+            if (EPISlotsAddArmor.Value.isOff()) return;
+            VisEquipment? ve = __instance.m_visEquipment;
+            if (!ve) return;
+            if (!_states.TryGetValue(ve, out State? st)) return;
+
+            float eitrRegenModifier = 0.0f;
+            foreach (EquippedEntry? entry in st.Equipped.Values)
+            {
+                ItemDrop.ItemData? item = entry.Item;
+                if (item is not { m_equipped: true }) continue;
+                eitrRegenModifier += item.m_shared.m_eitrRegenModifier;
+            }
+
+            __result += eitrRegenModifier;
+        }
+    }
+
+    [HarmonyPatch(typeof(Player), nameof(Player.ApplyArmorDamageMods))]
+    static class EPISlotsAddArmorDamage_ApplyArmorDamageModsPatch
+    {
+        static void Postfix(Player __instance, ref HitData.DamageModifiers mods)
+        {
+            if (__instance != Player.m_localPlayer)
+                return;
+            VisEquipment? ve = __instance.m_visEquipment;
+            if (!ve) return;
+            if (!_states.TryGetValue(ve, out State? st)) return;
+            foreach (EquippedEntry? entry in st.Equipped.Values)
+            {
+                ItemDrop.ItemData? item = entry.Item;
+                if (item is not { m_equipped: true }) continue;
+                mods.Apply(item.m_shared.m_damageModifiers);
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(Player), nameof(Player.UpdateModifiers))]
+    private static class Player_UpdateModifiers_ExtraUtility
+    {
+        private static void Postfix(Player __instance)
+        {
+            if (__instance != Player.m_localPlayer)
+                return;
+            if (Player.s_equipmentModifierSourceFields == null)
+                return;
+            VisEquipment? ve = __instance.m_visEquipment;
+            if (!ve) return;
+            if (!_states.TryGetValue(ve, out State? st)) return;
+            for (int i = 0; i < __instance.m_equipmentModifierValues.Length; ++i)
+            {
+                foreach (EquippedEntry? entry in st.Equipped.Values)
+                {
+                    ItemDrop.ItemData? item = entry.Item;
+                    if (item is not { m_equipped: true }) continue;
+                    __instance.m_equipmentModifierValues[i] += (float)Player.s_equipmentModifierSourceFields[i].GetValue(item.m_shared);
+                }
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.UnequipAllItems))]
     private static class UnequipAll
     {
@@ -367,6 +460,9 @@ public class CustomEquipVisuals
     [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.EquipItem))]
     internal static class HideTypeWhileEquipping
     {
+        // Track when vanilla is equipping a non-managed item that could trigger unwanted unequips
+        internal static bool IsVanillaEquipping;
+
         private static bool IsReserved(ItemDrop.ItemData.ItemType t) =>
             t is ItemDrop.ItemData.ItemType.Helmet
                 or ItemDrop.ItemData.ItemType.Chest
@@ -380,6 +476,12 @@ public class CustomEquipVisuals
         private static void Prefix(Humanoid __instance, ItemDrop.ItemData item, ref ItemDrop.ItemData.ItemType? __state)
         {
             if (__instance is not Player || item?.m_dropPrefab == null) return;
+
+            if (!IsManaged(item) && IsReserved(item.m_shared.m_itemType))
+            {
+                IsVanillaEquipping = true;
+            }
+
             if (!IsManaged(item)) return;
             if (!HasActiveSlot(item)) return;
             if (!IsReserved(item.m_shared.m_itemType)) return;
@@ -395,6 +497,9 @@ public class CustomEquipVisuals
         [HarmonyPriority(Priority.Last)]
         private static void Postfix(Humanoid __instance, ItemDrop.ItemData item, bool triggerEquipEffects, ItemDrop.ItemData.ItemType? __state, ref bool __result)
         {
+            // Always clear the vanilla equipping flag
+            IsVanillaEquipping = false;
+
             if (__instance is not Player p) return;
             if (__state is not { } original) return;
             if (item == null) return;
@@ -502,6 +607,27 @@ public class CustomEquipVisuals
     [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.UnequipItem))]
     private static class UnequipItemPatch
     {
+        [HarmonyPrefix]
+        [HarmonyPriority(Priority.First)]
+        private static bool Prefix(Humanoid __instance, ItemDrop.ItemData item)
+        {
+            // Only block if vanilla is currently equipping a non-managed item
+            if (!HideTypeWhileEquipping.IsVanillaEquipping) return true;
+
+            if (__instance is not Player p) return true;
+            if (item?.m_dropPrefab == null) return true;
+
+            string name = item.m_dropPrefab.name;
+            if (!_registered.Contains(name)) return true;
+
+            if (!_managed.TryGetValue(name, out (string slot, bool bypass, string visual) meta)) return true;
+            if (string.IsNullOrEmpty(meta.slot)) return true;
+            if (!API.TryGetSlotIndexByName(meta.slot, out _)) return true;
+
+            // Item is in a custom slot - block vanilla's automatic unequip
+            return false;
+        }
+
         private static void OnUnequip(Humanoid humanoid, ItemDrop.ItemData item)
         {
             if (humanoid is not Player p) return;
@@ -520,9 +646,6 @@ public class CustomEquipVisuals
                 entry.DisplayName = "";
                 st.SetDisplayName(name, "");
             }
-
-            /*PlayerPreviewManager.DestroyPlayerPreview();
-            PlayerPreviewManager.CreatePlayerPreviewShow();*/
         }
 
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructionEnumerable)

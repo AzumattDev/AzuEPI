@@ -113,6 +113,9 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
                 null,
                 new ConfigurationManagerAttributes { Order = NextOrder, Browsable = false }),
             NextOrder);
+        
+        EPISlotsAddArmor = config("4.5 - Equipment Slot Management", "Slots Use Armor", On, "If On, the armor on items in the custom slots is applied to the player. If off, the armor is not calculated, which is better for vanilla balance, but not expected. Default is set to On for this reason", NextOrder);
+        UtilityEPIAddArmor = config("4.5 - Equipment Slot Management", "Utility Slots Use Armor", Off, "If On & Slots Use Armor config is on, the armor on utility items in the custom slots is applied to the player. If off, the armor is not calculated, which is better for vanilla balance. Default is off for this reason.", NextOrder);
 
         /* 5 - UI Features */
         ResetConfigOrder();
@@ -373,6 +376,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<Toggle> WispLightSlot = null!;
     public static ConfigEntry<string> RemovedEquipmentSlots = null!;
     public static ConfigEntry<string> UserAddedSlots = null!;
+    public static ConfigEntry<Toggle> EPISlotsAddArmor = null!;
+    public static ConfigEntry<Toggle> UtilityEPIAddArmor = null!;
 
     public static ConfigEntry<Toggle> AddEquipmentRow = null!;
     public static ConfigEntry<Toggle> DisplayEquipmentRowSeparate = null!;
