@@ -189,7 +189,6 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         SlotBackupManager.InitializeBuiltInSlotBackups();
         ApplySlotChanges();
-        //API.RelocalizeSlots();
         Localization.OnLanguageChange += new Action(API.RelocalizeSlots);
         Localizer.OnLocalizationComplete += new Action(API.RelocalizeSlots);
     }

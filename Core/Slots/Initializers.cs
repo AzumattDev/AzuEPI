@@ -9,7 +9,6 @@ public static class Initializers
         InitializeBuiltInSlots();
         InitializeHotkeys();
         InitializeQuickslots();
-        API.RelocalizeSlots();
     }
 
     public static void InitializeBuiltInSlots()
