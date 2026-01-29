@@ -119,7 +119,7 @@ public class SlotHelpers
                 const int assumedMaxRows = 8;
                 float row7Y = yBase - (assumedMaxRows - 2) * Layout.tileSize;
 
-                if (quickCount <= 3)
+                if (quickCount <= 4)
                 {
                     float rowWidth = quickCount * Layout.tileSize;
                     float startX = leftX + (spanWidth - rowWidth) * 0.5f;

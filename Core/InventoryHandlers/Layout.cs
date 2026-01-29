@@ -148,7 +148,7 @@ public class Layout
     public static void FixPlayerPreview()
     {
         if (!PreviewParent) return;
-        PreviewAnchorMin = QuickSlotsAmount.Value > 3 ? new Vector2(0f, 0.24f) : QuickSlotsAmount.Value != 0 ? new Vector2(0f, 0.14f) : Vector2.zero;
+        PreviewAnchorMin = QuickSlotsAmount.Value > 4 ? new Vector2(0f, 0.24f) : QuickSlotsAmount.Value != 0 ? new Vector2(0f, 0.14f) : Vector2.zero;
         RectTransform previewParentRT = (RectTransform)PreviewParent.transform;
         previewParentRT.anchorMin = PreviewAnchorMin;
     }
