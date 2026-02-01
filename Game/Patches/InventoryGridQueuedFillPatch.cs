@@ -189,7 +189,7 @@ static class VanillaHotkeyBarFillPatch
     [HarmonyPriority(Priority.Last)]
     static void Postfix(HotkeyBar __instance, Player player)
     {
-        if (__instance.name == "QuickAccessBar") return;
+        if (__instance.name == QabName) return;
         if (!player) return;
 
         foreach (HotkeyBar.ElementData element in __instance.m_elements)
