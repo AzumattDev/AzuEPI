@@ -317,7 +317,18 @@ internal static class VanityPanelController
             }
 
             if (currentGrid != null)
-                CreateCell(slotPrefab, currentGrid, data, MapItemTypeToVisSlot(itemType));
+            {
+                int variants = data.m_shared.m_variants;
+                if (variants <= 1)
+                {
+                    CreateCell(slotPrefab, currentGrid, data, MapItemTypeToVisSlot(itemType), 0);
+                }
+                else
+                {
+                    for (int v = 0; v < variants && v < data.m_shared.m_icons.Length; v++)
+                        CreateCell(slotPrefab, currentGrid, data, MapItemTypeToVisSlot(itemType), v);
+                }
+            }
         }
 
         LayoutRebuilder.ForceRebuildLayoutImmediate(_content);
@@ -602,27 +613,18 @@ internal static class VanityPanelController
         VisEquipment? ve = Player.m_localPlayer?.m_visEquipment;
         if (!ve) return;
 
-        int v = slot switch
-        {
-            VisSlot.Helmet => VanityAPI.Get(ve, VanityZdoKeys.Helmet),
-            VisSlot.Chest => VanityAPI.Get(ve, VanityZdoKeys.Chest),
-            VisSlot.Legs => VanityAPI.Get(ve, VanityZdoKeys.Legs),
-            VisSlot.Shoulder => VanityAPI.Get(ve, VanityZdoKeys.Shoulder),
-            VisSlot.Utility => VanityAPI.Get(ve, VanityZdoKeys.Utility),
-            _ => 0
-        };
-
-        bool hidden = VanityAPI.IsHidden(v);
+        VanityState vs = VanitySlots.GetState(ve, slot);
 
         if (_cellsBySlot.TryGetValue(slot, out List<VanityCell>? list))
         {
             foreach (VanityCell? cell in list)
             {
                 bool isSelected = cell.IsNone
-                    ? hidden
-                    : (!hidden && v != 0 &&
+                    ? vs.IsHidden
+                    : (vs.HasVanity &&
                        cell.Item?.m_dropPrefab &&
-                       cell.Item.m_dropPrefab.name.GetStableHashCode() == v);
+                       cell.Item.m_dropPrefab.name.GetStableHashCode() == vs.Hash &&
+                       cell.Variant == vs.Variant);
 
                 if (cell.SelectedBadge) cell.SelectedBadge.SetActive(isSelected);
             }
@@ -636,17 +638,7 @@ internal static class VanityPanelController
 
         foreach (VisSlot slot in _cellsBySlot.Keys)
         {
-            int v = slot switch
-            {
-                VisSlot.Helmet => VanityAPI.Get(ve, VanityZdoKeys.Helmet),
-                VisSlot.Chest => VanityAPI.Get(ve, VanityZdoKeys.Chest),
-                VisSlot.Legs => VanityAPI.Get(ve, VanityZdoKeys.Legs),
-                VisSlot.Shoulder => VanityAPI.Get(ve, VanityZdoKeys.Shoulder),
-                VisSlot.Utility => VanityAPI.Get(ve, VanityZdoKeys.Utility),
-                _ => 0
-            };
-
-            bool hidden = VanityAPI.IsHidden(v);
+            VanityState vs = VanitySlots.GetState(ve, slot);
             List<VanityCell>? cellList = GetOrCreateSlotList(slot);
             if (cellList == null) continue;
 
@@ -655,8 +647,11 @@ internal static class VanityPanelController
                 if (!cell || !cell.EquippedBorder) continue;
 
                 bool isEquipped = cell.IsNone
-                    ? hidden
-                    : (!hidden && v != 0 && cell.Item?.m_dropPrefab && cell.Item.m_dropPrefab.name.GetStableHashCode() == v);
+                    ? vs.IsHidden
+                    : (vs.HasVanity &&
+                       cell.Item?.m_dropPrefab &&
+                       cell.Item.m_dropPrefab.name.GetStableHashCode() == vs.Hash &&
+                       cell.Variant == vs.Variant);
 
                 cell.EquippedBorder.SetActive(isEquipped);
             }
@@ -1120,8 +1115,11 @@ internal static class VanityPanelController
         tooltipForNone.m_text = "";
     }
 
-    private static void CreateCell(GameObject slotPrefab, GridLayoutGroup grid, ItemDrop.ItemData data, VisSlot slot)
+    private static void CreateCell(GameObject slotPrefab, GridLayoutGroup grid, ItemDrop.ItemData data, VisSlot slot, int variant = 0)
     {
+        Sprite[]? icons = data.m_shared.m_icons;
+        if (icons == null || variant >= icons.Length || icons[variant] == null) return;
+
         GameObject? go = Object.Instantiate(slotPrefab, grid.transform);
         RectTransform rt = (RectTransform)go.transform;
         rt.localScale = Vector3.one;
@@ -1133,7 +1131,7 @@ internal static class VanityPanelController
         le.flexibleHeight = 0;
 
         Image? icon = go.transform.Find("icon").GetComponent<Image>();
-        icon.sprite = data.m_shared.m_icons[0];
+        icon.sprite = icons[variant];
         icon.type = Image.Type.Simple;
         icon.preserveAspect = true;
         icon.color = Color.white;
@@ -1158,6 +1156,7 @@ internal static class VanityPanelController
         cell.Item = data;
         cell.Icon = icon;
         cell.Slot = slot;
+        cell.Variant = variant;
         cell.SelectedBadge = selectedBadge;
         cell.EquippedBorder = equippedBorder;
 
@@ -1235,6 +1234,7 @@ public class VanityCell : MonoBehaviour
     public ItemDrop.ItemData Item;
     public Image Icon;
     public VisSlot Slot;
+    public int Variant;
     public GameObject SelectedBadge;
     public GameObject EquippedBorder;
     public bool IsNone = false;
@@ -1317,24 +1317,7 @@ public class VanityCell : MonoBehaviour
         if (!Player.m_localPlayer.IsKnownMaterial(Item.m_shared.m_name)) return;
 
         string prefab = Item.m_dropPrefab.name;
-        switch (Slot)
-        {
-            case VisSlot.Helmet:
-                VanityAPI.SetVanity(ve, VisSlot.Helmet, prefab);
-                break;
-            case VisSlot.Chest:
-                VanityAPI.SetVanity(ve, VisSlot.Chest, prefab);
-                break;
-            case VisSlot.Legs:
-                VanityAPI.SetVanity(ve, VisSlot.Legs, prefab);
-                break;
-            case VisSlot.Shoulder:
-                VanityAPI.SetVanity(ve, VisSlot.Shoulder, prefab, variant: 0);
-                break;
-            case VisSlot.Utility:
-                VanityAPI.SetVanity(ve, VisSlot.Utility, prefab);
-                break;
-        }
+        VanityAPI.SetVanity(ve, Slot, prefab, variant: Variant);
 
         VanityPanelController.UpdateSelectedVisuals(Slot);
         // Reset stamp so MirrorFrom actually runs (vanity changes don't affect the stamp)

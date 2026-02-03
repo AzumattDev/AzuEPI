@@ -281,6 +281,7 @@
         <Compile Include="API\API.cs"/>
         <Compile Include="API\APIBkCompat.cs"/>
         <Compile Include="Core\Slots\Model.cs"/>
+        <Compile Include="Game\Patches\MaterialManBandaid.cs" />
         <Compile Include="GlobalUsings.cs"/>
         <None Include="App.config"/>
         <None Include="AzuEPI.snk"/>

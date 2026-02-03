@@ -35,6 +35,10 @@ internal static class CharacterSelectionVanity
             if (int.TryParse(parts[4], out int shoulderVar)) VanityData[VanityZdoKeys.ShoulderVariant] = shoulderVar;
             if (int.TryParse(parts[5], out int utility)) VanityData[VanityZdoKeys.Utility] = utility;
             if (parts.Length >= 7 && int.TryParse(parts[6], out int trinket)) VanityData[VanityZdoKeys.Trinket] = trinket;
+            if (parts.Length >= 8 && int.TryParse(parts[7], out int helmetVar)) VanityData[VanityZdoKeys.HelmetVariant] = helmetVar;
+            if (parts.Length >= 9 && int.TryParse(parts[8], out int chestVar)) VanityData[VanityZdoKeys.ChestVariant] = chestVar;
+            if (parts.Length >= 10 && int.TryParse(parts[9], out int legsVar)) VanityData[VanityZdoKeys.LegsVariant] = legsVar;
+            if (parts.Length >= 11 && int.TryParse(parts[10], out int utilityVar)) VanityData[VanityZdoKeys.UtilityVariant] = utilityVar;
         }
     }
 
@@ -72,7 +76,22 @@ internal static class VanityZdoKeys
     internal static readonly int Shoulder = "azu.vanity.shoulder".GetStableHashCode();
     internal static readonly int Utility = "azu.vanity.utility".GetStableHashCode();
     internal static readonly int Trinket = "azu.vanity.trinket".GetStableHashCode();
+
+    internal static readonly int HelmetVariant = "azu.vanity.helmet.variant".GetStableHashCode();
+    internal static readonly int ChestVariant = "azu.vanity.chest.variant".GetStableHashCode();
+    internal static readonly int LegsVariant = "azu.vanity.legs.variant".GetStableHashCode();
     internal static readonly int ShoulderVariant = "azu.vanity.shoulder.variant".GetStableHashCode();
+    internal static readonly int UtilityVariant = "azu.vanity.utility.variant".GetStableHashCode();
+
+    internal static int VariantKeyForSlot(VisSlot slot) => slot switch
+    {
+        VisSlot.Helmet => HelmetVariant,
+        VisSlot.Chest => ChestVariant,
+        VisSlot.Legs => LegsVariant,
+        VisSlot.Shoulder => ShoulderVariant,
+        VisSlot.Utility => UtilityVariant,
+        _ => 0
+    };
 }
 
 public static class VanityAPI
@@ -90,14 +109,26 @@ public static class VanityAPI
 
         switch (slot)
         {
-            case VisSlot.Chest: zdo.Set(VanityZdoKeys.Chest, hash); break;
-            case VisSlot.Legs: zdo.Set(VanityZdoKeys.Legs, hash); break;
-            case VisSlot.Helmet: zdo.Set(VanityZdoKeys.Helmet, hash); break;
+            case VisSlot.Chest:
+                zdo.Set(VanityZdoKeys.Chest, hash);
+                zdo.Set(VanityZdoKeys.ChestVariant, variant);
+                break;
+            case VisSlot.Legs:
+                zdo.Set(VanityZdoKeys.Legs, hash);
+                zdo.Set(VanityZdoKeys.LegsVariant, variant);
+                break;
+            case VisSlot.Helmet:
+                zdo.Set(VanityZdoKeys.Helmet, hash);
+                zdo.Set(VanityZdoKeys.HelmetVariant, variant);
+                break;
             case VisSlot.Shoulder:
                 zdo.Set(VanityZdoKeys.Shoulder, hash);
                 zdo.Set(VanityZdoKeys.ShoulderVariant, variant);
                 break;
-            case VisSlot.Utility: zdo.Set(VanityZdoKeys.Utility, hash); break;
+            case VisSlot.Utility:
+                zdo.Set(VanityZdoKeys.Utility, hash);
+                zdo.Set(VanityZdoKeys.UtilityVariant, variant);
+                break;
             default: return false;
         }
 
@@ -112,18 +143,18 @@ public static class VanityAPI
         if (!ve || ve.m_nview == null) return false;
         ZDO? zdo = ve.m_nview.GetZDO();
         if (zdo == null || !ve.m_nview.IsOwner()) return false;
+        int variantKey = VanityZdoKeys.VariantKeyForSlot(slot);
         switch (slot)
         {
             case VisSlot.Chest: zdo.Set(VanityZdoKeys.Chest, 0); break;
             case VisSlot.Legs: zdo.Set(VanityZdoKeys.Legs, 0); break;
             case VisSlot.Helmet: zdo.Set(VanityZdoKeys.Helmet, 0); break;
-            case VisSlot.Shoulder:
-                zdo.Set(VanityZdoKeys.Shoulder, 0);
-                zdo.Set(VanityZdoKeys.ShoulderVariant, 0);
-                break;
+            case VisSlot.Shoulder: zdo.Set(VanityZdoKeys.Shoulder, 0); break;
             case VisSlot.Utility: zdo.Set(VanityZdoKeys.Utility, 0); break;
             default: return false;
         }
+
+        if (variantKey != 0) zdo.Set(variantKey, 0);
 
         SaveToCustomData(Player.m_localPlayer);
         ve.UpdateVisuals();
@@ -136,18 +167,18 @@ public static class VanityAPI
         ZDO? zdo = ve.m_nview.GetZDO();
         if (zdo == null || !ve.m_nview.IsOwner()) return false;
         int v = hidden ? HIDE : 0;
+        int variantKey = VanityZdoKeys.VariantKeyForSlot(slot);
         switch (slot)
         {
             case VisSlot.Chest: zdo.Set(VanityZdoKeys.Chest, v); break;
             case VisSlot.Legs: zdo.Set(VanityZdoKeys.Legs, v); break;
             case VisSlot.Helmet: zdo.Set(VanityZdoKeys.Helmet, v); break;
-            case VisSlot.Shoulder:
-                zdo.Set(VanityZdoKeys.Shoulder, v);
-                if (!hidden) zdo.Set(VanityZdoKeys.ShoulderVariant, 0);
-                break;
+            case VisSlot.Shoulder: zdo.Set(VanityZdoKeys.Shoulder, v); break;
             case VisSlot.Utility: zdo.Set(VanityZdoKeys.Utility, v); break;
             default: return false;
         }
+
+        if (!hidden && variantKey != 0) zdo.Set(variantKey, 0);
 
         SaveToCustomData(Player.m_localPlayer);
         ve.UpdateVisuals();
@@ -163,7 +194,7 @@ public static class VanityAPI
         ZDO? zdo = ve.m_nview?.GetZDO();
         if (zdo == null) return;
 
-        string data = $"{zdo.GetInt(VanityZdoKeys.Helmet)}:{zdo.GetInt(VanityZdoKeys.Chest)}:{zdo.GetInt(VanityZdoKeys.Legs)}:{zdo.GetInt(VanityZdoKeys.Shoulder)}:{zdo.GetInt(VanityZdoKeys.ShoulderVariant)}:{zdo.GetInt(VanityZdoKeys.Utility)}:{zdo.GetInt(VanityZdoKeys.Trinket)}";
+        string data = $"{zdo.GetInt(VanityZdoKeys.Helmet)}:{zdo.GetInt(VanityZdoKeys.Chest)}:{zdo.GetInt(VanityZdoKeys.Legs)}:{zdo.GetInt(VanityZdoKeys.Shoulder)}:{zdo.GetInt(VanityZdoKeys.ShoulderVariant)}:{zdo.GetInt(VanityZdoKeys.Utility)}:{zdo.GetInt(VanityZdoKeys.Trinket)}:{zdo.GetInt(VanityZdoKeys.HelmetVariant)}:{zdo.GetInt(VanityZdoKeys.ChestVariant)}:{zdo.GetInt(VanityZdoKeys.LegsVariant)}:{zdo.GetInt(VanityZdoKeys.UtilityVariant)}";
 
         player.m_customData["AzuEPI.Vanity"] = data;
     }
@@ -190,6 +221,10 @@ public static class VanityAPI
             if (int.TryParse(parts[4], out int shoulderVar)) zdo.Set(VanityZdoKeys.ShoulderVariant, shoulderVar);
             if (int.TryParse(parts[5], out int utility)) zdo.Set(VanityZdoKeys.Utility, utility);
             if (parts.Length >= 7 && int.TryParse(parts[6], out int trinket)) zdo.Set(VanityZdoKeys.Trinket, trinket);
+            if (parts.Length >= 8 && int.TryParse(parts[7], out int helmetVar)) zdo.Set(VanityZdoKeys.HelmetVariant, helmetVar);
+            if (parts.Length >= 9 && int.TryParse(parts[8], out int chestVar)) zdo.Set(VanityZdoKeys.ChestVariant, chestVar);
+            if (parts.Length >= 10 && int.TryParse(parts[9], out int legsVar)) zdo.Set(VanityZdoKeys.LegsVariant, legsVar);
+            if (parts.Length >= 11 && int.TryParse(parts[10], out int utilityVar)) zdo.Set(VanityZdoKeys.UtilityVariant, utilityVar);
         }
     }
 

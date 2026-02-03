@@ -142,9 +142,8 @@ internal static class VanitySlots
         bool hidden = VanityAPI.IsHidden(val);
         bool hasVanity = !hidden && val != 0;
 
-        int variant = (slot == VisSlot.Shoulder)
-            ? VanityAPI.GetVariant(ve, VanityZdoKeys.ShoulderVariant)
-            : 0;
+        int variantKey = VanityZdoKeys.VariantKeyForSlot(slot);
+        int variant = variantKey != 0 ? VanityAPI.GetVariant(ve, variantKey) : 0;
 
         return new VanityState(hasVanity, hidden, val, variant);
     }
