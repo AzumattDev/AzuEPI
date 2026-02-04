@@ -132,6 +132,7 @@ internal static class QuickAccessBar
                         }
 
                         element.m_equiped.SetActive(itemData.m_equipped);
+                        element.m_queued.SetActive(false); // Hide vanilla queued indicator; fill overlay renders independently as a sibling
 
                         // Use the overlay-based fill approach to avoid MaterialMan conflicts
                         InventoryGridQueuedFillPatch.UpdateFillOverlay(element.m_queued, null, player, itemData);

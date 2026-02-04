@@ -142,7 +142,7 @@ namespace AzuExtendedPlayerInventory
         public static bool AddSlot(string slotName, Func<Player, ItemDrop.ItemData?> getItem, Func<ItemDrop.ItemData, bool> isValid, int index = -1)
         {
 #if !API
-            if (Localization.instance.Localize(slotName).Contains("["))
+            if (Localization.m_instance == null || Localization.m_instance.Localize(slotName).Contains("["))
             {
                 Localizer.OnLocalizationComplete += () => AzuEPI.API.AddSlot(slotName, getItem, isValid, index);
             }

@@ -63,7 +63,7 @@ public class API
 
         AzuExtendedPlayerInventoryLogger.LogDebug("API.AddSlot proceeding to add slot " + slotName);
 
-        int existingIdx = slots.FindIndex(s => s.Name == slotName || (Localization.instance != null && s.Name == Localization.instance.Localize(slotName)));
+        int existingIdx = slots.FindIndex(s => s != null && (s.Name == slotName || (Localization.m_instance != null && s.Name == Localization.m_instance.Localize(slotName))));
         if (existingIdx >= 0 && slots[existingIdx] is Model.EquipmentSlot existing)
         {
             ComposeOntoSlot(existing, isValid, getItem);
@@ -73,7 +73,7 @@ public class API
 
         Model.EquipmentSlot slot = new()
         {
-            Name = slotName.StartsWith("$") && Localization.instance != null ? Localization.instance.Localize(slotName) : slotName,
+            Name = slotName.StartsWith("$") && Localization.m_instance != null ? Localization.m_instance.Localize(slotName) : slotName,
             OriginalName = slotName,
             Get = getItem,
             Valid = isValid,
@@ -169,7 +169,7 @@ public class API
 
         Model.EquipmentSlot slot = new()
         {
-            Name = showName ? slotName.StartsWith("$") && Localization.instance != null ? Localization.instance.Localize(slotName) : slotName : "",
+            Name = showName ? slotName.StartsWith("$") && Localization.m_instance != null ? Localization.m_instance.Localize(slotName) : slotName : "",
             Valid = item => true,
             IsAPIAdded = true,
             IsQuickSlot = true
@@ -213,11 +213,11 @@ public class API
                     {
                         itemInSlot.m_gridPos = newPos;
                         inv.AddItem(itemInSlot);
-                        AzuExtendedPlayerInventoryLogger.LogInfo($"Relocated {Localization.instance.Localize(itemInSlot.m_shared.m_name)} from removed slot to ({newPos.x}, {newPos.y})");
+                        AzuExtendedPlayerInventoryLogger.LogInfo($"Relocated {Localization.m_instance.Localize(itemInSlot.m_shared.m_name)} from removed slot to ({newPos.x}, {newPos.y})");
                     }
                     else
                     {
-                        AzuExtendedPlayerInventoryLogger.LogWarning($"No room for {Localization.instance.Localize(itemInSlot.m_shared.m_name)} after slot removal, dropping item.");
+                        AzuExtendedPlayerInventoryLogger.LogWarning($"No room for {Localization.m_instance.Localize(itemInSlot.m_shared.m_name)} after slot removal, dropping item.");
                         Player.m_localPlayer.DropItem(inv, itemInSlot, itemInSlot.m_stack);
                     }
                 }
@@ -908,7 +908,7 @@ public class API
 
     internal static void RelocalizeSlots()
     {
-        if (Localization.instance == null) return;
+        if (Localization.m_instance == null) return;
         List<string> builtInSlotNames = GetBuiltInSlotNames();
 
         foreach (Model.Slot? slot in slots)
@@ -916,29 +916,32 @@ public class API
             if (slot == null || string.IsNullOrWhiteSpace(slot.OriginalName)) continue;
             if (!slot.OriginalName.StartsWith("$", StringComparison.Ordinal)) continue;
             bool isBuiltIn = builtInSlotNames.Contains(slot.OriginalName);
-            string localized = Localization.instance.Localize(slot.OriginalName);
+            string localized = Localization.m_instance.Localize(slot.OriginalName);
             if (slot.Name == localized && !isBuiltIn) continue;
             if (isBuiltIn)
             {
                 switch (slot.OriginalName)
                 {
                     case "$azu_epi_helmet":
-                        slot.Name = string.IsNullOrWhiteSpace(HelmetText.Value) ? localized : HelmetText.Value.StartsWith("$", StringComparison.Ordinal) ? Localization.instance.Localize(HelmetText.Value) : HelmetText.Value;
+                        slot.Name = string.IsNullOrWhiteSpace(HelmetText.Value) ? localized : HelmetText.Value.StartsWith("$", StringComparison.Ordinal) ? Localization.m_instance.Localize(HelmetText.Value) : HelmetText.Value;
                         break;
                     case "$azu_epi_chest":
-                        slot.Name = string.IsNullOrWhiteSpace(ChestText.Value) ? localized : ChestText.Value.StartsWith("$", StringComparison.Ordinal) ? Localization.instance.Localize(ChestText.Value) : ChestText.Value;
+                        slot.Name = string.IsNullOrWhiteSpace(ChestText.Value) ? localized : ChestText.Value.StartsWith("$", StringComparison.Ordinal) ? Localization.m_instance.Localize(ChestText.Value) : ChestText.Value;
                         break;
                     case "$azu_epi_legs":
-                        slot.Name = string.IsNullOrWhiteSpace(LegsText.Value) ? localized : LegsText.Value.StartsWith("$", StringComparison.Ordinal) ? Localization.instance.Localize(LegsText.Value) : LegsText.Value;
+                        slot.Name = string.IsNullOrWhiteSpace(LegsText.Value) ? localized : LegsText.Value.StartsWith("$", StringComparison.Ordinal) ? Localization.m_instance.Localize(LegsText.Value) : LegsText.Value;
                         break;
                     case "$azu_epi_shoulder":
-                        slot.Name = string.IsNullOrWhiteSpace(BackText.Value) ? localized : BackText.Value.StartsWith("$", StringComparison.Ordinal) ? Localization.instance.Localize(BackText.Value) : BackText.Value;
+                        slot.Name = string.IsNullOrWhiteSpace(BackText.Value) ? localized : BackText.Value.StartsWith("$", StringComparison.Ordinal) ? Localization.m_instance.Localize(BackText.Value) : BackText.Value;
                         break;
                     case "$azu_epi_utility":
-                        slot.Name = string.IsNullOrWhiteSpace(UtilityText.Value) ? localized : UtilityText.Value.StartsWith("$", StringComparison.Ordinal) ? Localization.instance.Localize(UtilityText.Value) : UtilityText.Value;
+                        slot.Name = string.IsNullOrWhiteSpace(UtilityText.Value) ? localized : UtilityText.Value.StartsWith("$", StringComparison.Ordinal) ? Localization.m_instance.Localize(UtilityText.Value) : UtilityText.Value;
                         break;
                     case "$azu_epi_trinket":
-                        slot.Name = string.IsNullOrWhiteSpace(TrinketText.Value) ? localized : TrinketText.Value.StartsWith("$", StringComparison.Ordinal) ? Localization.instance.Localize(TrinketText.Value) : TrinketText.Value;
+                        slot.Name = string.IsNullOrWhiteSpace(TrinketText.Value) ? localized : TrinketText.Value.StartsWith("$", StringComparison.Ordinal) ? Localization.m_instance.Localize(TrinketText.Value) : TrinketText.Value;
+                        break;
+                    default:
+                        slot.Name = localized;
                         break;
                 }
 

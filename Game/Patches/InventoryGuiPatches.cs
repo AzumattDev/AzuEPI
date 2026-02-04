@@ -381,3 +381,16 @@ public class InventoryGuiPatches
         }
     }
 }
+
+[HarmonyPatch(typeof(Humanoid), nameof(Humanoid.SetupEquipment))]
+static class SetupEquipment_GridSync
+{
+    static void Postfix(Humanoid __instance)
+    {
+        if (__instance is not Player p || p != Player.m_localPlayer) return;
+        if (InventoryGui.IsVisible()) return;
+        if (AddEquipmentRow.Value.isOff()) return;
+
+        Layout.ProjectEquippedIntoGridTail(p, null!);
+    }
+}

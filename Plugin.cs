@@ -1,4 +1,6 @@
 ﻿using System.Reflection;
+using System.Reflection.Emit;
+using System.Threading;
 using APIManager;
 using AzuEPI.Game.Compatibility.AdvBackpacks;
 using AzuEPI.Game.Panels;
@@ -7,6 +9,9 @@ using AzuEPI.Game.Slots.QAB;
 using BepInEx.Logging;
 using LocalizationManager;
 using ServerSync;
+using Splatform;
+using Unity.Collections;
+using Valheim.SettingsGui;
 
 namespace AzuEPI;
 
@@ -113,7 +118,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
                 null,
                 new ConfigurationManagerAttributes { Order = NextOrder, Browsable = false }),
             NextOrder);
-        
+
         EPISlotsAddArmor = config("4.5 - Equipment Slot Management", "Slots Use Armor", On, "If On, the armor on items in the custom slots is applied to the player. If off, the armor is not calculated, which is better for vanilla balance, but not expected. Default is set to On for this reason", NextOrder);
         UtilityEPIAddArmor = config("4.5 - Equipment Slot Management", "Utility Slots Use Armor", Off, "If On & Slots Use Armor config is on, the armor on utility items in the custom slots is applied to the player. If off, the armor is not calculated, which is better for vanilla balance. Default is off for this reason.", NextOrder);
 
@@ -927,17 +932,17 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         if (removedSlots.Contains(slotName))
             return true;
 
-        if (Localization.instance == null) return false;
+        if (Localization.m_instance == null) return false;
         if (slotName.StartsWith("$"))
         {
-            string localizedName = Localization.instance.Localize(slotName);
+            string localizedName = Localization.m_instance.Localize(slotName);
             if (removedSlots.Contains(localizedName))
                 return true;
         }
         else
         {
             string tokenName = "$item_" + slotName.ToLower();
-            if (removedSlots.Contains(tokenName) || removedSlots.Contains(Localization.instance.Localize(tokenName)))
+            if (removedSlots.Contains(tokenName) || removedSlots.Contains(Localization.m_instance.Localize(tokenName)))
                 return true;
         }
 
@@ -958,18 +963,18 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
                 bool shouldBeRemoved = removedSlots.Contains(backupKey);
 
-                if (!shouldBeRemoved && Localization.instance != null)
+                if (!shouldBeRemoved && Localization.m_instance != null)
                 {
                     if (backupKey.StartsWith("$"))
                     {
-                        string localized = Localization.instance.Localize(backupKey);
+                        string localized = Localization.m_instance.Localize(backupKey);
                         shouldBeRemoved = removedSlots.Contains(localized);
                     }
                     else
                     {
                         string tokenName = "$item_" + backupKey.ToLower();
                         shouldBeRemoved = removedSlots.Contains(tokenName) ||
-                                          removedSlots.Contains(Localization.instance.Localize(tokenName));
+                                          removedSlots.Contains(Localization.m_instance.Localize(tokenName));
                     }
                 }
 
@@ -1007,11 +1012,11 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
                 bool removed = API.RemoveSlot(slotName);
 
-                if (!removed && Localization.instance != null)
+                if (!removed && Localization.m_instance != null)
                 {
                     if (slotName.StartsWith("$"))
                     {
-                        string localizedName = Localization.instance.Localize(slotName);
+                        string localizedName = Localization.m_instance.Localize(slotName);
                         if (localizedName != slotName)
                         {
                             removed = API.RemoveSlot(localizedName);

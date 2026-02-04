@@ -159,8 +159,8 @@ public static class Initializers
             else
             {
                 API.RemoveSlot("$item_wishbone");
-                if (Localization.instance != null)
-                    API.RemoveSlot(Localization.instance.Localize("$item_wishbone"));
+                if (Localization.m_instance != null)
+                    API.RemoveSlot(Localization.m_instance.Localize("$item_wishbone"));
                 InventoryHealth.FixHiddenItems();
             }
 
@@ -181,8 +181,8 @@ public static class Initializers
             else
             {
                 API.RemoveSlot("$item_demister");
-                if (Localization.instance != null)
-                    API.RemoveSlot(Localization.instance.Localize("$item_demister"));
+                if (Localization.m_instance != null)
+                    API.RemoveSlot(Localization.m_instance.Localize("$item_demister"));
                 InventoryHealth.FixHiddenItems();
             }
 

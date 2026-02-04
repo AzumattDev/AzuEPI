@@ -99,8 +99,8 @@ public static class JewelcraftingCompat
         if (IsWishboneAGem())
         {
             API.RemoveSlot("$item_wishbone");
-            if (Localization.instance != null)
-                API.RemoveSlot(Localization.instance.Localize("$item_wishbone"));
+            if (Localization.m_instance != null)
+                API.RemoveSlot(Localization.m_instance.Localize("$item_wishbone"));
             AzuExtendedPlayerInventoryLogger.LogDebug("JewelcraftingCompat: Removed Wishbone slot (Jewelcrafting has it as a gem)");
             removedAny = true;
         }
@@ -108,8 +108,8 @@ public static class JewelcraftingCompat
         if (IsWisplightAGem())
         {
             API.RemoveSlot("$item_demister");
-            if (Localization.instance != null)
-                API.RemoveSlot(Localization.instance.Localize("$item_demister"));
+            if (Localization.m_instance != null)
+                API.RemoveSlot(Localization.m_instance.Localize("$item_demister"));
             AzuExtendedPlayerInventoryLogger.LogDebug("JewelcraftingCompat: Removed Wisplight slot (Jewelcrafting has it as a gem)");
             removedAny = true;
         }
@@ -133,8 +133,8 @@ public static class JewelcraftingCompat
         if (isGem)
         {
             API.RemoveSlot("$item_demister");
-            if (Localization.instance != null)
-                API.RemoveSlot(Localization.instance.Localize("$item_demister"));
+            if (Localization.m_instance != null)
+                API.RemoveSlot(Localization.m_instance.Localize("$item_demister"));
         }
         else
         {
