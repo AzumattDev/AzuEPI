@@ -56,6 +56,7 @@ internal static class JCBPUIUseBleedGuard
     {
         if (!ShouldActivate()) return;
         if (!InWarpWindow || !InventoryGui.IsVisible()) return;
+        if (Cursor.lockState != CursorLockMode.None) return;
 
         AzuEPICharacterPanel panel = AzuEPICharacterPanel.instance;
         if (panel?.render == null) return;

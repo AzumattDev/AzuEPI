@@ -1840,10 +1840,16 @@ public static class StatsPanelController
         containerLE.minHeight = 36;
         containerLE.preferredHeight = 36;
 
-        GameObject labelGo = new("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
+        GameObject labelGo = new("Label", typeof(RectTransform));
         labelGo.transform.SetParent(containerGo.transform, false);
-
-        TextMeshProUGUI label = labelGo.GetComponent<TextMeshProUGUI>();
+        labelGo.SafeSetActive(false);
+        TextMeshProUGUI label = labelGo.AddComponent<TextMeshProUGUI>();
+        if (_fontAsset != null)
+        {
+            label.font = _fontAsset;
+            label.fontSharedMaterial = _fontAsset.material;
+        }
+        labelGo.SafeSetActive(true);
         label.text = Localization.instance.Localize("$azu_epi_stat_player_label");
         label.fontSize = 16;
         label.fontStyle = FontStyles.Bold;

@@ -200,16 +200,24 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     internal void FullRebuild()
     {
+        try
+        {
+            InventoryGuiPatches.UpdateInventory_Patch.RebuildQuickslots();
+            SlotHelpers.ResizeSlots();
+        }
+        catch (Exception ex)
+        {
+            AzuExtendedPlayerInventoryLogger.LogError($"Error during FullRebuild (slot rebuild): {ex.Message}\n{ex.StackTrace}");
+        }
+
         if (Player.m_localPlayer == null || InventoryGui.instance == null)
         {
-            AzuExtendedPlayerInventoryLogger.LogDebug("FullRebuild skipped - player or inventory not initialized");
+            AzuExtendedPlayerInventoryLogger.LogDebug("FullRebuild skipped GUI phase - player or inventory not initialized");
             return;
         }
 
         try
         {
-            InventoryGuiPatches.UpdateInventory_Patch.RebuildQuickslots();
-            SlotHelpers.ResizeSlots();
             Layout.UpdateInventorySize();
             InventoryHealth.FixHiddenItems();
             SlotHelpers.UpdateEquipmentBackgroundAnchors();
@@ -219,7 +227,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         }
         catch (Exception ex)
         {
-            AzuExtendedPlayerInventoryLogger.LogError($"Error during FullRebuild: {ex.Message}\n{ex.StackTrace}");
+            AzuExtendedPlayerInventoryLogger.LogError($"Error during FullRebuild (GUI phase): {ex.Message}\n{ex.StackTrace}");
         }
     }
 
