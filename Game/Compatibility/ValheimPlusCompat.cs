@@ -33,7 +33,7 @@ public static class ValheimPlusCompat
             string configPath = Path.Combine(Paths.ConfigPath, "valheim_plus.cfg");
             if (!File.Exists(configPath))
             {
-                AzuExtendedPlayerInventoryLogger.LogDebugDebug("ValheimPlusCompat: Config file not found");
+                AzuExtendedPlayerInventoryLogger.LogWarning($"ValheimPlusCompat: Config file not found at: {configPath}");
                 return;
             }
 

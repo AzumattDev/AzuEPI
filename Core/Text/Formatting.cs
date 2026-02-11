@@ -7,7 +7,7 @@ public static class Formatting
     internal static string FormatNumberSimpleNoDecimal(float number)
     {
         CalculateShortNumberAndSuffix(number, out double shortNumber, out string suffix);
-        return $"{shortNumber:N0}{suffix}";
+        return shortNumber.ToString("N0", CultureInfo.InvariantCulture) + suffix;
     }
 
     private static void CalculateShortNumberAndSuffix(float number, out double shortNumber, out string suffix)

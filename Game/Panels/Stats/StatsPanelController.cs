@@ -361,10 +361,10 @@ public static class StatsPanelController
         if (hasAttributeStats)
         {
             CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_attributes"), new Color(1f, 0.84f, 0f, 1f));
-            if (IsLiveStatEnabled(LiveStatType.Health)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_health"));
-            if (IsLiveStatEnabled(LiveStatType.Stamina)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_stamina"));
-            if (IsLiveStatEnabled(LiveStatType.Eitr)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_eitr"));
-            if (IsLiveStatEnabled(LiveStatType.Adrenaline)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_adrenaline"));
+            if (IsLiveStatEnabled(LiveStatType.Health)) CreateLiveStatRow("Health", Localization.instance.Localize("$azu_epi_stat_health"));
+            if (IsLiveStatEnabled(LiveStatType.Stamina)) CreateLiveStatRow("Stamina", Localization.instance.Localize("$azu_epi_stat_stamina"));
+            if (IsLiveStatEnabled(LiveStatType.Eitr)) CreateLiveStatRow("Eitr", Localization.instance.Localize("$azu_epi_stat_eitr"));
+            if (IsLiveStatEnabled(LiveStatType.Adrenaline)) CreateLiveStatRow("Adrenaline", Localization.instance.Localize("$azu_epi_stat_adrenaline"));
             CreateSpacer("Spacer_Attributes");
         }
 
@@ -375,13 +375,13 @@ public static class StatsPanelController
         if (hasRegenStats)
         {
             CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_regeneration"), new Color(0.4f, 1f, 0.4f, 1f));
-            if (IsLiveStatEnabled(LiveStatType.HealthRegen)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_health_regen"));
-            if (IsLiveStatEnabled(LiveStatType.HealthRegenMulti)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_health_regen_multi"));
-            if (IsLiveStatEnabled(LiveStatType.FoodRegen)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_food_regen"));
-            if (IsLiveStatEnabled(LiveStatType.StaminaRegen)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_stamina_regen"));
-            if (IsLiveStatEnabled(LiveStatType.StaminaRegenMulti)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_stamina_regen_multi"));
-            if (IsLiveStatEnabled(LiveStatType.EitrRegen)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_eitr_regen"));
-            if (IsLiveStatEnabled(LiveStatType.EitrRegenMulti)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_eitr_regen_multi"));
+            if (IsLiveStatEnabled(LiveStatType.HealthRegen)) CreateLiveStatRow("Health Regen", Localization.instance.Localize("$azu_epi_stat_health_regen"));
+            if (IsLiveStatEnabled(LiveStatType.HealthRegenMulti)) CreateLiveStatRow("Health Regen Multi", Localization.instance.Localize("$azu_epi_stat_health_regen_multi"));
+            if (IsLiveStatEnabled(LiveStatType.FoodRegen)) CreateLiveStatRow("Food Regen", Localization.instance.Localize("$azu_epi_stat_food_regen"));
+            if (IsLiveStatEnabled(LiveStatType.StaminaRegen)) CreateLiveStatRow("Stamina Regen", Localization.instance.Localize("$azu_epi_stat_stamina_regen"));
+            if (IsLiveStatEnabled(LiveStatType.StaminaRegenMulti)) CreateLiveStatRow("Stamina Regen Multi", Localization.instance.Localize("$azu_epi_stat_stamina_regen_multi"));
+            if (IsLiveStatEnabled(LiveStatType.EitrRegen)) CreateLiveStatRow("Eitr Regen", Localization.instance.Localize("$azu_epi_stat_eitr_regen"));
+            if (IsLiveStatEnabled(LiveStatType.EitrRegenMulti)) CreateLiveStatRow("Eitr Regen Multi", Localization.instance.Localize("$azu_epi_stat_eitr_regen_multi"));
             CreateSpacer("Spacer_Regen");
         }
 
@@ -391,12 +391,12 @@ public static class StatsPanelController
         if (hasCombatStats)
         {
             CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_combat"), new Color(1f, 0.5f, 0f, 1f));
-            if (IsLiveStatEnabled(LiveStatType.AttackSpeed)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_attack_speed"));
-            if (IsLiveStatEnabled(LiveStatType.DamageModifier)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_damage_modifier"));
-            if (IsLiveStatEnabled(LiveStatType.StaggerResist)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_stagger_resist"));
-            if (IsLiveStatEnabled(LiveStatType.TimedBlockBonus)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_timed_block_bonus"));
-            if (IsLiveStatEnabled(LiveStatType.CritChance)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_crit_chance"));
-            if (IsLiveStatEnabled(LiveStatType.Lifesteal)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_lifesteal"));
+            if (IsLiveStatEnabled(LiveStatType.AttackSpeed)) CreateLiveStatRow("Attack Speed", Localization.instance.Localize("$azu_epi_stat_attack_speed"));
+            if (IsLiveStatEnabled(LiveStatType.DamageModifier)) CreateLiveStatRow("Damage Modifier", Localization.instance.Localize("$azu_epi_stat_damage_modifier"));
+            if (IsLiveStatEnabled(LiveStatType.StaggerResist)) CreateLiveStatRow("Stagger Resist", Localization.instance.Localize("$azu_epi_stat_stagger_resist"));
+            if (IsLiveStatEnabled(LiveStatType.TimedBlockBonus)) CreateLiveStatRow("Timed Block Bonus", Localization.instance.Localize("$azu_epi_stat_timed_block_bonus"));
+            if (IsLiveStatEnabled(LiveStatType.CritChance)) CreateLiveStatRow("Crit Chance", Localization.instance.Localize("$azu_epi_stat_crit_chance"));
+            if (IsLiveStatEnabled(LiveStatType.Lifesteal)) CreateLiveStatRow("Lifesteal", Localization.instance.Localize("$azu_epi_stat_lifesteal"));
             CreateSpacer("Spacer_Combat");
         }
 
@@ -407,14 +407,14 @@ public static class StatsPanelController
         if (hasElementalStats)
         {
             CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_elemental_damage"), new Color(1f, 0.6f, 0.2f, 1f));
-            if (IsLiveStatEnabled(LiveStatType.BluntDamage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_blunt_damage"));
-            if (IsLiveStatEnabled(LiveStatType.SlashDamage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_slash_damage"));
-            if (IsLiveStatEnabled(LiveStatType.PierceDamage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_pierce_damage"));
-            if (IsLiveStatEnabled(LiveStatType.FireDamage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_fire_damage"));
-            if (IsLiveStatEnabled(LiveStatType.FrostDamage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_frost_damage"));
-            if (IsLiveStatEnabled(LiveStatType.LightningDamage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_lightning_damage"));
-            if (IsLiveStatEnabled(LiveStatType.PoisonDamage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_poison_damage"));
-            if (IsLiveStatEnabled(LiveStatType.SpiritDamage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_spirit_damage"));
+            if (IsLiveStatEnabled(LiveStatType.BluntDamage)) CreateLiveStatRow("Blunt Damage", Localization.instance.Localize("$azu_epi_stat_blunt_damage"));
+            if (IsLiveStatEnabled(LiveStatType.SlashDamage)) CreateLiveStatRow("Slash Damage", Localization.instance.Localize("$azu_epi_stat_slash_damage"));
+            if (IsLiveStatEnabled(LiveStatType.PierceDamage)) CreateLiveStatRow("Pierce Damage", Localization.instance.Localize("$azu_epi_stat_pierce_damage"));
+            if (IsLiveStatEnabled(LiveStatType.FireDamage)) CreateLiveStatRow("Fire Damage", Localization.instance.Localize("$azu_epi_stat_fire_damage"));
+            if (IsLiveStatEnabled(LiveStatType.FrostDamage)) CreateLiveStatRow("Frost Damage", Localization.instance.Localize("$azu_epi_stat_frost_damage"));
+            if (IsLiveStatEnabled(LiveStatType.LightningDamage)) CreateLiveStatRow("Lightning Damage", Localization.instance.Localize("$azu_epi_stat_lightning_damage"));
+            if (IsLiveStatEnabled(LiveStatType.PoisonDamage)) CreateLiveStatRow("Poison Damage", Localization.instance.Localize("$azu_epi_stat_poison_damage"));
+            if (IsLiveStatEnabled(LiveStatType.SpiritDamage)) CreateLiveStatRow("Spirit Damage", Localization.instance.Localize("$azu_epi_stat_spirit_damage"));
             CreateSpacer("Spacer_ElementalDamage");
         }
 
@@ -423,10 +423,10 @@ public static class StatsPanelController
         if (hasWeightStats)
         {
             CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_carry_weight"), new Color(0.7f, 0.7f, 1f, 1f));
-            if (IsLiveStatEnabled(LiveStatType.CurrentWeight)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_current_weight"));
-            if (IsLiveStatEnabled(LiveStatType.MaxWeight)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_max_weight"));
-            if (IsLiveStatEnabled(LiveStatType.WeightPercentage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_weight_percentage"));
-            if (IsLiveStatEnabled(LiveStatType.ExtraCarryWeight)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_extra_carry_weight"));
+            if (IsLiveStatEnabled(LiveStatType.CurrentWeight)) CreateLiveStatRow("Current Weight", Localization.instance.Localize("$azu_epi_stat_current_weight"));
+            if (IsLiveStatEnabled(LiveStatType.MaxWeight)) CreateLiveStatRow("Max Weight", Localization.instance.Localize("$azu_epi_stat_max_weight"));
+            if (IsLiveStatEnabled(LiveStatType.WeightPercentage)) CreateLiveStatRow("Weight Percentage", Localization.instance.Localize("$azu_epi_stat_weight_percentage"));
+            if (IsLiveStatEnabled(LiveStatType.ExtraCarryWeight)) CreateLiveStatRow("Extra Carry Weight", Localization.instance.Localize("$azu_epi_stat_extra_carry_weight"));
             CreateSpacer("Spacer_CarryWeight");
         }
 
@@ -437,14 +437,14 @@ public static class StatsPanelController
         if (hasStaminaUsageStats)
         {
             CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_stamina_usage"), new Color(1f, 1f, 0.5f, 1f));
-            if (IsLiveStatEnabled(LiveStatType.JumpStamina)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_jump_stamina"));
-            if (IsLiveStatEnabled(LiveStatType.AttackStamina)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_attack_stamina"));
-            if (IsLiveStatEnabled(LiveStatType.BlockStamina)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_block_stamina"));
-            if (IsLiveStatEnabled(LiveStatType.DodgeStamina)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_dodge_stamina"));
-            if (IsLiveStatEnabled(LiveStatType.SwimStamina)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_swim_stamina"));
-            if (IsLiveStatEnabled(LiveStatType.RunStamina)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_run_stamina"));
-            if (IsLiveStatEnabled(LiveStatType.SneakStamina)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_sneak_stamina"));
-            if (IsLiveStatEnabled(LiveStatType.HomeItemStamina)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_home_item_stamina"));
+            if (IsLiveStatEnabled(LiveStatType.JumpStamina)) CreateLiveStatRow("Jump Stamina", Localization.instance.Localize("$azu_epi_stat_jump_stamina"));
+            if (IsLiveStatEnabled(LiveStatType.AttackStamina)) CreateLiveStatRow("Attack Stamina", Localization.instance.Localize("$azu_epi_stat_attack_stamina"));
+            if (IsLiveStatEnabled(LiveStatType.BlockStamina)) CreateLiveStatRow("Block Stamina", Localization.instance.Localize("$azu_epi_stat_block_stamina"));
+            if (IsLiveStatEnabled(LiveStatType.DodgeStamina)) CreateLiveStatRow("Dodge Stamina", Localization.instance.Localize("$azu_epi_stat_dodge_stamina"));
+            if (IsLiveStatEnabled(LiveStatType.SwimStamina)) CreateLiveStatRow("Swim Stamina", Localization.instance.Localize("$azu_epi_stat_swim_stamina"));
+            if (IsLiveStatEnabled(LiveStatType.RunStamina)) CreateLiveStatRow("Run Stamina", Localization.instance.Localize("$azu_epi_stat_run_stamina"));
+            if (IsLiveStatEnabled(LiveStatType.SneakStamina)) CreateLiveStatRow("Sneak Stamina", Localization.instance.Localize("$azu_epi_stat_sneak_stamina"));
+            if (IsLiveStatEnabled(LiveStatType.HomeItemStamina)) CreateLiveStatRow("Home Item Stamina", Localization.instance.Localize("$azu_epi_stat_home_item_stamina"));
             CreateSpacer("Spacer_StaminaUsage");
         }
 
@@ -453,9 +453,9 @@ public static class StatsPanelController
         if (hasEquipmentStats)
         {
             CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_equipment_bonuses"), new Color(1f, 0.8f, 0.5f, 1f));
-            if (IsLiveStatEnabled(LiveStatType.TotalArmor)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_total_armor"));
-            if (IsLiveStatEnabled(LiveStatType.HeatResistance)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_heat_resistance"));
-            if (IsLiveStatEnabled(LiveStatType.EquipmentMovement)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_equipment_movement"));
+            if (IsLiveStatEnabled(LiveStatType.TotalArmor)) CreateLiveStatRow("Total Armor", Localization.instance.Localize("$azu_epi_stat_total_armor"));
+            if (IsLiveStatEnabled(LiveStatType.HeatResistance)) CreateLiveStatRow("Heat Resistance", Localization.instance.Localize("$azu_epi_stat_heat_resistance"));
+            if (IsLiveStatEnabled(LiveStatType.EquipmentMovement)) CreateLiveStatRow("Equipment Movement", Localization.instance.Localize("$azu_epi_stat_equipment_movement"));
             CreateSpacer("Spacer_EquipmentBonuses");
         }
 
@@ -474,7 +474,7 @@ public static class StatsPanelController
             {
                 CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_skill_bonuses"), new Color(0.8f, 0.5f, 1f, 1f));
                 if (IsLiveStatEnabled(LiveStatType.SkillBonuses)) CreateDynamicTextRow("Skill Bonuses");
-                if (IsLiveStatEnabled(LiveStatType.SkillRaiseSpeed)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_skill_raise_speed"));
+                if (IsLiveStatEnabled(LiveStatType.SkillRaiseSpeed)) CreateLiveStatRow("Skill Raise Speed", Localization.instance.Localize("$azu_epi_stat_skill_raise_speed"));
                 CreateSpacer("Spacer_SkillBonuses");
             }
         }
@@ -485,11 +485,11 @@ public static class StatsPanelController
         if (hasUtilityStats)
         {
             CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_stealth_utility"), new Color(0.6f, 0.6f, 0.8f, 1f));
-            if (IsLiveStatEnabled(LiveStatType.NoiseLevel)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_noise_level"));
-            if (IsLiveStatEnabled(LiveStatType.StealthLevel)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_stealth_level"));
-            if (IsLiveStatEnabled(LiveStatType.CoverPercentage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_cover_percentage"));
-            if (IsLiveStatEnabled(LiveStatType.FallDamage)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_fall_damage"));
-            if (IsLiveStatEnabled(LiveStatType.ComfortLevel)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_comfort_level"));
+            if (IsLiveStatEnabled(LiveStatType.NoiseLevel)) CreateLiveStatRow("Noise Level", Localization.instance.Localize("$azu_epi_stat_noise_level"));
+            if (IsLiveStatEnabled(LiveStatType.StealthLevel)) CreateLiveStatRow("Stealth Level", Localization.instance.Localize("$azu_epi_stat_stealth_level"));
+            if (IsLiveStatEnabled(LiveStatType.CoverPercentage)) CreateLiveStatRow("Cover Percentage", Localization.instance.Localize("$azu_epi_stat_cover_percentage"));
+            if (IsLiveStatEnabled(LiveStatType.FallDamage)) CreateLiveStatRow("Fall Damage", Localization.instance.Localize("$azu_epi_stat_fall_damage"));
+            if (IsLiveStatEnabled(LiveStatType.ComfortLevel)) CreateLiveStatRow("Comfort Level", Localization.instance.Localize("$azu_epi_stat_comfort_level"));
             CreateSpacer("Spacer_Utility");
         }
 
@@ -499,11 +499,11 @@ public static class StatsPanelController
         if (hasMovementStats)
         {
             CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_movement"), new Color(0.5f, 1f, 0.5f, 1f));
-            if (IsLiveStatEnabled(LiveStatType.MovementSpeed)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_movement_speed"));
-            if (IsLiveStatEnabled(LiveStatType.SpeedModifier)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_speed_modifier"));
-            if (IsLiveStatEnabled(LiveStatType.RunSpeed)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_run_speed"));
-            if (IsLiveStatEnabled(LiveStatType.SwimSpeed)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_swim_speed"));
-            if (IsLiveStatEnabled(LiveStatType.JumpHeight)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_jump_height"));
+            if (IsLiveStatEnabled(LiveStatType.MovementSpeed)) CreateLiveStatRow("Movement Speed", Localization.instance.Localize("$azu_epi_stat_movement_speed"));
+            if (IsLiveStatEnabled(LiveStatType.SpeedModifier)) CreateLiveStatRow("Speed Modifier", Localization.instance.Localize("$azu_epi_stat_speed_modifier"));
+            if (IsLiveStatEnabled(LiveStatType.RunSpeed)) CreateLiveStatRow("Run Speed", Localization.instance.Localize("$azu_epi_stat_run_speed"));
+            if (IsLiveStatEnabled(LiveStatType.SwimSpeed)) CreateLiveStatRow("Swim Speed", Localization.instance.Localize("$azu_epi_stat_swim_speed"));
+            if (IsLiveStatEnabled(LiveStatType.JumpHeight)) CreateLiveStatRow("Jump Height", Localization.instance.Localize("$azu_epi_stat_jump_height"));
             CreateSpacer("Spacer_Movement");
         }
 
@@ -590,15 +590,15 @@ public static class StatsPanelController
         headerLayout.preferredHeight = 20f;
         headerLayout.minHeight = 20f;
 
-        if (IsLiveStatEnabled(LiveStatType.Armor)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_armor"));
-        if (IsLiveStatEnabled(LiveStatType.BluntResist)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_blunt_resist"));
-        if (IsLiveStatEnabled(LiveStatType.SlashResist)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_slash_resist"));
-        if (IsLiveStatEnabled(LiveStatType.PierceResist)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_pierce_resist"));
-        if (IsLiveStatEnabled(LiveStatType.FireResist)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_fire_resist"));
-        if (IsLiveStatEnabled(LiveStatType.FrostResist)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_frost_resist"));
-        if (IsLiveStatEnabled(LiveStatType.LightningResist)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_lightning_resist"));
-        if (IsLiveStatEnabled(LiveStatType.PoisonResist)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_poison_resist"));
-        if (IsLiveStatEnabled(LiveStatType.SpiritResist)) CreateLiveStatRow(Localization.instance.Localize("$azu_epi_stat_spirit_resist"));
+        if (IsLiveStatEnabled(LiveStatType.Armor)) CreateLiveStatRow("Armor", Localization.instance.Localize("$azu_epi_stat_armor"));
+        if (IsLiveStatEnabled(LiveStatType.BluntResist)) CreateLiveStatRow("Blunt Resist", Localization.instance.Localize("$azu_epi_stat_blunt_resist"));
+        if (IsLiveStatEnabled(LiveStatType.SlashResist)) CreateLiveStatRow("Slash Resist", Localization.instance.Localize("$azu_epi_stat_slash_resist"));
+        if (IsLiveStatEnabled(LiveStatType.PierceResist)) CreateLiveStatRow("Pierce Resist", Localization.instance.Localize("$azu_epi_stat_pierce_resist"));
+        if (IsLiveStatEnabled(LiveStatType.FireResist)) CreateLiveStatRow("Fire Resist", Localization.instance.Localize("$azu_epi_stat_fire_resist"));
+        if (IsLiveStatEnabled(LiveStatType.FrostResist)) CreateLiveStatRow("Frost Resist", Localization.instance.Localize("$azu_epi_stat_frost_resist"));
+        if (IsLiveStatEnabled(LiveStatType.LightningResist)) CreateLiveStatRow("Lightning Resist", Localization.instance.Localize("$azu_epi_stat_lightning_resist"));
+        if (IsLiveStatEnabled(LiveStatType.PoisonResist)) CreateLiveStatRow("Poison Resist", Localization.instance.Localize("$azu_epi_stat_poison_resist"));
+        if (IsLiveStatEnabled(LiveStatType.SpiritResist)) CreateLiveStatRow("Spirit Resist", Localization.instance.Localize("$azu_epi_stat_spirit_resist"));
 
         GameObject spacer = new("Spacer_Resistances", typeof(RectTransform));
         RectTransform spacerRect = spacer.GetComponent<RectTransform>();
@@ -677,9 +677,9 @@ public static class StatsPanelController
         _statElements.Add(new StatElement { Name = id, StatType = (PlayerStatType)(-2), ValueText = text, IsLiveStat = true });
     }
 
-    private static void CreateLiveStatRow(string statName)
+    private static void CreateLiveStatRow(string id, string displayName)
     {
-        GameObject rowObj = new($"LiveStatRow_{statName}", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+        GameObject rowObj = new($"LiveStatRow_{id}", typeof(RectTransform), typeof(HorizontalLayoutGroup));
         RectTransform rowRect = rowObj.GetComponent<RectTransform>();
         rowRect.SetParent(_content, false);
 
@@ -708,7 +708,7 @@ public static class StatsPanelController
         }
 
         labelObj.SafeSetActive(true);
-        labelText.text = statName;
+        labelText.text = displayName;
         labelText.fontSize = 18f;
         labelText.alignment = TextAlignmentOptions.Left;
         labelText.color = new Color(0.9f, 0.9f, 0.9f, 1f);
@@ -742,7 +742,7 @@ public static class StatsPanelController
         valueLayout.minWidth = 60f;
         valueLayout.preferredWidth = 60f;
 
-        _statElements.Add(new StatElement { Name = statName, StatType = (PlayerStatType)(-1), ValueText = valueText, IsLiveStat = true });
+        _statElements.Add(new StatElement { Name = id, StatType = (PlayerStatType)(-1), ValueText = valueText, IsLiveStat = true });
 
         CreateSeparator();
     }
@@ -1012,10 +1012,10 @@ public static class StatsPanelController
                         break;
 
                     case "Current Weight":
-                        element.ValueText.text = $"{player.GetInventory()?.GetTotalWeight() ?? 0f:F0}";
+                        element.ValueText.text = (player.GetInventory()?.GetTotalWeight() ?? 0f).ToString("F0", CultureInfo.InvariantCulture);
                         break;
                     case "Max Weight":
-                        element.ValueText.text = $"{player.GetMaxCarryWeight():F0}";
+                        element.ValueText.text = player.GetMaxCarryWeight().ToString("F0", CultureInfo.InvariantCulture);
                         break;
                     case "Weight Percentage":
                         float currentWeight = player.GetInventory()?.GetTotalWeight() ?? 0f;
@@ -1024,7 +1024,7 @@ public static class StatsPanelController
                         break;
                     case "Extra Carry Weight":
                         float extra = CalculateExtraCarryWeight(player);
-                        element.ValueText.text = extra > 0 ? $"+{extra:F0}" : "0";
+                        element.ValueText.text = extra > 0 ? "+" + extra.ToString("F0", CultureInfo.InvariantCulture) : "0";
                         break;
 
                     case "Jump Stamina":
@@ -1054,7 +1054,7 @@ public static class StatsPanelController
 
                     case "Total Armor":
                     case "Armor":
-                        element.ValueText.text = $"{player.GetBodyArmor():F0}";
+                        element.ValueText.text = player.GetBodyArmor().ToString("F0", CultureInfo.InvariantCulture);
                         break;
                     case "Heat Resistance":
                         element.ValueText.text = FormatPercentModifier(CalculateHeatResistance(player));
@@ -1126,7 +1126,11 @@ public static class StatsPanelController
                         break;
                     case "Jump Height":
                         float jumpMod = CalculateJumpModifier(player);
-                        element.ValueText.text = jumpMod > 0 ? $"+{jumpMod:F0}%" : jumpMod < 0 ? $"{jumpMod:F0}%" : "100%";
+                        element.ValueText.text = jumpMod > 0
+                            ? "+" + jumpMod.ToString("F0", CultureInfo.InvariantCulture) + "%"
+                            : jumpMod < 0
+                                ? jumpMod.ToString("F0", CultureInfo.InvariantCulture) + "%"
+                                : "100%";
                         break;
 
                     case "FoodBuffs":
@@ -1447,7 +1451,7 @@ public static class StatsPanelController
             foreach (Skills.Skill skill in topSkills)
             {
                 string skillName = skill.m_info.m_skill.ToString();
-                sb.Append($"• {skillName}: {skill.m_level:F0}");
+                sb.Append($"• {skillName}: {skill.m_level.ToString("F0", CultureInfo.InvariantCulture)}");
 
                 if (skill != topSkills.Last())
                     sb.AppendLine();
@@ -1480,7 +1484,7 @@ public static class StatsPanelController
                 string skillName = skill.m_info.m_skill.ToString();
                 if (!flag) continue;
                 float num2 = skillLevel - skill.m_level;
-                sb.Append($"• {skillName}: {num2:+0}");
+                sb.Append($"• {skillName}: {num2.ToString("+0", CultureInfo.InvariantCulture)}");
             }
 
             return sb.Length > 0 ? sb.ToString() : Localization.instance.Localize("$azu_epi_stat_none");
@@ -1526,9 +1530,9 @@ public static class StatsPanelController
                 {
                     float remaining = effect.m_time;
                     if (remaining > 60)
-                        timeStr = $" {remaining / 60:F0}m";
+                        timeStr = " " + (remaining / 60).ToString("F0", CultureInfo.InvariantCulture) + "m";
                     else if (remaining > 0)
-                        timeStr = $" {remaining:F0}s";
+                        timeStr = " " + remaining.ToString("F0", CultureInfo.InvariantCulture) + "s";
                 }
 
                 sb.Append($"• {Localization.instance.Localize(effect.m_name)}{timeStr}");
@@ -1725,9 +1729,9 @@ public static class StatsPanelController
                 if (timeLeft > 0)
                 {
                     if (timeLeft >= 60)
-                        timeStr = $" ({timeLeft / 60:F0}m)";
+                        timeStr = " (" + (timeLeft / 60).ToString("F0", CultureInfo.InvariantCulture) + "m)";
                     else
-                        timeStr = $" ({timeLeft:F0}s)";
+                        timeStr = " (" + timeLeft.ToString("F0", CultureInfo.InvariantCulture) + "s)";
                 }
 
                 float hp = food.m_item.m_shared.m_food;
@@ -1735,9 +1739,9 @@ public static class StatsPanelController
                 float eitr = food.m_item.m_shared.m_foodEitr;
 
                 string stats = "";
-                if (hp > 0) stats += $" +{hp:F0}HP";
-                if (stam > 0) stats += $" +{stam:F0}Stam";
-                if (eitr > 0) stats += $" +{eitr:F0}Eitr";
+                if (hp > 0) stats += " +" + hp.ToString("F0", CultureInfo.InvariantCulture) + "HP";
+                if (stam > 0) stats += " +" + stam.ToString("F0", CultureInfo.InvariantCulture) + "Stam";
+                if (eitr > 0) stats += " +" + eitr.ToString("F0", CultureInfo.InvariantCulture) + "Eitr";
 
                 sb.Append($"• {Localization.instance.Localize(foodName)}{stats}{timeStr}");
                 count++;
@@ -1765,7 +1769,9 @@ public static class StatsPanelController
                 PlayerStatType.DistanceWalk or
                 PlayerStatType.DistanceRun or
                 PlayerStatType.DistanceSail or
-                PlayerStatType.DistanceAir => statValue >= 1000f ? $"{statValue / 1000f:F1}km" : $"{statValue:F0}m",
+                PlayerStatType.DistanceAir => statValue >= 1000f
+                    ? (statValue / 1000f).ToString("F1", CultureInfo.InvariantCulture) + "km"
+                    : statValue.ToString("F0", CultureInfo.InvariantCulture) + "m",
 
             PlayerStatType.TimeInBase or
                 PlayerStatType.TimeOutOfBase or
@@ -1777,26 +1783,26 @@ public static class StatsPanelController
 
     private static string FormatTime(float seconds)
     {
-        if (seconds >= 86400) return $"{seconds / 86400f:F1}d";
-        if (seconds >= 3600) return $"{seconds / 3600f:F1}h";
-        if (seconds >= 60) return $"{seconds / 60f:F0}m";
-        return $"{seconds:F0}s";
+        if (seconds >= 86400) return (seconds / 86400f).ToString("F1", CultureInfo.InvariantCulture) + "d";
+        if (seconds >= 3600) return (seconds / 3600f).ToString("F1", CultureInfo.InvariantCulture) + "h";
+        if (seconds >= 60) return (seconds / 60f).ToString("F0", CultureInfo.InvariantCulture) + "m";
+        return seconds.ToString("F0", CultureInfo.InvariantCulture) + "s";
     }
 
     private static string FormatLargeNumber(float value)
     {
-        if (value >= 1000000) return $"{value / 1000000f:F1}M";
-        if (value >= 10000) return $"{value / 1000f:F1}k";
-        return value.ToString("N0");
+        if (value >= 1000000) return (value / 1000000f).ToString("F1", CultureInfo.InvariantCulture) + "M";
+        if (value >= 10000) return (value / 1000f).ToString("F1", CultureInfo.InvariantCulture) + "k";
+        return value.ToString("N0", CultureInfo.InvariantCulture);
     }
 
-    private static string FormatCurrentMax(float current, float max) => $"{current:F0} / {max:F0}";
+    private static string FormatCurrentMax(float current, float max) => current.ToString("F0", CultureInfo.InvariantCulture) + " / " + max.ToString("F0", CultureInfo.InvariantCulture);
 
-    private static string FormatPercentModifier(float value) => value != 0 ? $"{value:+0;-0}%" : "0%";
+    private static string FormatPercentModifier(float value) => value != 0 ? value.ToString("+0;-0", CultureInfo.InvariantCulture) + "%" : "0%";
 
-    private static string FormatRegen(float value, string suffix) => $"{value:F1}{suffix}";
+    private static string FormatRegen(float value, string suffix) => value.ToString("F1", CultureInfo.InvariantCulture) + suffix;
 
-    private static string FormatPercent(float value) => $"{value:F0}%";
+    private static string FormatPercent(float value) => value.ToString("F0", CultureInfo.InvariantCulture) + "%";
 
     #endregion
 
@@ -2299,9 +2305,9 @@ public static class StatsPanelController
                     "Stamina" => FormatCurrentMax(stats.CurrentStamina, stats.MaxStamina),
                     "Eitr" => FormatCurrentMax(stats.CurrentEitr, stats.MaxEitr),
 
-                    "Total Armor" or "Armor" => $"{stats.BodyArmor:F0}",
-                    "Current Weight" => $"{stats.CurrentCarryWeight:F0}",
-                    "Max Weight" => $"{stats.MaxCarryWeight:F0}",
+                    "Total Armor" or "Armor" => stats.BodyArmor.ToString("F0", CultureInfo.InvariantCulture),
+                    "Current Weight" => stats.CurrentCarryWeight.ToString("F0", CultureInfo.InvariantCulture),
+                    "Max Weight" => stats.MaxCarryWeight.ToString("F0", CultureInfo.InvariantCulture),
                     "Weight Percentage" => FormatPercent(stats.MaxCarryWeight > 0 ? (stats.CurrentCarryWeight / stats.MaxCarryWeight) * 100f : 0f),
 
                     "Health Regen" => FormatRegen(stats.HealthRegen, "/tick"),
@@ -2337,7 +2343,7 @@ public static class StatsPanelController
         {
             FoodSnapshot food = foods[i];
             float remaining = food.RemainingTime / 60f;
-            sb.Append($"• {food.Name} ({remaining:F0}m)");
+            sb.Append($"• {food.Name} ({remaining.ToString("F0", CultureInfo.InvariantCulture)}m)");
             if (i < foods.Count - 1 && i < 4)
                 sb.AppendLine();
         }
