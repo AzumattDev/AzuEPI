@@ -43,6 +43,7 @@ public class Layout
     public static Vector2 RepairButtonOrigAnchoredPos;
     public static Vector2 EnchantmentMenuOrigAnchoredPos;
     public static Vector2 EnchantmentMenuBkgOrigAnchoredPos;
+    public static Vector2 ContainerOrigPivot;
 
     public static void UpdateInventorySize()
     {
@@ -63,7 +64,9 @@ public class Layout
         InventoryGrid? playerGrid = instance.m_playerGrid;
         if (!playerGrid) return;
         float extraSpace = addAPIRows ? (ExtraRows.Value + API.GetAddedRows(instance.m_playerGrid.m_width)) : ExtraRows.Value;
-        instance.m_container.pivot = ExtraRows.Value > 0 ? new Vector2(0f, 1f + extraSpace * 0.2f) : new Vector2(0f, 1f);
+        instance.m_container.pivot = ExtraRows.Value > 0
+            ? new Vector2(ContainerOrigPivot.x, ContainerOrigPivot.y + extraSpace * 0.2f)
+            : ContainerOrigPivot;
     }
 
     public static int NormalRows(Inventory inv)

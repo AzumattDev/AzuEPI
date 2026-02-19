@@ -33,18 +33,6 @@ public class TombstonePatches
             ___m_container.m_lastRevision = 0;
             ___m_container.m_lastDataString = "";
         }
-
-        private static void Postfix(TombStone __instance, bool hold, Humanoid character, Container ___m_container, ref bool __result)
-        {
-            if (hold) return;
-            if (!__result) return; // Vanilla already handled it
-
-            // If vanilla auto-looted but items remain, open the container UI
-            if (!(___m_container?.GetInventory()?.NrOfItems() > 0)) return;
-            AzuExtendedPlayerInventoryLogger.LogDebug($"TombStone still has {___m_container.GetInventory().NrOfItems()} items, opening container UI");
-            // Manually open the container UI since vanilla won't
-            ___m_container.Interact(character, false, false);
-        }
     }
 
     [HarmonyPatch(typeof(TombStone), nameof(TombStone.OnTakeAllSuccess))]
@@ -66,15 +54,88 @@ public class TombstonePatches
                 }
             }
 
-            if (!AutoEquip.Value.isOn()) return;
-            Inventory inventory = localPlayer.GetInventory();
-            IEnumerable<SlotSnapshot> snaps = API.GetEquipmentSlotSnapshots(inventory);
-            foreach (SlotSnapshot snap in snaps)
+            if (AutoEquip.Value.isOn())
             {
-                ItemDrop.ItemData? itemAt = inventory.GetItemAt(snap.GridPos.x, snap.GridPos.y);
-                if (itemAt != null)
-                    localPlayer.EquipItem(itemAt);
+                Inventory inventory = localPlayer.GetInventory();
+                IEnumerable<SlotSnapshot> snaps = API.GetEquipmentSlotSnapshots(inventory);
+                foreach (SlotSnapshot snap in snaps)
+                {
+                    ItemDrop.ItemData? itemAt = inventory.GetItemAt(snap.GridPos.x, snap.GridPos.y);
+                    if (itemAt != null)
+                        localPlayer.EquipItem(itemAt);
+                }
             }
+
+            Container? container = __instance.m_container;
+            if (!(container?.GetInventory()?.NrOfItems() > 0)) return;
+            AzuExtendedPlayerInventoryLogger.LogDebug($"TombStone still has {container.GetInventory().NrOfItems()} items after TakeAll, opening container UI");
+            container.Interact(localPlayer, false, false);
+        }
+    }
+
+    [HarmonyPatch(typeof(TombStone), nameof(TombStone.EasyFitInInventory))]
+    private static class EasyFitInInventory_SimulateFit
+    {
+        [HarmonyPriority(Priority.Low)]
+        private static bool Prefix(TombStone __instance, Player player, ref bool __result)
+        {
+            Inventory? playerInv = player?.GetInventory();
+            Inventory? tombInv = __instance.m_container?.GetInventory();
+            if (playerInv == null || tombInv == null) return true;
+
+            if (SimulateFit(tombInv, playerInv)) return true; // slot check passed – let vanilla do the weight check
+            AzuExtendedPlayerInventoryLogger.LogDebug("EasyFitInInventory simulation: not all items fit – opening container instead of auto-looting.");
+            __result = false;
+            return false;
+        }
+
+        private static bool SimulateFit(Inventory tombInv, Inventory playerInv)
+        {
+            int width = playerInv.GetWidth();
+            int normalRows = Layout.BaseInventoryHeight + ExtraRows.Value;
+
+            HashSet<Vector2i> claimed = [];
+            foreach (ItemDrop.ItemData existing in playerInv.GetAllItems())
+                claimed.Add(existing.m_gridPos);
+
+            foreach (ItemDrop.ItemData item in tombInv.GetAllItems())
+            {
+                Vector2i pos = FindVirtualFreePos(playerInv, item, claimed, width, normalRows);
+                if (pos.x < 0)
+                {
+                    AzuExtendedPlayerInventoryLogger.LogDebug($"EasyFitInInventory simulation: '{item.m_shared.m_name}' has no available slot.");
+                    return false;
+                }
+
+                claimed.Add(pos);
+            }
+
+            return true;
+        }
+
+        private static Vector2i FindVirtualFreePos(Inventory inv, ItemDrop.ItemData item, HashSet<Vector2i> claimed, int width, int normalRows)
+        {
+            for (int y = 0; y < normalRows; y++)
+            for (int x = 0; x < width; x++)
+            {
+                Vector2i pos = new(x, y);
+                if (!claimed.Contains(pos)) return pos;
+            }
+
+            foreach (Vector2i pos in inv.EnumerateQuickCells())
+            {
+                if (!claimed.Contains(pos)) return pos;
+            }
+
+            foreach (Vector2i pos in inv.EnumerateEquipmentCells())
+            {
+                if (claimed.Contains(pos)) continue;
+                if (!API.TryGetSlotIndexAtGridPos(inv, pos, out int slotIndex)) continue;
+                if (!API.SlotValidates(slotIndex, item)) continue;
+                return pos;
+            }
+
+            return new Vector2i(-1, -1);
         }
     }
 

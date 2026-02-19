@@ -37,6 +37,12 @@ public static class InventoryExtensions
             Vector2i newPos = inv.FindEmptyQuickAware(itemData, true);
             if (newPos.x >= 0 && newPos.y >= 0)
             {
+                if (!inv.m_inventory.Contains(itemData))
+                {
+                    AzuExtendedPlayerInventoryLogger.LogWarning($"TryAddItemToInventory: {Localization.instance?.Localize(itemData.m_shared.m_name) ?? itemData.m_shared.m_name} is not in this inventory, skipping relocation.");
+                    return;
+                }
+
                 int stack = itemData.m_stack;
                 inv.RemoveItem(itemData);
                 if (!inv.AddItem(itemData, stack, newPos.x, newPos.y))

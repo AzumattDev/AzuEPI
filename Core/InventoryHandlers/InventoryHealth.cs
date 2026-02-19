@@ -10,12 +10,19 @@ public class InventoryHealth
         HashSet<Vector2i> curPositions = [];
         List<ItemDrop.ItemData> itemsToFix = [];
         if (playerInventory == null) return;
+        int normalRows = Layout.BaseInventoryHeight + ExtraRows.Value;
         if (playerInventory?.m_inventory != null)
             for (int index = 0; index < playerInventory.m_inventory.Count; ++index)
             {
                 ItemDrop.ItemData? itemData = playerInventory.m_inventory[index];
                 bool overlappingItem = curPositions.Contains(itemData.m_gridPos);
-                if (overlappingItem || itemData.m_gridPos.x < 0 || itemData.m_gridPos.x >= playerInventory.m_width || itemData.m_gridPos.y < 0 || itemData.m_gridPos.y >= playerInventory.m_height || itemData.m_stack < 1)
+
+                // Don't apply a y-upper-bound check there — the height is dynamic and may be
+                bool inEpiArea = itemData.m_gridPos.y >= normalRows;
+                bool outOfBounds = itemData.m_gridPos.x < 0 || itemData.m_gridPos.x >= playerInventory.m_width
+                    || (!inEpiArea && (itemData.m_gridPos.y < 0 || itemData.m_gridPos.y >= normalRows));
+
+                if (overlappingItem || outOfBounds || itemData.m_stack < 1)
                 {
                     if (itemData.m_stack < 1) playerInventory.RemoveItem(itemData);
 

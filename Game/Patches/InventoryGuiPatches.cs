@@ -24,6 +24,7 @@ public class InventoryGuiPatches
             Layout.RepairButtonOrigAnchoredPos = GUICache._repairButtonRT.anchoredPosition;
             Layout.EnchantmentMenuOrigAnchoredPos = GUICache._enchantmentMenuButtonRT is not null ? GUICache._enchantmentMenuButtonRT.anchoredPosition : new Vector2();
             Layout.EnchantmentMenuBkgOrigAnchoredPos = GUICache._enchantmentMenuBkgButtonRT is not null ? GUICache._enchantmentMenuBkgButtonRT.anchoredPosition : new Vector2();
+            Layout.ContainerOrigPivot = __instance.m_container.pivot;
 
             if (OldLayout.Value.isOff())
                 Layout.ApplyRepairShift();
@@ -390,6 +391,7 @@ static class SetupEquipment_GridSync
         if (__instance is not Player p || p != Player.m_localPlayer) return;
         if (InventoryGui.IsVisible()) return;
         if (AddEquipmentRow.Value.isOff()) return;
+        if (InventoryPatches.IsInAutoEquip) return; // Don't reposition mid-MoveAll
 
         Layout.ProjectEquippedIntoGridTail(p, null!);
     }

@@ -3,6 +3,7 @@ namespace AzuEPI.Game.Patches;
 public class InventoryPatches
 {
     internal static bool IsInMigration = false;
+    internal static bool IsInAutoEquip = false;
     private static bool _isLoadingInventory = false;
 
     private static ItemDrop.ItemData? _itemBeingAdded = null;
@@ -144,6 +145,7 @@ public class InventoryPatches
             try
             {
                 _inAutoEquipCall = true;
+                IsInAutoEquip = true;
 
                 bool placed = __instance.AddItem(item, item.m_stack, pos.x, pos.y);
                 if (!placed)
@@ -183,6 +185,7 @@ public class InventoryPatches
             finally
             {
                 _inAutoEquipCall = false;
+                IsInAutoEquip = false;
             }
         }
 
