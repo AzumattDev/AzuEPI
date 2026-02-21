@@ -4,6 +4,7 @@ public class InventoryPatches
 {
     internal static bool IsInMigration = false;
     internal static bool IsInAutoEquip = false;
+    internal static bool IsInTombstoneTakeAll = false;
     private static bool _isLoadingInventory = false;
 
     private static ItemDrop.ItemData? _itemBeingAdded = null;
@@ -167,11 +168,15 @@ public class InventoryPatches
 
                 AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: Retrieved item from inventory - IsEquipped={actualItem.m_equipped}, InInventory={__instance.ContainsItem(actualItem)}");
 
-                if (AutoEquip.Value.isOn())
+                if (AutoEquip.Value.isOn() && !IsInTombstoneTakeAll)
                 {
                     AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: Calling EquipItem...");
                     bool equipResult = Player.m_localPlayer.EquipItem(actualItem, false);
                     AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: EquipItem returned {equipResult}, item.m_equipped={actualItem.m_equipped}");
+                }
+                else if (IsInTombstoneTakeAll)
+                {
+                    AzuExtendedPlayerInventoryLogger.LogDebugDebug($"AddItem {item.m_shared.m_name}: Tombstone TakeAll in progress – placement done, deferring equip to AutoEquipAfterTombstoneGrab.");
                 }
                 else
                 {
@@ -454,9 +459,23 @@ public class InventoryPatches
     [HarmonyPatch(typeof(Container), nameof(Container.RPC_TakeAllRespons))]
     internal static class ContainerRPCRequestTakeAllPatch
     {
-        private static void Postfix(Container __instance, ref bool granted)
+        private static void Prefix(Container __instance, bool granted)
+        {
+            if (granted && __instance.GetComponent<TombStone>() != null)
+            {
+                AzuExtendedPlayerInventoryLogger.LogDebug("TombStone TakeAll starting – suppressing per-item EquipItem calls during MoveAll.");
+                IsInTombstoneTakeAll = true;
+            }
+        }
+
+        private static void Postfix(Container __instance, bool granted)
         {
             if (granted) InventoryHealth.InventoryFix();
+        }
+
+        private static void Finalizer()
+        {
+            IsInTombstoneTakeAll = false;
         }
     }
 

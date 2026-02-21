@@ -115,6 +115,15 @@ public class TombstonePatches
 
         private static Vector2i FindVirtualFreePos(Inventory inv, ItemDrop.ItemData item, HashSet<Vector2i> claimed, int width, int normalRows)
         {
+            // the simulation must do the same – otherwise it "spends" normal row
+            foreach (Vector2i pos in inv.EnumerateEquipmentCells())
+            {
+                if (claimed.Contains(pos)) continue;
+                if (!API.TryGetSlotIndexAtGridPos(inv, pos, out int slotIndex)) continue;
+                if (!API.SlotValidates(slotIndex, item)) continue;
+                return pos;
+            }
+
             for (int y = 0; y < normalRows; y++)
             for (int x = 0; x < width; x++)
             {
@@ -125,14 +134,6 @@ public class TombstonePatches
             foreach (Vector2i pos in inv.EnumerateQuickCells())
             {
                 if (!claimed.Contains(pos)) return pos;
-            }
-
-            foreach (Vector2i pos in inv.EnumerateEquipmentCells())
-            {
-                if (claimed.Contains(pos)) continue;
-                if (!API.TryGetSlotIndexAtGridPos(inv, pos, out int slotIndex)) continue;
-                if (!API.SlotValidates(slotIndex, item)) continue;
-                return pos;
             }
 
             return new Vector2i(-1, -1);
@@ -184,11 +185,6 @@ public class TombstonePatches
             __state.TempWeight += tempWeight + 150f;
             __state.Height = 0; // Don't adjust height - inventory already has correct size from UpdateInventorySize()
             player.m_maxCarryWeight += __state.TempWeight;
-        }
-
-        private static void Postfix()
-        {
-            InventoryHealth.InventoryFix();
         }
 
         private static void Finalizer(Player player, TempState __state)
