@@ -57,6 +57,7 @@ internal static class JCBPUIUseBleedGuard
         if (!ShouldActivate()) return;
         if (!InWarpWindow || !InventoryGui.IsVisible()) return;
         if (Cursor.lockState != CursorLockMode.None) return;
+        if (PreviewParent == null || !PreviewParent.activeSelf) return;
 
         AzuEPICharacterPanel panel = AzuEPICharacterPanel.instance;
         if (panel?.render == null) return;
@@ -135,7 +136,7 @@ internal static class JCBPUIUseBleedGuard
     [HarmonyPrefix]
     [HarmonyPriority(Priority.First)]
     [HarmonyBefore("org.bepinex.plugins.jewelcrafting")]
-    private static bool ZInput_GetButton_Prefix(string name, ref bool __result)
+    private static bool ZInput_GetButton_Prefix(string name, ref bool __result, MethodBase __originalMethod)
     {
         if (!ShouldActivate()) return true;
 
@@ -146,6 +147,7 @@ internal static class JCBPUIUseBleedGuard
         }
 
         if (!checkGate || !InGateWindow) return true;
+        if (__originalMethod.Name != nameof(ZInput.GetButtonDown)) return true;
 
         InventoryGui inv = InventoryGui.instance;
         if (inv?.m_playerGrid == null) return true;

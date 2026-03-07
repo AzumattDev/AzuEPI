@@ -20,6 +20,13 @@ namespace AzuEPI;
 [BepInDependency("ishid4.mods.betterarchery", BepInDependency.DependencyFlags.SoftDependency)]
 [BepInIncompatibility("shudnal.ExtraSlots")]
 [BepInIncompatibility("shudnal.ExtraSlotsCustomSlots")]
+[BepInIncompatibility("aedenthorn.ExtendedPlayerInventory")]
+[BepInIncompatibility("com.bruce.valheim.comfyquickslots")]
+[BepInIncompatibility("randyknapp.mods.equipmentandquickslots")]
+[BepInIncompatibility("moreslots")]
+[BepInIncompatibility("randyknapp.mods.auga")]
+[BepInIncompatibility("toombe.EquipMultipleUtilityItemsUpdate")] // https://thunderstore.io/c/valheim/p/JackFrostCC/ToombeEquipMultipleUtilityItemsUnofficialUpdate/
+[BepInIncompatibility("aedenthorn.EquipMultipleUtilityItems")] // https://www.nexusmods.com/valheim/mods/1348
 public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 {
     public enum Toggle
@@ -29,7 +36,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     }
 
     internal const string ModName = "AzuExtendedPlayerInventory";
-    internal const string ModVersion = "2.3.7";
+    internal const string ModVersion = "2.3.8";
     internal const string Author = "Azumatt";
     internal const string ModGUID = Author + "." + ModName;
     private static readonly string ConfigFileName = ModGUID + ".cfg";

@@ -1,3 +1,5 @@
+using System.Reflection;
+
 namespace AzuEPI.Game.Compatibility;
 
 public static class ValheimPlusCompat
@@ -8,6 +10,7 @@ public static class ValheimPlusCompat
     private static bool? _isLoaded;
     private static bool? _isInventoryEnabled;
     private static int? _vplusConfiguredRows;
+    private static Assembly _assembly;
 
     private static bool IsLoaded => _isLoaded ??= Chainloader.PluginInfos.ContainsKey(GUID);
 
@@ -99,14 +102,78 @@ public static class ValheimPlusCompat
         }
 
         AzuExtendedPlayerInventoryLogger.LogInfo("ValheimPlusCompat: ValheimPlus detected");
+
+        if (Chainloader.PluginInfos.TryGetValue(GUID, out PluginInfo vplusPlugin))
+            _assembly = Assembly.GetAssembly(vplusPlugin.Instance.GetType());
+
         ParseVPlusConfig();
 
         if (!IsInventoryFeatureEnabled)
+            return;
+
+        RemoveConflictingPatches();
+        PatchRowsGetter();
+        SyncRowsToConfig();
+    }
+
+    private static void PatchRowsGetter()
+    {
+        if (_assembly == null) return;
+
+        Type inventoryConfig = _assembly.GetType("ValheimPlus.Configurations.Sections.InventoryConfiguration");
+        if (inventoryConfig == null)
         {
+            AzuExtendedPlayerInventoryLogger.LogWarning("ValheimPlusCompat: Could not find InventoryConfiguration type");
             return;
         }
 
-        RemoveConflictingPatches();
+        MethodBase getter = AccessTools.PropertyGetter(inventoryConfig, "playerInventoryRows");
+        if (getter == null)
+        {
+            AzuExtendedPlayerInventoryLogger.LogWarning("ValheimPlusCompat: Could not find playerInventoryRows getter");
+            return;
+        }
+
+        context._harmony.Patch(getter, finalizer: new HarmonyMethod(typeof(ValheimPlusCompat), nameof(RowsGetterFinalizer)));
+        AzuExtendedPlayerInventoryLogger.LogInfo("ValheimPlusCompat: Patched V+ playerInventoryRows getter to return AzuEPI height");
+    }
+
+    private static void RowsGetterFinalizer(ref int __result) => __result = API.GetFullHeight(Layout.BaseInventoryWidth);
+
+    public static void SyncRowsToConfig()
+    {
+        if (_assembly == null) return;
+
+        try
+        {
+            Type configurationType = _assembly.GetType("ValheimPlus.Configurations.Configuration");
+            if (configurationType == null) return;
+
+            object current = AccessTools.Property(configurationType, "Current")?.GetValue(null);
+            if (current == null) return;
+
+            object inventorySection = current.GetType()
+                .GetProperty("Inventory", BindingFlags.Public | BindingFlags.Instance)
+                ?.GetValue(current);
+            if (inventorySection == null) return;
+
+            PropertyInfo rowsProp = inventorySection.GetType()
+                .GetProperty("playerInventoryRows", BindingFlags.Public | BindingFlags.Instance);
+            if (rowsProp == null) return;
+
+            int fullHeight = API.GetFullHeight(Layout.BaseInventoryWidth);
+            MethodInfo setter = rowsProp.GetSetMethod(true);
+            if (setter != null)
+                setter.Invoke(inventorySection, new object[] { fullHeight });
+            else if (rowsProp.CanWrite)
+                rowsProp.SetValue(inventorySection, fullHeight);
+
+            AzuExtendedPlayerInventoryLogger.LogInfo($"ValheimPlusCompat: Set V+ playerInventoryRows = {fullHeight}");
+        }
+        catch (Exception ex)
+        {
+            AzuExtendedPlayerInventoryLogger.LogWarning($"ValheimPlusCompat: Failed to sync rows to V+ config: {ex.Message}");
+        }
     }
 
     private static void RemoveConflictingPatches()

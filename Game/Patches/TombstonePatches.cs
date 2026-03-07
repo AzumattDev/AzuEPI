@@ -163,7 +163,6 @@ public class TombstonePatches
 
             float tempWeight = 0f;
             tempWeight += __instance?.m_lootStatusEffect is SE_Stats { m_addMaxCarryWeight: > 0f } se ? se.m_addMaxCarryWeight : 0f;
-            if (AutoEquip.Value.isOn())
             {
                 Inventory? tombInv = __instance?.m_container?.GetInventory();
                 float sum = 0f;

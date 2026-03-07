@@ -110,7 +110,11 @@ public static class Initializers
         };
         ExtraRows.SettingChanged += (sender, args) => { context.FullRebuild(); };
         AddEquipmentRow.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
-        DisplayEquipmentRowSeparate.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
+        DisplayEquipmentRowSeparate.SettingChanged += (sender, args) =>
+        {
+            EAQ.CheckRandy();
+            if (GlgGo) GlgGo.SetActive(DisplayEquipmentRowSeparate.Value.isOn());
+        };
         ShowQuickSlots.SettingChanged += (sender, args) => { HotkeyBarController.Hud_Update_Patch.DeselectHotkeyBar(); };
         SelectedPlayerStats.SettingChanged += StatsPanelController.OnStatsConfigChanged;
         SelectedLiveStats.SettingChanged += StatsPanelController.OnStatsConfigChanged;

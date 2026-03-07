@@ -437,7 +437,9 @@ public class InventoryPatches
             if (original.IsPlayerInventory())
             {
                 original.m_height = API.GetFullHeight(original.GetWidth());
-                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"MoveInventoryToGrave: Set original inventory height to {original.m_height}");
+                // Also expand the tombstone inventory so items in EPI rows (y >= 4) pass the vanilla bounds check
+                __instance.m_height = API.GetFullHeight(__instance.GetWidth());
+                AzuExtendedPlayerInventoryLogger.LogDebugDebug($"MoveInventoryToGrave: Set original inventory height to {original.m_height}, grave height to {__instance.m_height}");
             }
         }
 

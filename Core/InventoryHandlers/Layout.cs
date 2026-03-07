@@ -49,6 +49,7 @@ public class Layout
     {
         if (InventoryGui.instance == null) return;
         if (Player.m_localPlayer == null) return;
+        ValheimPlusCompat.SyncRowsToConfig();
         int height = API.GetFullHeight(Player.m_localPlayer.m_inventory.GetWidth());
         Player.m_localPlayer.m_inventory.m_height = height;
         Player.m_localPlayer.m_tombstone.GetComponent<Container>().m_height = height;

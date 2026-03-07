@@ -54,6 +54,7 @@ public class UIBuilder
         GUICache.ButtonGridLayoutGroup.constraintCount = OldLayout.Value.isOff() ? ToggleButtonColumns : QuickSlotsAmount.Value < 1 && slots.Count < 10 ? ToggleButtonColumns - 1 : ToggleButtonColumns;
         GUICache.ButtonGridLayoutGroup.childAlignment = OldLayout.Value.isOff() ? TextAnchor.MiddleCenter : TextAnchor.MiddleLeft;
         GUICache.ButtonGridLayoutGroup.cellSize = OldLayout.Value.isOff() ? new Vector2(ToggleButtonCellSize, ToggleButtonCellSize) : new Vector2(ToggleButtonCellSizeOld, ToggleButtonCellSizeOld);
+        GlgGo.transform.SafeSetActive(DisplayEquipmentRowSeparate.Value.isOn());
     }
 
     public static void BuildEquipmentBkg(InventoryGui invGui, RectTransform bkgRect)
@@ -106,6 +107,8 @@ public class UIBuilder
         VanityPanelController.ToggleButtonParentGlg = GlgRt;
         PersonalLoadoutGui.ToggleButtonParentGlg = GlgRt;
         StatsPanelController.ToggleButtonParentGlg = GlgRt;
+
+        GlgGo.SetActive(DisplayEquipmentRowSeparate.Value.isOn());
     }
 
     public static void BuildCraftingToggleButton(InventoryGui gui)
