@@ -157,6 +157,10 @@ public class Layout
         previewParentRT.anchorMin = PreviewAnchorMin;
     }
 
+    private static ItemDrop.ItemData?[] _projectedItems = [];
+    private static readonly Dictionary<ItemDrop.ItemData, Vector2i> _plannedMoves = new();
+    private static readonly HashSet<Vector2i> _targetPositions = [];
+
     public static void ProjectEquippedIntoGridTail(Player player, InventoryGrid playerGrid)
     {
         Inventory playerInventory = player.GetInventory();
@@ -169,10 +173,16 @@ public class Layout
         List<Model.Slot?> allSlots = slots;
 
         int equipmentTailStartIndex = GetBaseSlotIndex(playerInventory);
-        ItemDrop.ItemData?[] projectedEquippedItemsBySlot = new ItemDrop.ItemData[allSlots.Count];
+        if (_projectedItems.Length != allSlots.Count)
+            _projectedItems = new ItemDrop.ItemData?[allSlots.Count];
+        else
+            Array.Clear(_projectedItems, 0, _projectedItems.Length);
+        ItemDrop.ItemData?[] projectedEquippedItemsBySlot = _projectedItems;
 
-        Dictionary<ItemDrop.ItemData, Vector2i> plannedMoves = new();
-        HashSet<Vector2i> targetPositions = [];
+        _plannedMoves.Clear();
+        _targetPositions.Clear();
+        Dictionary<ItemDrop.ItemData, Vector2i> plannedMoves = _plannedMoves;
+        HashSet<Vector2i> targetPositions = _targetPositions;
 
         for (int i = 0; i < allSlots.Count; ++i)
         {

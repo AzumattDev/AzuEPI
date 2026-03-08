@@ -18,6 +18,7 @@ public class InventoryGuiPatches
             GUICache._enchantmentMenuBkgButtonRT = VESCompat.IsVesInstalled ? __instance.m_crafting.Find("RepairSimple(Clone)").GetComponent<RectTransform>() : null;
             GUICache._playerBkgRT = __instance.m_player.Find("Bkg").GetComponent<RectTransform>();
             GUICache._playerGridRootRT = __instance.m_playerGrid ? __instance.m_playerGrid.m_gridRoot?.GetComponent<RectTransform>() : null;
+            GUICache._playerGridRootImage = __instance.m_playerGrid ? __instance.m_playerGrid.m_gridRoot?.GetComponent<Image>() : null;
 
             Layout.SelectedFrameOrigAnchMin = GUICache._selectedFrameRT.anchorMin;
             Layout.RepairSimpleOrigAnchoredPos = GUICache._repairSimpleRT.anchoredPosition;
@@ -138,9 +139,14 @@ public class InventoryGuiPatches
         private static RectTransform _cachedPlayerGridRect;
         private static Transform _cachedEquipmentBkg;
         private static InventoryGui _lastInstance;
+        private static Vector2 _lastBkgAnchorMin = new(float.NaN, float.NaN);
+        private static Vector2[] _cachedSlotPositions = [];
+        private static string[] _cachedSlotNames = [];
 
         internal static void RebuildQuickslots()
         {
+            _cachedSlotPositions = [];
+            _cachedSlotNames = [];
             if (Hotkeys == null || HotkeyTexts == null)
             {
                 AzuExtendedPlayerInventoryLogger.LogWarning("RebuildQuickslots called with null Hotkeys or HotkeyTexts");
@@ -185,16 +191,24 @@ public class InventoryGuiPatches
                 _cachedBkgRect = __instance.m_player.Find("Bkg").GetComponent<RectTransform>();
                 _cachedPlayerScrollCheck = __instance.m_player.transform.Find("PlayerScroll");
                 _cachedPlayerGridRect = ___m_playerGrid?.GetComponent<RectTransform>();
+                _lastBkgAnchorMin = new(float.NaN, float.NaN);
+                _cachedSlotPositions = [];
+                _cachedSlotNames = [];
             }
 
             RectTransform bkgRect = _cachedBkgRect;
             if (_cachedPlayerScrollCheck == null) // If ValheimPlus didn't add a scrollbar
             {
-                bkgRect.anchorMin = new Vector2(0.0f, (ExtraRows.Value
-                                                       + (AddEquipmentRow.Value.isOff()
-                                                          || DisplayEquipmentRowSeparate.Value.isOn()
-                                                           ? 0
-                                                           : API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()))) * -0.25f);
+                Vector2 newMin = new Vector2(0.0f, (ExtraRows.Value
+                                                    + (AddEquipmentRow.Value.isOff()
+                                                       || DisplayEquipmentRowSeparate.Value.isOn()
+                                                        ? 0
+                                                        : API.GetAddedRows(Player.m_localPlayer.m_inventory.GetWidth()))) * -0.25f);
+                if (newMin != _lastBkgAnchorMin)
+                {
+                    bkgRect.anchorMin = newMin;
+                    _lastBkgAnchorMin = newMin;
+                }
             }
             else
             {
@@ -221,7 +235,16 @@ public class InventoryGuiPatches
 
             Vector2 baseGridPos = new((_cachedPlayerGridRect.rect.width - ___m_playerGrid.GetWidgetSize().x) / 2f, 0.0f);
 
-            for (int i = 0; i < slots.Count; ++i)
+            int slotCount = slots.Count;
+            if (_cachedSlotPositions.Length != slotCount)
+            {
+                _cachedSlotPositions = new Vector2[slotCount];
+                for (int j = 0; j < slotCount; j++) _cachedSlotPositions[j] = new Vector2(float.NaN, float.NaN);
+            }
+            if (_cachedSlotNames.Length != slotCount)
+                _cachedSlotNames = new string[slotCount];
+
+            for (int i = 0; i < slotCount; ++i)
             {
                 InventoryGrid.Element? currentElement = ___m_playerGrid.m_elements[baseIndex + i];
                 GameObject currentChild = currentElement.m_go;
@@ -232,7 +255,7 @@ public class InventoryGuiPatches
                 if (slot == null)
                     continue;
 
-                currentChild.SetActive(true);
+                if (!currentChild.activeSelf) currentChild.SetActive(true);
 
                 if (!currentChild.name.StartsWith($"{Prefix}Slot_"))
                     currentChild.name = $"{Prefix}Slot_{slots[i]?.Name}";
@@ -240,7 +263,12 @@ public class InventoryGuiPatches
                 // if .m_used assume it's occupied
                 slots[i].Occupied = currentElement.m_used;
 
-                SlotText.Set(slots[i]?.Name, currentChild.transform);
+                string slotName = slots[i]?.Name ?? "";
+                if (_cachedSlotNames[i] != slotName)
+                {
+                    SlotText.Set(slotName, currentChild.transform);
+                    _cachedSlotNames[i] = slotName;
+                }
 
                 RectTransform childRT = currentChild.GetComponent<RectTransform>();
                 if (DisplayEquipmentRowSeparate.Value.isOn())
@@ -253,18 +281,28 @@ public class InventoryGuiPatches
                             childRT.SetParent(InventoryGui.instance.m_playerGrid.transform.parent, false);
                     }
 
-                    childRT.anchoredPosition = slots[i].Position;
+                    Vector2 pos = slots[i].Position;
+                    if (_cachedSlotPositions[i] != pos)
+                    {
+                        childRT.anchoredPosition = pos;
+                        _cachedSlotPositions[i] = pos;
+                    }
                 }
                 else
                 {
-                    childRT.anchoredPosition = baseGridPos + new Vector2((baseIndex + i) % inventory.GetWidth() * ___m_playerGrid.m_elementSpace, (baseIndex + i) / inventory.GetWidth() * -___m_playerGrid.m_elementSpace);
+                    Vector2 pos = baseGridPos + new Vector2((baseIndex + i) % inventory.GetWidth() * ___m_playerGrid.m_elementSpace, (baseIndex + i) / inventory.GetWidth() * -___m_playerGrid.m_elementSpace);
+                    if (_cachedSlotPositions[i] != pos)
+                    {
+                        childRT.anchoredPosition = pos;
+                        _cachedSlotPositions[i] = pos;
+                    }
                 }
             }
 
-            for (int i = baseIndex + slots.Count; i < ___m_playerGrid.m_elements.Count; ++i)
+            for (int i = baseIndex + slotCount; i < ___m_playerGrid.m_elements.Count; ++i)
             {
                 InventoryGrid.Element? tailElement = ___m_playerGrid.m_elements[i];
-                tailElement.m_go.SetActive(false);
+                if (tailElement.m_go.activeSelf) tailElement.m_go.SetActive(false);
                 tailElement.m_used = true;
             }
 
@@ -297,12 +335,11 @@ public class InventoryGuiPatches
                     float extraX = (extraTiles * Layout.tileSize) / totalWidth;
 
                     Vector2 maxAnchor = new(1f + extraX, 1f);
-                    if (Chainloader.PluginInfos.TryGetValue(MinimalUiguid, out PluginInfo? pi) && pi != null)
+                    if (GUICache.IsMinimalUiInstalled)
                         maxAnchor.x += 0.03f;
 
-                    //rectTransform.anchorMax = maxAnchor;
-                    InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<RectTransform>().anchorMax = maxAnchor;
-                    InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<Image>().raycastTarget = false;
+                    if (GUICache._playerGridRootRT) GUICache._playerGridRootRT.anchorMax = maxAnchor;
+                    if (GUICache._playerGridRootImage) GUICache._playerGridRootImage.raycastTarget = false;
                     break;
                 }
 

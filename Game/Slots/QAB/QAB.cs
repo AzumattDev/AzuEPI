@@ -266,11 +266,13 @@ public static class HotkeyBarController
                 }
             }
 
+            bool doIconUpdate = Time.frameCount % 2 == 0;
             foreach (HotkeyBar? hotkeyBar in HotkeyBars)
                 if (hotkeyBar != null && hotkeyBar.m_elements != null)
                 {
                     ValidateHotkeyBarSelection(hotkeyBar);
-                    hotkeyBar.UpdateIcons(player);
+                    if (doIconUpdate)
+                        hotkeyBar.UpdateIcons(player);
                 }
         }
 
