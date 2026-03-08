@@ -7,6 +7,11 @@ public class AdvBackpacksCompat
         "BackpackMeadows", "BackpackBlackForest", "BackpackSwamp", "BackpackMountains", "BackpackPlains", "BackpackMistlands", "CapeSilverBackpack", "CapeIronBackpack"
     };
 
+    internal static bool IsActive;
+
+    internal static bool IsAbBackpack(ItemDrop.ItemData? item) =>
+        IsActive && item?.m_dropPrefab != null && Backpacks.Contains(item.m_dropPrefab.name);
+
     private static Func<ItemDrop.ItemData, bool>? _abApiIsBackpack;
     private static bool _apiResolved;
 
@@ -25,6 +30,7 @@ public class AdvBackpacksCompat
             API.AddSlot("$bp_backpack_slot_name", new List<string>(Backpacks).ToArray());
         }
         context._harmony.PatchAll(typeof(AdvBackpacksCompat));
+        IsActive = true;
     }
 
     private static void ResolveAbApi(Assembly abAssembly)
@@ -75,6 +81,42 @@ public class AdvBackpacksCompat
         }
 
         return null;
+    }
+
+    // Apply AB backpack's stat contributions directly when not already covered by vanilla
+    // (vanilla only reads m_shoulderItem; if the backpack is there, IsBackpackItem guard prevents double-apply).
+    // This handles three cases: backpack-only, cape+backpack, and reconnect where m_shoulderItem is accidentally set.
+
+    [HarmonyPatch(typeof(Player), nameof(Player.UpdateModifiers)), HarmonyPostfix]
+    private static void UpdateModifiers_Postfix(Player __instance)
+    {
+        if (__instance != Player.m_localPlayer) return;
+        if (Player.s_equipmentModifierSourceFields == null) return;
+        if (IsBackpackItem(__instance.m_shoulderItem)) return;
+        ItemDrop.ItemData? bp = FindEquippedBackpack(__instance);
+        if (bp == null) return;
+        for (int i = 0; i < __instance.m_equipmentModifierValues.Length; ++i)
+            __instance.m_equipmentModifierValues[i] += (float)Player.s_equipmentModifierSourceFields[i].GetValue(bp.m_shared);
+    }
+
+    [HarmonyPatch(typeof(Player), nameof(Player.GetBodyArmor)), HarmonyPostfix]
+    private static void GetBodyArmor_Postfix(Player __instance, ref float __result)
+    {
+        if (__instance != Player.m_localPlayer) return;
+        if (IsBackpackItem(__instance.m_shoulderItem)) return;
+        ItemDrop.ItemData? bp = FindEquippedBackpack(__instance);
+        if (bp == null) return;
+        __result += bp.GetArmor();
+    }
+
+    [HarmonyPatch(typeof(Player), nameof(Player.ApplyArmorDamageMods)), HarmonyPostfix]
+    private static void ApplyArmorDamageMods_Postfix(Player __instance, ref HitData.DamageModifiers mods)
+    {
+        if (__instance != Player.m_localPlayer) return;
+        if (IsBackpackItem(__instance.m_shoulderItem)) return;
+        ItemDrop.ItemData? bp = FindEquippedBackpack(__instance);
+        if (bp == null) return;
+        mods.Apply(bp.m_shared.m_damageModifiers);
     }
 
     [HarmonyPatch("AdventureBackpacks.Extensions.PlayerExtensions, AdventureBackpacks", "IsBackpackEquipped"), HarmonyPostfix]

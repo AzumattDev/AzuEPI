@@ -26,10 +26,13 @@ public class EpicLootCompat
     public static void EpicLootGetEquipment(ref List<ItemDrop.ItemData> __result)
     {
         Player? player = Player.m_localPlayer;
-        if (player == null || player.GetInventory() == null) return;
-        foreach (ItemDrop.ItemData equippedItem in player.GetInventory().GetEquippedItems())
+        Inventory? inv = player?.GetInventory();
+        if (player == null || inv == null) return;
+        foreach (SlotSnapshot snap in API.GetEquipmentSlotSnapshots(inv))
         {
-            if (!__result.Contains(equippedItem)) __result.Add(equippedItem);
+            ItemDrop.ItemData? item = inv.GetItemAt(snap.GridPos.x, snap.GridPos.y);
+            if (item != null && !__result.Contains(item))
+                __result.Add(item);
         }
     }
 }

@@ -113,6 +113,10 @@ public class CustomEquipVisuals
                     shouldShow = e.Item.m_equipped;
                     displayLocal = e.DisplayName ?? "";
                 }
+                else if (!isOwner && zdo != null)
+                {
+                    shouldShow = zdo.GetInt(ZdoKeyFor(prefabName)) != 0;
+                }
 
                 if (!shouldShow)
                 {
@@ -290,6 +294,7 @@ public class CustomEquipVisuals
             {
                 ItemDrop.ItemData? item = entry.Item;
                 if (item is not { m_equipped: true }) continue;
+                if (AdvBackpacksCompat.IsAbBackpack(item)) continue;
                 if (item.m_shared.m_itemType != ItemDrop.ItemData.ItemType.Utility || UtilityEPIAddArmor.Value.isOn() && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility)
                     extraArmor += item.GetArmor();
             }
@@ -316,6 +321,7 @@ public class CustomEquipVisuals
             {
                 ItemDrop.ItemData? item = entry.Item;
                 if (item is not { m_equipped: true }) continue;
+                if (AdvBackpacksCompat.IsAbBackpack(item)) continue;
                 eitrRegenModifier += item.m_shared.m_eitrRegenModifier;
             }
 
@@ -337,6 +343,7 @@ public class CustomEquipVisuals
             {
                 ItemDrop.ItemData? item = entry.Item;
                 if (item is not { m_equipped: true }) continue;
+                if (AdvBackpacksCompat.IsAbBackpack(item)) continue;
                 mods.Apply(item.m_shared.m_damageModifiers);
             }
         }
@@ -360,6 +367,7 @@ public class CustomEquipVisuals
                 {
                     ItemDrop.ItemData? item = entry.Item;
                     if (item is not { m_equipped: true }) continue;
+                    if (AdvBackpacksCompat.IsAbBackpack(item)) continue;
                     __instance.m_equipmentModifierValues[i] += (float)Player.s_equipmentModifierSourceFields[i].GetValue(item.m_shared);
                 }
             }
@@ -397,6 +405,7 @@ public class CustomEquipVisuals
             foreach (EquippedEntry? entry in st.Equipped.Values)
             {
                 ItemDrop.ItemData? item = entry.Item;
+                if (AdvBackpacksCompat.IsAbBackpack(item)) continue;
                 if (item?.m_shared?.m_equipStatusEffect is { } eff)
                 {
                     set.Add(eff);
