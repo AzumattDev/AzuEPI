@@ -80,7 +80,7 @@ static class PreviewInstantRefresh_VisEquipmentPatch
         if (__instance != Player.m_localPlayer.m_visEquipment) return;
         if (AzuEPICharacterPanel.playerPreviewComp == null) return;
 
-        VECloneSync.MirrorFrom(Player.m_localPlayer, AzuEPICharacterPanel.playerPreviewComp);
+        if (!VECloneSync.MirrorFrom(Player.m_localPlayer, AzuEPICharacterPanel.playerPreviewComp)) return;
 
         PreviewLayerFix.ForceUILayer(AzuEPICharacterPanel.playerPreviewComp.m_visEquipment);
 
@@ -156,9 +156,9 @@ static class VECloneSync
 
     public static void ResetStamp() => _lastStamp = 0;
 
-    public static void MirrorFrom(Player srcPlayer, Player dstPreview)
+    public static bool MirrorFrom(Player srcPlayer, Player dstPreview)
     {
-        if (!srcPlayer || !dstPreview) return;
+        if (!srcPlayer || !dstPreview) return false;
 
         VisEquipment? src = srcPlayer.m_visEquipment;
         VisEquipment? dst = dstPreview.m_visEquipment;
@@ -213,7 +213,7 @@ static class VECloneSync
             BeardItem, HairItem,
             LeftBack, RightBack, LeftBackVar
         );
-        if (stamp == _lastStamp) return;
+        if (stamp == _lastStamp) return false;
         _lastStamp = stamp;
 
         dst.SetRightItem(src.m_rightItem);
@@ -245,6 +245,7 @@ static class VECloneSync
         }
 
         dst.enabled = false;
+        return true;
     }
 
     internal static int CombineHash(params int[] hashes)

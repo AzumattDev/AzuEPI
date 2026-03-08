@@ -97,7 +97,7 @@ public class CustomEquipVisuals
             return true;
         }
 
-        public void UpdateAllVisuals()
+        public bool UpdateAllVisuals()
         {
             bool changedAny = false;
             ZNetView? nview = Vis.m_nview;
@@ -153,6 +153,7 @@ public class CustomEquipVisuals
 
             if (changedAny)
                 Vis.UpdateLodgroup();
+            return changedAny;
         }
 
         public void SetDisplayName(string prefabName, string name)
@@ -246,8 +247,8 @@ public class CustomEquipVisuals
             if (!__instance.m_isPlayer) return;
             if (_states.TryGetValue(__instance, out State? st))
             {
-                st.UpdateAllVisuals();
-                if (__instance == Player.m_localPlayer?.m_visEquipment)
+                bool changed = st.UpdateAllVisuals();
+                if (changed && __instance == Player.m_localPlayer?.m_visEquipment)
                     VECloneSync.ResetStamp();
             }
         }
