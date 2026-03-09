@@ -31,7 +31,7 @@ Mods that add slots using the API will either create the slot, or extend the slo
 - **6 standard equipment slots**: Helmet, Chest, Legs, Back, Utility, Trinket
 - **2 special slots**: Wishbone, Demister (toggleable)
 - **API for mod slots**: Other mods can add custom equipment slots
-- **Auto-equip**: Items equip automatically when picked up
+- **Auto-equip**: Items equip automatically when picked up or dragged into an equipment slot. Upgrading an item that was equipped will re-equip the upgraded version automatically.
 
 ### Quick Slots (v2.0: 0-8 Slots!)
 

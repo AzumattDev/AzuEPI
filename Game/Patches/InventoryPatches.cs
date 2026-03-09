@@ -427,6 +427,21 @@ public class InventoryPatches
 
             return true;
         }
+
+        private static void Postfix(Inventory __instance, bool __result, ItemDrop.ItemData item, int x, int y)
+        {
+            if (!__result) return;
+            if (!AutoEquip.Value.isOn()) return;
+            if (!AddEquipmentRow.Value.isOn()) return;
+            if (IsInAutoEquip || IsInMigration || IsInTombstoneTakeAll) return;
+            if (Player.m_localPlayer == null) return;
+            if (__instance != Player.m_localPlayer.GetInventory()) return;
+            if (!API.TryGetSlotIndexAtGridPos(__instance, new Vector2i(x, y), out int slotIdx)) return;
+            if (slots[slotIdx] is not Model.EquipmentSlot) return;
+            ItemDrop.ItemData? movedItem = __instance.GetItemAt(x, y);
+            if (movedItem == null || movedItem.m_equipped) return;
+            Player.m_localPlayer.EquipItem(movedItem, false);
+        }
     }
 
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.MoveInventoryToGrave))]
@@ -481,6 +496,22 @@ public class InventoryPatches
         }
     }
 
+    [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.DoCrafting))]
+    private static class DoCrafting_TrackUpgradeEquipped_Patch
+    {
+        internal static bool UpgradeItemWasEquipped = false;
+
+        private static void Prefix(InventoryGui __instance)
+        {
+            UpgradeItemWasEquipped = __instance.m_craftUpgradeItem?.m_equipped ?? false;
+        }
+
+        private static void Finalizer()
+        {
+            UpgradeItemWasEquipped = false;
+        }
+    }
+
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.AddItem), typeof(string), typeof(int), typeof(int), typeof(int), typeof(long), typeof(string), typeof(Vector2i), typeof(bool))]
     internal static class AddItem_String_TrackItemForUpgrading_Patch
     {
@@ -497,6 +528,21 @@ public class InventoryPatches
             _itemBeingAdded = component.m_itemData.Clone();
             _itemBeingAdded.m_quality = quality;
             _itemBeingAdded.m_variant = variant;
+        }
+
+        [HarmonyPriority(Priority.Last)]
+        private static void Postfix(Inventory __instance, ItemDrop.ItemData? __result)
+        {
+            if (__result == null || !DoCrafting_TrackUpgradeEquipped_Patch.UpgradeItemWasEquipped) return;
+            if (!AutoEquip.Value.isOn()) return;
+            if (!AddEquipmentRow.Value.isOn()) return;
+            if (_isLoadingInventory || IsInMigration) return;
+            if (Player.m_localPlayer == null) return;
+            if (__instance != Player.m_localPlayer.GetInventory()) return;
+            if (!API.TryGetSlotIndexAtGridPos(__instance, __result.m_gridPos, out int slotIdx)) return;
+            if (slots[slotIdx] is not Model.EquipmentSlot) return;
+            __result.m_equipped = false;
+            Player.m_localPlayer.EquipItem(__result, false);
         }
 
         [HarmonyPriority(Priority.Last)]
