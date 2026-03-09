@@ -102,7 +102,7 @@ internal static class InventoryGridQueuedFillPatch
                 action.m_type != Player.MinorActionData.ActionType.Unequip)
                 continue;
 
-            if (i == 0 && action.m_time > 0f)
+            if (i == 0)
             {
                 isActivelyEquipping = true;
                 return action.m_duration <= 0f ? 1f : Mathf.Clamp01(action.m_time / action.m_duration);

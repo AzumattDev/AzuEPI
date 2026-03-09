@@ -406,7 +406,6 @@ public class CustomEquipVisuals
             foreach (EquippedEntry? entry in st.Equipped.Values)
             {
                 ItemDrop.ItemData? item = entry.Item;
-                if (AdvBackpacksCompat.IsAbBackpack(item)) continue;
                 if (item?.m_shared?.m_equipStatusEffect is { } eff)
                 {
                     set.Add(eff);
