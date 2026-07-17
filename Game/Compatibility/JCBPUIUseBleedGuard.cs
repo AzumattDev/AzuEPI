@@ -75,17 +75,6 @@ internal static class JCBPUIUseBleedGuard
         ZInput.SetMousePosition(new Vector2(center.x, center.y));
     }
 
-    private static bool ShouldSuppressUseButton(string name, out bool checkGate)
-    {
-        checkGate = false;
-        if (!IsUseName(name)) return false;
-
-        if (InWarpWindow) return true;
-
-        checkGate = true;
-        return false;
-    }
-
     #region Container/Inventory Patches
 
     [HarmonyPatch(typeof(Container), nameof(Container.Interact))]
@@ -131,23 +120,24 @@ internal static class JCBPUIUseBleedGuard
 
     #region Input Suppression Patches
 
-    [HarmonyPatch(typeof(ZInput), nameof(ZInput.GetButton))]
     [HarmonyPatch(typeof(ZInput), nameof(ZInput.GetButtonDown))]
     [HarmonyPrefix]
     [HarmonyPriority(Priority.First)]
     [HarmonyBefore("org.bepinex.plugins.jewelcrafting")]
-    private static bool ZInput_GetButton_Prefix(string name, ref bool __result, MethodBase __originalMethod)
+    private static bool ZInput_GetButtonDown_Prefix(string name, ref bool __result)
     {
         if (!ShouldActivate()) return true;
+        if (!IsUseName(name)) return true;
 
-        if (ShouldSuppressUseButton(name, out bool checkGate))
+        // Vanilla InventoryGui.UpdateContainer cancels hold-to-stack (m_containerHoldState = -1)
+        // if GetButton("Use") reads false for a single frame while a container is open,
+        if (InWarpWindow)
         {
             __result = false;
             return false;
         }
 
-        if (!checkGate || !InGateWindow) return true;
-        if (__originalMethod.Name != nameof(ZInput.GetButtonDown)) return true;
+        if (!InGateWindow) return true;
 
         InventoryGui inv = InventoryGui.instance;
         if (inv?.m_playerGrid == null) return true;

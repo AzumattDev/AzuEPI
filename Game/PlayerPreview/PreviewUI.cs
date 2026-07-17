@@ -201,6 +201,20 @@ static class VECloneSync
             HairItem = string.IsNullOrEmpty(src.m_hairItem) ? 0 : src.m_hairItem.GetStableHashCode();
             LeftBack = string.IsNullOrEmpty(src.m_leftBackItem) ? 0 : src.m_leftBackItem.GetStableHashCode();
             RightBack = string.IsNullOrEmpty(src.m_rightBackItem) ? 0 : src.m_rightBackItem.GetStableHashCode();
+            
+            /*// Fall back to strings if there’s no ZDO
+            LeftItem = src.m_leftItem == null ? 0 : src.m_leftItem;
+            RightItem = src.m_rightItem == null ? 0 : src.m_rightItem;
+            ChestItem = src.m_chestItem == null ? 0 : src.m_chestItem;
+            LegItem = src.m_legItem == null ? 0 : src.m_legItem;
+            HelmetItem = src.m_helmetItem == null ? 0 : src.m_helmetItem;
+            ShoulderItem = src.m_shoulderItem == null ? 0 : src.m_shoulderItem;
+            UtilityItem = src.m_utilityItem == null ? 0 : src.m_utilityItem;
+            TrinketItem = string.IsNullOrEmpty(src.m_trinketItem) ? 0 : src.m_trinketItem.GetStableHashCode();
+            BeardItem = src.m_beardItem == null ? 0 : src.m_beardItem;
+            HairItem = src.m_hairItem == null ? 0 : src.m_hairItem;
+            LeftBack = src.m_leftBackItem == null ? 0 : src.m_leftBackItem;
+            RightBack = src.m_rightBackItem == null ? 0 : src.m_rightBackItem;*/
         }
 
         int stamp = CombineHash(
@@ -425,6 +439,7 @@ public class PlayerPreviewManager
         Player dst = AzuEPICharacterPanel.playerPreviewComp;
 
         dst.m_visEquipment.SetHairItem(localPlayer.m_hairItem);
+        //dst.m_visEquipment.SetHairItem(localPlayer.m_hairItem.GetStableHashCode());
         dst.m_visEquipment.SetHairColor(localPlayer.m_hairColor);
         dst.m_visEquipment.SetSkinColor(localPlayer.m_skinColor);
         dst.m_visEquipment.SetModel(localPlayer.m_visEquipment.m_currentModelIndex);
@@ -470,6 +485,7 @@ public class PlayerPreviewManager
 
         Player dst = AzuEPICharacterPanel.playerPreviewComp;
         dst.m_visEquipment.SetHairItem(localPlayer.m_hairItem);
+        //dst.m_visEquipment.SetHairItem(localPlayer.m_hairItem.GetStableHashCode());
         dst.m_visEquipment.SetHairColor(localPlayer.m_hairColor);
         dst.m_visEquipment.SetSkinColor(localPlayer.m_skinColor);
         dst.m_visEquipment.SetModel(localPlayer.m_visEquipment.m_currentModelIndex);

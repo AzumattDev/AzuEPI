@@ -5,13 +5,13 @@ public class TombstonePatches
     [HarmonyPatch(typeof(TombStone), nameof(TombStone.Awake))]
     private static class TombStoneAwakePatch
     {
-        private static void Prefix(TombStone __instance)
+        private static void Postfix(TombStone __instance)
         {
-            AzuExtendedPlayerInventoryLogger.LogDebug("TombStone_Awake");
-
-            int height = API.GetFullHeight(__instance.GetComponent<Container>().m_width);
-
-            __instance.GetComponent<Container>().m_height = height;
+            Container container = __instance.GetComponent<Container>();
+            int height = API.GetFullHeight(container.m_width);
+            container.m_height = height;
+            if (container.m_inventory != null)
+                container.m_inventory.m_height = height;
         }
     }
 
@@ -25,13 +25,24 @@ public class TombstonePatches
 
             int targetHeight = API.GetFullHeight(___m_container.m_width);
 
-            if (targetHeight <= ___m_container.m_height) return;
-            AzuExtendedPlayerInventoryLogger.LogDebug($"TombStone Interact: Adjusting height {___m_container.m_height} -> {targetHeight}");
-            ___m_container.m_height = targetHeight;
-            ___m_container.m_inventory.m_height = targetHeight;
+            bool containerNeedsFix = ___m_container.m_height < targetHeight;
+            bool inventoryNeedsFix = ___m_container.m_inventory != null && ___m_container.m_inventory.m_height < targetHeight;
+
+            if (!containerNeedsFix && !inventoryNeedsFix) return;
+
+            if (containerNeedsFix)
+            {
+                AzuExtendedPlayerInventoryLogger.LogDebug($"TombStone Interact: Adjusting container height {___m_container.m_height} -> {targetHeight}");
+                ___m_container.m_height = targetHeight;
+            }
+
+            if (inventoryNeedsFix)
+            {
+                AzuExtendedPlayerInventoryLogger.LogDebug($"TombStone Interact: Adjusting inventory height {___m_container.m_inventory.m_height} -> {targetHeight}");
+                ___m_container.m_inventory.m_height = targetHeight;
+            }
 
             ___m_container.m_lastRevision = 0;
-            ___m_container.m_lastDataString = "";
         }
     }
 
