@@ -149,6 +149,8 @@ static class HudAwakePatch
             actionBarChildren.Clear();
         }
 
+        PlayerGetActionProgressPatch.Reset();
+
         Transform[]? children = __instance.m_actionBarRoot.GetComponentsInChildren<Transform>();
         foreach (Transform child in children)
         {
@@ -157,30 +159,44 @@ static class HudAwakePatch
     }
 }
 
+[HarmonyPatch]
+static class PlayerGetActionProgressPatch
+{
+    private static bool hidden;
+    internal static bool InHudUpdate;
+
+    static MethodInfo TargetMethod() => typeof(Player).GetMethods().Single(m => m.Name == nameof(Player.GetActionProgress) && m.GetParameters().Length == 3);
+
+    [HarmonyPriority(Priority.Last)]
+    static void Postfix(string name, Player.MinorActionData data)
+    {
+        if (!InHudUpdate) return;
+
+        bool barVisible = !string.IsNullOrEmpty(name) && data is { m_duration: > 0.5f };
+        SetHidden(barVisible && data!.m_type is Player.MinorActionData.ActionType.Equip or Player.MinorActionData.ActionType.Unequip);
+    }
+
+    internal static void SetHidden(bool hide)
+    {
+        if (HudAwakePatch.actionBarChildren.Count <= 0) return;
+        if (hide == hidden) return;
+        hidden = hide;
+
+        foreach (GameObject actionBarChild in HudAwakePatch.actionBarChildren)
+        {
+            actionBarChild.SafeSetActive(!hide);
+        }
+    }
+
+    internal static void Reset() => hidden = false;
+}
+
 [HarmonyPatch(typeof(Hud), nameof(Hud.UpdateActionProgress))]
 static class HudUpdateActionProgressPatch
 {
-    static void Prefix(Hud __instance)
-    {
-        Player? player = Player.m_localPlayer;
-        if (!player || player.m_actionQueue.Count <= 0) return;
-        if (HudAwakePatch.actionBarChildren.Count <= 0) return;
+    static void Prefix() => PlayerGetActionProgressPatch.InHudUpdate = true;
 
-        if (player.m_actionQueue[0].m_type is Player.MinorActionData.ActionType.Equip or Player.MinorActionData.ActionType.Unequip)
-        {
-            foreach (GameObject actionBarChild in HudAwakePatch.actionBarChildren)
-            {
-                actionBarChild.SafeSetActive(false);
-            }
-        }
-        else
-        {
-            foreach (GameObject actionBarChild in HudAwakePatch.actionBarChildren)
-            {
-                actionBarChild.SafeSetActive(true);
-            }
-        }
-    }
+    static void Finalizer() => PlayerGetActionProgressPatch.InHudUpdate = false;
 }
 
 [HarmonyPatch(typeof(HotkeyBar), nameof(HotkeyBar.UpdateIcons))]
