@@ -1,4 +1,4 @@
-namespace AzuEPI.Game.Panels.Stats;
+﻿namespace AzuEPI.Game.Panels.Stats;
 
 public enum LiveStatType
 {
@@ -19,8 +19,6 @@ public enum LiveStatType
     DamageModifier,
     StaggerResist,
     TimedBlockBonus,
-    CritChance,
-    Lifesteal,
 
     BluntDamage,
     SlashDamage,

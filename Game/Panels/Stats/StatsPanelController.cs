@@ -1,4 +1,4 @@
-namespace AzuEPI.Game.Panels.Stats;
+﻿namespace AzuEPI.Game.Panels.Stats;
 
 public static class StatsPanelController
 {
@@ -386,8 +386,7 @@ public static class StatsPanelController
         }
 
         bool hasCombatStats = IsLiveStatEnabled(LiveStatType.AttackSpeed) || IsLiveStatEnabled(LiveStatType.DamageModifier) ||
-                              IsLiveStatEnabled(LiveStatType.StaggerResist) || IsLiveStatEnabled(LiveStatType.TimedBlockBonus) ||
-                              IsLiveStatEnabled(LiveStatType.CritChance) || IsLiveStatEnabled(LiveStatType.Lifesteal);
+                              IsLiveStatEnabled(LiveStatType.StaggerResist) || IsLiveStatEnabled(LiveStatType.TimedBlockBonus);
         if (hasCombatStats)
         {
             CreateSectionHeader(Localization.instance.Localize("$azu_epi_stat_section_combat"), new Color(1f, 0.5f, 0f, 1f));
@@ -395,8 +394,6 @@ public static class StatsPanelController
             if (IsLiveStatEnabled(LiveStatType.DamageModifier)) CreateLiveStatRow("Damage Modifier", Localization.instance.Localize("$azu_epi_stat_damage_modifier"));
             if (IsLiveStatEnabled(LiveStatType.StaggerResist)) CreateLiveStatRow("Stagger Resist", Localization.instance.Localize("$azu_epi_stat_stagger_resist"));
             if (IsLiveStatEnabled(LiveStatType.TimedBlockBonus)) CreateLiveStatRow("Timed Block Bonus", Localization.instance.Localize("$azu_epi_stat_timed_block_bonus"));
-            if (IsLiveStatEnabled(LiveStatType.CritChance)) CreateLiveStatRow("Crit Chance", Localization.instance.Localize("$azu_epi_stat_crit_chance"));
-            if (IsLiveStatEnabled(LiveStatType.Lifesteal)) CreateLiveStatRow("Lifesteal", Localization.instance.Localize("$azu_epi_stat_lifesteal"));
             CreateSpacer("Spacer_Combat");
         }
 
@@ -979,12 +976,6 @@ public static class StatsPanelController
                     case "Timed Block Bonus":
                         element.ValueText.text = FormatPercentModifier(CalculateTimedBlockBonus(player));
                         break;
-                    case "Crit Chance":
-                        element.ValueText.text = FormatPercent(CalculateCritChance(player));
-                        break;
-                    case "Lifesteal":
-                        element.ValueText.text = FormatPercent(CalculateLifesteal(player));
-                        break;
 
                     case "Blunt Damage":
                         element.ValueText.text = FormatPercentModifier(CalculateElementalDamageBonus(player, HitData.DamageType.Blunt));
@@ -1122,15 +1113,10 @@ public static class StatsPanelController
                         element.ValueText.text = FormatPercent(player.GetRunSpeedFactor() * 100);
                         break;
                     case "Swim Speed":
-                        element.ValueText.text = FormatPercent(player.m_swimSpeed * player.GetAttackSpeedFactorMovement());
+                        element.ValueText.text = (player.m_swimSpeed * player.GetAttackSpeedFactorMovement()).ToString("F1", CultureInfo.InvariantCulture);
                         break;
                     case "Jump Height":
-                        float jumpMod = CalculateJumpModifier(player);
-                        element.ValueText.text = jumpMod > 0
-                            ? "+" + jumpMod.ToString("F0", CultureInfo.InvariantCulture) + "%"
-                            : jumpMod < 0
-                                ? jumpMod.ToString("F0", CultureInfo.InvariantCulture) + "%"
-                                : "100%";
+                        element.ValueText.text = FormatPercentModifier(CalculateJumpModifier(player));
                         break;
 
                     case "FoodBuffs":
@@ -1211,9 +1197,7 @@ public static class StatsPanelController
         return foodRegen;
     }
 
-    private static float CalculateMultiplierModifier(Player player, Func<SE_Stats, float> getMultiplier) => PlayerStatsCalculator.CalculateMultiplierModifierPercent(player.m_seman, getMultiplier);
-
-    private static float CalculateAdrenaline(Player player) => CalculateModifiers(player, seStats => seStats.m_adrenalineModifier);
+    private static float CalculateAdrenaline(Player player) => PlayerStatsCalculator.CalculateAdrenaline(player);
 
     private static float CalculateHealthRegenMultiplier(Player player) => PlayerStatsCalculator.CalculateHealthRegenMultiplier(player);
 
@@ -1227,7 +1211,7 @@ public static class StatsPanelController
 
     private static float CalculateStaggerResist(Player player) => PlayerStatsCalculator.CalculateStaggerResist(player);
 
-    private static float CalculateTimedBlockBonus(Player player) => CalculateModifiers(player, seStats => seStats.m_timedBlockBonus);
+    private static float CalculateTimedBlockBonus(Player player) => PlayerStatsCalculator.CalculateTimedBlockBonus(player);
 
     private static float CalculateMaxCarryWeight(Player player)
     {
@@ -1245,155 +1229,35 @@ public static class StatsPanelController
         return maxWeight;
     }
 
-    private static float CalculateExtraCarryWeight(Player player)
-    {
-        float extraWeight = 0f;
+    private static float CalculateExtraCarryWeight(Player player) => PlayerStatsCalculator.CalculateExtraCarryWeight(player);
 
-        try
-        {
-            if (player.m_seman?.GetStatusEffects() != null)
-            {
-                foreach (StatusEffect effect in player.m_seman.GetStatusEffects())
-                {
-                    if (effect is SE_Stats { m_addMaxCarryWeight: > 0 } seStats)
-                    {
-                        extraWeight += seStats.m_addMaxCarryWeight;
-                    }
-                }
-            }
-        }
-        catch
-        {
-            /* Ignore errors */
-        }
+    private static float CalculateJumpStaminaUsage(Player player) => PlayerStatsCalculator.CalculateEquipmentModifierPercent(player, PlayerStatsCalculator.EquipJumpStamina);
 
-        return extraWeight;
-    }
+    private static float CalculateAttackStaminaUsage(Player player) => PlayerStatsCalculator.CalculateEquipmentModifierPercent(player, PlayerStatsCalculator.EquipAttackStamina);
 
-    private static float CalculateModifiers(Player player, Func<SE_Stats, float> getSeStatsModifier, Func<ItemDrop.ItemData.SharedData, float>? getItemModifier = null)
-    {
-        float modifier = 0f;
+    private static float CalculateBlockStaminaUsage(Player player) => PlayerStatsCalculator.CalculateEquipmentModifierPercent(player, PlayerStatsCalculator.EquipBlockStamina);
 
-        try
-        {
-            if (player.m_seman?.GetStatusEffects() != null)
-            {
-                foreach (StatusEffect effect in player.m_seman.GetStatusEffects())
-                {
-                    if (effect is not SE_Stats seStats) continue;
-                    float value = getSeStatsModifier(seStats);
-                    if (value != 0f)
-                        modifier += value * 100f;
-                }
-            }
+    private static float CalculateDodgeStaminaUsage(Player player) => PlayerStatsCalculator.CalculateEquipmentModifierPercent(player, PlayerStatsCalculator.EquipDodgeStamina);
 
-            if (getItemModifier != null)
-            {
-                List<ItemDrop.ItemData> equipped = player.GetInventory()?.GetEquippedItems() ?? [];
-                foreach (ItemDrop.ItemData item in equipped)
-                {
-                    if (item == null) continue;
-                    float value = getItemModifier(item.m_shared);
-                    if (value != 0f)
-                        modifier += value * 100f;
-                }
-            }
-        }
-        catch
-        {
-            /* Ignore errors */
-        }
+    private static float CalculateSwimStaminaUsage(Player player) => PlayerStatsCalculator.CalculateEquipmentModifierPercent(player, PlayerStatsCalculator.EquipSwimStamina);
 
-        return modifier;
-    }
+    private static float CalculateRunStaminaUsage(Player player) => PlayerStatsCalculator.CalculateEquipmentModifierPercent(player, PlayerStatsCalculator.EquipRunStamina);
 
-    private static float CalculateJumpStaminaUsage(Player player) => CalculateModifiers(player, seStats => seStats.m_jumpStaminaUseModifier, shared => shared.m_jumpStaminaModifier);
+    private static float CalculateSneakStaminaUsage(Player player) => PlayerStatsCalculator.CalculateEquipmentModifierPercent(player, PlayerStatsCalculator.EquipSneakStamina);
 
-    private static float CalculateAttackStaminaUsage(Player player) => CalculateModifiers(player, seStats => seStats.m_attackStaminaUseModifier, shared => shared.m_attackStaminaModifier);
+    private static float CalculateHomeItemStaminaUsage(Player player) => PlayerStatsCalculator.CalculateEquipmentModifierPercent(player, PlayerStatsCalculator.EquipHomeItemStamina);
 
-    private static float CalculateBlockStaminaUsage(Player player) => CalculateModifiers(player, seStats => seStats.m_blockStaminaUseModifier, shared => shared.m_blockStaminaModifier);
+    private static float CalculateNoiseLevel(Player player) => PlayerStatsCalculator.CalculateNoiseLevel(player);
 
-    private static float CalculateDodgeStaminaUsage(Player player) => CalculateModifiers(player, seStats => seStats.m_dodgeStaminaUseModifier, shared => shared.m_dodgeStaminaModifier);
+    private static float CalculateStealthLevel(Player player) => PlayerStatsCalculator.CalculateStealthLevel(player);
 
-    private static float CalculateSwimStaminaUsage(Player player) => CalculateModifiers(player, seStats => seStats.m_swimStaminaUseModifier, shared => shared.m_swimStaminaModifier);
-
-    private static float CalculateRunStaminaUsage(Player player) => CalculateModifiers(player, seStats => seStats.m_runStaminaUseModifier, shared => shared.m_runStaminaModifier);
-
-    private static float CalculateSneakStaminaUsage(Player player) => CalculateModifiers(player, seStats => seStats.m_sneakStaminaUseModifier, shared => shared.m_sneakStaminaModifier);
-
-    private static float CalculateHomeItemStaminaUsage(Player player) => CalculateModifiers(player, _ => 0f, shared => shared.m_homeItemsStaminaModifier);
-
-    private static float CalculateNoiseLevel(Player player) => CalculateModifiers(player, seStats => seStats.m_noiseModifier);
-
-    private static float CalculateStealthLevel(Player player) => CalculateModifiers(player, seStats => seStats.m_stealthModifier);
-
-    private static float CalculateFallDamage(Player player) => CalculateModifiers(player, seStats => seStats.m_fallDamageModifier);
-
-    private static float CalculateCritChance(Player player)
-    {
-        float critChance = 0f;
-
-        try
-        {
-            if (player.m_seman?.GetStatusEffects() != null)
-            {
-                foreach (StatusEffect effect in player.m_seman.GetStatusEffects())
-                {
-                    if (effect == null) continue;
-
-                    string effectName = effect.m_name?.ToLower() ?? "";
-                    string tooltip = effect.m_tooltip?.ToLower() ?? "";
-
-                    if (effectName.Contains("crit") || tooltip.Contains("crit"))
-                    {
-                        critChance += 5f;
-                    }
-                }
-            }
-        }
-        catch
-        {
-            /* Ignore errors */
-        }
-
-        return critChance;
-    }
-
-    private static float CalculateLifesteal(Player player)
-    {
-        float lifesteal = 0f;
-
-        try
-        {
-            if (player.m_seman?.GetStatusEffects() != null)
-            {
-                foreach (StatusEffect effect in player.m_seman.GetStatusEffects())
-                {
-                    if (effect == null) continue;
-
-                    string effectName = effect.m_name?.ToLower() ?? "";
-                    string tooltip = effect.m_tooltip?.ToLower() ?? "";
-
-                    if (effectName.Contains("lifesteal") || tooltip.Contains("lifesteal"))
-                    {
-                        lifesteal += 5f;
-                    }
-                }
-            }
-        }
-        catch
-        {
-            /* Ignore errors */
-        }
-
-        return lifesteal;
-    }
+    private static float CalculateFallDamage(Player player) => PlayerStatsCalculator.CalculateFallDamage(player);
 
     private static float CalculateJumpModifier(Player player) => PlayerStatsCalculator.CalculateJumpModifier(player);
 
     private static HitData.DamageModifier GetResistance(Player player, HitData.DamageType damageType)
     {
-        HitData.DamageModifiers mods = player.GetBodyArmor() > 0 ? player.GetDamageModifiers() : new HitData.DamageModifiers();
+        HitData.DamageModifiers mods = player.GetDamageModifiers();
 
         return damageType switch
         {
@@ -1425,9 +1289,9 @@ public static class StatsPanelController
         };
     }
 
-    private static float CalculateHeatResistance(Player player) => CalculateModifiers(player, _ => 0f, shared => shared.m_heatResistanceModifier);
+    private static float CalculateHeatResistance(Player player) => PlayerStatsCalculator.CalculateEquipmentModifierPercent(player, PlayerStatsCalculator.EquipHeatResistance);
 
-    private static float CalculateEquipmentMovement(Player player) => CalculateModifiers(player, _ => 0f, shared => shared.m_movementModifier);
+    private static float CalculateEquipmentMovement(Player player) => PlayerStatsCalculator.CalculateEquipmentModifierPercent(player, PlayerStatsCalculator.EquipMovement);
 
     private static string GetTopSkills(Player player)
     {
@@ -1704,9 +1568,9 @@ public static class StatsPanelController
         return bonus;
     }
 
-    private static float CalculateSkillRaiseSpeed(Player player) => CalculateMultiplierModifier(player, seStats => seStats.m_raiseSkillModifier);
+    private static float CalculateSkillRaiseSpeed(Player player) => PlayerStatsCalculator.CalculateSkillRaiseSpeed(player);
 
-    private static float CalculateSpeedModifier(Player player) => CalculateMultiplierModifier(player, seStats => seStats.m_speedModifier);
+    private static float CalculateSpeedModifier(Player player) => PlayerStatsCalculator.CalculateSpeedModifier(player);
 
     private static string GetActiveFoodBuffs(Player player)
     {
