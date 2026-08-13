@@ -17,7 +17,7 @@ public class Localizer
     private static BaseUnityPlugin? _plugin;
     public static event Action? OnLocalizationComplete;
 
-    private static BaseUnityPlugin plugin
+    private static BaseUnityPlugin? plugin
     {
         get
         {
@@ -33,7 +33,8 @@ public class Localizer
                     types = e.Types.Where(t => t != null).Select(t => t.GetTypeInfo());
                 }
 
-                _plugin = (BaseUnityPlugin)Chainloader.ManagerObject.GetComponent(types.First(t => t.IsClass && typeof(BaseUnityPlugin).IsAssignableFrom(t)));
+                Type? pluginType = types.FirstOrDefault(t => t.IsClass && typeof(BaseUnityPlugin).IsAssignableFrom(t));
+                _plugin = pluginType == null || Chainloader.ManagerObject == null ? null : Chainloader.ManagerObject.GetComponent(pluginType) as BaseUnityPlugin;
             }
 
             return _plugin;
@@ -108,6 +109,21 @@ public class Localizer
 
     private static void LoadLocalization(Localization __instance, string language)
     {
+        // the SetupLanguage postfix can fire before our plugin component exists; SetupGui re-runs this
+        if (__instance == null || plugin is not { } owner) return;
+
+        try
+        {
+            LoadLocalizationFor(owner, __instance, language);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Localization load for mod {owner.Info.Metadata.Name} failed: {e}");
+        }
+    }
+
+    private static void LoadLocalizationFor(BaseUnityPlugin owner, Localization __instance, string language)
+    {
         if (!localizationLanguage.Remove(__instance))
         {
             localizationObjects.Add(new WeakReference<Localization>(__instance));
@@ -116,12 +132,12 @@ public class Localizer
         localizationLanguage.Add(__instance, language);
 
         Dictionary<string, string> localizationFiles = new();
-        foreach (string file in Directory.GetFiles(Path.GetDirectoryName(Paths.PluginPath)!, $"{plugin.Info.Metadata.Name}.*", SearchOption.AllDirectories).Where(f => fileExtensions.IndexOf(Path.GetExtension(f)) >= 0))
+        foreach (string file in Directory.GetFiles(Path.GetDirectoryName(Paths.PluginPath)!, $"{owner.Info.Metadata.Name}.*", SearchOption.AllDirectories).Where(f => fileExtensions.IndexOf(Path.GetExtension(f)) >= 0))
         {
             string key = Path.GetFileNameWithoutExtension(file).Split('.')[1];
             if (localizationFiles.ContainsKey(key))
             {
-                Debug.LogWarning($"Duplicate key {key} found for {plugin.Info.Metadata.Name}. The duplicate file found at {file} will be skipped.");
+                Debug.LogWarning($"Duplicate key {key} found for {owner.Info.Metadata.Name}. The duplicate file found at {file} will be skipped.");
             }
             else
             {
@@ -131,13 +147,13 @@ public class Localizer
 
         if (LoadTranslationFromAssembly("English") is not { } englishAssemblyData)
         {
-            throw new Exception($"Found no English localizations in mod {plugin.Info.Metadata.Name}. Expected an embedded resource translations/English.json or translations/English.yml.");
+            throw new Exception($"Found no English localizations in mod {owner.Info.Metadata.Name}. Expected an embedded resource translations/English.json or translations/English.yml.");
         }
 
         Dictionary<string, string>? localizationTexts = new DeserializerBuilder().IgnoreFields().Build().Deserialize<Dictionary<string, string>?>(Encoding.UTF8.GetString(englishAssemblyData));
         if (localizationTexts is null)
         {
-            throw new Exception($"Localization for mod {plugin.Info.Metadata.Name} failed: Localization file was empty.");
+            throw new Exception($"Localization for mod {owner.Info.Metadata.Name} failed: Localization file was empty.");
         }
 
         string? localizationData = null;
