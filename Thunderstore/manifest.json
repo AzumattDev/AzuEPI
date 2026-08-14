@@ -1,9 +1,9 @@
 {
   "name": "AzuExtendedPlayerInventory",
-  "version_number": "1.4.11",
+  "version_number": "2.4.5",
   "website_url": "https://discord.gg/pdHgy6Bsng",
-  "description": "AzuEPI is Extended Player Inventory from OdinsQOL pulled out for your modular pleasure. Currently pulled out as is, but soon get a rewrite of sorts!",
+  "description": "AzuEPI (Extended Player Inventory) is a comprehensive inventory expansion mod that adds more rows to inventory, equipment slots, quick slots, vanity customization, and loadout management to Valheim. Controller friendly.",
   "dependencies": [
-    "denikson-BepInExPack_Valheim-5.4.2202"
+    "denikson-BepInExPack_Valheim-5.4.2333"
   ]
 }

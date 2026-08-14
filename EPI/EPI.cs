@@ -1,137 +1,17 @@
-﻿using System.Collections.Generic;
-using AzuExtendedPlayerInventory.EPI.Patches;
-using TMPro;
-using Object = UnityEngine.Object;
+﻿namespace AzuEPI.EPI;
 
-namespace AzuExtendedPlayerInventory.EPI
+internal class ExtendedPlayerInventory
 {
-    internal class ExtendedPlayerInventory
-    {
-        public const string QABName = "QuickAccessBar";
-        public const string AzuBkgName = "AzuEquipmentBkg";
-        public const string DropAllButtonName = "AzuDropAllButton";
-        public const string MinimalUiguid = "Azumatt.MinimalUI";
+    internal static readonly List<Model.Slot?> slots = [];
+    internal static readonly GameObject _elementPrefab = null!;
 
-        private static readonly GameObject _elementPrefab = null!;
+    internal static ItemDrop.ItemData?[] equipItems = new ItemDrop.ItemData[15];
 
-        internal static ItemDrop.ItemData?[] equipItems = new ItemDrop.ItemData[5];
+    public static Vector3 lastMousePos;
+    public static string currentlyDragging = null!;
+    public static List<HotkeyBar> HotkeyBars { get; set; } = null!;
 
-        public static Vector3 lastMousePos;
-        public static string currentlyDragging = null!;
-        internal static readonly int Visible = Animator.StringToHash("visible");
-        public static List<HotkeyBar> HotkeyBars { get; set; } = null!;
+    public static int SelectedHotkeyBarIndex { get; set; } = -1;
 
-        public static int SelectedHotkeyBarIndex { get; set; } = -1;
-
-        public static Vector2 LastSlotPosition { get; set; }
-
-        public static void SetSlotText(string value, Transform transform, bool center = true)
-        {
-            Transform transform1 = transform.Find("binding");
-            if (!transform1)
-                transform1 = Object.Instantiate(_elementPrefab.transform.Find("binding"), transform);
-            var textComp = transform1.GetComponent<TMP_Text>();
-            textComp.enabled = true;
-            textComp.overflowMode = TextOverflowModes.Overflow;
-            textComp.textWrappingMode = TextWrappingModes.PreserveWhitespaceNoWrap;
-            textComp.fontSizeMin = 10f;
-            textComp.fontSizeMax = 18f;
-            textComp.enableAutoSizing = true;
-            textComp.text = value;
-            if (!center)
-                return;
-            transform1.GetComponent<RectTransform>().sizeDelta = new Vector2(80f, 17f);
-            transform1.GetComponent<RectTransform>().anchoredPosition = new Vector2(30f, -10f);
-        }
-
-        internal static bool IsEquipmentSlotFree(Inventory inventory, ItemDrop.ItemData item, out int which)
-        {
-            var addedRows = API.GetAddedRows(inventory.GetWidth());
-            which = InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s is InventoryGuiPatches.EquipmentSlot slot && slot.Valid(item));
-            return which >= 0 && inventory.GetItemAt(which, inventory.GetHeight() - addedRows) == null;
-        }
-
-        /*internal static bool IsQuickslotFree(Inventory inventory, ItemDrop.ItemData item, out int which)
-        {
-            int addedRows = API.GetAddedRows(inventory.GetWidth());
-
-            // Count the equipment slots (which are not quickslots) in your custom row.
-            List<InventoryGuiPatches.Slot?> quickSlots = InventoryGuiPatches.UpdateInventory_Patch.slots.FindAll(s => s is { IsQuickslot: true });
-            // Find the first available quickslot index in the inventory grid that can hold the item.
-            bool freeslot = false;
-            which = -1; // Default to -1 if no quickslot is found
-            foreach (InventoryGuiPatches.Slot? quickSlot in quickSlots)
-            {
-                // Find the index of this quickslot in the slots list
-                which = InventoryGuiPatches.UpdateInventory_Patch.slots.IndexOf(quickSlot);
-                freeslot = which >= 0 && inventory.GetItemAt(which, inventory.GetHeight() - addedRows) == null;
-                if (freeslot) break;
-            }
-
-            return freeslot;
-        }*/
-
-
-        internal static bool IsAtEquipmentSlot(Inventory inventory, ItemDrop.ItemData item, out int which)
-        {
-            var inventoryRows = inventory.GetHeight() - API.GetAddedRows(inventory.GetWidth());
-            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || item.m_gridPos.y < inventoryRows || (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x >= InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length)
-            {
-                which = -1;
-                return false;
-            }
-
-            which = (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x;
-            return true;
-        }
-
-        // Add a method to get the slots that are not equipment slots but are the quickslots (last 3 slots)
-        internal static bool IsAtQuickSlot(Inventory inventory, ItemDrop.ItemData item, out int which)
-        {
-            var inventoryRows = inventory.GetHeight() - API.GetAddedRows(inventory.GetWidth());
-            if (AzuExtendedPlayerInventoryPlugin.AddEquipmentRow.Value == AzuExtendedPlayerInventoryPlugin.Toggle.Off || item.m_gridPos.y < inventoryRows || (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x < InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length)
-            {
-                which = -1;
-                return false;
-            }
-
-            which = (item.m_gridPos.y - inventoryRows) * inventory.GetWidth() + item.m_gridPos.x;
-            return true;
-        }
-
-        public static void SetElementPositions()
-        {
-            Transform transform = Hud.instance.transform.Find("hudroot");
-            if (!(transform.Find(QABName)?.GetComponent<RectTransform>() != null))
-                return;
-            if (AzuExtendedPlayerInventoryPlugin.QuickAccessX.Value == 9999.0)
-                AzuExtendedPlayerInventoryPlugin.QuickAccessX.Value = transform.Find("healthpanel").GetComponent<RectTransform>().anchoredPosition.x - 32f;
-            if (AzuExtendedPlayerInventoryPlugin.QuickAccessY.Value == 9999.0)
-                AzuExtendedPlayerInventoryPlugin.QuickAccessY.Value = transform.Find("healthpanel").GetComponent<RectTransform>().anchoredPosition.y - 870f;
-            transform.Find(QABName).GetComponent<RectTransform>().anchoredPosition = new Vector2(AzuExtendedPlayerInventoryPlugin.QuickAccessX.Value, AzuExtendedPlayerInventoryPlugin.QuickAccessY.Value);
-            transform.Find(QABName).GetComponent<RectTransform>().localScale = new Vector3(AzuExtendedPlayerInventoryPlugin.QuickAccessScale.Value, AzuExtendedPlayerInventoryPlugin.QuickAccessScale.Value, 1f);
-        }
-    }
-
-    [HarmonyPatch(typeof(Container), nameof(Container.RPC_TakeAllRespons))]
-    internal static class ContainerRPCRequestTakeAllPatch
-    {
-        private static void Postfix(Container __instance, ref bool granted)
-        {
-            if (Player.m_localPlayer == null)
-                return;
-            if (granted) Utilities.Utilities.InventoryFix();
-        }
-    }
-
-    [HarmonyPatch(typeof(Inventory), nameof(Inventory.MoveAll))]
-    internal static class MoveAllToPatch // This should fix issues with AzuContainerSizes
-    {
-        private static void Postfix(Inventory __instance, Inventory fromInventory)
-        {
-            if (Player.m_localPlayer == null)
-                return;
-            if (__instance == Player.m_localPlayer.GetInventory()) Utilities.Utilities.InventoryFix();
-        }
-    }
+    public static Vector2 LastSlotPosition { get; set; }
 }

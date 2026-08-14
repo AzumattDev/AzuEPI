@@ -1,81 +1,235 @@
-﻿using System.Collections.Generic;
+﻿#if !API
+using AzuEPI.Game.PlayerPreview;
+using AzuEPI.Game.Slots;
+
+# else
 using BepInEx.Bootstrap;
-#if ! API
-using AzuExtendedPlayerInventory.EPI.Patches;
+using JetBrains.Annotations;
+using UnityEngine;
+using System;
+using System.Collections.Generic;
+using AzuEPI.Core.Slots;
 #endif
 
-namespace AzuExtendedPlayerInventory;
+namespace AzuEPI;
 
 [PublicAPI]
 public class API
 {
-    // Delegate types for the event handlers
     public delegate void SlotAddedHandler(string slotName);
 
     public delegate void SlotRemovedHandler(string slotName);
 
-    internal static HashSet<InventoryGuiPatches.EquipmentSlot?> CustomSlots { get; } = new();
+    internal static HashSet<Model.EquipmentSlot?> CustomSlots { get; } = [];
 
-    internal static bool IsCustomSlot(InventoryGuiPatches.EquipmentSlot? slot)
-    {
-        return CustomSlots.Contains(slot);
-    }
-
-    // Using events to allow other code to register for updates.
     public static event Action<Hud>? OnHudAwake;
     public static event Action<Hud>? OnHudAwakeComplete;
     public static event Action<Hud>? OnHudUpdate;
     public static event Action<Hud>? OnHudUpdateComplete;
 
-    // Events fired when a slot is added or removed
+    public static event Action? OnBeforeQuickSlotsAdded;
+    public static event Action? OnQuickSlotsAdded;
+
     public static event SlotAddedHandler? SlotAdded;
     public static event SlotRemovedHandler? SlotRemoved;
+    public static event Action<string>? OnRegisterVisualPrefab;
 
     public static bool IsLoaded()
     {
 #if API
-		return false;
+        return false;
 #else
         return true;
 #endif
     }
 
-    // Add a new slot
+    public static ItemDrop.ItemData.ItemType GetFakeItemType()
+    {
+#if !API
+        return (ItemDrop.ItemData.ItemType)FakeType;
+#else
+        return ItemDrop.ItemData.ItemType.None;
+#endif
+    }
+
     public static bool AddSlot(string slotName, Func<Player, ItemDrop.ItemData?> getItem, Func<ItemDrop.ItemData, bool> isValid, int index = -1)
     {
-#if ! API
-        if (InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s.Name == slotName) < 0)
+#if !API
+        if (string.IsNullOrWhiteSpace(slotName) || (getItem == null && isValid == null)) return false;
+
+        AzuExtendedPlayerInventoryLogger.LogDebug("API.AddSlot called, asking to add slot " + slotName);
+
+        if (IsSlotMarkedForRemoval(slotName)) return false;
+
+        AzuExtendedPlayerInventoryLogger.LogDebug("API.AddSlot proceeding to add slot " + slotName);
+
+        int existingIdx = slots.FindIndex(s => s != null && (s.Name == slotName || (Localization.m_instance != null && s.Name == Localization.m_instance.Localize(slotName))));
+        if (existingIdx >= 0 && slots[existingIdx] is Model.EquipmentSlot existing)
         {
-            InventoryGuiPatches.EquipmentSlot? slot = new() { Name = slotName, Get = getItem, Valid = isValid };
-            if (index < 0 || index > InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length) index = InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length;
-
-            UpdateSlots(index, 1);
-            InventoryGuiPatches.UpdateInventory_Patch.slots.Insert(index, slot);
-            CustomSlots.Add(slot);
-            InventoryGuiPatches.UpdateInventory_Patch.ResizeSlots();
-
-            AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogDebug($"Added slot {slotName}");
-            //AddAdditionalValidations();
-            SlotAdded?.Invoke(slotName);
-
+            ComposeOntoSlot(existing, isValid, getItem);
+            AzuExtendedPlayerInventoryLogger.LogDebug($"Extended slot {slotName}");
             return true;
         }
-#endif
+
+        Model.EquipmentSlot slot = new()
+        {
+            Name = slotName.StartsWith("$") && Localization.m_instance != null ? Localization.m_instance.Localize(slotName) : slotName,
+            OriginalName = slotName,
+            Get = getItem,
+            Valid = isValid,
+            IsAPIAdded = true
+        };
+
+        if (index < 0 || index > slots.Count - QuickSlotsAmount.Value)
+            index = slots.Count - QuickSlotsAmount.Value;
+
+        UpdateSlots(index, 1);
+        slots.Insert(index, slot);
+        CustomSlots.Add(slot);
+
+        SlotBackupManager.BackupSlot(slot);
+
+        SlotHelpers.ResizeSlots();
+        SlotHelpers.UpdateEquipmentBackgroundAnchors();
+
+        AzuExtendedPlayerInventoryLogger.LogDebug($"Added slot {slotName}, localized as '{slot.Name}'");
+        SlotAdded?.Invoke(slotName);
+
+        return true;
+#else
         return false;
+#endif
+    }
+
+    public static bool AddSlot(string slotName, string prefabName, int index = -1)
+    {
+#if !API
+        if (string.IsNullOrWhiteSpace(slotName) || string.IsNullOrWhiteSpace(prefabName)) return false;
+
+        bool IsValid(ItemDrop.ItemData item) => item != null && item.m_dropPrefab && item.m_dropPrefab.name == prefabName;
+
+        ItemDrop.ItemData? Get(Player p) => p?.GetInventory()?.GetEquippedItems()
+            ?.FirstOrDefault(i => i != null && i.m_dropPrefab && i.m_dropPrefab.name == prefabName);
+
+        bool ok = AddSlot(slotName, Get, IsValid, index);
+        if (ok) RegisterVisualsForSlot(slotName, prefabName);
+        return ok;
+#else
+        return false;
+#endif
+    }
+
+    public static bool AddSlot(string slotName, IEnumerable<string> prefabNames, int index = -1)
+    {
+#if !API
+        if (string.IsNullOrWhiteSpace(slotName) || prefabNames == null) return false;
+
+        HashSet<string> set = new(prefabNames.Where(n => !string.IsNullOrWhiteSpace(n)), StringComparer.Ordinal);
+        if (set.Count == 0) return false;
+
+        bool IsValid(ItemDrop.ItemData item) => item != null && item.m_dropPrefab && set.Contains(item.m_dropPrefab.name);
+
+        ItemDrop.ItemData? Get(Player p) => p?.GetInventory()?.GetEquippedItems()
+            ?.FirstOrDefault(i => i != null && i.m_dropPrefab && set.Contains(i.m_dropPrefab.name));
+
+        bool ok = AddSlot(slotName, Get, IsValid, index);
+        if (ok) RegisterVisualsForSlot(slotName, set.ToArray());
+        return ok;
+#else
+        return false;
+#endif
+    }
+
+    public static bool AddSlot(string slotName, Func<ItemDrop.ItemData, bool> isValid, int index = -1, IEnumerable<string>? prefabNamesForVisuals = null)
+    {
+#if !API
+        if (string.IsNullOrWhiteSpace(slotName) || isValid == null) return false;
+
+        ItemDrop.ItemData? AutoGet(Player p) => p?.GetInventory()?.GetEquippedItems()
+            ?.FirstOrDefault(i => i != null && isValid(i));
+
+        bool ok = AddSlot(slotName, AutoGet, isValid, index);
+        if (ok && prefabNamesForVisuals != null) RegisterVisualsForSlot(slotName, prefabNamesForVisuals.ToArray());
+        return ok;
+#else
+        return false;
+#endif
+    }
+
+    public static bool AddQuickSlot(string slotName, bool showName = false, int index = -1)
+    {
+#if !API
+        if (string.IsNullOrWhiteSpace(slotName)) return false;
+
+        int existingIdx = slots.FindIndex(s => s?.Name == slotName);
+        if (existingIdx >= 0 && slots[existingIdx] is Model.EquipmentSlot existing)
+        {
+            return true;
+        }
+
+        Model.EquipmentSlot slot = new()
+        {
+            Name = showName ? slotName.StartsWith("$") && Localization.m_instance != null ? Localization.m_instance.Localize(slotName) : slotName : "",
+            Valid = item => true,
+            IsAPIAdded = true,
+            IsQuickSlot = true
+        };
+
+        if (index < 0 || index > slots.Count - QuickSlotsAmount.Value)
+            index = slots.Count - QuickSlotsAmount.Value;
+
+        UpdateSlots(index, 1);
+        slots.Insert(index, slot);
+        CustomSlots.Add(slot);
+        SlotHelpers.ResizeSlots();
+        SlotHelpers.UpdateEquipmentBackgroundAnchors();
+
+        AzuExtendedPlayerInventoryLogger.LogDebug($"Added slot {slotName}");
+        SlotAdded?.Invoke(slotName);
+
+        return true;
+#else
+        return false;
+#endif
     }
 
     public static bool RemoveSlot(string slotName)
     {
-#if ! API
-        if (InventoryGuiPatches.UpdateInventory_Patch.slots.FindIndex(s => s.Name == slotName) is { } slotIndex and >= 0 && InventoryGuiPatches.UpdateInventory_Patch.slots[slotIndex] is InventoryGuiPatches.EquipmentSlot slot)
+#if !API
+        if (slots.FindIndex(s => s.Name == slotName || (s is Model.EquipmentSlot es && es.OriginalName == slotName)) is { } slotIndex and >= 0 && slots[slotIndex] is Model.EquipmentSlot slot)
         {
-            if (Player.m_localPlayer && slot.Get(Player.m_localPlayer) is { } item) Player.m_localPlayer.UnequipItem(item);
+            if (Player.m_localPlayer && slot.Get?.Invoke(Player.m_localPlayer) is { } item) Player.m_localPlayer.UnequipItem(item);
+
+            if (Player.m_localPlayer)
+            {
+                Inventory inv = Player.m_localPlayer.GetInventory();
+                Vector2i slotPos = inv.EpiIndexToGridPos(slotIndex);
+                ItemDrop.ItemData? itemInSlot = inv.GetItemAt(slotPos.x, slotPos.y);
+                if (itemInSlot != null)
+                {
+                    inv.RemoveItem(itemInSlot);
+                    Vector2i newPos = inv.FindEmptyQuickAware(true);
+                    if (newPos is { x: >= 0, y: >= 0 })
+                    {
+                        itemInSlot.m_gridPos = newPos;
+                        inv.AddItem(itemInSlot);
+                        AzuExtendedPlayerInventoryLogger.LogInfo($"Relocated {Localization.m_instance.Localize(itemInSlot.m_shared.m_name)} from removed slot to ({newPos.x}, {newPos.y})");
+                    }
+                    else
+                    {
+                        AzuExtendedPlayerInventoryLogger.LogWarning($"No room for {Localization.m_instance.Localize(itemInSlot.m_shared.m_name)} after slot removal, dropping item.");
+                        Player.m_localPlayer.DropItem(inv, itemInSlot, itemInSlot.m_stack);
+                    }
+                }
+            }
 
             UpdateSlots(slotIndex, -1);
 
-            InventoryGuiPatches.UpdateInventory_Patch.slots.RemoveAt(slotIndex);
+            slots.RemoveAt(slotIndex);
 
-            InventoryGuiPatches.UpdateInventory_Patch.ResizeSlots();
+            SlotHelpers.ResizeSlots();
+            SlotHelpers.UpdateEquipmentBackgroundAnchors();
+            InventoryHealth.FixHiddenItems();
             SlotRemoved?.Invoke(slotName);
 
             return true;
@@ -84,75 +238,504 @@ public class API
         return false;
     }
 
-    public static SlotInfo GetSlots()
+    public static SlotInfo GetSlots() => BuildSlotInfo(_ => true);
+
+    public static SlotInfo GetQuickSlots() => BuildSlotInfo(s => s.IsQuickSlot);
+
+    public static SlotInfo GetEquipmentSlots() => BuildSlotInfo(s => !s.IsQuickSlot && s.EquipmentSlot != null);
+
+    private static SlotInfo BuildSlotInfo(Func<Model.Slot, bool> filter)
     {
-#if ! API
-        return new SlotInfo
         {
-            SlotNames = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.Name).ToArray(),
-            SlotPositions = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.Position).ToArray(),
-            GetItemFuncs = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.EquipmentSlot?.Get).ToArray(),
-            IsValidFuncs = InventoryGuiPatches.UpdateInventory_Patch.slots.Select(s => s.EquipmentSlot?.Valid).ToArray()
-        };
+#if !API
+            Model.Slot?[] slots = EPI.ExtendedPlayerInventory.slots.Where(s => s != null && filter(s!)).ToArray();
+
+            return new SlotInfo
+            {
+                SlotNames = slots.Select(s => s!.Name).ToArray(),
+                OriginalSlotNames = slots.Select(s => s!.OriginalName).ToArray(),
+                SlotPositions = slots.Select(s => s!.Position).ToArray(),
+                GetItemFuncs = slots.Select(s => s!.EquipmentSlot?.Get).ToArray(),
+                IsValidFuncs = slots.Select(s => s!.EquipmentSlot?.Valid).ToArray()
+            };
 #else
-    return new SlotInfo();
+            return new SlotInfo();
 #endif
-    }
-
-    public static SlotInfo GetQuickSlots()
-    {
-#if ! API
-        string[] fixedSlotNames = AzuExtendedPlayerInventoryPlugin.Hotkeys.Select(hk => hk.Value.ToString()).ToArray();
-
-        InventoryGuiPatches.Slot?[] quickSlots = InventoryGuiPatches.UpdateInventory_Patch.slots.Where(slot => fixedSlotNames.Contains(slot.Name)).ToArray();
-
-        return new SlotInfo
-        {
-            SlotNames = quickSlots.Select(s => s.Name).ToArray(),
-            SlotPositions = quickSlots.Select(s => s.Position).ToArray(),
-            GetItemFuncs = quickSlots.Select(s => s.EquipmentSlot?.Get).ToArray(),
-            IsValidFuncs = quickSlots.Select(s => s.EquipmentSlot?.Valid).ToArray()
-        };
-#else
-    return new SlotInfo();
-#endif
+        }
     }
 
     public static List<ItemDrop.ItemData> GetQuickSlotsItems()
     {
-#if ! API
-        List<ItemDrop.ItemData> quickSlotItems = new();
+#if !API
+        List<ItemDrop.ItemData> quickSlotItems = [];
         if (Player.m_localPlayer == null) return quickSlotItems;
-        Inventory inventory = Player.m_localPlayer.GetInventory();
-        int width = inventory.GetWidth();
-        int adjustedHeight = inventory.GetHeight() - GetAddedRows(width);
-        int firstHotkeyIndex = adjustedHeight * width + InventoryGuiPatches.UpdateInventory_Patch.slots.Count - AzuExtendedPlayerInventoryPlugin.Hotkeys.Length;
 
-        for (int i = 0; i < AzuExtendedPlayerInventoryPlugin.Hotkeys.Length; ++i)
+        Inventory? inv = Player.m_localPlayer.GetInventory();
+        int w = inv.GetWidth();
+        int baseIndex = Layout.GetBaseSlotIndex(inv);
+
+        foreach (SlotSnapshot snap in GetQuickSlotSnapshots(inv))
         {
-            int index = firstHotkeyIndex + i;
-            if (inventory.GetItemAt(index % width, index / width) is { } item) quickSlotItems.Add(item);
+            ItemDrop.ItemData? itemAt = inv.GetItemAt(snap.GridPos.x, snap.GridPos.y);
+            if (itemAt != null) quickSlotItems.Add(itemAt);
         }
 
         return quickSlotItems;
 #else
-    return new List<ItemDrop.ItemData>();
+        return new List<ItemDrop.ItemData>();
 #endif
     }
-
 
     public static int GetAddedRows(int width)
     {
-#if ! API
-        int slotsCount = InventoryGuiPatches.UpdateInventory_Patch.slots.Count;
+#if !API
+        int slotsCount = slots.Count;
         int requiredRows = Mathf.CeilToInt((float)slotsCount / width);
         return requiredRows;
 #else
-		return 0;
+        return 0;
 #endif
     }
 
-#if ! API
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int GetFullHeight(int width)
+    {
+#if !API
+        return Layout.BaseInventoryHeight + ExtraRows.Value + (AddEquipmentRow.Value.isOn() ? GetAddedRows(width) : 0);
+#else
+        return 0;
+#endif
+    }
+
+    public static void RegisterVisualPrefabs(string slotName, params (string prefabName, string visualName)[] pairs)
+    {
+#if !API
+        foreach ((string prefab, string visual) in pairs)
+        {
+            if (string.IsNullOrWhiteSpace(prefab)) continue;
+            CustomEquipVisuals.Register(prefab);
+            CustomEquipVisuals.RegisterForSlot(prefab, slotName, visual);
+            try
+            {
+                OnRegisterVisualPrefab?.Invoke(prefab);
+            }
+            catch
+            {
+            }
+        }
+#endif
+    }
+
+    public static int GetSlotCount()
+    {
+#if !API
+        return slots.Count;
+#else
+        return 0;
+#endif
+    }
+
+    public static bool TryGetSlotIndexByName(string slotName, out int index, bool allowLocalized = true)
+    {
+#if !API
+        index = -1;
+        if (string.IsNullOrWhiteSpace(slotName)) return false;
+
+        List<Model.Slot?> slots = EPI.ExtendedPlayerInventory.slots;
+
+        for (int i = 0; i < slots.Count; ++i)
+        {
+            Model.Slot? s = slots[i];
+            if (s == null) continue;
+            if (!string.Equals(s.OriginalName, slotName, StringComparison.Ordinal)
+                && (!allowLocalized || !string.Equals(s.Name, slotName, StringComparison.Ordinal))) continue;
+            index = i;
+            return true;
+        }
+
+        return false;
+#else
+        index = -1;
+        return false;
+#endif
+    }
+
+    public static bool TryGetSlotDescriptor(int index, out SlotDescriptor desc)
+    {
+#if API
+        desc = default;
+        return false;
+#else
+        desc = default;
+        List<Model.Slot?> slots = EPI.ExtendedPlayerInventory.slots;
+        if ((uint)index >= (uint)slots.Count) return false;
+
+        Model.Slot? s = slots[index];
+        if (s == null) return false;
+
+        bool isEquip = s is Model.EquipmentSlot { IsQuickSlot: false };
+        bool isQuick = s is { IsQuickSlot: true };
+        bool isCustom = IsCustomSlot(s as Model.EquipmentSlot);
+
+        desc = new SlotDescriptor(
+            index,
+            s.Name ?? string.Empty,
+            s.OriginalName ?? string.Empty,
+            isQuick,
+            isEquip,
+            isCustom,
+            s.Position
+        );
+        return true;
+#endif
+    }
+
+    public static int GetSlotGridLinearIndex(Inventory inv, int slotIndex)
+    {
+#if API
+        return -1;
+#else
+        if (inv == null) return -1;
+        int total = GetSlotCount();
+        if ((uint)slotIndex >= (uint)total) return -1;
+
+        int baseIndex = Layout.GetBaseSlotIndex(inv);
+        return baseIndex + slotIndex;
+#endif
+    }
+
+    public static Vector2i GetSlotGridPos(Inventory inv, int slotIndex)
+    {
+#if API
+        return new Vector2i(-1, -1);
+#else
+        int linear = GetSlotGridLinearIndex(inv, slotIndex);
+        if (linear < 0) return new Vector2i(-1, -1);
+        int w = inv.GetWidth();
+        return new Vector2i(linear % w, linear / w);
+#endif
+    }
+
+    public static bool TryGetSlotIndexAtGridPos(Inventory inv, Vector2i gridPos, out int slotIndex)
+    {
+#if API
+        slotIndex = -1;
+        return false;
+#else
+        slotIndex = -1;
+        if (inv == null) return false;
+
+        int w = inv.GetWidth();
+        int normalRows = Layout.NormalRows(inv);
+        if (gridPos.y < normalRows) return false;
+
+        int linear = gridPos.y * w + gridPos.x;
+        int baseLinear = normalRows * w;
+        int epiLinear = linear - baseLinear;
+
+        int total = GetSlotCount();
+        if ((uint)epiLinear >= (uint)total) return false;
+
+        slotIndex = epiLinear;
+        return true;
+#endif
+    }
+
+    public static bool IsEquipmentCell(Inventory inv, int x, int y, out int slotIndex)
+    {
+#if API
+        slotIndex = -1;
+        return false;
+#else
+        if (!TryGetSlotIndexAtGridPos(inv, new Vector2i(x, y), out slotIndex)) return false;
+        return TryGetSlotDescriptor(slotIndex, out SlotDescriptor d) && d.IsEquipmentSlot;
+#endif
+    }
+
+    public static bool IsQuickCell(Inventory inv, int x, int y, out int slotIndex)
+    {
+#if API
+        slotIndex = -1;
+        return false;
+#else
+        if (!TryGetSlotIndexAtGridPos(inv, new Vector2i(x, y), out slotIndex)) return false;
+        return TryGetSlotDescriptor(slotIndex, out SlotDescriptor d) && d.IsQuickSlot;
+#endif
+    }
+
+    public static bool TryGetSlotSnapshot(Inventory inv, int slotIndex, out SlotSnapshot snapshot)
+    {
+#if API
+        snapshot = default;
+        return false;
+#else
+        snapshot = default;
+        if (inv == null) return false;
+        if (!TryGetSlotDescriptor(slotIndex, out SlotDescriptor desc)) return false;
+
+        List<Model.Slot?> slots = EPI.ExtendedPlayerInventory.slots;
+        Model.Slot? raw = slots[slotIndex];
+        bool occupied = raw?.Occupied ?? false;
+
+        Vector2i gp = GetSlotGridPos(inv, slotIndex);
+        int linear = GetSlotGridLinearIndex(inv, slotIndex);
+
+        snapshot = new SlotSnapshot(desc, occupied, gp, linear);
+        return true;
+#endif
+    }
+
+    public static IEnumerable<SlotDescriptor> EnumerateSlots()
+    {
+#if API
+        yield break;
+#else
+        int count = GetSlotCount();
+        for (int i = 0; i < count; ++i)
+            if (TryGetSlotDescriptor(i, out SlotDescriptor d))
+                yield return d;
+#endif
+    }
+
+    public static IEnumerable<SlotSnapshot> GetAllSlotSnapshots(Inventory inv)
+    {
+#if API
+        yield break;
+#else
+        int count = GetSlotCount();
+        for (int i = 0; i < count; ++i)
+            if (TryGetSlotSnapshot(inv, i, out SlotSnapshot s))
+                yield return s;
+#endif
+    }
+
+    public static IEnumerable<SlotSnapshot> GetQuickSlotSnapshots(Inventory inv)
+    {
+#if API
+        yield break;
+#else
+        foreach (SlotSnapshot s in GetAllSlotSnapshots(inv))
+            if (s.Descriptor.IsQuickSlot)
+                yield return s;
+#endif
+    }
+
+    public static IEnumerable<SlotSnapshot> GetEquipmentSlotSnapshots(Inventory inv)
+    {
+#if API
+        yield break;
+#else
+        foreach (SlotSnapshot s in GetAllSlotSnapshots(inv))
+            if (s.Descriptor.IsEquipmentSlot)
+                yield return s;
+#endif
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryGetSlotIndexByItem(Player player, ItemDrop.ItemData item, out int slotIndex)
+    {
+#if API
+    slotIndex = -1;
+    return false;
+#else
+        slotIndex = -1;
+        if (!player || item == null) return false;
+
+        int total = GetSlotCount();
+        for (int i = 0; i < total; ++i)
+        {
+            if (!TryGetSlotDescriptor(i, out SlotDescriptor d) || !d.IsEquipmentSlot) continue;
+            if (TryGetEquippedItem(i, out ItemDrop.ItemData? eq) && ReferenceEquals(eq, item))
+            {
+                slotIndex = i;
+                return true;
+            }
+        }
+
+        Inventory? inv = player.GetInventory();
+        if (inv == null) return false;
+
+        foreach (SlotSnapshot snap in GetQuickSlotSnapshots(inv))
+        {
+            ItemDrop.ItemData? at = inv.GetItemAt(snap.GridPos.x, snap.GridPos.y);
+            if (ReferenceEquals(at, item))
+            {
+                slotIndex = snap.Descriptor.Index;
+                return true;
+            }
+        }
+
+        return false;
+#endif
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryGetSlotIndexByItem(ItemDrop.ItemData item, out int slotIndex)
+    {
+#if API
+    slotIndex = -1;
+    return false;
+#else
+        return TryGetSlotIndexByItem(Player.m_localPlayer, item, out slotIndex);
+#endif
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool TryGetSlotDescriptorByItem(Player player, ItemDrop.ItemData item, out SlotDescriptor desc)
+    {
+#if API
+    desc = default;
+    return false;
+#else
+        desc = default;
+        if (!TryGetSlotIndexByItem(player, item, out int idx)) return false;
+        return TryGetSlotDescriptor(idx, out desc);
+#endif
+    }
+
+    public static bool SlotValidates(int slotIndex, ItemDrop.ItemData item)
+    {
+#if API
+        return false;
+#else
+        List<Model.Slot?> slots = EPI.ExtendedPlayerInventory.slots;
+        if ((uint)slotIndex >= (uint)slots.Count) return false;
+
+        if (slots[slotIndex] is Model.EquipmentSlot es)
+        {
+            if (es.Valid == null) return false;
+            try
+            {
+                return es.Valid(item);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        if (slots[slotIndex] is { IsQuickSlot: true }) return true;
+        return false;
+#endif
+    }
+
+    public static bool TryGetEquippedItem(int slotIndex, out ItemDrop.ItemData? item)
+    {
+#if API
+        item = null;
+        return false;
+#else
+        item = null;
+        if (Player.m_localPlayer == null) return false;
+
+        List<Model.Slot?> slots = EPI.ExtendedPlayerInventory.slots;
+        if ((uint)slotIndex >= (uint)slots.Count) return false;
+
+        if (slots[slotIndex] is Model.EquipmentSlot es)
+        {
+            try
+            {
+                item = es.Get?.Invoke(Player.m_localPlayer);
+                return item != null;
+            }
+            catch
+            {
+                item = null;
+                return false;
+            }
+        }
+
+        return false;
+#endif
+    }
+
+    public static bool TryGetSlotDescriptorByName(string slotName, out SlotDescriptor desc, bool allowLocalized = true)
+    {
+        desc = default;
+        if (!TryGetSlotIndexByName(slotName, out int idx, allowLocalized)) return false;
+        return TryGetSlotDescriptor(idx, out desc);
+    }
+
+#if !API
+    private static void RegisterVisualsForSlot(string slotName, params string[] prefabNames)
+    {
+        if (string.IsNullOrWhiteSpace(slotName) || prefabNames == null) return;
+
+        foreach (string? n in prefabNames.Where(s => !string.IsNullOrWhiteSpace(s)))
+        {
+            CustomEquipVisuals.Register(n);
+            CustomEquipVisuals.RegisterForSlot(n, slotName);
+
+            try
+            {
+                OnRegisterVisualPrefab?.Invoke(n);
+            }
+            catch
+            {
+                /* ignore listeners */
+            }
+        }
+    }
+
+    private static void ComposeOntoSlot(Model.EquipmentSlot slot, Func<ItemDrop.ItemData, bool> isValid, Func<Player, ItemDrop.ItemData?> getItem)
+    {
+        Func<ItemDrop.ItemData, bool>? originalValid = slot.Valid;
+        Func<Player, ItemDrop.ItemData?>? originalGet = slot.Get;
+
+        slot.Valid = item =>
+        {
+            try
+            {
+                if (originalValid?.Invoke(item) == true) return true;
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                return isValid(item);
+            }
+            catch
+            {
+                return false;
+            }
+        };
+
+        slot.Get = player =>
+        {
+            try
+            {
+                ItemDrop.ItemData? res = originalGet?.Invoke(player);
+                if (res != null) return res;
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                return getItem(player);
+            }
+            catch
+            {
+                return null;
+            }
+        };
+    }
+
+    internal static bool IsCustomSlot(Model.EquipmentSlot? slot)
+    {
+        return CustomSlots.Contains(slot);
+    }
+
+    public static bool IsCustomSlot(SlotDescriptor d) => d.IsCustom;
+    public static bool IsQuickSlot(SlotDescriptor d) => d.IsQuickSlot;
+    public static bool IsEquipmentSlot(SlotDescriptor d) => d.IsEquipmentSlot;
+
+#endif
+
+#if !API
     public static void HudAwake(Hud __instance)
     {
         OnHudAwake?.Invoke(__instance);
@@ -172,104 +755,258 @@ public class API
     {
         OnHudUpdateComplete?.Invoke(__instance);
     }
+
+    public static void BeforeQuickSlotsAdded()
+    {
+        OnBeforeQuickSlotsAdded?.Invoke();
+    }
+
+    public static void QuickSlotsAdded()
+    {
+        OnQuickSlotsAdded?.Invoke();
+    }
 #endif
 
-#if ! API
-    private static void UpdateSlots(int index, int shift)
-    {
-        if (Player.m_localPlayer)
-        {
-            Inventory inv = Player.m_localPlayer.m_inventory;
-            int width = inv.GetWidth();
-            int baseRows = 4 + AzuExtendedPlayerInventoryPlugin.ExtraRows.Value;
-            foreach (ItemDrop.ItemData item in inv.m_inventory)
-                if ((item.m_gridPos.y - baseRows) * width + item.m_gridPos.x >= index)
-                {
-                    item.m_gridPos.x += shift;
-                    if (item.m_gridPos.x < 0)
-                    {
-                        item.m_gridPos.x = width - 1;
-                        --item.m_gridPos.y;
-                    }
+#if !API
 
-                    if (item.m_gridPos.x >= width)
-                    {
-                        item.m_gridPos.x = 0;
-                        ++item.m_gridPos.y;
-                    }
+    #region Model.Slot accessors (thin wrappers, no duplication)
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool TryGetModelSlot(int slotIndex, out Model.Slot? slot)
+    {
+#if API
+    slot = null;
+    return false;
+#else
+        slot = null;
+        List<Model.Slot?> slots = EPI.ExtendedPlayerInventory.slots;
+        if ((uint)slotIndex >= (uint)slots.Count) return false;
+        slot = slots[slotIndex];
+        return slot != null;
+#endif
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool TryGetEquipmentModelSlot(int slotIndex, out Model.EquipmentSlot? equipmentSlot)
+    {
+#if API
+    equipmentSlot = null;
+    return false;
+#else
+        equipmentSlot = null;
+        if (!TryGetModelSlot(slotIndex, out Model.Slot? s)) return false;
+        equipmentSlot = s as Model.EquipmentSlot;
+        return equipmentSlot != null;
+#endif
+    }
+
+    internal static bool TryGetModelSlotByName(string slotName, out Model.Slot? slot, bool allowLocalized = true)
+    {
+#if API
+    slot = null;
+    return false;
+#else
+        slot = null;
+        if (!TryGetSlotIndexByName(slotName, out int idx, allowLocalized)) return false;
+        return TryGetModelSlot(idx, out slot);
+#endif
+    }
+
+    internal static bool TryGetModelSlotByItem(Player player, ItemDrop.ItemData item, out Model.Slot? slot)
+    {
+#if API
+    slot = null;
+    return false;
+#else
+        slot = null;
+        if (!TryGetSlotIndexByItem(player, item, out int idx)) return false;
+        return TryGetModelSlot(idx, out slot);
+#endif
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool TryGetModelSlotByItem(ItemDrop.ItemData item, out Model.Slot? slot)
+    {
+#if API
+    slot = null;
+    return false;
+#else
+        return TryGetModelSlotByItem(Player.m_localPlayer, item, out slot);
+#endif
+    }
+
+    internal static bool TryGetModelSlotAtGridPos(Inventory inv, Vector2i gridPos, out Model.Slot? slot)
+    {
+#if API
+    slot = null;
+    return false;
+#else
+        slot = null;
+        if (!TryGetSlotIndexAtGridPos(inv, gridPos, out int idx)) return false;
+        return TryGetModelSlot(idx, out slot);
+#endif
+    }
+
+    internal static Model.Slot?[] GetModelSlotsSnapshot()
+    {
+#if API
+    return Array.Empty<Model.Slot?>();
+#else
+        return slots.ToArray();
+#endif
+    }
+
+    internal static IEnumerable<Model.Slot?> EnumerateModelSlots()
+    {
+#if API
+    yield break;
+#else
+        List<Model.Slot?> slots = EPI.ExtendedPlayerInventory.slots;
+        for (int i = 0; i < slots.Count; ++i)
+            yield return slots[i];
+#endif
+    }
+
+    #endregion
+
+    internal static void UpdateSlots(int index, int shift)
+    {
+        if (!Player.m_localPlayer) return;
+        Inventory inv = Player.m_localPlayer.m_inventory;
+        int width = inv.GetWidth();
+        int baseRows = Layout.BaseInventoryHeight + ExtraRows.Value;
+
+#if DEBUG
+        AzuExtendedPlayerInventoryLogger.LogDebug($"UpdateSlots: index={index}, shift={shift}, baseRows={baseRows}, width={width}, slots.Count={slots.Count}");
+#endif
+        foreach (ItemDrop.ItemData item in inv.m_inventory)
+        {
+            int slotIndex = (item.m_gridPos.y - baseRows) * width + item.m_gridPos.x;
+            if (slotIndex >= index)
+            {
+                Vector2i oldPos = item.m_gridPos;
+                item.m_gridPos.x += shift;
+                if (item.m_gridPos.x < 0)
+                {
+                    item.m_gridPos.x = width - 1;
+                    --item.m_gridPos.y;
                 }
 
-            inv.m_height = baseRows + Mathf.CeilToInt((float)(InventoryGuiPatches.UpdateInventory_Patch.slots.Count + shift) / width);
-        }
-    }
-
-    public static void AddAdditionalValidations()
-    {
-        if (Chainloader.PluginInfos.TryGetValue("vapok.mods.adventurebackpacks", out PluginInfo? advBackpacks))
-            if (advBackpacks != null)
-            {
-                var existingSlot = InventoryGuiPatches.UpdateInventory_Patch.slots.FirstOrDefault(s => s?.Name == Localization.instance.Localize("$bp_backpack_slot_name"));
-                if (existingSlot?.EquipmentSlot != null)
+                if (item.m_gridPos.x >= width)
                 {
-                    Func<ItemDrop.ItemData, bool> originalIsValid = existingSlot.EquipmentSlot.Valid;
-                    Func<ItemDrop.ItemData, bool> additionalIsValid = AzuExtendedPlayerInventoryPlugin.IsBackpackItem;
-
-                    // Do the original gets as well
-                    Func<Player, ItemDrop.ItemData?> originalGet = existingSlot.EquipmentSlot.Get;
-                    Func<Player, ItemDrop.ItemData?> additionalGet = AzuExtendedPlayerInventoryPlugin.GetBackpackItem;
-
-
-                    AzuExtendedPlayerInventoryPlugin.AzuExtendedPlayerInventoryLogger.LogWarning("Adding additional validation for Adventure Backpacks");
-                    existingSlot.EquipmentSlot.Valid = item => originalIsValid(item) || additionalIsValid(item);
-                    existingSlot.EquipmentSlot.Get = player => originalGet(player) ?? additionalGet(player);
+                    item.m_gridPos.x = 0;
+                    ++item.m_gridPos.y;
                 }
+#if DEBUG
+                AzuExtendedPlayerInventoryLogger.LogDebug($"UpdateSlots: Shifted '{item.m_shared.m_name}' from slot {slotIndex} ({oldPos.x},{oldPos.y}) to ({item.m_gridPos.x},{item.m_gridPos.y})");
+#endif
             }
+        }
+
+        inv.m_height = baseRows + Mathf.CeilToInt((float)(slots.Count + shift) / width);
     }
 
-    /*public static void AddAdditionalValidations2()
+    internal static void RelocalizeSlots()
     {
-        foreach (var existingSlot in InventoryGuiPatches.UpdateInventory_Patch.slots)
+        if (Localization.m_instance == null) return;
+        List<string> builtInSlotNames = GetBuiltInSlotNames();
+
+        foreach (Model.Slot? slot in slots)
         {
-            if (existingSlot?.EquipmentSlot != null)
+            if (slot == null || string.IsNullOrWhiteSpace(slot.OriginalName)) continue;
+            if (!slot.OriginalName.StartsWith("$", StringComparison.Ordinal)) continue;
+            bool isBuiltIn = builtInSlotNames.Contains(slot.OriginalName);
+            string localized = Localization.m_instance.Localize(slot.OriginalName);
+            if (slot.Name == localized && !isBuiltIn) continue;
+            if (isBuiltIn)
             {
-                Func<ItemDrop.ItemData, bool> originalIsValid = existingSlot.EquipmentSlot.Valid;
-                Func<Player, ItemDrop.ItemData?> originalGet = existingSlot.EquipmentSlot.Get;
+                switch (slot.OriginalName)
+                {
+                    case "$azu_epi_helmet":
+                        slot.Name = string.IsNullOrWhiteSpace(HelmetText.Value) ? localized : HelmetText.Value.StartsWith("$", StringComparison.Ordinal) ? Localization.m_instance.Localize(HelmetText.Value) : HelmetText.Value;
+                        break;
+                    case "$azu_epi_chest":
+                        slot.Name = string.IsNullOrWhiteSpace(ChestText.Value) ? localized : ChestText.Value.StartsWith("$", StringComparison.Ordinal) ? Localization.m_instance.Localize(ChestText.Value) : ChestText.Value;
+                        break;
+                    case "$azu_epi_legs":
+                        slot.Name = string.IsNullOrWhiteSpace(LegsText.Value) ? localized : LegsText.Value.StartsWith("$", StringComparison.Ordinal) ? Localization.m_instance.Localize(LegsText.Value) : LegsText.Value;
+                        break;
+                    case "$azu_epi_shoulder":
+                        slot.Name = string.IsNullOrWhiteSpace(BackText.Value) ? localized : BackText.Value.StartsWith("$", StringComparison.Ordinal) ? Localization.m_instance.Localize(BackText.Value) : BackText.Value;
+                        break;
+                    case "$azu_epi_utility":
+                        slot.Name = string.IsNullOrWhiteSpace(UtilityText.Value) ? localized : UtilityText.Value.StartsWith("$", StringComparison.Ordinal) ? Localization.m_instance.Localize(UtilityText.Value) : UtilityText.Value;
+                        break;
+                    case "$azu_epi_trinket":
+                        slot.Name = string.IsNullOrWhiteSpace(TrinketText.Value) ? localized : TrinketText.Value.StartsWith("$", StringComparison.Ordinal) ? Localization.m_instance.Localize(TrinketText.Value) : TrinketText.Value;
+                        break;
+                    default:
+                        slot.Name = localized;
+                        break;
+                }
 
-                // Combine original validation with additional generic validation
-                existingSlot.EquipmentSlot.Valid = item => originalIsValid(item) || AdditionalValidation(item);
-
-                // Combine original get with additional generic get
-                existingSlot.EquipmentSlot.Get = player => originalGet(player) ?? AdditionalGet(player);
+                AzuExtendedPlayerInventoryLogger.LogDebug($"Relocalizing slot '{slot.Name}' to '{localized}' from key '{slot.OriginalName}'");
+            }
+            else
+            {
+                AzuExtendedPlayerInventoryLogger.LogDebug($"Relocalizing slot '{slot.Name}' to '{localized}' from key '{slot.OriginalName}'");
+                slot.Name = localized;
             }
         }
     }
-
-    private static bool AdditionalValidation(ItemDrop.ItemData item)
-    {
-        // Add generic validation logic here
-        // Example: return true if the item is equipable
-        return item.IsEquipable() && PlayerVisual.PlayerVisuals.TryGetValue(Player.m_localPlayer.m_visEquipment, out PlayerVisual visual) && visual.EquippedItems.Contains(item);
-    }
-
-    private static ItemDrop.ItemData? AdditionalGet(Player player)
-    {
-        // Add generic get logic here
-        // Example: find the first item that meets certain criteria
-        if (PlayerVisual.PlayerVisuals.TryGetValue(player.m_visEquipment, out PlayerVisual visual))
-        {
-            return visual.EquippedItems.FirstOrDefault(item => item?.IsEquipable() == true);
-        }
-
-        return null;
-    }*/
 #endif
 }
 
 [PublicAPI]
 public class SlotInfo
 {
-    public string[] SlotNames { get; set; } = { };
-    public Vector2[] SlotPositions { get; set; } = { };
-    public Func<Player, ItemDrop.ItemData?>?[] GetItemFuncs { get; set; } = { };
-    public Func<ItemDrop.ItemData, bool>?[] IsValidFuncs { get; set; } = { };
+    public string[] SlotNames { get; set; } = [];
+    public string[] OriginalSlotNames { get; set; } = [];
+    public Vector2[] SlotPositions { get; set; } = [];
+    public Func<Player, ItemDrop.ItemData?>?[] GetItemFuncs { get; set; } = [];
+    public Func<ItemDrop.ItemData, bool>?[] IsValidFuncs { get; set; } = [];
+}
+
+[PublicAPI]
+public struct SlotDescriptor
+{
+    public int Index { get; }
+    public string Name { get; }
+    public string OriginalName { get; }
+    public bool IsQuickSlot { get; }
+    public bool IsEquipmentSlot { get; }
+    public bool IsCustom { get; }
+    public Vector2 UiPosition { get; }
+
+    public SlotDescriptor(int index, string name, string originalName, bool isQuickSlot, bool isEquipmentSlot, bool isCustom, Vector2 uiPosition)
+    {
+        Index = index;
+        Name = name ?? string.Empty;
+        OriginalName = originalName ?? string.Empty;
+        IsQuickSlot = isQuickSlot;
+        IsEquipmentSlot = isEquipmentSlot;
+        IsCustom = isCustom;
+        UiPosition = uiPosition;
+    }
+}
+
+[PublicAPI]
+public struct SlotSnapshot
+{
+    public SlotDescriptor Descriptor { get; }
+
+    public bool Occupied { get; }
+    public Vector2i GridPos { get; }
+    public int LinearGridIndex { get; }
+
+    public SlotSnapshot(SlotDescriptor descriptor, bool occupied, Vector2i gridPos, int linearGridIndex)
+    {
+        Descriptor = descriptor;
+        Occupied = occupied;
+        GridPos = gridPos;
+        LinearGridIndex = linearGridIndex;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool Validates(ItemDrop.ItemData item) => API.SlotValidates(Descriptor.Index, item);
 }

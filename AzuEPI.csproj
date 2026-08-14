@@ -12,8 +12,10 @@
         <AssemblyName>AzuExtendedPlayerInventory</AssemblyName>
         <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
         <FileAlignment>512</FileAlignment>
-        <LangVersion>10</LangVersion>
+        <LangVersion>preview</LangVersion>
         <Nullable>enable</Nullable>
+        <SignAssembly>true</SignAssembly>
+        <AssemblyOriginatorKeyFile>AzuEPI.snk</AssemblyOriginatorKeyFile>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
         <PlatformTarget>AnyCPU</PlatformTarget>
@@ -85,6 +87,9 @@
         <Reference Include="assembly_valheim">
             <HintPath>$(PublicizedAssembliesPath)\assembly_valheim_publicized.dll</HintPath>
         </Reference>
+        <Reference Include="Splatform">
+            <HintPath>$(PublicizedAssembliesPath)\Splatform_publicized.dll</HintPath>
+        </Reference>
         <Reference Include="BepInEx">
             <HintPath>$(BepInExPath)\core\BepInEx.dll</HintPath>
         </Reference>
@@ -119,20 +124,26 @@
         <Reference Include="UnityEngine.InputLegacyModule">
             <HintPath>$(CorlibPath)\UnityEngine.InputLegacyModule.dll</HintPath>
         </Reference>
+        <Reference Include="Unity.InputSystem">
+            <HintPath>$(CorlibPath)\Unity.InputSystem.dll</HintPath>
+        </Reference>
         <Reference Include="UnityEngine.ParticleSystemModule">
-            <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\UnityEngine.ParticleSystemModule.dll</HintPath>
+            <HintPath>$(CorlibPath)\UnityEngine.ParticleSystemModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.UI">
             <HintPath>$(CorlibPath)\UnityEngine.UI.dll</HintPath>
         </Reference>
         <Reference Include="Unity.TextMeshPro">
-            <HintPath>$(GamePath)\valheim_Data\Managed\Unity.TextMeshPro.dll</HintPath>
+            <HintPath>$(CorlibPath)\Unity.TextMeshPro.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.PhysicsModule">
-            <HintPath>$(GamePath)\valheim_Data\Managed\UnityEngine.PhysicsModule.dll</HintPath>
+            <HintPath>$(CorlibPath)\UnityEngine.PhysicsModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.ImageConversionModule">
-            <HintPath>$(GamePath)\valheim_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
+            <HintPath>C:\Users\crypt\OneDrive\Desktop\Libs\UnityEngine.ImageConversionModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.TextRenderingModule">
+            <HintPath>$(CorlibPath)\UnityEngine.TextRenderingModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.UIModule">
             <HintPath>$(CorlibPath)\UnityEngine.UIModule.dll</HintPath>
@@ -140,20 +151,81 @@
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)|$(Platform)' != 'API|AnyCPU'">
         <Compile Include="EPI\EPI.cs"/>
-        <Compile Include="EPI\Patches\HudPatches.cs"/>
-        <Compile Include="EPI\Patches\InventoryGuiPatches.cs"/>
-        <Compile Include="EPI\Patches\InventoryPatches.cs"/>
-        <Compile Include="EPI\Patches\PlayerPatches.cs"/>
-        <Compile Include="EPI\Patches\TombstonePatches.cs"/>
-        <Compile Include="EPI\QAB\QAB.cs"/>
-        <Compile Include="EPI\Utilities\Utilities.cs"/>
-        <Compile Include="EPI\Utilities\VersionHandshake.cs"/>
-        <Compile Include="Managers\ItemDataManager.cs"/>
-        <Compile Include="Managers\LocalizationManager.cs"/>
-        <Compile Include="Managers\Patcher.cs"/>
-        <Compile Include="Moveable\DragControl.cs"/>
-        <Compile Include="Moveable\MoveableChestInventory.cs"/>
         <Compile Include="Plugin.cs"/>
+        <Compile Include="Core\Input\GamepadCompatibility.cs"/>
+        <Compile Include="Core\Input\KeyboardExtensions.cs"/>
+        <Compile Include="Core\InventoryHandlers\Capacity.cs"/>
+        <Compile Include="Core\InventoryHandlers\InventoryHealth.cs"/>
+        <Compile Include="Core\InventoryHandlers\Layout.cs"/>
+        <Compile Include="Core\InventoryHandlers\UIBuilder.cs"/>
+        <Compile Include="Core\InventoryHandlers\GUICache.cs"/>
+        <Compile Include="Core\Slots\EpiDropRouter.cs"/>
+        <Compile Include="Core\Slots\Initializers.cs"/>
+        <Compile Include="Core\Slots\Rules.cs"/>
+        <Compile Include="Core\Slots\SlotHelpers.cs"/>
+        <Compile Include="Core\Slots\SlotOverlays.cs"/>
+        <Compile Include="Core\Text\Formatting.cs"/>
+        <Compile Include="Core\Text\SlotText.cs"/>
+        <Compile Include="Core\Utilities\Extensions\GameObjectHelper.cs"/>
+        <Compile Include="Core\Utilities\Extensions\InventoryExtensions.cs"/>
+        <Compile Include="Core\Utilities\Extensions\LoggerExtensions.cs"/>
+        <Compile Include="Core\Utilities\Extensions\RectTransformExtensions.cs"/>
+        <Compile Include="Core\Utilities\Extensions\ToggleExtensions.cs"/>
+        <Compile Include="Core\Utilities\VersionHandshake.cs"/>
+        <Compile Include="Game\CLI\TerminalCommands.cs"/>
+        <Compile Include="Game\Compatibility\ArmoireCompat.cs"/>
+        <Compile Include="Game\Compatibility\AdvBackpacks\AdvBackpacks.cs"/>
+        <Compile Include="Game\Compatibility\AdvBackpacks\BoneReorder.cs"/>
+        <Compile Include="Game\Compatibility\BetterArchery.cs"/>
+        <Compile Include="Game\Compatibility\EAQ.cs"/>
+        <Compile Include="Game\Compatibility\EpicLootCompat.cs"/>
+        <Compile Include="Game\Compatibility\WeightBase.cs"/>
+        <Compile Include="Game\Compatibility\JCBPUIUseBleedGuard.cs"/>
+        <Compile Include="Game\Compatibility\JudesEquipment.cs"/>
+        <Compile Include="Game\Compatibility\JewelcraftingCompat.cs"/>
+        <Compile Include="Game\Compatibility\RustBags.cs"/>
+        <Compile Include="Game\Compatibility\VESCompat.cs"/>
+        <Compile Include="Game\Compatibility\ZenUICompat.cs"/>
+        <Compile Include="Game\Compatibility\ValheimPlusCompat.cs"/>
+        <Compile Include="Game\Managers\ItemDataManager.cs"/>
+        <Compile Include="Game\Managers\LocalizationManager.cs"/>
+        <Compile Include="Game\Managers\Patcher.cs"/>
+        <Compile Include="Game\Moveable\DragControl.cs"/>
+        <Compile Include="Game\Moveable\MoveableChestInventory.cs"/>
+        <Compile Include="Game\Compatibility\BackpacksCompat.cs"/>
+        <Compile Include="Game\Compatibility\Hunter_Legacy.cs"/>
+        <Compile Include="Game\Compatibility\Wizardry.cs"/>
+        <Compile Include="Game\Panels\PanelUtilities.cs"/>
+        <Compile Include="Game\Panels\Loadout\LoadoutPatches.cs"/>
+        <Compile Include="Game\Panels\Loadout\PersonalLoadoutGui.cs"/>
+        <Compile Include="Game\Panels\Loadout\PersonalLoadoutGuiDetails.cs"/>
+        <Compile Include="Game\Panels\Loadout\UIDragger.cs"/>
+        <Compile Include="Game\Panels\Stats\StatsPanelController.cs"/>
+        <Compile Include="Game\Panels\Stats\LiveStatType.cs"/>
+        <Compile Include="Game\Panels\Stats\PlayerStatsCalculator.cs"/>
+        <Compile Include="Game\Panels\Stats\FakePlayerStats.cs"/>
+        <Compile Include="Game\Panels\Stats\RemotePlayerStats.cs"/>
+        <Compile Include="Game\Panels\Stats\RemoteStatsRPC.cs"/>
+        <Compile Include="Game\Panels\Vanity\SlotIconChanges.cs"/>
+        <Compile Include="Game\Panels\Vanity\VanityAPI.cs"/>
+        <Compile Include="Game\Panels\Vanity\VanityLookup.cs"/>
+        <Compile Include="Game\Panels\Vanity\VanityPanelController.cs"/>
+        <Compile Include="Game\Panels\Vanity\VanityPatches.cs"/>
+        <Compile Include="Game\Patches\InventoryGuiPatches.cs"/>
+        <Compile Include="Game\Patches\InventoryPatches.cs"/>
+        <Compile Include="Game\Patches\MaterialManBandaid.cs"/>
+        <Compile Include="Game\Patches\PlayerPatches.cs"/>
+        <Compile Include="Game\Patches\PreventKeys.cs"/>
+        <Compile Include="Game\Patches\TombstonePatches.cs"/>
+        <Compile Include="Game\Patches\InventoryGridQueuedFillPatch.cs"/>
+        <Compile Include="Game\PlayerPreview\PlayerRotationController.cs"/>
+        <Compile Include="Game\PlayerPreview\PreviewUI.cs"/>
+        <Compile Include="Game\PlayerPreview\RealPlayer\PlayerRotationController.cs"/>
+        <Compile Include="Game\PlayerPreview\RealPlayer\PreviewUITEST.cs"/>
+        <Compile Include="Game\PlayerPreview\VisualHandler.cs"/>
+        <Compile Include="Game\Slots\QAB\HudPatches.cs"/>
+        <Compile Include="Game\Slots\QAB\QAB.cs"/>
+        <Compile Include="Game\Slots\SlotBackupManager.cs"/>
         <Compile Include="Properties\AssemblyInfo.cs"/>
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)|$(Platform)' != 'API|AnyCPU'">
@@ -165,6 +237,41 @@
         </Content>
         <Content Include="README.md"/>
         <EmbeddedResource Include="translations\English.yml"/>
+        <EmbeddedResource Include="translations\Swedish.yml"/>
+        <EmbeddedResource Include="translations\French.yml"/>
+        <EmbeddedResource Include="translations\Italian.yml"/>
+        <EmbeddedResource Include="translations\German.yml"/>
+        <EmbeddedResource Include="translations\Spanish.yml"/>
+        <EmbeddedResource Include="translations\Russian.yml"/>
+        <EmbeddedResource Include="translations\Romanian.yml"/>
+        <EmbeddedResource Include="translations\Bulgarian.yml"/>
+        <EmbeddedResource Include="translations\Macedonian.yml"/>
+        <EmbeddedResource Include="translations\Finnish.yml"/>
+        <EmbeddedResource Include="translations\Danish.yml"/>
+        <EmbeddedResource Include="translations\Norwegian.yml"/>
+        <EmbeddedResource Include="translations\Icelandic.yml"/>
+        <EmbeddedResource Include="translations\Turkish.yml"/>
+        <EmbeddedResource Include="translations\Lithuanian.yml"/>
+        <EmbeddedResource Include="translations\Czech.yml"/>
+        <EmbeddedResource Include="translations\Hungarian.yml"/>
+        <EmbeddedResource Include="translations\Slovak.yml"/>
+        <EmbeddedResource Include="translations\Polish.yml"/>
+        <EmbeddedResource Include="translations\Dutch.yml"/>
+        <EmbeddedResource Include="translations\Portuguese_European.yml"/>
+        <EmbeddedResource Include="translations\Portuguese_Brazilian.yml"/>
+        <EmbeddedResource Include="translations\Chinese.yml"/>
+        <EmbeddedResource Include="translations\Chinese_Trad.yml"/>
+        <EmbeddedResource Include="translations\Japanese.yml"/>
+        <EmbeddedResource Include="translations\Korean.yml"/>
+        <EmbeddedResource Include="translations\Hindi.yml"/>
+        <EmbeddedResource Include="translations\Thai.yml"/>
+        <EmbeddedResource Include="translations\Abenaki.yml"/>
+        <EmbeddedResource Include="translations\Croatian.yml"/>
+        <EmbeddedResource Include="translations\Georgian.yml"/>
+        <EmbeddedResource Include="translations\Greek.yml"/>
+        <EmbeddedResource Include="translations\Serbian.yml"/>
+        <EmbeddedResource Include="translations\Ukrainian.yml"/>
+        <EmbeddedResource Include="translations\Latvian.yml"/>
         <Content Include="Thunderstore\CHANGELOG.md"/>
         <Content Include="Thunderstore\icon.png"/>
         <Content Include="Thunderstore\manifest.json"/>
@@ -173,20 +280,24 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="API\API.cs"/>
-        <Compile Include="EPI\Patches\Visuals.cs"/>
-        <Compile Include="EPI\Utilities\TerminalCommands.cs"/>
-        <Compile Include="GlobalUsings.cs" />
+        <Compile Include="API\APIBkCompat.cs"/>
+        <Compile Include="Core\Slots\Model.cs"/>
+        <Compile Include="GlobalUsings.cs"/>
         <None Include="App.config"/>
+        <None Include="AzuEPI.snk"/>
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.43">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="YamlDotNet" Version="16.3.0" />
+        <PackageReference Include="YamlDotNet" Version="16.3.0"/>
     </ItemGroup>
     <ItemGroup>
-      <Content Include=".github\workflows\publish-mod.yml" />
+        <Content Include=".github\workflows\publish-mod.yml"/>
+    </ItemGroup>
+    <ItemGroup Condition="'$(Configuration)|$(Platform)' != 'API|AnyCPU'">
+        <Folder Include="Core\"/>
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
