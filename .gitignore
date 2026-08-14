@@ -9,3 +9,7 @@ AzuEPI.sln.DotSettings.user
 
 # strong-name signing key
 AzuEPI.snk
+
+# release packages and local backups
+*.zip
+*.backup
