@@ -1,5 +1,11 @@
 # AzuEPI - Extended Player Inventory
 
+Valheim's most widely integrated inventory mod — around **1,900 other mods** declare AzuEPI as a dependency, and slots
+from different mods merge instead of fighting. Works with an existing character and existing save.
+
+*Only want the slots? Set `0 - Presets` → Apply Preset to `Minimal` and the extra UI disappears.*
+
+*Mod author? Adding an equipment slot is one line — jump to [the API](#api-for-mod-developers).*
 
 - **Vanity System** - Change armor appearance without losing stats
 - **Loadout System** - Save & swap 10 equipment sets with custom names
@@ -171,6 +177,19 @@ place the DLL in `BepInEx/plugins` folder.
 Access via BepInEx [Configuration Manager](https://thunderstore.io/c/valheim/p/Azumatt/Azus_UnOfficial_ConfigManager/) (
 F1). Most settings apply instantly!
 
+### Just want slots? (vanilla-plus setup)
+
+AzuEPI works out of the box — you do not have to touch any of this. But if you want only extra slots and none of the
+extra UI, set `0 - Presets` → **Apply Preset** to `Minimal`.
+
+That turns off the vanity button, the loadout button, the stats panel and the Drop All button, and switches to the
+classic layout. You are left with equipment slots, quick slots and extra rows — nothing else on screen. `Full` puts
+everything back.
+
+The preset only touches those UI toggles — your rows, quick slot count, hotkeys and custom slots are never changed by
+it. It resets itself to `None` after applying, so the individual settings below always stay in charge; the preset is a
+starting point, not a mode you get locked into.
+
 **Key Settings:**
 
 - **Section 2 - Inventory**: Extra rows (0-6), equipment row, auto-equip
@@ -203,7 +222,26 @@ automatically do this on boot, but keep it off.
 
 **Incompatible:**
 
-- ExtraSlots, ExtraSlotsCustomSlots (use AzuEPI instead)
+- ExtraSlots, ExtraSlotsCustomSlots — both mods rewrite the same inventory grid, so run one or the other
+
+### How AzuEPI compares to ExtraSlots
+
+Both mods add equipment and quick slots. They differ in scope and in how they treat other mods.
+
+| | AzuEPI | ExtraSlots |
+|---|---|---|
+| Mods declaring it as a dependency | ~1,900 | — |
+| Slot API for other mods | Yes | Yes |
+| Slots merge when two mods claim the same one | Yes — AdventureBackpacks and Backpacks share one Backpack slot | No |
+| Native support for mods with no API call | Adventure Backpacks, Wizardry, Epic Loot, Judes Equipment, Hunter Legacy | — |
+| Vanity / transmog | Yes | No |
+| Loadouts | 10, named, with drag-in grid | No |
+| Player stats panel & 3D preview | Yes | No |
+| Slot progression gating | No | Yes |
+| Dedicated food / ammo slots | No | Yes |
+
+Pick ExtraSlots if you want progression-gated slots and dedicated food/ammo categories. Pick AzuEPI if you run a large
+modpack, or you want vanity, loadouts, or the stats panel.
 
 ---
 
@@ -264,19 +302,56 @@ automatically do this on boot, but keep it off.
 
 ⚠️ **One-way migration** - reverting may cause item loss!
 
+## Migration from ExtraSlots
+
+There is no automatic transfer between the two mods, but you will not lose anything if you empty the slots first.
+
+1. **Before uninstalling**, load in with ExtraSlots still active
+2. Move everything out of every extra slot (equipment, quick slots, food and ammo slots) into a chest
+3. Log out and let the character save
+4. Remove ExtraSlots and ExtraSlotsCustomSlots, install AzuEPI
+5. Load in and re-equip
+
+Back up `<profile>/saves/characters/<name>.fch` first if you want a guaranteed rollback point.
+
+The same procedure works in reverse if you decide to go back — clear the slots while AzuEPI is still installed and
+nothing is stranded.
+
 ---
 
 ## API for Mod Developers
 
-AzuEPI provides a comprehensive API for adding custom equipment slots.
+AzuEPI provides a comprehensive API for adding custom equipment slots. Adding one is a single line — the slot's
+validation, its equipped-item lookup, and its character-preview visual are all wired up for you:
 
-**Key Features:**
+```csharp
+// Soft dependency: safe to call even if AzuEPI is absent
+if (API.IsLoaded())
+{
+    // One prefab
+    API.AddSlot("Grimoire", "MyGrimoirePrefab");
 
-- Add/remove slots with validation
-- Quick slot additions (accept any item)
-- Visual prefab registration
-- Vanity API integration
-- Event subscriptions
+    // Several prefabs share the slot
+    API.AddSlot("Quiver", new[] { "QuiverBasic", "QuiverAdvanced" });
+
+    // Or your own predicate
+    API.AddSlot("Relic", item => item.m_shared.m_name.StartsWith("$relic_"));
+
+    // A quick slot that accepts anything
+    API.AddQuickSlot("Utility Belt", showName: true);
+}
+```
+
+Reference `AzuExtendedPlayerInventoryAPI.dll` (the stub assembly from the `API` build configuration). Its methods
+compile away to no-ops, so your mod ships one build that works with or without AzuEPI installed — no hard dependency
+required.
+
+**Slots merge instead of colliding.** If two mods call `AddSlot` with the same name, they share one slot rather than
+producing duplicates. That is why AdventureBackpacks and Smoothbrain's Backpacks both land in a single Backpack slot,
+and why Hunter Legacy, BowsBeforeHoes and Rusty Bags all share one Quiver slot.
+
+**Also available:** `RemoveSlot`, `RegisterVisualPrefabs`, vanity integration, slot lookup by item or grid position,
+and events (`SlotAdded`, `SlotRemoved`, `OnHudAwake`, `OnQuickSlotsAdded`).
 
 **Full Documentation**: https://github.com/AzumattDev/AzuEPI/wiki/API-Home
 
@@ -313,5 +388,32 @@ AzuEPI provides a comprehensive API for adding custom equipment slots.
 **Discord**: Azumatt#2625
 **Steam**: https://steamcommunity.com/id/azumatt/
 
-[![Odin Plus Discord](https://i.imgur.com/XXP6HCU.png)](https://discord.gg/Pb6bVMnFb2)
-[![Azumatt's Discord](https://i.imgur.com/Xlcbmm9.png)](https://discord.gg/pdHgy6Bsng)
+<table width="100%">
+  <tr>
+    <td align="center">
+      <a href="https://hexium.gg">
+        <img
+          src="https://hexium.gg/assets/Logo.png"
+          alt="Hexium"
+          width="64"/>
+      </a>
+    </td>
+
+<td align="center">
+      <a href="https://discord.gg/Pb6bVMnFb2">
+        <img
+          src="https://i.imgur.com/XXP6HCU.png"
+          alt="Odin Plus Discord"
+          width="64"/>
+      </a>
+    </td>
+<td align="center">
+      <a href="https://discord.gg/pdHgy6Bsng">
+        <img
+          src="https://i.imgur.com/Xlcbmm9.png"
+          alt="Azumatt's Discord"
+          width="64"/>
+      </a>
+    </td>
+  </tr>
+</table>
