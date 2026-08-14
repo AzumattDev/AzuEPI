@@ -35,6 +35,13 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         Off = 0
     }
 
+    public enum ConfigPreset
+    {
+        None = 0,
+        Minimal = 1,
+        Full = 2
+    }
+
     internal const string ModName = "AzuExtendedPlayerInventory";
     internal const string ModVersion = "2.4.5";
     internal const string Author = "Azumatt";
@@ -72,6 +79,14 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         ]);
 
         context = this;
+
+        /* 0 - Presets */
+        ResetConfigOrder();
+        Preset = config("0 - Presets", "Apply Preset", ConfigPreset.None,
+            "One-click setup. 'Minimal' strips AzuEPI back to slots only: no vanity button, no loadout button, no stats panel, classic layout. " +
+            "'Full' restores everything to defaults. Resets itself to 'None' once applied, so your individual settings below stay in charge afterwards. " +
+            "Only touches the UI toggles - your rows, quick slots, hotkeys and custom slots are never changed.",
+            NextOrder, false);
 
         /* 1 - Server & Sync */
         ResetConfigOrder();
@@ -139,6 +154,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
                 .Cast<PlayerStatType>()
                 .Where(stat => stat != PlayerStatType.Count)
                 .Select(stat => stat.ToString()));
+        _defaultPlayerStats = defaultStats;
         SelectedPlayerStats = config("5 - UI Features", "Player Stats to Display", defaultStats,
             new ConfigDescription("Choose which character stats to display in the stats panel (📋 button). Use the config manager UI to select/deselect stats.", null, new ConfigurationManagerAttributes { CustomDrawer = StatsConfigDrawer }),
             NextOrder, false);
@@ -147,6 +163,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             Enum.GetValues(typeof(LiveStatType))
                 .Cast<LiveStatType>()
                 .Select(stat => stat.ToString()));
+        _defaultLiveStats = defaultLiveStats;
         SelectedLiveStats = config("5 - UI Features", "Live Stats to Display", defaultLiveStats,
             new ConfigDescription("Choose which live character stats to display in the stats panel (📋 button). These include health, damage modifiers, resistances, etc. Use the config manager UI to select/deselect stats.", null, new ConfigurationManagerAttributes { CustomDrawer = LiveStatsConfigDrawer }),
             NextOrder, false);
@@ -176,6 +193,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         ResetConfigOrder();
         MakeDropAllButton = config("9 - Additional Features", "Enable Drop All Button", Off, "Adds a 'Drop All' button to your inventory for quickly dropping all items. USE WITH CAUTION!", NextOrder, false);
         DropAllButtonPosition = config("9 - Additional Features", "Drop All Button Position", new Vector2(880.00f, 10.00f), "Position of the Drop All button in the inventory window (X, Y coordinates).", NextOrder, false);
+
+        Preset.SettingChanged += (_, _) => ApplyPreset(Preset.Value);
 
         InitSlotsAndKeys();
 
@@ -385,6 +404,31 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     #region ConfigOptions
 
+    private static void ApplyPreset(ConfigPreset preset)
+    {
+        if (_applyingPreset || preset == ConfigPreset.None) return;
+
+        _applyingPreset = true;
+        try
+        {
+            bool minimal = preset == ConfigPreset.Minimal;
+
+            VanityOption.Value = minimal ? Off : On;
+            LoadoutOption.Value = minimal ? Off : On;
+            OldLayout.Value = minimal ? On : Off;
+            MakeDropAllButton.Value = Off;
+            SelectedPlayerStats.Value = minimal ? "" : _defaultPlayerStats;
+            SelectedLiveStats.Value = minimal ? "" : _defaultLiveStats;
+
+            AzuExtendedPlayerInventoryLogger.LogInfo($"Applied '{preset}' preset.");
+        }
+        finally
+        {
+            _applyingPreset = false;
+            Preset.Value = ConfigPreset.None;
+        }
+    }
+
     private int _configOrder = 100;
     private void ResetConfigOrder(int order = 100) => _configOrder = order;
     private int NextOrder => _configOrder--;
@@ -432,6 +476,11 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<Toggle> VanityOption = null!;
     public static ConfigEntry<Toggle> LoadoutOption = null!;
     public static ConfigEntry<Toggle> OldLayout = null!;
+    public static ConfigEntry<ConfigPreset> Preset = null!;
+
+    private static string _defaultPlayerStats = "";
+    private static string _defaultLiveStats = "";
+    private static bool _applyingPreset;
 
     public static ConfigEntry<KeyCode> VanityToggleGamepadKey = null!;
     public static ConfigEntry<KeyCode> LoadoutToggleGamepadKey = null!;
