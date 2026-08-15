@@ -27,20 +27,12 @@ public static class EpicLootCompat
         _registered = true;
     }
 
-    /// <summary>
-    /// Our quick access bar replaces <see cref="HotkeyBar.UpdateIcons"/> wholesale, which skips the
-    /// transpiler Epic Loot decorates it with, so the rarity background has to be reapplied by hand.
-    /// </summary>
     internal static void ApplyItemBackground(GameObject slotRoot, GameObject equippedOverlay, ItemDrop.ItemData? item)
     {
         if (!_registered) return;
         EpicLoot.ApplyMagicItemBackground(slotRoot, equippedOverlay, item, false);
     }
 
-    /// <summary>
-    /// Our equipment provider reports items by grid position, but Epic Loot only recomputes on vanilla
-    /// equip/unequip. Call whenever slot contents move without one of those.
-    /// </summary>
     internal static void NotifySlotsChanged()
     {
         if (!_registered || Player.m_localPlayer == null) return;
@@ -68,8 +60,6 @@ public static class EpicLootCompat
 
         foreach (SlotSnapshot snap in API.GetEquipmentSlotSnapshots(inv))
         {
-            // m_equipped, not just occupancy: unequipping happens before the item is dragged out of the
-            // cell, and reporting it until the drag lands would keep its effects and aura alive.
             if (inv.GetItemAt(snap.GridPos.x, snap.GridPos.y) is { m_equipped: true } item && !equipped.Contains(item))
                 equipped.Add(item);
         }
