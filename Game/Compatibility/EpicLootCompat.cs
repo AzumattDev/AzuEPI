@@ -1,38 +1,54 @@
-﻿namespace AzuEPI.Game.Compatibility;
+using EpicLootAPI;
 
-public class EpicLootCompat
+namespace AzuEPI.Game.Compatibility;
+
+public static class EpicLootCompat
 {
-    private static readonly HashSet<string> EpicLootEquipmentItems = new(StringComparer.Ordinal)
-    {
-        "Andvaranaut", "GoldRubyRing", "SilverRing"
-    };
+    private static readonly string[] FingerSlotItems = ["Andvaranaut", "GoldRubyRing", "SilverRing"];
 
     public static void Init()
     {
-        if (!Chainloader.PluginInfos.TryGetValue("randyknapp.mods.epicloot", out PluginInfo randyEl))
-            return;
-
-        if (randyEl?.Instance == null)
+        if (!Chainloader.PluginInfos.TryGetValue("randyknapp.mods.epicloot", out PluginInfo? epicLoot) || epicLoot?.Instance == null)
             return;
 
         if (!IsSlotMarkedForRemoval("$azuepi_fingerslot"))
+            API.AddSlot("$azuepi_fingerslot", FingerSlotItems);
+
+        if (!EpicLoot.IsLoaded())
         {
-            API.AddSlot("$azuepi_fingerslot", new List<string>(EpicLootEquipmentItems).ToArray());
+            AzuExtendedPlayerInventoryLogger.LogWarning("Epic Loot is installed but exposes no API. Items in this mod's slots will not count towards magic effects. Update Epic Loot.");
+            return;
         }
-        context._harmony.PatchAll(typeof(EpicLootCompat));
+
+        EpicLoot.RegisterEquipmentProvider(ModGUID, GetSlotEquipment);
+        EpicLoot.RegisterSacrificeFilter(ModGUID, CanSacrifice);
     }
 
-    [HarmonyPatch("EpicLoot.PlayerExtensions, EpicLoot", "GetEquipment"), HarmonyPostfix, HarmonyPriority(Priority.Last)]
-    public static void EpicLootGetEquipment(ref List<ItemDrop.ItemData> __result)
+    private static bool CanSacrifice(ItemDrop.ItemData item)
     {
-        Player? player = Player.m_localPlayer;
-        Inventory? inv = player?.GetInventory();
-        if (player == null || inv == null) return;
+        Inventory? inv = Player.m_localPlayer == null ? null : Player.m_localPlayer.GetInventory();
+        if (item == null || inv == null) return true;
+
+        if (!API.TryGetSlotIndexAtGridPos(inv, item.m_gridPos, out int slotIndex)) return true;
+        if (!API.TryGetSlotDescriptor(slotIndex, out SlotDescriptor slot) || !slot.IsQuickSlot) return true;
+
+        // Grid positions repeat across inventories, so confirm this is the instance actually in the slot.
+        return !ReferenceEquals(inv.GetItemAt(item.m_gridPos.x, item.m_gridPos.y), item);
+    }
+
+    private static List<ItemDrop.ItemData> GetSlotEquipment(Player player)
+    {
+        List<ItemDrop.ItemData> equipped = [];
+
+        Inventory? inv = player == Player.m_localPlayer ? player?.GetInventory() : null;
+        if (inv == null) return equipped;
+
         foreach (SlotSnapshot snap in API.GetEquipmentSlotSnapshots(inv))
         {
-            ItemDrop.ItemData? item = inv.GetItemAt(snap.GridPos.x, snap.GridPos.y);
-            if (item != null && !__result.Contains(item))
-                __result.Add(item);
+            if (inv.GetItemAt(snap.GridPos.x, snap.GridPos.y) is { } item && !equipped.Contains(item))
+                equipped.Add(item);
         }
+
+        return equipped;
     }
 }
