@@ -82,6 +82,7 @@ public class InventoryHealth
         }
 
         inventory.Changed();
+        EpicLootCompat.NotifySlotsChanged();
     }
 
     public static bool IgnoreKeyPresses(bool extra = false)

@@ -68,6 +68,7 @@ public class API
         {
             ComposeOntoSlot(existing, isValid, getItem);
             AzuExtendedPlayerInventoryLogger.LogDebug($"Extended slot {slotName}");
+            EpicLootCompat.NotifySlotsChanged();
             return true;
         }
 
@@ -94,6 +95,7 @@ public class API
 
         AzuExtendedPlayerInventoryLogger.LogDebug($"Added slot {slotName}, localized as '{slot.Name}'");
         SlotAdded?.Invoke(slotName);
+        EpicLootCompat.NotifySlotsChanged();
 
         return true;
 #else
@@ -231,6 +233,7 @@ public class API
             SlotHelpers.UpdateEquipmentBackgroundAnchors();
             InventoryHealth.FixHiddenItems();
             SlotRemoved?.Invoke(slotName);
+            EpicLootCompat.NotifySlotsChanged();
 
             return true;
         }

@@ -6,6 +6,8 @@ public static class EpicLootCompat
 {
     private static readonly string[] FingerSlotItems = ["Andvaranaut", "GoldRubyRing", "SilverRing"];
 
+    private static bool _registered;
+
     public static void Init()
     {
         if (!Chainloader.PluginInfos.TryGetValue("randyknapp.mods.epicloot", out PluginInfo? epicLoot) || epicLoot?.Instance == null)
@@ -22,6 +24,27 @@ public static class EpicLootCompat
 
         EpicLoot.RegisterEquipmentProvider(ModGUID, GetSlotEquipment);
         EpicLoot.RegisterSacrificeFilter(ModGUID, CanSacrifice);
+        _registered = true;
+    }
+
+    /// <summary>
+    /// Our quick access bar replaces <see cref="HotkeyBar.UpdateIcons"/> wholesale, which skips the
+    /// transpiler Epic Loot decorates it with, so the rarity background has to be reapplied by hand.
+    /// </summary>
+    internal static void ApplyItemBackground(GameObject slotRoot, GameObject equippedOverlay, ItemDrop.ItemData? item)
+    {
+        if (!_registered) return;
+        EpicLoot.ApplyMagicItemBackground(slotRoot, equippedOverlay, item, false);
+    }
+
+    /// <summary>
+    /// Our equipment provider reports items by grid position, but Epic Loot only recomputes on vanilla
+    /// equip/unequip. Call whenever slot contents move without one of those.
+    /// </summary>
+    internal static void NotifySlotsChanged()
+    {
+        if (!_registered || Player.m_localPlayer == null) return;
+        Player.m_localPlayer.InvalidatePlayerEffectCache();
     }
 
     private static bool CanSacrifice(ItemDrop.ItemData item)
@@ -45,7 +68,9 @@ public static class EpicLootCompat
 
         foreach (SlotSnapshot snap in API.GetEquipmentSlotSnapshots(inv))
         {
-            if (inv.GetItemAt(snap.GridPos.x, snap.GridPos.y) is { } item && !equipped.Contains(item))
+            // m_equipped, not just occupancy: unequipping happens before the item is dragged out of the
+            // cell, and reporting it until the drag lands would keep its effects and aura alive.
+            if (inv.GetItemAt(snap.GridPos.x, snap.GridPos.y) is { m_equipped: true } item && !equipped.Contains(item))
                 equipped.Add(item);
         }
 
