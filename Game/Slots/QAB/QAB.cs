@@ -132,6 +132,7 @@ internal static class QuickAccessBar
                         }
 
                         element.m_equiped.SetActive(itemData.m_equipped);
+                        EpicLootCompat.ApplyItemBackground(element.m_go, element.m_equiped, itemData);
                         element.m_queued.SetActive(false); // Hide vanilla queued indicator; fill overlay renders independently as a sibling
 
                         // Use the overlay-based fill approach to avoid MaterialMan conflicts
@@ -163,6 +164,7 @@ internal static class QuickAccessBar
                     element.m_durability.gameObject.SetActive(false);
                     element.m_equiped.SetActive(false);
                     element.m_queued.SetActive(false);
+                    EpicLootCompat.ApplyItemBackground(element.m_go, element.m_equiped, null);
 
                     InventoryGridQueuedFillPatch.UpdateFillOverlay(element.m_queued, null, player, null);
 
