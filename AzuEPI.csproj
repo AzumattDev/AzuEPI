@@ -298,6 +298,7 @@
     </ItemGroup>
     <ItemGroup>
         <Content Include=".github\workflows\publish-mod.yml"/>
+        <Content Include="Libs\EpicLootAPI.dll" />
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)|$(Platform)' != 'API|AnyCPU'">
         <Folder Include="Core\"/>

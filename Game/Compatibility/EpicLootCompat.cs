@@ -4,7 +4,7 @@ namespace AzuEPI.Game.Compatibility;
 
 public static class EpicLootCompat
 {
-    private static readonly string[] FingerSlotItems = ["Andvaranaut", "GoldRubyRing", "SilverRing"];
+    private static readonly string[] fingerSlotItems = ["Andvaranaut", "GoldRubyRing", "SilverRing"];
 
     private static bool _registered;
 
@@ -14,7 +14,7 @@ public static class EpicLootCompat
             return;
 
         if (!IsSlotMarkedForRemoval("$azuepi_fingerslot"))
-            API.AddSlot("$azuepi_fingerslot", FingerSlotItems);
+            API.AddSlot("$azuepi_fingerslot", fingerSlotItems);
 
         if (!EpicLoot.IsLoaded())
         {

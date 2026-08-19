@@ -307,8 +307,7 @@ modpack, or you want vanity, loadouts, or the stats panel.
 There is no automatic transfer between the two mods, but you will not lose anything if you empty the slots first.
 
 1. **Before uninstalling**, load in with ExtraSlots still active
-2. Move everything out of every extra slot — equipment, quick slots, food and ammo slots — into your regular inventory
-   or a chest
+2. Move everything out of every extra slot (equipment, quick slots, food and ammo slots) into a chest
 3. Log out and let the character save
 4. Remove ExtraSlots and ExtraSlotsCustomSlots, install AzuEPI
 5. Load in and re-equip
@@ -389,5 +388,32 @@ and events (`SlotAdded`, `SlotRemoved`, `OnHudAwake`, `OnQuickSlotsAdded`).
 **Discord**: Azumatt#2625
 **Steam**: https://steamcommunity.com/id/azumatt/
 
-[![Odin Plus Discord](https://i.imgur.com/XXP6HCU.png)](https://discord.gg/Pb6bVMnFb2)
-[![Azumatt's Discord](https://i.imgur.com/Xlcbmm9.png)](https://discord.gg/pdHgy6Bsng)
+<table width="100%">
+  <tr>
+    <td align="center">
+      <a href="https://hexium.gg">
+        <img
+          src="https://hexium.gg/assets/Logo.png"
+          alt="Hexium"
+          width="64"/>
+      </a>
+    </td>
+
+<td align="center">
+      <a href="https://discord.gg/Pb6bVMnFb2">
+        <img
+          src="https://i.imgur.com/XXP6HCU.png"
+          alt="Odin Plus Discord"
+          width="64"/>
+      </a>
+    </td>
+<td align="center">
+      <a href="https://discord.gg/pdHgy6Bsng">
+        <img
+          src="https://i.imgur.com/Xlcbmm9.png"
+          alt="Azumatt's Discord"
+          width="64"/>
+      </a>
+    </td>
+  </tr>
+</table>
