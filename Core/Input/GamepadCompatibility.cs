@@ -369,8 +369,8 @@ internal static class EpiGridMap
         Inventory,
         Equipment,
         Quick,
-        Unknown
-    }
+        Unknown,
+	}
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static CellKind Classify(in Snapshot s, Vector2i pos, out int equipIdx, out int quickIdx)

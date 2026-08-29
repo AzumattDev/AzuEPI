@@ -426,8 +426,8 @@ public class CustomEquipVisuals
             list.InsertRange(2, [
                 new CodeInstruction(OpCodes.Ldarg_0), // this (Humanoid)
                 new CodeInstruction(OpCodes.Ldloc_0),
-                new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(InjectStatusEffects), nameof(Collect)))
-            ]);
+                new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(InjectStatusEffects), nameof(Collect))),
+			]);
             return list;
         }
     }
@@ -605,8 +605,8 @@ public class CustomEquipVisuals
                 new CodeInstruction(OpCodes.Ldarg_0) { labels = labelCarrier.labels }, // this (Humanoid)
                 new CodeInstruction(OpCodes.Ldarg_1),
                 new CodeInstruction(OpCodes.Ldarg_2),
-                new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(EquipItemPatch), nameof(OnEquip)))
-            ]);
+                new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(EquipItemPatch), nameof(OnEquip))),
+			]);
 
             labelCarrier.labels = [];
             return instructions;
@@ -668,8 +668,8 @@ public class CustomEquipVisuals
             list.InsertRange(idx - 1, [
                 new CodeInstruction(OpCodes.Ldarg_0),
                 new CodeInstruction(OpCodes.Ldarg_1),
-                new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(UnequipItemPatch), nameof(OnUnequip)))
-            ]);
+                new CodeInstruction(OpCodes.Call, AccessTools.DeclaredMethod(typeof(UnequipItemPatch), nameof(OnUnequip))),
+			]);
 
             return list;
         }

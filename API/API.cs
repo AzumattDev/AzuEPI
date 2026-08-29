@@ -78,8 +78,8 @@ public class API
             OriginalName = slotName,
             Get = getItem,
             Valid = isValid,
-            IsAPIAdded = true
-        };
+            IsAPIAdded = true,
+		};
 
         if (index < 0 || index > slots.Count - QuickSlotsAmount.Value)
             index = slots.Count - QuickSlotsAmount.Value;
@@ -174,8 +174,8 @@ public class API
             Name = showName ? slotName.StartsWith("$") && Localization.m_instance != null ? Localization.m_instance.Localize(slotName) : slotName : "",
             Valid = item => true,
             IsAPIAdded = true,
-            IsQuickSlot = true
-        };
+            IsQuickSlot = true,
+		};
 
         if (index < 0 || index > slots.Count - QuickSlotsAmount.Value)
             index = slots.Count - QuickSlotsAmount.Value;
@@ -259,8 +259,8 @@ public class API
                 OriginalSlotNames = slots.Select(s => s!.OriginalName).ToArray(),
                 SlotPositions = slots.Select(s => s!.Position).ToArray(),
                 GetItemFuncs = slots.Select(s => s!.EquipmentSlot?.Get).ToArray(),
-                IsValidFuncs = slots.Select(s => s!.EquipmentSlot?.Valid).ToArray()
-            };
+                IsValidFuncs = slots.Select(s => s!.EquipmentSlot?.Valid).ToArray(),
+			};
 #else
             return new SlotInfo();
 #endif

@@ -190,6 +190,12 @@
         <Compile Include="Game\Compatibility\VESCompat.cs"/>
         <Compile Include="Game\Compatibility\ZenUICompat.cs"/>
         <Compile Include="Game\Compatibility\ValheimPlusCompat.cs"/>
+        <Compile Include="Game\Favoriting\BorderRenderer.cs" />
+        <Compile Include="Game\Favoriting\FavoritingMode.cs" />
+        <Compile Include="Game\Favoriting\InventoryGridButtonHandlingPatches.cs" />
+        <Compile Include="Game\Favoriting\StackAllPatches.cs" />
+        <Compile Include="Game\Favoriting\TooltipRenderer.cs" />
+        <Compile Include="Game\Favoriting\UserConfig.cs" />
         <Compile Include="Game\Managers\ItemDataManager.cs"/>
         <Compile Include="Game\Managers\LocalizationManager.cs"/>
         <Compile Include="Game\Managers\Patcher.cs"/>
@@ -239,6 +245,7 @@
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
         <Content Include="README.md"/>
+        <EmbeddedResource Include="assets\border.png"/>
         <EmbeddedResource Include="translations\English.yml"/>
         <EmbeddedResource Include="translations\Swedish.yml"/>
         <EmbeddedResource Include="translations\French.yml"/>

@@ -90,8 +90,8 @@ internal static class VanityZdoKeys
         VisSlot.Legs => LegsVariant,
         VisSlot.Shoulder => ShoulderVariant,
         VisSlot.Utility => UtilityVariant,
-        _ => 0
-    };
+        _ => 0,
+	};
 }
 
 public static class VanityAPI
@@ -237,8 +237,8 @@ public static class VanityAPI
             VisSlot.Helmet => Get(ve, VanityZdoKeys.Helmet),
             VisSlot.Shoulder => Get(ve, VanityZdoKeys.Shoulder),
             VisSlot.Utility => Get(ve, VanityZdoKeys.Utility),
-            _ => 0
-        };
+            _ => 0,
+		};
         return IsHidden(v);
     }
 

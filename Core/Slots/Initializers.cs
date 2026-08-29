@@ -30,8 +30,8 @@ public static class Initializers
 
                 return shoulderItem;
             },
-            Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder && !SlotAcceptRules.HasDedicatedAPISlot(item)
-        });
+            Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Shoulder && !SlotAcceptRules.HasDedicatedAPISlot(item),
+		});
         slots.Add(new Model.EquipmentSlot
         {
             Name = UtilityText.Value, OriginalName = "$azu_epi_utility", IsQuickSlot = false, Get = player =>
@@ -45,8 +45,8 @@ public static class Initializers
 
                 return utilityItem;
             },
-            Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility && !SlotAcceptRules.HasDedicatedAPISlot(item)
-        });
+            Valid = item => item != null && item.m_shared.m_itemType == ItemDrop.ItemData.ItemType.Utility && !SlotAcceptRules.HasDedicatedAPISlot(item),
+		});
     }
 
     public static void InitializeQuickslots()
@@ -79,8 +79,8 @@ public static class Initializers
             new(KeyCode.B, KeyCode.LeftAlt),
             new(KeyCode.N, KeyCode.LeftAlt),
             new(KeyCode.Alpha1, KeyCode.LeftAlt),
-            new(KeyCode.Alpha2, KeyCode.LeftAlt)
-        ];
+            new(KeyCode.Alpha2, KeyCode.LeftAlt),
+		];
 
         Hotkeys = new ConfigEntry<KeyboardShortcut>[MaxQuickSlots];
         HotkeyTexts = new ConfigEntry<string>[MaxQuickSlots];

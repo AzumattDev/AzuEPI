@@ -153,8 +153,8 @@ public class RemotePlayerStats
 
             IsPvPEnabled = pkg.ReadBool(),
             CurrentBiome = pkg.ReadString(),
-            ComfortLevel = pkg.ReadInt()
-        };
+            ComfortLevel = pkg.ReadInt(),
+		};
 
         int skillsCount = pkg.ReadInt();
         for (int i = 0; i < skillsCount; i++)
@@ -185,8 +185,8 @@ public class RemotePlayerStats
             {
                 Name = pkg.ReadString(),
                 RemainingTime = pkg.ReadSingle(),
-                MaxTime = pkg.ReadSingle()
-            });
+                MaxTime = pkg.ReadSingle(),
+			});
         }
 
         int equippedCount = pkg.ReadInt();
@@ -198,8 +198,8 @@ public class RemotePlayerStats
                 Slot = pkg.ReadString(),
                 Quality = pkg.ReadInt(),
                 Durability = pkg.ReadSingle(),
-                MaxDurability = pkg.ReadSingle()
-            });
+                MaxDurability = pkg.ReadSingle(),
+			});
         }
 
         return stats;
@@ -279,8 +279,8 @@ public class RemotePlayerStats
 
             IsPvPEnabled = player.IsPVPEnabled(),
             CurrentBiome = PlayerStatsCalculator.GetBiomeName(player),
-            ComfortLevel = player.GetComfortLevel()
-        };
+            ComfortLevel = player.GetComfortLevel(),
+		};
 
         Skills? skills = player.GetSkills();
         if (skills != null)
@@ -335,8 +335,8 @@ public class RemotePlayerStats
             {
                 Name = Localization.instance.Localize(food.m_item.m_shared.m_name),
                 RemainingTime = food.m_time,
-                MaxTime = food.m_item.m_shared.m_foodBurnTime
-            });
+                MaxTime = food.m_item.m_shared.m_foodBurnTime,
+			});
         }
 
         Inventory? inventory = player.GetInventory();
@@ -350,8 +350,8 @@ public class RemotePlayerStats
                     Slot = PlayerStatsCalculator.GetEquipmentSlotName(item),
                     Quality = item.m_quality,
                     Durability = item.m_durability,
-                    MaxDurability = item.GetMaxDurability()
-                });
+                    MaxDurability = item.GetMaxDurability(),
+				});
             }
         }
 

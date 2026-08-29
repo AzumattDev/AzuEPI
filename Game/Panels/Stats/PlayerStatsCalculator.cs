@@ -356,7 +356,7 @@ internal static class PlayerStatsCalculator
             ItemDrop.ItemData.ItemType.Shield => "Shield",
             ItemDrop.ItemData.ItemType.Tool => "Tool",
             ItemDrop.ItemData.ItemType.Torch => "Torch",
-            _ => "Other"
-        };
+            _ => "Other",
+		};
     }
 }

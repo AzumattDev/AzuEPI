@@ -80,8 +80,8 @@ internal static class QuickAccessBar
                     {
                         HotkeyBar.ElementData elementData = new()
                         {
-                            m_go = Object.Instantiate(__instance.m_elementPrefab, __instance.transform)
-                        };
+                            m_go = Object.Instantiate(__instance.m_elementPrefab, __instance.transform),
+						};
 
                         int slotsPerRow = Mathf.Max(1, QuickSlotsPerRow.Value);
                         int column = index % slotsPerRow;

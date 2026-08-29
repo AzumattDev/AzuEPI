@@ -4,8 +4,8 @@ public class AdvBackpacksCompat
 {
     internal static readonly HashSet<string> Backpacks = new(StringComparer.Ordinal)
     {
-        "BackpackMeadows", "BackpackBlackForest", "BackpackSwamp", "BackpackMountains", "BackpackPlains", "BackpackMistlands", "CapeSilverBackpack", "CapeIronBackpack"
-    };
+        "BackpackMeadows", "BackpackBlackForest", "BackpackSwamp", "BackpackMountains", "BackpackPlains", "BackpackMistlands", "CapeSilverBackpack", "CapeIronBackpack",
+	};
 
     internal static bool IsActive;
 

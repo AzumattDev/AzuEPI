@@ -167,8 +167,8 @@ namespace AzuExtendedPlayerInventory
                 SlotNames = n.SlotNames ?? [],
                 SlotPositions = n.SlotPositions ?? [],
                 GetItemFuncs = n.GetItemFuncs ?? [],
-                IsValidFuncs = n.IsValidFuncs ?? []
-            };
+                IsValidFuncs = n.IsValidFuncs ?? [],
+			};
         }
 
         public static SlotInfo GetQuickSlots()
@@ -179,8 +179,8 @@ namespace AzuExtendedPlayerInventory
                 SlotNames = n.SlotNames ?? [],
                 SlotPositions = n.SlotPositions ?? [],
                 GetItemFuncs = n.GetItemFuncs ?? [],
-                IsValidFuncs = n.IsValidFuncs ?? []
-            };
+                IsValidFuncs = n.IsValidFuncs ?? [],
+			};
         }
 
         public static List<ItemDrop.ItemData> GetQuickSlotsItems() => AzuEPI.API.GetQuickSlotsItems();

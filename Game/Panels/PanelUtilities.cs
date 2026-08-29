@@ -316,8 +316,8 @@ public static class PanelUtilities
             KeyCode.JoystickButton17 => "JoyButtonB",
             KeyCode.JoystickButton18 => "JoyButtonX",
             KeyCode.JoystickButton19 => "JoyButtonY",
-            _ => "JoyButtonA"
-        };
+            _ => "JoyButtonA",
+		};
     }
 
     public static void HideCraftingElements(bool hide)

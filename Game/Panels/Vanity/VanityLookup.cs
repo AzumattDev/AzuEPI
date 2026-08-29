@@ -136,8 +136,8 @@ internal static class VanitySlots
             VisSlot.Legs => VanityAPI.Get(ve, VanityZdoKeys.Legs),
             VisSlot.Shoulder => VanityAPI.Get(ve, VanityZdoKeys.Shoulder),
             VisSlot.Utility => VanityAPI.Get(ve, VanityZdoKeys.Utility),
-            _ => 0
-        };
+            _ => 0,
+		};
 
         bool hidden = VanityAPI.IsHidden(val);
         bool hasVanity = !hidden && val != 0;

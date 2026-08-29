@@ -32,18 +32,18 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public enum Toggle
     {
         On = 1,
-        Off = 0
-    }
+        Off = 0,
+	}
 
     public enum ConfigPreset
     {
         None = 0,
         Minimal = 1,
-        Full = 2
-    }
+        Full = 2,
+	}
 
     internal const string ModName = "AzuExtendedPlayerInventory";
-    internal const string ModVersion = "2.4.5";
+    internal const string ModVersion = "2.4.6";
     internal const string Author = "Azumatt";
     internal const string ModGUID = Author + "." + ModName;
     private static readonly string ConfigFileName = ModGUID + ".cfg";
@@ -75,8 +75,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         Localizer.Load();
         Patcher.Patch([
             "AzuExtendedPlayerInventory",
-            "AzuExtendedPlayerInventory.EPI.Patches"
-        ]);
+            "AzuExtendedPlayerInventory.EPI.Patches",
+		]);
 
         context = this;
 
@@ -193,6 +193,22 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         ResetConfigOrder();
         MakeDropAllButton = config("9 - Additional Features", "Enable Drop All Button", Off, "Adds a 'Drop All' button to your inventory for quickly dropping all items. USE WITH CAUTION!", NextOrder, false);
         DropAllButtonPosition = config("9 - Additional Features", "Drop All Button Position", new Vector2(880.00f, 10.00f), "Position of the Drop All button in the inventory window (X, Y coordinates).", NextOrder, false);
+
+        /* 10 - Favoriting */
+        ResetConfigOrder();
+        FavoritingModifierKeybind = config("10 - Favoriting", "Favoriting Modifier Key", new KeyboardShortcut(KeyCode.LeftAlt), "Hold this while left-clicking an item or right-clicking any player inventory slot to favorite it and prevent storage mods from moving it.", NextOrder, false);
+        BorderColorFavoritedItem = config("10 - Favoriting", "Favorited Item Border Color", new Color(1f, 0.8482759f, 0f), "Color of the border around favorited items.", NextOrder, false);
+        BorderColorFavoritedItemOnFavoritedSlot = config("10 - Favoriting", "Favorited Item and Slot Border Color", new Color(0.5f, 0.67413795f, 0.5f), "Color of the border when both the item and its slot are favorited.", NextOrder, false);
+        BorderColorFavoritedSlot = config("10 - Favoriting", "Favorited Slot Border Color", new Color(0f, 0.5f, 1f), "Color of the border around favorited slots.", NextOrder, false);
+        DisplayTooltipHint = config("10 - Favoriting", "Display Tooltip Hint", true, "Show favoriting status in item tooltips.", NextOrder, false);
+        FavoritedItemTooltip = config("10 - Favoriting", "Favorited Item Tooltip", "Item is favorited and won't be stored", "Text shown for a favorited item.", NextOrder, false);
+        FavoritedSlotTooltip = config("10 - Favoriting", "Favorited Slot Tooltip", "Slot is favorited and won't be stored", "Text shown for a favorited slot.", NextOrder, false);
+        ItemOnFavoritedSlotTooltip = config("10 - Favoriting", "Favorited Item and Slot Tooltip", "Item & Slot are favorited and won't be stored", "Text shown when both the item and slot are favorited.", NextOrder, false);
+
+        BorderColorFavoritedItem.SettingChanged += (_, _) => FavoritingMode.RefreshDisplay();
+        BorderColorFavoritedItemOnFavoritedSlot.SettingChanged += (_, _) => FavoritingMode.RefreshDisplay();
+        BorderColorFavoritedSlot.SettingChanged += (_, _) => FavoritingMode.RefreshDisplay();
+        BorderRenderer.Border = LoadSprite("border.png");
 
         Preset.SettingChanged += (_, _) => ApplyPreset(Preset.Value);
 
@@ -380,8 +396,8 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.FileName,
             IncludeSubdirectories = false,
             SynchronizingObject = ThreadingHelper.SynchronizingObject,
-            EnableRaisingEvents = true
-        };
+            EnableRaisingEvents = true,
+		};
         _cfgWatcher.Changed += (_, __) => _debounce?.Start();
         _cfgWatcher.Created += (_, __) => _debounce?.Start();
         _cfgWatcher.Renamed += (_, __) => _debounce?.Start();
@@ -477,6 +493,14 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<Toggle> LoadoutOption = null!;
     public static ConfigEntry<Toggle> OldLayout = null!;
     public static ConfigEntry<ConfigPreset> Preset = null!;
+    public static ConfigEntry<KeyboardShortcut> FavoritingModifierKeybind = null!;
+    public static ConfigEntry<Color> BorderColorFavoritedItem = null!;
+    public static ConfigEntry<Color> BorderColorFavoritedItemOnFavoritedSlot = null!;
+    public static ConfigEntry<Color> BorderColorFavoritedSlot = null!;
+    public static ConfigEntry<bool> DisplayTooltipHint = null!;
+    public static ConfigEntry<string> FavoritedItemTooltip = null!;
+    public static ConfigEntry<string> FavoritedSlotTooltip = null!;
+    public static ConfigEntry<string> ItemOnFavoritedSlotTooltip = null!;
 
     private static string _defaultPlayerStats = "";
     private static string _defaultLiveStats = "";
@@ -519,6 +543,18 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     internal ConfigEntry<T> config<T>(string group, string name, T value, string description, int order, bool synchronizedSetting = true)
     {
         return config(group, name, value, new ConfigDescription(description), order, synchronizedSetting);
+    }
+
+    private static Sprite LoadSprite(string name)
+    {
+        Assembly assembly = Assembly.GetExecutingAssembly();
+        string resourceName = assembly.GetManifestResourceNames().First(resource => resource.EndsWith($".assets.{name}", StringComparison.Ordinal));
+        using Stream stream = assembly.GetManifestResourceStream(resourceName)!;
+        using MemoryStream data = new();
+        stream.CopyTo(data);
+        Texture2D texture = new(0, 0);
+        texture.LoadImage(data.ToArray());
+        return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), Vector2.zero);
     }
 
     private class ConfigurationManagerAttributes

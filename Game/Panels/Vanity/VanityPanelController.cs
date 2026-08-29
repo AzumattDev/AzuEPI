@@ -305,8 +305,8 @@ internal static class VanityPanelController
                     ItemDrop.ItemData.ItemType.Legs => "$azu_epi_legs",
                     ItemDrop.ItemData.ItemType.Shoulder => "$azu_epi_shoulder",
                     ItemDrop.ItemData.ItemType.Utility => "$item_utility",
-                    _ => itemType.ToString()
-                };
+                    _ => itemType.ToString(),
+				};
 
                 string? headerLabel = Localization.instance.Localize(headerLocKey);
                 VisSlot slot = MapItemTypeToVisSlot(itemType);
@@ -747,8 +747,8 @@ internal static class VanityPanelController
             AnchorMax = BarAnchorMax,
             Pivot = BarPivot,
             OffsetMin = BarOffsetMin,
-            OffsetMax = BarOffsetMax
-        });
+            OffsetMax = BarOffsetMax,
+		});
     }
 
     private static void BuildVanityToggleButton(InventoryGui gui)
@@ -1171,8 +1171,8 @@ internal static class VanityPanelController
         ItemDrop.ItemData.ItemType.Legs => VisSlot.Legs,
         ItemDrop.ItemData.ItemType.Shoulder => VisSlot.Shoulder,
         ItemDrop.ItemData.ItemType.Utility => VisSlot.Utility,
-        _ => throw new NotSupportedException($"Vanity not supported for {t}")
-    };
+        _ => throw new NotSupportedException($"Vanity not supported for {t}"),
+	};
 
     private static GameObject FindOrCreateSelectedBadge(Transform root)
     {

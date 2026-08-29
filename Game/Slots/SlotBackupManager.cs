@@ -39,9 +39,9 @@ internal static class SlotBackupManager
                 Get = slot.Get,
                 Valid = slot.Valid,
                 IsAPIAdded = slot.IsAPIAdded,
-                IsQuickSlot = slot.IsQuickSlot
-            }
-        };
+                IsQuickSlot = slot.IsQuickSlot,
+			},
+		};
         AzuExtendedPlayerInventoryLogger.LogDebug($"Created backup for slot '{backupKey}' at index {currentIndex}");
     }
 
@@ -94,7 +94,7 @@ internal static class SlotBackupManager
             IsAPIAdded = slotData.IsAPIAdded,
             IsQuickSlot = slotData.IsQuickSlot,
             Get = slotData.Get,
-            Valid = slotData.Valid
-        };
+            Valid = slotData.Valid,
+		};
     }
 }

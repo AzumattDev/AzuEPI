@@ -50,8 +50,8 @@ public static class FakePlayerStats
 
             IsPvPEnabled = _random.Next(0, 100) > 80,
             CurrentBiome = FakeBiomes[_random.Next(FakeBiomes.Length)],
-            ComfortLevel = _random.Next(0, 18)
-        };
+            ComfortLevel = _random.Next(0, 18),
+		};
 
         GenerateSkills(stats);
 
@@ -75,8 +75,8 @@ public static class FakePlayerStats
                 {
                     Name = foodName,
                     RemainingTime = _random.Next(60, 1800),
-                    MaxTime = 1800
-                });
+                    MaxTime = 1800,
+				});
             }
         }
 
@@ -92,8 +92,8 @@ public static class FakePlayerStats
                 3 => "Cape",
                 4 => "Weapon",
                 5 => "Shield",
-                _ => "Utility"
-            };
+                _ => "Utility",
+			};
 
             if (usedSlots.Contains(slot)) continue;
             usedSlots.Add(slot);
@@ -105,8 +105,8 @@ public static class FakePlayerStats
                 Slot = slot,
                 Quality = _random.Next(1, 5),
                 Durability = maxDurability * (0.3f + (float)_random.NextDouble() * 0.7f),
-                MaxDurability = maxDurability
-            });
+                MaxDurability = maxDurability,
+			});
         }
 
         return stats;
@@ -125,8 +125,8 @@ public static class FakePlayerStats
             Skills.SkillType.Sneak,
             Skills.SkillType.Swim,
             Skills.SkillType.WoodCutting,
-            Skills.SkillType.Pickaxes
-        ];
+            Skills.SkillType.Pickaxes,
+		];
 
         foreach (Skills.SkillType skill in commonSkills)
         {

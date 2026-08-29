@@ -263,8 +263,8 @@ public static class StatsPanelController
             AnchorMax = BarAnchorMax,
             Pivot = BarPivot,
             OffsetMin = BarOffsetMin,
-            OffsetMax = BarOffsetMax
-        });
+            OffsetMax = BarOffsetMax,
+		});
     }
 
     private static void PopulateStats()
@@ -1269,8 +1269,8 @@ public static class StatsPanelController
             HitData.DamageType.Lightning => mods.m_lightning,
             HitData.DamageType.Poison => mods.m_poison,
             HitData.DamageType.Spirit => mods.m_spirit,
-            _ => HitData.DamageModifier.Normal
-        };
+            _ => HitData.DamageModifier.Normal,
+		};
     }
 
     private static string FormatResistance(HitData.DamageModifier modifier)
@@ -1285,8 +1285,8 @@ public static class StatsPanelController
             HitData.DamageModifier.SlightlyWeak => Localization.instance.Localize("$azu_epi_stat_resist_slightly_weak"),
             HitData.DamageModifier.Weak => Localization.instance.Localize("$azu_epi_stat_resist_weak"),
             HitData.DamageModifier.VeryWeak => Localization.instance.Localize("$azu_epi_stat_resist_very_weak"),
-            _ => Localization.instance.Localize("$azu_epi_stat_resist_unknown")
-        };
+            _ => Localization.instance.Localize("$azu_epi_stat_resist_unknown"),
+		};
     }
 
     private static float CalculateHeatResistance(Player player) => PlayerStatsCalculator.CalculateEquipmentModifierPercent(player, PlayerStatsCalculator.EquipHeatResistance);
@@ -1552,8 +1552,8 @@ public static class StatsPanelController
                         HitData.DamageType.Lightning => seStats.m_percentigeDamageModifiers.m_lightning,
                         HitData.DamageType.Poison => seStats.m_percentigeDamageModifiers.m_poison,
                         HitData.DamageType.Spirit => seStats.m_percentigeDamageModifiers.m_spirit,
-                        _ => 0f
-                    };
+                        _ => 0f,
+					};
 
                     if (modifier != 0f)
                         bonus += modifier * 100f;
@@ -1641,8 +1641,8 @@ public static class StatsPanelController
                 PlayerStatType.TimeOutOfBase or
                 PlayerStatType.Sleep => FormatTime(statValue),
 
-            _ => FormatLargeNumber(statValue)
-        };
+            _ => FormatLargeNumber(statValue),
+		};
     }
 
     private static string FormatTime(float seconds)
@@ -1940,8 +1940,8 @@ public static class StatsPanelController
 
         List<TMP_Dropdown.OptionData> options = new()
         {
-            new TMP_Dropdown.OptionData(Localization.instance.Localize("$azu_epi_stat_self"))
-        };
+            new TMP_Dropdown.OptionData(Localization.instance.Localize("$azu_epi_stat_self")),
+		};
 
         long myUid = ZNet.instance != null ? ZNet.GetUID() : 0;
         foreach (ZNet.PlayerInfo playerInfo in _playerList)
@@ -2193,8 +2193,8 @@ public static class StatsPanelController
                     "FoodBuffs" => FormatRemoteFoods(stats.ActiveFoods),
                     "ActiveEffects" => FormatRemoteEffects(stats.ActiveEffectNames),
 
-                    _ => "N/A"
-                };
+                    _ => "N/A",
+				};
                 continue;
             }
 

@@ -637,7 +637,7 @@ public static class Patcher
 		BaseUnityPlugin plugin = (BaseUnityPlugin)Chainloader.ManagerObject.GetComponent(types.First(t => t.IsClass && typeof(BaseUnityPlugin).IsAssignableFrom(t)));
 		redirectedNamespaces =
 		[
-			..extraNamespaces ?? [], plugin.GetType().Namespace!
+			..extraNamespaces ?? [], plugin.GetType().Namespace!,
 		];
 		modGUID = plugin.Info.Metadata.GUID;
 	}
