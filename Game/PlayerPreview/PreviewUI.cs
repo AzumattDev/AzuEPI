@@ -86,7 +86,6 @@ static class PreviewInstantRefresh_VisEquipmentPatch
 
         Camera? cam = AzuEPICharacterPanel.instance?.cam;
         if (cam) cam.Render();
-        //PlayerPreviewManager.SyncAnimationState(Player.m_localPlayer, AzuEPICharacterPanel.playerPreviewComp);
     }
 }
 
@@ -445,9 +444,7 @@ public class PlayerPreviewManager
         dst.m_visEquipment.SetModel(localPlayer.m_visEquipment.m_currentModelIndex);
         dst.m_visEquipment.m_isPlayer = true;
 
-        dst.m_animator.SetBool("wakeup", false);
-        //SyncAnimationState(localPlayer, dst);
-        dst.m_animator.Update(0f);
+        SetPreviewPose(localPlayer, dst);
 
         VECloneSync.MirrorFrom(localPlayer, dst);
 
@@ -499,9 +496,7 @@ public class PlayerPreviewManager
         {
         }
 
-        dst.m_animator.SetBool("wakeup", false);
-        SyncAnimationState(localPlayer, dst);
-        dst.m_animator.Update(0f);
+        SetPreviewPose(localPlayer, dst);
 
         VECloneSync.MirrorFrom(localPlayer, dst);
         UpdatePlayerPreview(localPlayer);
@@ -535,7 +530,7 @@ public class PlayerPreviewManager
     {
         if (!Player.m_localPlayer || AzuEPICharacterPanel.playerPreviewComp == null) return;
         VECloneSync.MirrorFrom(Player.m_localPlayer, AzuEPICharacterPanel.playerPreviewComp);
-        SyncAnimationState(Player.m_localPlayer, AzuEPICharacterPanel.playerPreviewComp);
+        SetPreviewPose(Player.m_localPlayer, AzuEPICharacterPanel.playerPreviewComp);
         PreviewLayerFix.ForceUILayer(AzuEPICharacterPanel.playerPreviewComp.m_visEquipment);
         AzuEPICharacterPanel.instance?.cam?.Render();
     }
@@ -575,39 +570,35 @@ public class PlayerPreviewManager
             AzuEPICharacterPanel.playerPreview.SetActive(true);
     }
 
-    internal static void SyncAnimationState(Humanoid p, Player playerPreviewComp)
+    private static void SetPreviewPose(Player source, Player playerPreview)
     {
-        Animator pAnimator = p.m_animator;
-        Animator previewAnimator = playerPreviewComp.m_animator;
-
-        AnimatorStateInfo stateInfo = pAnimator.GetCurrentAnimatorStateInfo(0);
-
-        previewAnimator.Play(stateInfo.shortNameHash, 0, stateInfo.normalizedTime);
-
-        foreach (AnimatorControllerParameter param in pAnimator.parameters)
+        Animator animator = playerPreview.m_animator;
+        foreach (AnimatorControllerParameter parameter in animator.parameters)
         {
-            switch (param.type)
+            switch (parameter.type)
             {
                 case AnimatorControllerParameterType.Bool:
-                    previewAnimator.SetBool(param.name, pAnimator.GetBool(param.name));
+                    animator.SetBool(parameter.name, parameter.defaultBool);
                     break;
                 case AnimatorControllerParameterType.Float:
-                    previewAnimator.SetFloat(param.name, pAnimator.GetFloat(param.name));
+                    animator.SetFloat(parameter.name, parameter.defaultFloat);
                     break;
                 case AnimatorControllerParameterType.Int:
-                    previewAnimator.SetInteger(param.name, pAnimator.GetInteger(param.name));
+                    animator.SetInteger(parameter.name, parameter.defaultInt);
                     break;
                 case AnimatorControllerParameterType.Trigger:
-                    if (pAnimator.GetBool(param.name))
-                    {
-                        previewAnimator.SetTrigger(param.name);
-                    }
-
+                    animator.ResetTrigger(parameter.name);
                     break;
             }
         }
 
-        previewAnimator.Update(0f);
+        animator.SetBool("wakeup", false);
+        animator.SetFloat("forward_speed", 0f);
+        animator.SetFloat("sideway_speed", 0f);
+        animator.SetFloat("statef", source.m_animator.GetFloat("statef"));
+        animator.SetInteger("statei", source.m_animator.GetInteger("statei"));
+        animator.Play("Movement", 0, 0f);
+        animator.Update(0f);
     }
 
     internal void CreatePreviewCamera()
