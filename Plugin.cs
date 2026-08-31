@@ -43,7 +43,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 	}
 
     internal const string ModName = "AzuExtendedPlayerInventory";
-    internal const string ModVersion = "2.4.7";
+    internal const string ModVersion = "2.4.8";
     internal const string Author = "Azumatt";
     internal const string ModGUID = Author + "." + ModName;
     private static readonly string ConfigFileName = ModGUID + ".cfg";
@@ -111,6 +111,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         ResetConfigOrder();
         WishboneSlot = config("4 - Special Equipment Slots", "Enable Wishbone Slot", On, "Adds a dedicated equipment slot specifically for the Wishbone. When equipped here, the Wishbone's detection works without occupying utility slots.", NextOrder);
         WispLightSlot = config("4 - Special Equipment Slots", "Enable Demister Slot", On, "Adds a dedicated equipment slot specifically for the Demister/Wisplight. Keeps the mist clear without using utility slots.", NextOrder);
+        UtilitySlotsExclusive = config("4 - Special Equipment Slots", "One Utility Item At A Time", Off, "Keeps the dedicated slots but restores vanilla exclusivity: equipping any utility item (Wishbone, Demister, Megingjord, etc.) unequips the others.", NextOrder);
 
         /* 4.5 - Equipment Slot Management */
         ResetConfigOrder();
@@ -353,6 +354,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             if (UserAddedSlots != null) ClearSettingChangedEvent(UserAddedSlots);
             if (WishboneSlot != null) ClearSettingChangedEvent(WishboneSlot);
             if (WispLightSlot != null) ClearSettingChangedEvent(WispLightSlot);
+            if (UtilitySlotsExclusive != null) ClearSettingChangedEvent(UtilitySlotsExclusive);
             if (VanityOption != null) ClearSettingChangedEvent(VanityOption);
             if (LoadoutOption != null) ClearSettingChangedEvent(LoadoutOption);
             if (VanityToggleGamepadKey != null) ClearSettingChangedEvent(VanityToggleGamepadKey);
@@ -454,6 +456,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     public static ConfigEntry<Toggle> WishboneSlot = null!;
     public static ConfigEntry<Toggle> WispLightSlot = null!;
+    public static ConfigEntry<Toggle> UtilitySlotsExclusive = null!;
     public static ConfigEntry<string> RemovedEquipmentSlots = null!;
     public static ConfigEntry<string> UserAddedSlots = null!;
     public static ConfigEntry<Toggle> EPISlotsAddArmor = null!;

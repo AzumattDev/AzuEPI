@@ -193,6 +193,11 @@ public static class Initializers
             context.FullRebuild();
         };
 
+        UtilitySlotsExclusive.SettingChanged += (sender, args) =>
+        {
+            AzuEPI.Game.Slots.UtilityExclusivity.TrimToOne(Player.m_localPlayer);
+        };
+
         VanityOption.SettingChanged += (sender, args) =>
         {
             if (VanityPanelController.VanityButtonGo)

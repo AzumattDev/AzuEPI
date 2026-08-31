@@ -1,6 +1,7 @@
 ﻿using System.Reflection.Emit;
 using AzuEPI.Game.Compatibility;
 using AzuEPI.Game.Compatibility.AdvBackpacks;
+using AzuEPI.Game.Slots;
 
 namespace AzuEPI.Game.PlayerPreview;
 
@@ -558,6 +559,9 @@ public class CustomEquipVisuals
 
             item.m_equipped = true;
             __result = true;
+
+            if (original == ItemDrop.ItemData.ItemType.Utility)
+                UtilityExclusivity.Enforce(p, item);
 
             __instance.SetupEquipment();
         }

@@ -235,6 +235,7 @@
         <Compile Include="Game\Slots\QAB\HudPatches.cs"/>
         <Compile Include="Game\Slots\QAB\QAB.cs"/>
         <Compile Include="Game\Slots\SlotBackupManager.cs"/>
+        <Compile Include="Game\Slots\UtilityExclusivity.cs"/>
         <Compile Include="Properties\AssemblyInfo.cs"/>
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)|$(Platform)' != 'API|AnyCPU'">
