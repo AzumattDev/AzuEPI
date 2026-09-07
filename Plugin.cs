@@ -43,7 +43,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 	}
 
     internal const string ModName = "AzuExtendedPlayerInventory";
-    internal const string ModVersion = "2.4.8";
+    internal const string ModVersion = "2.4.9";
     internal const string Author = "Azumatt";
     internal const string ModGUID = Author + "." + ModName;
     private static readonly string ConfigFileName = ModGUID + ".cfg";
@@ -149,6 +149,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
         ResetConfigOrder();
         OldLayout = config("5 - UI Features", "Use Legacy Layout", Off, "Reverts to the old inventory layout from previous versions. Only enable if you prefer the classic style or have compatibility issues.", NextOrder);
         VanityOption = config("5 - UI Features", "Show Vanity Button", On, "Shows the vanity button (👔) in the inventory. Use this to customize your character's appearance with cosmetic overrides.", NextOrder);
+        HideUnknownVanityItems = config("5 - UI Features", "Hide Unknown Vanity Items", Off, "If On, the vanity panel only lists armor you've already picked up. If Off, undiscovered pieces show as black silhouettes.", NextOrder);
         LoadoutOption = config("5 - UI Features", "Show Loadout Button", On, "Shows the loadout button (🎯) in the inventory. Use this to save and quickly swap between different equipment sets.", NextOrder);
         string defaultStats = string.Join(",",
             Enum.GetValues(typeof(PlayerStatType))
@@ -493,6 +494,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     public static ConfigEntry<Vector3> LocalScale = null!;
 
     public static ConfigEntry<Toggle> VanityOption = null!;
+    public static ConfigEntry<Toggle> HideUnknownVanityItems = null!;
     public static ConfigEntry<Toggle> LoadoutOption = null!;
     public static ConfigEntry<Toggle> OldLayout = null!;
     public static ConfigEntry<ConfigPreset> Preset = null!;

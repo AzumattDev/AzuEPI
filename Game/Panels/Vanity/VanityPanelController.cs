@@ -123,6 +123,28 @@ internal static class VanityPanelController
         return false;
     }
 
+    internal static void UpdateUnknownVisibility()
+    {
+        Player? player = Player.m_localPlayer;
+        if (!player) return;
+
+        bool hide = HideUnknownVanityItems.Value.isOn();
+        bool changed = false;
+
+        foreach (VanityCell cell in _allCells)
+        {
+            if (!cell || cell.IsNone || cell.Item?.m_shared == null) continue;
+
+            bool show = !hide || player.IsKnownMaterial(cell.Item.m_shared.m_name);
+            if (cell.gameObject.activeSelf == show) continue;
+
+            cell.gameObject.SetActive(show);
+            changed = true;
+        }
+
+        if (changed && _content) LayoutRebuilder.ForceRebuildLayoutImmediate(_content);
+    }
+
     public static void RefreshGridIfNeeded()
     {
         if (!NeedsRebuild()) return;
@@ -142,6 +164,8 @@ internal static class VanityPanelController
         if (visible && _panel)
         {
             _panel.SetAsLastSibling();
+
+            UpdateUnknownVisibility();
 
             foreach (VisSlot slot in _cellsBySlot.Keys)
                 UpdateSelectedVisuals(slot);
@@ -784,9 +808,9 @@ internal static class VanityPanelController
         if (!src || !_panel) return;
 
         Transform clone = PanelUtilities.CloneButton(src, _panel, ResetAllVanityButtonName, ResetBtnAnchorMin, ResetBtnAnchorMax, ResetBtnPivot, ResetBtnPos, ResetBtnSize);
-        
+
         PanelUtilities.BindGamePad(clone, PanelUtilities.KeyCodeToZInputKey(KeyCode.JoystickButton15), KeyCode.None, gui);
-        
+
         Button? btn = clone.GetComponent<Button>();
         btn.onClick.RemoveAllListeners();
         btn.onClick.AddListener(ResetAllVanities);
