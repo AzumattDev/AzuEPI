@@ -43,7 +43,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 	}
 
     internal const string ModName = "AzuExtendedPlayerInventory";
-    internal const string ModVersion = "2.4.9";
+    internal const string ModVersion = "2.4.10";
     internal const string Author = "Azumatt";
     internal const string ModGUID = Author + "." + ModName;
     private static readonly string ConfigFileName = ModGUID + ".cfg";

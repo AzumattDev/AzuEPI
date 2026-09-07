@@ -188,20 +188,7 @@ static class VECloneSync
         }
         else
         {
-            LeftItem = string.IsNullOrEmpty(src.m_leftItem) ? 0 : src.m_leftItem.GetStableHashCode();
-            RightItem = string.IsNullOrEmpty(src.m_rightItem) ? 0 : src.m_rightItem.GetStableHashCode();
-            ChestItem = string.IsNullOrEmpty(src.m_chestItem) ? 0 : src.m_chestItem.GetStableHashCode();
-            LegItem = string.IsNullOrEmpty(src.m_legItem) ? 0 : src.m_legItem.GetStableHashCode();
-            HelmetItem = string.IsNullOrEmpty(src.m_helmetItem) ? 0 : src.m_helmetItem.GetStableHashCode();
-            ShoulderItem = string.IsNullOrEmpty(src.m_shoulderItem) ? 0 : src.m_shoulderItem.GetStableHashCode();
-            UtilityItem = string.IsNullOrEmpty(src.m_utilityItem) ? 0 : src.m_utilityItem.GetStableHashCode();
-            TrinketItem = string.IsNullOrEmpty(src.m_trinketItem) ? 0 : src.m_trinketItem.GetStableHashCode();
-            BeardItem = string.IsNullOrEmpty(src.m_beardItem) ? 0 : src.m_beardItem.GetStableHashCode();
-            HairItem = string.IsNullOrEmpty(src.m_hairItem) ? 0 : src.m_hairItem.GetStableHashCode();
-            LeftBack = string.IsNullOrEmpty(src.m_leftBackItem) ? 0 : src.m_leftBackItem.GetStableHashCode();
-            RightBack = string.IsNullOrEmpty(src.m_rightBackItem) ? 0 : src.m_rightBackItem.GetStableHashCode();
-            
-            /*// Fall back to strings if there’s no ZDO
+          // Fall back to strings if there’s no ZDO
             LeftItem = src.m_leftItem == null ? 0 : src.m_leftItem;
             RightItem = src.m_rightItem == null ? 0 : src.m_rightItem;
             ChestItem = src.m_chestItem == null ? 0 : src.m_chestItem;
@@ -213,7 +200,7 @@ static class VECloneSync
             BeardItem = src.m_beardItem == null ? 0 : src.m_beardItem;
             HairItem = src.m_hairItem == null ? 0 : src.m_hairItem;
             LeftBack = src.m_leftBackItem == null ? 0 : src.m_leftBackItem;
-            RightBack = src.m_rightBackItem == null ? 0 : src.m_rightBackItem;*/
+            RightBack = src.m_rightBackItem == null ? 0 : src.m_rightBackItem;
         }
 
         int stamp = CombineHash(
@@ -437,8 +424,7 @@ public class PlayerPreviewManager
 
         Player dst = AzuEPICharacterPanel.playerPreviewComp;
 
-        dst.m_visEquipment.SetHairItem(localPlayer.m_hairItem);
-        //dst.m_visEquipment.SetHairItem(localPlayer.m_hairItem.GetStableHashCode());
+        dst.m_visEquipment.SetHairItem(localPlayer.m_hairItem.GetStableHashCode());
         dst.m_visEquipment.SetHairColor(localPlayer.m_hairColor);
         dst.m_visEquipment.SetSkinColor(localPlayer.m_skinColor);
         dst.m_visEquipment.SetModel(localPlayer.m_visEquipment.m_currentModelIndex);
@@ -481,8 +467,7 @@ public class PlayerPreviewManager
         panel.cam.enabled = true;
 
         Player dst = AzuEPICharacterPanel.playerPreviewComp;
-        dst.m_visEquipment.SetHairItem(localPlayer.m_hairItem);
-        //dst.m_visEquipment.SetHairItem(localPlayer.m_hairItem.GetStableHashCode());
+        dst.m_visEquipment.SetHairItem(localPlayer.m_hairItem.GetStableHashCode());
         dst.m_visEquipment.SetHairColor(localPlayer.m_hairColor);
         dst.m_visEquipment.SetSkinColor(localPlayer.m_skinColor);
         dst.m_visEquipment.SetModel(localPlayer.m_visEquipment.m_currentModelIndex);
