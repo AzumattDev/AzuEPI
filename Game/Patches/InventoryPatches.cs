@@ -300,7 +300,7 @@ public class InventoryPatches
         }
     }
 
-    [HarmonyPatch(typeof(Inventory), nameof(Inventory.Load))]
+    [HarmonyPatch(typeof(Inventory), nameof(Inventory.Load), typeof(ZPackage))]
     internal static class Load_TrackAndFixHiddenItems_Patch
     {
         private static readonly List<ItemDrop.ItemData> _stuckItems = new(16);
