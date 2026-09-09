@@ -220,8 +220,8 @@ internal static class GamepadCompatibility
         }
     }
 
-    [HarmonyPatch(typeof(InventoryGrid), nameof(InventoryGrid.SetSelection))]
-    private static class InventoryGrid_SetSelection_GamepadSupport
+    [HarmonyPatch(typeof(InventoryGrid), nameof(InventoryGrid.SetGamepadSelection))]
+    private static class InventoryGrid_SetGamepadSelection_GamepadSupport
     {
         private static void Postfix(InventoryGrid __instance, Vector2i pos)
         {
@@ -281,7 +281,7 @@ internal static class EpiGridMap
         Inventory? inv = p?.GetInventory();
 
         int width = inv?.GetWidth() ?? Layout.BaseInventoryWidth;
-        int baseInvHeight = Layout.BaseInventoryHeight;
+        int baseInvHeight = Layout.VanillaRows;
         int extraRows = ExtraRows.Value;
 
         int equipCount = CountEquipmentSlots();

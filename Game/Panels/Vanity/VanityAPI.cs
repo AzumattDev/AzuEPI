@@ -286,7 +286,7 @@ public static class VanityAPI
             return false;
 
         VanityState vs = GetAppliedVanity(player, slot);
-        InventoryGrid.Element? slotObject;
+        InventoryElement? slotObject;
         try
         {
             slotObject = InventoryGui.instance.m_playerGrid.GetElement(item.m_gridPos.x, item.m_gridPos.y, player.GetInventory().GetWidth());
@@ -298,7 +298,7 @@ public static class VanityAPI
 
         if (slotObject == null) return false;
 
-        SlotOverlays.SetVanityOverlayVisible(slotObject.m_go, vs);
+        SlotOverlays.SetVanityOverlayVisible(slotObject.gameObject, vs);
         return vs is { HasVanity: true, IsHidden: false } && VanityLookup.TryGetIcon(vs.Hash, vs.Variant, out sprite);
     }
 }

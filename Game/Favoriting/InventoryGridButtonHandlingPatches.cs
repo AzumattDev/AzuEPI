@@ -5,13 +5,13 @@ internal class InventoryGridButtonHandlingPatches
 {
     private static bool Prepare() => !FavoritingMode.IsExternalFavoritingModLoaded();
 
-    [HarmonyPatch(nameof(InventoryGrid.OnRightClick)), HarmonyPrefix]
+    [HarmonyPatch(nameof(InventoryGrid.OnRightDown)), HarmonyPrefix]
     internal static bool OnRightClick(InventoryGrid __instance, UIInputHandler element)
     {
         return HandleClick(__instance, element, false);
     }
 
-    [HarmonyPatch(nameof(InventoryGrid.OnLeftClick)), HarmonyPrefix]
+    [HarmonyPatch(nameof(InventoryGrid.OnLeftDown)), HarmonyPrefix]
     internal static bool OnLeftClick(InventoryGrid __instance, UIInputHandler clickHandler)
     {
         return HandleClick(__instance, clickHandler, true);

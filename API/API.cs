@@ -304,7 +304,7 @@ public class API
     public static int GetFullHeight(int width)
     {
 #if !API
-        return Layout.BaseInventoryHeight + ExtraRows.Value + (AddEquipmentRow.Value.isOn() ? GetAddedRows(width) : 0);
+        return Layout.NormalInventoryRows + (AddEquipmentRow.Value.isOn() ? GetAddedRows(width) : 0);
 #else
         return 0;
 #endif
@@ -877,7 +877,7 @@ public class API
         if (!Player.m_localPlayer) return;
         Inventory inv = Player.m_localPlayer.m_inventory;
         int width = inv.GetWidth();
-        int baseRows = Layout.BaseInventoryHeight + ExtraRows.Value;
+        int baseRows = Layout.NormalInventoryRows;
 
 #if DEBUG
         AzuExtendedPlayerInventoryLogger.LogDebug($"UpdateSlots: index={index}, shift={shift}, baseRows={baseRows}, width={width}, slots.Count={slots.Count}");

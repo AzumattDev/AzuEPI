@@ -29,9 +29,9 @@ public static class BackpacksCompatBlockInteractInput
             if (elementIndex >= InventoryGui.instance.m_playerGrid.m_elements.Count)
                 break;
 
-            InventoryGrid.Element element = InventoryGui.instance.m_playerGrid.m_elements[elementIndex];
-            if (element?.m_go == null) continue;
-            RectTransform elementRT = element.m_go.transform as RectTransform;
+            InventoryElement element = InventoryGui.instance.m_playerGrid.m_elements[elementIndex];
+            if (element?.gameObject == null) continue;
+            RectTransform elementRT = element.gameObject.transform as RectTransform;
             if (elementRT == null) continue;
             Vector3[] corners = new Vector3[4];
             elementRT.GetWorldCorners(corners);

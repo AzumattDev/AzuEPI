@@ -10,7 +10,7 @@ public class InventoryHealth
         HashSet<Vector2i> curPositions = [];
         List<ItemDrop.ItemData> itemsToFix = [];
         if (playerInventory == null) return;
-        int normalRows = Layout.BaseInventoryHeight + ExtraRows.Value;
+        int normalRows = Layout.NormalInventoryRows;
         if (playerInventory?.m_inventory != null)
             for (int index = 0; index < playerInventory.m_inventory.Count; ++index)
             {

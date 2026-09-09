@@ -305,7 +305,7 @@ public class RemotePlayerStats
 
                 try
                 {
-                    stats.PlayerStats[statType] = profile.m_playerStats[statType];
+                    stats.PlayerStats[statType] = profile.GetStat(statType);
                 }
                 catch (KeyNotFoundException)
                 {

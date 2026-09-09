@@ -8,6 +8,27 @@ public class Layout
     public const int BaseInventoryHeight = 4;
     public const int BaseInventoryWidth = 8;
 
+    // 1.0 lets the trader sell inventory rows, tracked on the player as the "invrows" unique key
+    public const int MaxVanillaRows = 9;
+    private static int _vanillaRows = BaseInventoryHeight;
+
+    public static int VanillaRows => _vanillaRows;
+
+    public static int NormalInventoryRows => _vanillaRows + ExtraRows.Value;
+
+    public static void SetVanillaRows(int rows) => _vanillaRows = Mathf.Clamp(rows, BaseInventoryHeight, MaxVanillaRows);
+
+    public static int RefreshVanillaRows(Player? player = null)
+    {
+        player ??= Player.m_localPlayer;
+        if (player && player.TryGetUniqueKeyValue(Player.InventoryRowsKey, out string value) && int.TryParse(value, out int rows))
+            _vanillaRows = Mathf.Clamp(rows, BaseInventoryHeight, MaxVanillaRows);
+        else
+            _vanillaRows = BaseInventoryHeight;
+
+        return _vanillaRows;
+    }
+
     internal const float tileSize = 70f;
 
     public const int MaxQuickSlots = 8;

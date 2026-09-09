@@ -1133,7 +1133,7 @@ public static class StatsPanelController
                 continue;
             }
 
-            float statValue = profile.m_playerStats[element.StatType];
+            float statValue = profile.GetStat(element.StatType);
             element.ValueText.text = FormatHistoricalStat(element.StatType, statValue);
         }
     }

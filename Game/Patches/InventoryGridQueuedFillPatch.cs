@@ -10,11 +10,11 @@ internal static class InventoryGridQueuedFillPatch
     {
         if (!player) return;
 
-        foreach (InventoryGrid.Element element in __instance.m_elements)
+        foreach (InventoryElement element in __instance.m_elements)
         {
             if (!element.m_queued) continue;
 
-            ItemDrop.ItemData? item = element.m_used ? __instance.m_inventory?.GetItemAt(element.m_pos.x, element.m_pos.y) : null;
+            ItemDrop.ItemData? item = element.m_used ? __instance.m_inventory?.GetItemAt(element.Position.x, element.Position.y) : null;
             UpdateFillOverlay(element.m_queued.gameObject, element.m_queued, player, item);
         }
     }

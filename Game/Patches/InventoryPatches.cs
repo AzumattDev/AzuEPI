@@ -201,7 +201,7 @@ public class InventoryPatches
         }
     }
 
-    [HarmonyPatch(typeof(Inventory), nameof(Inventory.AddItem), typeof(ItemDrop.ItemData), typeof(int), typeof(int), typeof(int))]
+    [HarmonyPatch(typeof(Inventory), nameof(Inventory.AddItem), typeof(ItemDrop.ItemData), typeof(int), typeof(int), typeof(int), typeof(bool))]
     private static class AddItem_XY_Guard_Patch
     {
         [HarmonyPriority(Priority.Last)]
@@ -512,7 +512,7 @@ public class InventoryPatches
         }
     }
 
-    [HarmonyPatch(typeof(Inventory), nameof(Inventory.AddItem), typeof(string), typeof(int), typeof(int), typeof(int), typeof(long), typeof(string), typeof(Vector2i), typeof(bool))]
+    [HarmonyPatch(typeof(Inventory), nameof(Inventory.AddItem), typeof(string), typeof(int), typeof(int), typeof(int), typeof(long), typeof(string), typeof(Vector2i), typeof(bool), typeof(bool), typeof(bool))]
     internal static class AddItem_String_TrackItemForUpgrading_Patch
     {
         [HarmonyPriority(Priority.First)]

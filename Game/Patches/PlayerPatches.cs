@@ -40,6 +40,9 @@ public class PlayerPatches
             if (Player.m_localPlayer == null || Player.m_localPlayer != __instance)
                 return;
 
+            Layout.RefreshVanillaRows(__instance);
+            Layout.UpdateInventorySize();
+
             VanityPanelController.InvalidateCache();
 
             if (!Chainloader.PluginInfos.TryGetValue("randyknapp.mods.equipmentandquickslots", out PluginInfo? RandyEAQ)) Load(__instance);
@@ -196,7 +199,7 @@ public class PlayerPatches
                 if (!Hotkeys[hotkey].Value.IsKeyDown())
                     continue;
 
-                int index = (Layout.BaseInventoryHeight + ExtraRows.Value) * width + slots.Count - QuickSlotsAmount.Value + hotkey;
+                int index = Layout.NormalInventoryRows * width + slots.Count - QuickSlotsAmount.Value + hotkey;
                 ItemDrop.ItemData itemAt = ___m_inventory.GetItemAt(index % width, index / width);
                 if (itemAt != null)
                     __instance.UseItem(null, itemAt, true);
@@ -213,7 +216,7 @@ public class PlayerPatches
             AzuExtendedPlayerInventoryLogger.LogDebugDebug($"Inv height {gameObject.GetComponent<Container>().GetInventory().GetHeight()}");
             AzuExtendedPlayerInventoryLogger.LogDebugDebug($"Inv slots {gameObject.GetComponent<Container>().GetInventory().GetEmptySlots()}");
             for (int index = 0; index < gameObject.GetComponent<Container>().GetInventory().GetEmptySlots(); ++index)
-                gameObject.GetComponent<Container>().GetInventory().AddItem("SwordBronze", 1, 1, 0, 0L, "");
+                gameObject.GetComponent<Container>().GetInventory().AddItem("SwordBronze", 1, 1, 0, 0L, "", false);
             AzuExtendedPlayerInventoryLogger.LogDebugDebug($"No items: {gameObject.GetComponent<Container>().GetInventory().NrOfItems()}");
             PlayerProfile playerProfile = global::Game.instance.GetPlayerProfile();
             component.Setup(playerProfile.GetName(), playerProfile.GetPlayerID());

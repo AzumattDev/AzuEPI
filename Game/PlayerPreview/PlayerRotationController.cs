@@ -16,7 +16,7 @@ public class PlayerRotationController : MonoBehaviour, IDragHandler, IEndDragHan
 
     public void OnDrag(PointerEventData eventData)
     {
-        if (AzuEPICharacterPanel.instance.render.rect.Contains((Vector2)transform.InverseTransformPoint(ZInput.mousePosition)))
+        if (AzuEPICharacterPanel.instance.render.rect.Contains((Vector2)transform.InverseTransformPoint(ZInput.pointerPosition)))
         {
             if (!dragging)
             {
@@ -40,7 +40,7 @@ public class PlayerRotationController : MonoBehaviour, IDragHandler, IEndDragHan
 
     public void OnScroll(PointerEventData eventData)
     {
-        if (AzuEPICharacterPanel.instance.render.rect.Contains((Vector2)transform.InverseTransformPoint(ZInput.mousePosition)))
+        if (AzuEPICharacterPanel.instance.render.rect.Contains((Vector2)transform.InverseTransformPoint(ZInput.pointerPosition)))
         {
             float scroll = Input.GetAxis("Mouse ScrollWheel");
 

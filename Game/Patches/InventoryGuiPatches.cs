@@ -226,10 +226,10 @@ public class InventoryGuiPatches
 
             for (int i = 0; i < ___m_playerGrid.m_elements.Count; ++i)
             {
-                InventoryGrid.Element? elem = ___m_playerGrid.m_elements[i];
-                if (elem?.m_go != null && !elem.m_used)
+                InventoryElement? elem = ___m_playerGrid.m_elements[i];
+                if (elem?.gameObject != null && !elem.m_used)
                 {
-                    SlotOverlays.SetVanityOverlayVisible(elem.m_go, new VanityState());
+                    SlotOverlays.SetVanityOverlayVisible(elem.gameObject, new VanityState());
                 }
             }
 
@@ -246,8 +246,8 @@ public class InventoryGuiPatches
 
             for (int i = 0; i < slotCount; ++i)
             {
-                InventoryGrid.Element? currentElement = ___m_playerGrid.m_elements[baseIndex + i];
-                GameObject currentChild = currentElement.m_go;
+                InventoryElement? currentElement = ___m_playerGrid.m_elements[baseIndex + i];
+                GameObject currentChild = currentElement.gameObject;
                 if (!currentChild)
                     continue;
 
@@ -301,8 +301,8 @@ public class InventoryGuiPatches
 
             for (int i = baseIndex + slotCount; i < ___m_playerGrid.m_elements.Count; ++i)
             {
-                InventoryGrid.Element? tailElement = ___m_playerGrid.m_elements[i];
-                if (tailElement.m_go.activeSelf) tailElement.m_go.SetActive(false);
+                InventoryElement? tailElement = ___m_playerGrid.m_elements[i];
+                if (tailElement.gameObject.activeSelf) tailElement.gameObject.SetActive(false);
                 tailElement.m_used = true;
             }
 
@@ -374,8 +374,8 @@ public class InventoryGuiPatches
                     int elemIdx = baseIndex + i;
                     if (elemIdx < 0 || elemIdx >= playerGrid.m_elements.Count) continue;
 
-                    InventoryGrid.Element? elem = playerGrid.m_elements[elemIdx];
-                    GameObject? slotGo = elem.m_go;
+                    InventoryElement? elem = playerGrid.m_elements[elemIdx];
+                    GameObject? slotGo = elem.gameObject;
                     if (!slotGo) continue;
 
                     _ = SlotOverlays.EnsureInvalidOverlay(slotGo);
@@ -395,8 +395,8 @@ public class InventoryGuiPatches
                 int elemIdx = baseIndex1 + i;
                 if (elemIdx < 0 || elemIdx >= playerGrid.m_elements.Count) continue;
 
-                InventoryGrid.Element? elem = playerGrid.m_elements[elemIdx];
-                GameObject? slotGo = elem.m_go;
+                InventoryElement? elem = playerGrid.m_elements[elemIdx];
+                GameObject? slotGo = elem.gameObject;
                 if (!slotGo) continue;
 
                 if (!dragging)

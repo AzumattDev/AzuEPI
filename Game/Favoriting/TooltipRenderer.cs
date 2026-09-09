@@ -12,7 +12,8 @@ internal static class TooltipRenderer
         typeof(int),
         typeof(bool),
         typeof(float),
-        typeof(int)
+        typeof(int),
+        typeof(bool),
     ])]
     [HarmonyPostfix]
     public static void GetTooltip(ItemDrop.ItemData item, bool crafting, ref string __result)

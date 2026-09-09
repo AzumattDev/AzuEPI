@@ -103,7 +103,7 @@ public class TombstonePatches
         private static bool SimulateFit(Inventory tombInv, Inventory playerInv)
         {
             int width = playerInv.GetWidth();
-            int normalRows = Layout.BaseInventoryHeight + ExtraRows.Value;
+            int normalRows = Layout.NormalInventoryRows;
 
             HashSet<Vector2i> claimed = [];
             foreach (ItemDrop.ItemData existing in playerInv.GetAllItems())
