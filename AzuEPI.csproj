@@ -222,6 +222,7 @@
         <Compile Include="Game\Panels\Vanity\VanityPatches.cs"/>
         <Compile Include="Game\Patches\InventoryGuiPatches.cs"/>
         <Compile Include="Game\Patches\InventoryPatches.cs"/>
+        <Compile Include="Game\Patches\InventoryRowsPatches.cs"/>
         <Compile Include="Game\Patches\MaterialManBandaid.cs"/>
         <Compile Include="Game\Patches\PlayerPatches.cs"/>
         <Compile Include="Game\Patches\PreventKeys.cs"/>
