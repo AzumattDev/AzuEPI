@@ -536,7 +536,7 @@ public class ItemInfo : IEnumerable<ItemData>
 		CodeInstruction[] instructions = instructionsEnumerable.ToArray();
 		Label target = (Label)instructions.First(i => i.opcode == OpCodes.Br || i.opcode == OpCodes.Br_S).operand;
 		CodeInstruction targetedInstr = instructions.First(i => i.labels.Contains(target));
-		CodeInstruction lastBranch = instructions.Reverse().First(i => i.Branches(out Label? label) && targetedInstr.labels.Contains(label!.Value));
+		CodeInstruction lastBranch = ((IEnumerable<CodeInstruction>)instructions).Reverse().First(i => i.Branches(out Label? label) && targetedInstr.labels.Contains(label!.Value));
 		CodeInstruction? loadingInstruction = null;
 
 		for (int i = 0; i < instructions.Length; ++i)

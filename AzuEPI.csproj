@@ -143,7 +143,7 @@
             <HintPath>$(CorlibPath)\UnityEngine.PhysicsModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.ImageConversionModule">
-            <HintPath>C:\Users\crypt\OneDrive\Desktop\Libs\UnityEngine.ImageConversionModule.dll</HintPath>
+            <HintPath>$(CorlibPath)\UnityEngine.ImageConversionModule.dll</HintPath>
         </Reference>
         <Reference Include="UnityEngine.TextRenderingModule">
             <HintPath>$(CorlibPath)\UnityEngine.TextRenderingModule.dll</HintPath>
@@ -304,6 +304,10 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="YamlDotNet" Version="16.3.0"/>
+        <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
     <ItemGroup>
         <Content Include=".github\workflows\publish-mod.yml"/>
