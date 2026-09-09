@@ -473,7 +473,7 @@ public class InventoryPatches
         }
     }
 
-    [HarmonyPatch(typeof(Container), nameof(Container.RPC_TakeAllRespons))]
+    [HarmonyPatch(typeof(Container), nameof(Container.RPC_TakeAllResponse))]
     internal static class ContainerRPCRequestTakeAllPatch
     {
         private static void Prefix(Container __instance, bool granted)

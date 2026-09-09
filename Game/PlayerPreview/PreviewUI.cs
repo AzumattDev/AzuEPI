@@ -216,17 +216,18 @@ static class VECloneSync
         if (stamp == _lastStamp) return false;
         _lastStamp = stamp;
 
-        dst.SetRightItem(src.m_rightItem);
-        dst.SetLeftItem(src.m_leftItem, src.m_leftItemVariant);
+		//TODO: Make this better later.
+        dst.SetRightItem(src.m_rightItem, 1);
+        dst.SetLeftItem(src.m_leftItem, src.m_leftItemVariant,1);
 
         dst.SetChestItem(src.m_chestItem);
         dst.SetLegItem(src.m_legItem);
         dst.SetHelmetItem(src.m_helmetItem);
-        dst.SetShoulderItem(src.m_shoulderItem, src.m_shoulderItemVariant);
+        dst.SetShoulderItem(src.m_shoulderItem, src.m_shoulderItemVariant,1);
         dst.SetUtilityItem(src.m_utilityItem);
         dst.SetTrinketItem(src.m_trinketItem);
-        dst.SetLeftBackItem(src.m_leftBackItem, src.m_leftBackItemVariant);
-        dst.SetRightBackItem(src.m_rightBackItem);
+        dst.SetLeftBackItem(src.m_leftBackItem, src.m_leftBackItemVariant,1);
+        dst.SetRightBackItem(src.m_rightBackItem,1);
 
         dst.SetBeardItem(src.m_beardItem);
         dst.SetHairItem(src.m_hairItem);
