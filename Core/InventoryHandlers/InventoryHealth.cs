@@ -6,21 +6,19 @@ public class InventoryHealth
     {
         if (Player.m_localPlayer == null)
             return;
+        if (Player.m_localPlayer.m_isLoading) return;
         Inventory? playerInventory = Player.m_localPlayer.GetInventory();
         HashSet<Vector2i> curPositions = [];
         List<ItemDrop.ItemData> itemsToFix = [];
         if (playerInventory == null) return;
-        int normalRows = Layout.NormalInventoryRows;
         if (playerInventory?.m_inventory != null)
             for (int index = 0; index < playerInventory.m_inventory.Count; ++index)
             {
                 ItemDrop.ItemData? itemData = playerInventory.m_inventory[index];
                 bool overlappingItem = curPositions.Contains(itemData.m_gridPos);
 
-                // Don't apply a y-upper-bound check there — the height is dynamic and may be
-                bool inEpiArea = itemData.m_gridPos.y >= normalRows;
                 bool outOfBounds = itemData.m_gridPos.x < 0 || itemData.m_gridPos.x >= playerInventory.m_width
-                    || (!inEpiArea && (itemData.m_gridPos.y < 0 || itemData.m_gridPos.y >= normalRows));
+                    || itemData.m_gridPos.y < 0 || itemData.m_gridPos.y >= playerInventory.GetHeight();
 
                 if (overlappingItem || outOfBounds || itemData.m_stack < 1)
                 {

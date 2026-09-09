@@ -109,11 +109,22 @@ public static class Initializers
             context.FullRebuild();
         };
         ExtraRows.SettingChanged += (sender, args) => { context.FullRebuild(); };
-        AddEquipmentRow.SettingChanged += (sender, args) => { EAQ.CheckRandy(); };
+        AddEquipmentRow.SettingChanged += (sender, args) =>
+        {
+            EAQ.CheckRandy();
+            if (Player.m_localPlayer)
+            {
+                Inventory inventory = Player.m_localPlayer.GetInventory();
+                int previousRows = inventory.GetHeight() - (AddEquipmentRow.Value.isOff() ? API.GetAddedRows(inventory.GetWidth()) : 0);
+                Layout.ResizeInventory(inventory, previousRows, API.GetFullHeight(inventory.GetWidth()));
+            }
+            context.FullRebuild();
+        };
         DisplayEquipmentRowSeparate.SettingChanged += (sender, args) =>
         {
             EAQ.CheckRandy();
             if (GlgGo) GlgGo.SetActive(DisplayEquipmentRowSeparate.Value.isOn());
+            context.FullRebuild();
         };
         ShowQuickSlots.SettingChanged += (sender, args) => { HotkeyBarController.Hud_Update_Patch.DeselectHotkeyBar(); };
         SelectedPlayerStats.SettingChanged += StatsPanelController.OnStatsConfigChanged;
@@ -224,12 +235,8 @@ public static class Initializers
 
         OldLayout.SettingChanged += (sender, args) =>
         {
-            SlotHelpers.ResizeSlots();
-            Layout.UpdateInventorySize();
             Layout.ApplyLayoutCorrections();
-            RebuildUI();
             context.FullRebuild();
-            SlotHelpers.UpdateEquipmentBackgroundAnchors();
         };
     }
 }

@@ -46,14 +46,22 @@ public class UIBuilder
     {
         if (!InventoryGui.instance) return;
 
-        InventoryGui.instance.m_player.Find(AzuEquipmentBkgName).SafeSetActive(OldLayout.Value.isOn());
-        Layout.AzuPlayerBkg.SafeSetActive(OldLayout.Value.isOff());
-        PreviewParent.SafeSetActive(OldLayout.Value.isOff());
-        PlayerPreviewImage.SafeSetActive(OldLayout.Value.isOff());
-        CharName.SafeSetActive(OldLayout.Value.isOff());
-        GUICache.ButtonGridLayoutGroup.constraintCount = OldLayout.Value.isOff() ? ToggleButtonColumns : QuickSlotsAmount.Value < 1 && slots.Count < 10 ? ToggleButtonColumns - 1 : ToggleButtonColumns;
-        GUICache.ButtonGridLayoutGroup.childAlignment = OldLayout.Value.isOff() ? TextAnchor.MiddleCenter : TextAnchor.MiddleLeft;
-        GUICache.ButtonGridLayoutGroup.cellSize = OldLayout.Value.isOff() ? new Vector2(ToggleButtonCellSize, ToggleButtonCellSize) : new Vector2(ToggleButtonCellSizeOld, ToggleButtonCellSizeOld);
+        bool legacy = OldLayout.Value.isOn();
+        Transform equipmentBkg = InventoryGui.instance.m_player.Find(AzuEquipmentBkgName);
+        equipmentBkg.SafeSetActive(legacy);
+        if (equipmentBkg && equipmentBkg.TryGetComponent(out Image equipmentBkgImage)) equipmentBkgImage.enabled = legacy;
+
+        Layout.AzuPlayerBkg.SafeSetActive(!legacy);
+        if (Layout.AzuPlayerBkg && Layout.AzuPlayerBkg.TryGetComponent(out Image playerBkgImage)) playerBkgImage.enabled = !legacy;
+        if (GUICache._craftingBkgRT && GUICache._craftingBkgRT.TryGetComponent(out Image craftingBkgImage)) craftingBkgImage.enabled = legacy;
+
+        PreviewParent.SafeSetActive(!legacy);
+        PlayerPreviewImage.SafeSetActive(!legacy);
+        CharName.SafeSetActive(!legacy);
+        GUICache.ButtonGridLayoutGroup.constraintCount = !legacy ? ToggleButtonColumns : QuickSlotsAmount.Value < 1 && slots.Count < 10 ? ToggleButtonColumns - 1 : ToggleButtonColumns;
+        GUICache.ButtonGridLayoutGroup.childAlignment = !legacy ? TextAnchor.MiddleCenter : TextAnchor.MiddleLeft;
+        GUICache.ButtonGridLayoutGroup.cellSize = !legacy ? new Vector2(ToggleButtonCellSize, ToggleButtonCellSize) : new Vector2(ToggleButtonCellSizeOld, ToggleButtonCellSizeOld);
+        GUICache.ButtonGridLayoutGroup.spacing = new Vector2(!legacy ? 18f : 25f, 5f);
         GlgGo.transform.SafeSetActive(DisplayEquipmentRowSeparate.Value.isOn());
     }
 
@@ -79,9 +87,6 @@ public class UIBuilder
             equipBkgRT.offsetMin = new Vector2(-10, -10);
         }
 
-        InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<RectTransform>().WithAnchorMax(maxAnchor);
-
-        InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<Image>().raycastTarget = false;
         transform.gameObject.SetActive(OldLayout.Value.isOn());
     }
 

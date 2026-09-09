@@ -66,17 +66,40 @@ public class Layout
     public static Vector2 EnchantmentMenuBkgOrigAnchoredPos;
     public static Vector2 ContainerOrigPivot;
 
-    public static void UpdateInventorySize()
+    public static void UpdateInventorySize() => UpdateInventorySize(null);
+
+    internal static void UpdateInventorySize(int? previousSlotCount)
     {
-        if (InventoryGui.instance == null) return;
         if (Player.m_localPlayer == null) return;
         ValheimPlusCompat.SyncRowsToConfig();
-        int height = API.GetFullHeight(Player.m_localPlayer.m_inventory.GetWidth());
-        Player.m_localPlayer.m_inventory.m_height = height;
+        Inventory inventory = Player.m_localPlayer.GetInventory();
+        int width = inventory.GetWidth();
+        int height = API.GetFullHeight(width);
+        int previousRows = inventory.GetHeight() - (AddEquipmentRow.Value.isOn()
+            ? Mathf.CeilToInt((float)(previousSlotCount ?? slots.Count) / width) : 0);
+        ResizeInventory(inventory, previousRows, height);
         Player.m_localPlayer.m_tombstone.GetComponent<Container>().m_height = height;
 
         Player.m_localPlayer.m_inventory.Changed();
         InventoryHealth.InventoryFix();
+    }
+
+    internal static void ResizeInventory(Inventory inventory, int previousNormalRows, int height)
+    {
+        int reservedRows = AddEquipmentRow.Value.isOn() ? API.GetAddedRows(inventory.GetWidth()) : 0;
+        int normalRows = height - reservedRows;
+        int delta = normalRows - previousNormalRows;
+        List<ItemDrop.ItemData> displaced = [];
+        foreach (ItemDrop.ItemData item in inventory.GetAllItems())
+        {
+            if (item.m_gridPos.y >= previousNormalRows && reservedRows > 0)
+                item.m_gridPos.y += delta;
+            else if (item.m_gridPos.y >= normalRows)
+                displaced.Add(item);
+        }
+        inventory.SetHeight(height);
+        foreach (ItemDrop.ItemData item in displaced)
+            inventory.TryAddItemToInventory(item);
     }
 
     public static void UpdateContainerPosition(bool addAPIRows = false)
@@ -148,7 +171,7 @@ public class Layout
             repairButton.anchoredPosition = RepairButtonOrigAnchoredPos;
             if(enchantmentMenu)enchantmentMenu.anchoredPosition = EnchantmentMenuOrigAnchoredPos;
             if(enchantmentMenuBkg)enchantmentMenuBkg.anchoredPosition = EnchantmentMenuBkgOrigAnchoredPos;
-            if (!craftingBkg.isActiveAndEnabled) craftingBkg.enabled = true;
+            craftingBkg.enabled = true;
             if (!GlgGo) return;
             if (InventoryGui.instance)
                 GlgGo.WithParent(OldLayout.Value.isOff() ? InventoryGui.instance.m_crafting.transform : InventoryGui.instance.m_player.transform, false);
@@ -158,11 +181,11 @@ public class Layout
         else
         {
             selectedFrame.anchorMin = PlayerBkgAnchorMin;
-            repairSimple.anchoredPosition += RepairMovement;
-            repairButton.anchoredPosition += RepairMovement;
-            if(enchantmentMenu)enchantmentMenu.anchoredPosition += RepairMovement;
-            if(enchantmentMenuBkg)enchantmentMenuBkg.anchoredPosition += RepairMovement;
-            if (craftingBkg.isActiveAndEnabled) craftingBkg.enabled = false;
+            repairSimple.anchoredPosition = RepairSimpleOrigAnchoredPos + RepairMovement;
+            repairButton.anchoredPosition = RepairButtonOrigAnchoredPos + RepairMovement;
+            if(enchantmentMenu)enchantmentMenu.anchoredPosition = EnchantmentMenuOrigAnchoredPos + RepairMovement;
+            if(enchantmentMenuBkg)enchantmentMenuBkg.anchoredPosition = EnchantmentMenuBkgOrigAnchoredPos + RepairMovement;
+            craftingBkg.enabled = false;
             if (!GlgGo) return;
             if (InventoryGui.instance)
                 GlgGo.WithParent(OldLayout.Value.isOff() ? InventoryGui.instance.m_crafting.transform : InventoryGui.instance.m_player.transform, false);
@@ -210,7 +233,8 @@ public class Layout
             Model.Slot? slot = allSlots[i];
             if (slot is not Model.EquipmentSlot equipmentSlot) continue;
 
-            Vector2i destPos = new(equipmentTailStartIndex % inventoryWidth, equipmentTailStartIndex / inventoryWidth);
+            int linear = equipmentTailStartIndex + i;
+            Vector2i destPos = new(linear % inventoryWidth, linear / inventoryWidth);
 
             if (equipmentSlot.Get?.Invoke(player) is { } equippedItem)
             {
@@ -222,7 +246,6 @@ public class Layout
                 }
             }
 
-            ++equipmentTailStartIndex;
         }
 
         foreach (KeyValuePair<ItemDrop.ItemData, Vector2i> kvp in plannedMoves)

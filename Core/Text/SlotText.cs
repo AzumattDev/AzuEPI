@@ -8,7 +8,11 @@ public class SlotText
     {
         Transform transform1 = transform.Find("binding");
         if (!transform1)
+        {
             transform1 = Object.Instantiate(_elementPrefab.transform.Find("binding"), transform);
+            transform1.name = "binding";
+        }
+        transform1.gameObject.SetActive(true);
         if (!transform1.TryGetComponent(out RectTransform rectTransform)) return;
         rectTransform.WithAnchorMin(Vector2.zero).WithAnchorMax(Vector2.one).WithOffsetMin(Vector2.zero).WithOffsetMax(Vector2.zero).WithSizeDelta(Vector2.zero).WithAnchoredPosition(Vector2.zero);
 

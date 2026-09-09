@@ -29,11 +29,6 @@ public class SlotHelpers
             equipBkgRT.offsetMin = new Vector2(-10, -10);
         }
 
-        if (InventoryGui.instance.m_playerGrid?.m_gridRoot)
-        {
-            InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<RectTransform>().anchorMax = maxAnchor;
-            InventoryGui.instance.m_playerGrid.m_gridRoot.GetComponent<Image>().raycastTarget = false;
-        }
     }
 
     internal static void ResizeSlots()

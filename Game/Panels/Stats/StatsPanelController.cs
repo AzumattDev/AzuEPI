@@ -1133,9 +1133,13 @@ public static class StatsPanelController
                 continue;
             }
 
-            float statValue = profile.GetStat(element.StatType);
-            element.ValueText.text = FormatHistoricalStat(element.StatType, statValue);
-        }
+
+			if (element.StatType != PlayerStatType.None)
+			{
+				float statValue = profile.GetStat(element.StatType);
+				element.ValueText.text = FormatHistoricalStat(element.StatType, statValue);
+			}
+		}
     }
 
     private static float CalculateHealthRegen(Player player)

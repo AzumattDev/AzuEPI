@@ -7,6 +7,12 @@ namespace AzuExtendedPlayerInventory
     [PublicAPI]
     public class API
     {
+        /*public static event Action<InventoryGrid>? OnInventoryGridRebuilt
+        {
+            add => AzuEPI.API.OnInventoryGridRebuilt += value;
+            remove => AzuEPI.API.OnInventoryGridRebuilt -= value;
+        }*/
+
         public delegate void SlotAddedHandler(string slotName);
 
         public delegate void SlotRemovedHandler(string slotName);

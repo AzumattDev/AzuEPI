@@ -43,7 +43,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 	}
 
     internal const string ModName = "AzuExtendedPlayerInventory";
-    internal const string ModVersion = "2.4.11";
+    internal const string ModVersion = "2.4.12";
     internal const string Author = "Azumatt";
     internal const string ModGUID = Author + "." + ModName;
     private static readonly string ConfigFileName = ModGUID + ".cfg";
@@ -244,6 +244,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     internal void FullRebuild()
     {
+        int previousSlotCount = slots.Count;
         try
         {
             InventoryGuiPatches.UpdateInventory_Patch.RebuildQuickslots();
@@ -262,7 +263,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         try
         {
-            Layout.UpdateInventorySize();
+            Layout.UpdateInventorySize(previousSlotCount);
             InventoryHealth.FixHiddenItems();
             SlotHelpers.UpdateEquipmentBackgroundAnchors();
             RebuildUI();

@@ -300,20 +300,31 @@ public class InventoryPatches
         }
     }
 
-    [HarmonyPatch(typeof(Inventory), nameof(Inventory.Load), typeof(ZPackage))]
+    [HarmonyPatch]
     internal static class Load_TrackAndFixHiddenItems_Patch
     {
         private static readonly List<ItemDrop.ItemData> _stuckItems = new(16);
 
+        private static IEnumerable<MethodBase> TargetMethods()
+        {
+            yield return AccessTools.Method(typeof(Inventory), nameof(Inventory.Load), [typeof(ZPackage)]);
+            yield return AccessTools.Method(typeof(Inventory), nameof(Inventory.Load), [typeof(ZPackage), typeof(bool)]);
+        }
+
         [HarmonyPriority(Priority.First)]
-        private static void Prefix(Inventory __instance) => _isLoadingInventory = true;
+        private static void Prefix(out bool __state)
+        {
+            __state = _isLoadingInventory;
+            _isLoadingInventory = true;
+        }
 
         [HarmonyPriority(Priority.Last)]
-        private static void Postfix(Inventory __instance)
+        private static void Postfix(Inventory __instance, bool __state)
         {
             try
             {
                 if (!__instance.ShouldProtectInventorySlots()) return;
+                if (Player.m_localPlayer && Player.m_localPlayer.m_isLoading && __instance == Player.m_localPlayer.GetInventory()) return;
 
                 int width = __instance.GetWidth();
                 int height = __instance.GetHeight();
@@ -386,9 +397,11 @@ public class InventoryPatches
             }
             finally
             {
-                _isLoadingInventory = false;
+                _isLoadingInventory = __state;
             }
         }
+
+        private static void Finalizer(bool __state) => _isLoadingInventory = __state;
     }
 
     [HarmonyPatch(typeof(Inventory), nameof(Inventory.MoveItemToThis), typeof(Inventory), typeof(ItemDrop.ItemData), typeof(int), typeof(int), typeof(int))]

@@ -1,8 +1,18 @@
 ﻿namespace AzuEPI.Game.Patches;
 
-// 1.0 sells inventory rows at the trader, so the vanilla row count is no longer a constant 4
 public class InventoryRowsPatches
 {
+    [HarmonyPatch(typeof(Player), "EquipInventoryItems")]
+    private static class RestoreLoadedInventorySize
+    {
+        private static void Prefix(Player __instance)
+        {
+            if (__instance != Player.m_localPlayer) return;
+            Layout.RefreshVanillaRows(__instance);
+            __instance.GetInventory().m_height = API.GetFullHeight(__instance.GetInventory().GetWidth());
+        }
+    }
+
     [HarmonyPatch(typeof(Player), nameof(Player.SetInventorySize))]
     private static class PlayerSetInventorySizePatch
     {
@@ -10,7 +20,10 @@ public class InventoryRowsPatches
         private static void Prefix(Player __instance, int rows)
         {
             if (Player.m_localPlayer != __instance) return;
+            Inventory inventory = __instance.GetInventory();
+            int previousRows = Layout.NormalRows(inventory);
             Layout.SetVanillaRows(rows);
+            Layout.ResizeInventory(inventory, previousRows, API.GetFullHeight(inventory.GetWidth()));
         }
 
         [HarmonyPriority(Priority.Last)]

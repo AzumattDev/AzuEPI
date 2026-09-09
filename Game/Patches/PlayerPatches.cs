@@ -173,9 +173,9 @@ public class PlayerPatches
 
         private static void Postfix(Player __instance, ref Inventory ___m_inventory)
         {
+            if (__instance != Player.m_localPlayer) return;
             int width = ___m_inventory.GetWidth();
-            int height = API.GetFullHeight(width);
-            ___m_inventory.m_height = height;
+            int height = ___m_inventory.GetHeight();
 
             if (!TombstoneContainerCache.TryGetValue(__instance, out Container? tombstoneContainer))
             {
@@ -199,7 +199,7 @@ public class PlayerPatches
                 if (!Hotkeys[hotkey].Value.IsKeyDown())
                     continue;
 
-                int index = Layout.NormalInventoryRows * width + slots.Count - QuickSlotsAmount.Value + hotkey;
+                int index = Layout.GetBaseSlotIndex(___m_inventory) + slots.Count - QuickSlotsAmount.Value + hotkey;
                 ItemDrop.ItemData itemAt = ___m_inventory.GetItemAt(index % width, index / width);
                 if (itemAt != null)
                     __instance.UseItem(null, itemAt, true);

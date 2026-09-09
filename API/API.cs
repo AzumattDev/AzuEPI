@@ -33,6 +33,7 @@ public class API
     public static event SlotAddedHandler? SlotAdded;
     public static event SlotRemovedHandler? SlotRemoved;
     public static event Action<string>? OnRegisterVisualPrefab;
+    public static event Action<InventoryGrid>? OnInventoryGridRebuilt;
 
     public static bool IsLoaded()
     {
@@ -81,8 +82,9 @@ public class API
             IsAPIAdded = true,
 		};
 
-        if (index < 0 || index > slots.Count - QuickSlotsAmount.Value)
-            index = slots.Count - QuickSlotsAmount.Value;
+        int quickStart = slots.FindIndex(s => s is { IsQuickSlot: true } && s is not Model.EquipmentSlot);
+        if (quickStart < 0) quickStart = slots.Count;
+        if (index < 0 || index > quickStart) index = quickStart;
 
         UpdateSlots(index, 1);
         slots.Insert(index, slot);
@@ -163,7 +165,7 @@ public class API
 #if !API
         if (string.IsNullOrWhiteSpace(slotName)) return false;
 
-        int existingIdx = slots.FindIndex(s => s?.Name == slotName);
+        int existingIdx = slots.FindIndex(s => s?.Name == slotName || s?.OriginalName == slotName);
         if (existingIdx >= 0 && slots[existingIdx] is Model.EquipmentSlot existing)
         {
             return true;
@@ -172,13 +174,15 @@ public class API
         Model.EquipmentSlot slot = new()
         {
             Name = showName ? slotName.StartsWith("$") && Localization.m_instance != null ? Localization.m_instance.Localize(slotName) : slotName : "",
+            OriginalName = slotName,
             Valid = item => true,
             IsAPIAdded = true,
             IsQuickSlot = true,
 		};
 
-        if (index < 0 || index > slots.Count - QuickSlotsAmount.Value)
-            index = slots.Count - QuickSlotsAmount.Value;
+        int quickStart = slots.FindIndex(s => s is { IsQuickSlot: true } && s is not Model.EquipmentSlot);
+        if (quickStart < 0) quickStart = slots.Count;
+        if (index < 0 || index > quickStart) index = quickStart;
 
         UpdateSlots(index, 1);
         slots.Insert(index, slot);
@@ -202,32 +206,22 @@ public class API
         {
             if (Player.m_localPlayer && slot.Get?.Invoke(Player.m_localPlayer) is { } item) Player.m_localPlayer.UnequipItem(item);
 
+            ItemDrop.ItemData? removedItem = null;
             if (Player.m_localPlayer)
             {
                 Inventory inv = Player.m_localPlayer.GetInventory();
                 Vector2i slotPos = inv.EpiIndexToGridPos(slotIndex);
-                ItemDrop.ItemData? itemInSlot = inv.GetItemAt(slotPos.x, slotPos.y);
-                if (itemInSlot != null)
-                {
-                    inv.RemoveItem(itemInSlot);
-                    Vector2i newPos = inv.FindEmptyQuickAware(true);
-                    if (newPos is { x: >= 0, y: >= 0 })
-                    {
-                        itemInSlot.m_gridPos = newPos;
-                        inv.AddItem(itemInSlot);
-                        AzuExtendedPlayerInventoryLogger.LogInfo($"Relocated {Localization.m_instance.Localize(itemInSlot.m_shared.m_name)} from removed slot to ({newPos.x}, {newPos.y})");
-                    }
-                    else
-                    {
-                        AzuExtendedPlayerInventoryLogger.LogWarning($"No room for {Localization.m_instance.Localize(itemInSlot.m_shared.m_name)} after slot removal, dropping item.");
-                        Player.m_localPlayer.DropItem(inv, itemInSlot, itemInSlot.m_stack);
-                    }
-                }
+                if (AddEquipmentRow.Value.isOn()) removedItem = inv.GetItemAt(slotPos.x, slotPos.y);
+                if (removedItem != null) removedItem.m_gridPos = new Vector2i(-1, -1);
             }
 
             UpdateSlots(slotIndex, -1);
 
             slots.RemoveAt(slotIndex);
+            CustomSlots.Remove(slot);
+
+            if (removedItem != null)
+                Player.m_localPlayer.GetInventory().TryAddItemToInventory(removedItem);
 
             SlotHelpers.ResizeSlots();
             SlotHelpers.UpdateEquipmentBackgroundAnchors();
@@ -427,8 +421,10 @@ public class API
 #else
         slotIndex = -1;
         if (inv == null) return false;
+        if (AddEquipmentRow.Value.isOff() || !inv.ShouldProtectInventorySlots()) return false;
 
         int w = inv.GetWidth();
+        if (gridPos.x < 0 || gridPos.x >= w || gridPos.y < 0 || gridPos.y >= inv.GetHeight()) return false;
         int normalRows = Layout.NormalRows(inv);
         if (gridPos.y < normalRows) return false;
 
@@ -739,6 +735,16 @@ public class API
 #endif
 
 #if !API
+    internal static void InventoryGridRebuilt(InventoryGrid grid)
+    {
+        if (OnInventoryGridRebuilt == null) return;
+        foreach (Action<InventoryGrid> handler in OnInventoryGridRebuilt.GetInvocationList())
+        {
+            try { handler(grid); }
+            catch (Exception ex) { AzuExtendedPlayerInventoryLogger.LogError($"Inventory grid listener failed: {ex}"); }
+        }
+    }
+
     public static void HudAwake(Hud __instance)
     {
         OnHudAwake?.Invoke(__instance);
@@ -877,7 +883,8 @@ public class API
         if (!Player.m_localPlayer) return;
         Inventory inv = Player.m_localPlayer.m_inventory;
         int width = inv.GetWidth();
-        int baseRows = Layout.NormalInventoryRows;
+        int baseRows = Layout.NormalRows(inv);
+        if (AddEquipmentRow.Value.isOff()) return;
 
 #if DEBUG
         AzuExtendedPlayerInventoryLogger.LogDebug($"UpdateSlots: index={index}, shift={shift}, baseRows={baseRows}, width={width}, slots.Count={slots.Count}");
@@ -885,21 +892,11 @@ public class API
         foreach (ItemDrop.ItemData item in inv.m_inventory)
         {
             int slotIndex = (item.m_gridPos.y - baseRows) * width + item.m_gridPos.x;
-            if (slotIndex >= index)
+            if (slotIndex >= index && slotIndex < slots.Count)
             {
                 Vector2i oldPos = item.m_gridPos;
-                item.m_gridPos.x += shift;
-                if (item.m_gridPos.x < 0)
-                {
-                    item.m_gridPos.x = width - 1;
-                    --item.m_gridPos.y;
-                }
-
-                if (item.m_gridPos.x >= width)
-                {
-                    item.m_gridPos.x = 0;
-                    ++item.m_gridPos.y;
-                }
+                int linear = baseRows * width + slotIndex + shift;
+                item.m_gridPos = new Vector2i(linear % width, linear / width);
 #if DEBUG
                 AzuExtendedPlayerInventoryLogger.LogDebug($"UpdateSlots: Shifted '{item.m_shared.m_name}' from slot {slotIndex} ({oldPos.x},{oldPos.y}) to ({item.m_gridPos.x},{item.m_gridPos.y})");
 #endif

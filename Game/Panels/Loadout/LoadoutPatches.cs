@@ -120,6 +120,7 @@ static class PlayerSpawnedPatch
         PersonalLoadoutGui.m_loadoutGrid.m_elementSpace = 70f;
         PersonalLoadoutGui.m_loadoutGrid.m_width = 0;
         PersonalLoadoutGui.m_loadoutGrid.m_height = 0;
+		PersonalLoadoutGui.m_loadoutGrid.CanDropDragOntoItem = _ => false;
 
         UIGroupHandler uiGroup = gridRoot.AddComponent<UIGroupHandler>();
         uiGroup.m_active = false;
