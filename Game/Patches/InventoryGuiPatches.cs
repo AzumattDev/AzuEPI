@@ -64,7 +64,7 @@ public class InventoryGuiPatches
             Layout.RepairButtonOrigAnchoredPos = GUICache._repairButtonRT.anchoredPosition;
             Layout.EnchantmentMenuOrigAnchoredPos = GUICache._enchantmentMenuButtonRT is not null ? GUICache._enchantmentMenuButtonRT.anchoredPosition : new Vector2();
             Layout.EnchantmentMenuBkgOrigAnchoredPos = GUICache._enchantmentMenuBkgButtonRT is not null ? GUICache._enchantmentMenuBkgButtonRT.anchoredPosition : new Vector2();
-            Layout.ContainerOrigPivot = __instance.m_container.pivot;
+            Layout.ContainerOrigAnchoredPos = __instance.m_container.anchoredPosition;
 
             if (OldLayout.Value.isOff())
                 Layout.ApplyRepairShift();
@@ -183,7 +183,6 @@ public class InventoryGuiPatches
         private static string[] _cachedSlotNames = [];
         private static InventoryElement[] _cachedSlotElements = [];
         private static int _visibleRows = -1;
-        private static bool _elementsChanged = true;
 
         internal static void AlignPlayerGrid(InventoryGrid grid)
         {
@@ -200,7 +199,7 @@ public class InventoryGuiPatches
             _cachedSlotNames = [];
             _cachedSlotElements = [];
             _overlaysInitialized = false;
-            _elementsChanged = true;
+            _visibleRows = -1;
         }
 
         internal static void RebuildQuickslots()
@@ -264,12 +263,11 @@ public class InventoryGuiPatches
             RectTransform bkgRect = _cachedBkgRect;
             if (_cachedPlayerScrollCheck == null) // If ValheimPlus didn't add a scrollbar
             {
-                int visibleRows = AddEquipmentRow.Value.isOn() && DisplayEquipmentRowSeparate.Value.isOn()
-                    ? Layout.NormalRows(player.GetInventory())
-                    : player.GetInventory().GetHeight();
+                int visibleRows = Layout.VisiblePlayerRows(player.GetInventory());
                 if (_visibleRows != visibleRows)
                 {
                     __instance.SetInventorySize(visibleRows);
+                    Layout.UpdateContainerPosition();
                     _visibleRows = visibleRows;
                     AlignPlayerGrid(___m_playerGrid);
                 }
@@ -298,7 +296,6 @@ public class InventoryGuiPatches
 
             if (AddEquipmentRow.Value.isOff())
             {
-                NotifyElementsChanged(___m_playerGrid);
                 return;
             }
             int slotCount = slots.Count;
@@ -387,13 +384,11 @@ public class InventoryGuiPatches
             {
                 case On when !equipmentBkgTransform && OldLayout.Value.isOn():
                 {
-                    Layout.UpdateContainerPosition();
                     BuildEquipmentBkg(__instance, bkgRect);
                     break;
                 }
                 case On when OldLayout.Value.isOff():
                 {
-                    Layout.UpdateContainerPosition();
                     if (!equipmentBkgTransform)
                     {
                         BuildEquipmentBkg(__instance, bkgRect);
@@ -403,7 +398,6 @@ public class InventoryGuiPatches
                 }
 
                 case Off when equipmentBkgTransform:
-                    Layout.UpdateContainerPosition(true);
                     equipmentBkgTransform.gameObject.SetActive(false);
                     break;
             }
@@ -412,14 +406,6 @@ public class InventoryGuiPatches
                 StatsPanelController.UpdateStats(player);
 
             UpdateInvalidDropOverlays(__instance, ___m_playerGrid, player);
-            NotifyElementsChanged(___m_playerGrid);
-        }
-
-        private static void NotifyElementsChanged(InventoryGrid grid)
-        {
-            if (!_elementsChanged) return;
-            _elementsChanged = false;
-            API.InventoryGridRebuilt(grid);
         }
 
         private static void BindSlotElement(int index, InventoryElement element, string name)
@@ -430,7 +416,6 @@ public class InventoryGuiPatches
                 _cachedSlotNames[index] = null!;
                 _cachedSlotPositions[index] = new Vector2(float.NaN, float.NaN);
                 _overlaysInitialized = false;
-                _elementsChanged = true;
             }
             if (_cachedSlotNames[index] == name) return;
             SlotText.Set(name, element.transform);

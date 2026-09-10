@@ -64,7 +64,7 @@ public class Layout
     public static Vector2 RepairButtonOrigAnchoredPos;
     public static Vector2 EnchantmentMenuOrigAnchoredPos;
     public static Vector2 EnchantmentMenuBkgOrigAnchoredPos;
-    public static Vector2 ContainerOrigPivot;
+    public static Vector2 ContainerOrigAnchoredPos;
 
     public static void UpdateInventorySize() => UpdateInventorySize(null);
 
@@ -102,16 +102,22 @@ public class Layout
             inventory.TryAddItemToInventory(item);
     }
 
-    public static void UpdateContainerPosition(bool addAPIRows = false)
+    public static int VisiblePlayerRows(Inventory inv)
     {
+        return AddEquipmentRow.Value.isOn() && DisplayEquipmentRowSeparate.Value.isOn() ? NormalRows(inv) : inv.GetHeight();
+    }
+
+    public static void UpdateContainerPosition()
+	{
+		return; // Not sure if I need this shit anymore. My other work arounds make it almost better.
         InventoryGui? instance = InventoryGui.instance;
-        if (!instance) return;
-        InventoryGrid? playerGrid = instance.m_playerGrid;
-        if (!playerGrid) return;
-        float extraSpace = addAPIRows ? (ExtraRows.Value + API.GetAddedRows(instance.m_playerGrid.m_width)) : ExtraRows.Value;
-        instance.m_container.pivot = ExtraRows.Value > 0
-            ? new Vector2(ContainerOrigPivot.x, ContainerOrigPivot.y + extraSpace * 0.2f)
-            : ContainerOrigPivot;
+        if (!instance || !instance.m_container) return;
+        Player? player = Player.m_localPlayer;
+        if (!player) return;
+        // vanilla only grows m_player when rows are added, so the container has to slide down by the same amount
+        float rowHeight = instance.m_invGridHeight > 0f ? instance.m_invGridHeight : tileSize;
+        float shift = (VisiblePlayerRows(player.GetInventory()) - BaseInventoryHeight) * rowHeight;
+        instance.m_container.anchoredPosition = ContainerOrigAnchoredPos - new Vector2(0f, shift);
     }
 
     public static int NormalRows(Inventory inv)

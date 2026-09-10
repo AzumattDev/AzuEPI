@@ -33,7 +33,6 @@ public class API
     public static event SlotAddedHandler? SlotAdded;
     public static event SlotRemovedHandler? SlotRemoved;
     public static event Action<string>? OnRegisterVisualPrefab;
-    public static event Action<InventoryGrid>? OnInventoryGridRebuilt;
 
     public static bool IsLoaded()
     {
@@ -735,16 +734,6 @@ public class API
 #endif
 
 #if !API
-    internal static void InventoryGridRebuilt(InventoryGrid grid)
-    {
-        if (OnInventoryGridRebuilt == null) return;
-        foreach (Action<InventoryGrid> handler in OnInventoryGridRebuilt.GetInvocationList())
-        {
-            try { handler(grid); }
-            catch (Exception ex) { AzuExtendedPlayerInventoryLogger.LogError($"Inventory grid listener failed: {ex}"); }
-        }
-    }
-
     public static void HudAwake(Hud __instance)
     {
         OnHudAwake?.Invoke(__instance);

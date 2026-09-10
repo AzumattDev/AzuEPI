@@ -31,8 +31,9 @@ public class InventoryRowsPatches
         {
             if (Player.m_localPlayer != __instance) return;
 
+            InventoryGuiPatches.UpdateInventory_Patch.InvalidateElements();
             Layout.UpdateInventorySize();
-            Layout.UpdateContainerPosition(true);
+            Layout.UpdateContainerPosition();
             InventoryGui.instance?.m_playerGrid?.ResetView();
         }
     }
