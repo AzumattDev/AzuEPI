@@ -27,7 +27,7 @@ public class AdvBackpacksCompat
 
         if (!IsSlotMarkedForRemoval("$bp_backpack_slot_name"))
         {
-            API.AddSlot("$bp_backpack_slot_name", new List<string>(Backpacks).ToArray());
+            API.AddSlot("$bp_backpack_slot_name", [.. Backpacks]);
         }
         context._harmony.PatchAll(typeof(AdvBackpacksCompat));
         IsActive = true;

@@ -15,7 +15,7 @@ public class WizardryCompat
         if (wizardryInfo?.Instance == null)
             return;
 
-        API.AddSlot("$azuepi_fingerslot", new List<string>(Rings).ToArray());
+        API.AddSlot("$azuepi_fingerslot", [.. Rings]);
         context._harmony.PatchAll(typeof(Hunter_LegacyCompat));
     }
 }

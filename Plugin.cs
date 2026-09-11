@@ -1,7 +1,4 @@
-﻿using System.Reflection;
-using System.Reflection.Emit;
-using System.Threading;
-using APIManager;
+﻿using APIManager;
 using AzuEPI.Game.Compatibility.AdvBackpacks;
 using AzuEPI.Game.Panels;
 using AzuEPI.Game.Slots;
@@ -9,9 +6,6 @@ using AzuEPI.Game.Slots.QAB;
 using BepInEx.Logging;
 using LocalizationManager;
 using ServerSync;
-using Splatform;
-using Unity.Collections;
-using Valheim.SettingsGui;
 
 namespace AzuEPI;
 
@@ -43,7 +37,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 	}
 
     internal const string ModName = "AzuExtendedPlayerInventory";
-    internal const string ModVersion = "2.4.13";
+    internal const string ModVersion = "2.4.14";
     internal const string Author = "Azumatt";
     internal const string ModGUID = Author + "." + ModName;
     private static readonly string ConfigFileName = ModGUID + ".cfg";
@@ -198,7 +192,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
         /* 10 - Favoriting */
         ResetConfigOrder();
-        FavoritingModifierKeybind = config("10 - Favoriting", "Favoriting Modifier Key", new KeyboardShortcut(KeyCode.LeftAlt), "Hold this while left-clicking an item or right-clicking any player inventory slot to favorite it and prevent storage mods from moving it.", NextOrder, false);
+        FavoritingModifierKeybind = config("10 - Favoriting", "Favoriting Modifier Key", new KeyboardShortcut(KeyCode.LeftAlt), "Hold this while left-clicking an item or right-clicking any player inventory slot to favorite it and prevent storage mods from moving it. Ignored while AzuAutoStore or Quick Stack Store is installed, use their favoriting key instead. Favorites are shared with AzuAutoStore either way.", NextOrder, false);
         BorderColorFavoritedItem = config("10 - Favoriting", "Favorited Item Border Color", new Color(1f, 0.8482759f, 0f), "Color of the border around favorited items.", NextOrder, false);
         BorderColorFavoritedItemOnFavoritedSlot = config("10 - Favoriting", "Favorited Item and Slot Border Color", new Color(0.5f, 0.67413795f, 0.5f), "Color of the border when both the item and its slot are favorited.", NextOrder, false);
         BorderColorFavoritedSlot = config("10 - Favoriting", "Favorited Slot Border Color", new Color(0f, 0.5f, 1f), "Color of the border around favorited slots.", NextOrder, false);
@@ -536,7 +530,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     internal ConfigEntry<T> config<T>(string group, string name, T value, ConfigDescription description, int order, bool synchronizedSetting = true)
     {
         ConfigurationManagerAttributes attributes = new() { Order = order };
-        object[] tags = description.Tags.Length > 0 ? description.Tags.Append(attributes).ToArray() : [attributes];
+        object[] tags = description.Tags.Length > 0 ? [.. description.Tags, attributes] : [attributes];
         ConfigDescription extendedDescription = new(description.Description + (synchronizedSetting ? " [Synced with Server]" : " [Not Synced with Server]"), description.AcceptableValues, tags);
         ConfigEntry<T> configEntry = Config.Bind(group, name, value, extendedDescription);
 
@@ -596,7 +590,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
     private static void StatsConfigDrawer(ConfigEntryBase entry)
     {
         PlayerStatType[] allStats = (PlayerStatType[])Enum.GetValues(typeof(PlayerStatType));
-        allStats = allStats.Where(x => x != PlayerStatType.Count).ToArray();
+        allStats = [.. allStats.Where(x => x != PlayerStatType.Count)];
         List<PlayerStatType> selectedStats = ParseStatsList(SelectedPlayerStats.Value);
 
         GUILayout.Space(5);
@@ -954,7 +948,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             AzuExtendedPlayerInventoryLogger.LogWarning($"Error getting current slots: {ex.Message}");
         }
 
-        return curslots.Distinct().ToList();
+        return [.. curslots.Distinct()];
     }
 
     public static List<string> GetBuiltInSlotNames()
@@ -964,9 +958,11 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
 
     private static List<string> GetUserAddedSlotNames()
     {
-        return ParseUserAddedSlots().Select(s => s.Split(':')[0].Trim())
-            .Where(name => !string.IsNullOrEmpty(name))
-            .ToList();
+        return
+		[
+			.. ParseUserAddedSlots().Select(s => s.Split(':')[0].Trim())
+				.Where(name => !string.IsNullOrEmpty(name)),
+		];
     }
 
     private static List<string> GetAvailableItemPrefabs()
@@ -991,7 +987,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
             AzuExtendedPlayerInventoryLogger.LogWarning($"Error getting item prefabs: {ex.Message}");
         }
 
-        return prefabs.OrderBy(p => p).ToList();
+        return [.. prefabs.OrderBy(p => p)];
     }
 
     private static List<string> ParseSlotList(string slotsString)
@@ -1170,7 +1166,7 @@ public class AzuExtendedPlayerInventoryPlugin : BaseUnityPlugin
                 if (parts.Length != 2) continue;
 
                 string slotName = parts[0].Trim();
-                string[] prefabs = parts[1].Split(',').Select(p => p.Trim()).Where(p => !string.IsNullOrEmpty(p)).ToArray();
+                string[] prefabs = [.. parts[1].Split(',').Select(p => p.Trim()).Where(p => !string.IsNullOrEmpty(p))];
 
                 if (string.IsNullOrEmpty(slotName) || prefabs.Length == 0) continue;
 

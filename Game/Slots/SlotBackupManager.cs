@@ -83,7 +83,7 @@ internal static class SlotBackupManager
         return true;
     }
 
-    public static IEnumerable<string> GetBackupKeys() => _slotBackups.Keys.ToList();
+    public static IEnumerable<string> GetBackupKeys() => [.. _slotBackups.Keys];
 
     private static Model.EquipmentSlot RecreateSlotWithDelegates(Model.EquipmentSlot slotData)
     {

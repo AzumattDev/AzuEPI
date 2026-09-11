@@ -26,7 +26,7 @@ public class Localizer
                 IEnumerable<TypeInfo> types;
                 try
                 {
-                    types = Assembly.GetExecutingAssembly().DefinedTypes.ToList();
+                    types = [.. Assembly.GetExecutingAssembly().DefinedTypes];
                 }
                 catch (ReflectionTypeLoadException e)
                 {

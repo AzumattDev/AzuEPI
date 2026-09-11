@@ -5,8 +5,6 @@ namespace AzuEPI.Game.Favoriting;
 [HarmonyPatch(typeof(Inventory), nameof(Inventory.StackAll), typeof(Inventory), typeof(bool))]
 internal static class StackAllPatches
 {
-    private static bool Prepare() => !FavoritingMode.IsExternalFavoritingModLoaded();
-
     [HarmonyTranspiler]
     private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
     {
@@ -23,9 +21,9 @@ internal static class StackAllPatches
 
     private static List<ItemDrop.ItemData> FilterItems(List<ItemDrop.ItemData> items, Inventory fromInventory)
     {
-        if (!Player.m_localPlayer || fromInventory != Player.m_localPlayer.GetInventory()) return items;
+        if (!Player.m_localPlayer || FavoritingMode.IsExternalFavoritingModLoaded() || fromInventory != Player.m_localPlayer.GetInventory()) return items;
 
         UserConfig config = UserConfig.GetPlayerConfig(Player.m_localPlayer.GetPlayerID());
-        return items.Where(item => !config.IsItemNameOrSlotFavorited(item)).ToList();
+        return [.. items.Where(item => !config.IsItemNameOrSlotFavorited(item))];
     }
 }

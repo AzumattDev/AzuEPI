@@ -10,7 +10,7 @@ public class JudesEquipmentCompat
         if (judebackpackInfo == null || judebackpackInfo.Instance == null) return;
         if (!IsSlotMarkedForRemoval("$bp_backpack_slot_name"))
         {
-            API.AddSlot("$bp_backpack_slot_name", new JudesEquipmentCompat().Backpacks.ToArray());
+            API.AddSlot("$bp_backpack_slot_name", [.. new JudesEquipmentCompat().Backpacks]);
         }
         context._harmony.PatchAll(typeof(JudesEquipmentCompat));
     }

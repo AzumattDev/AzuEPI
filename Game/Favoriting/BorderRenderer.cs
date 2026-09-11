@@ -6,14 +6,12 @@ static class BorderRenderer
     public static Sprite Border = null!;
     public const string BorderName = "AzuEPIFavoritingBorder";
 
-    private static bool Prepare() => !FavoritingMode.IsExternalFavoritingModLoaded();
-
     [HarmonyPostfix]
     [HarmonyAfter("goldenrevolver.quick_stack_store", "Azumatt.AzuAutoStore")]
     [HarmonyPriority(Priority.LowerThanNormal)]
     static void UpdateGui(InventoryGrid __instance, Player player, Inventory ___m_inventory, List<InventoryElement> ___m_elements)
     {
-        if (player == null || player.m_inventory != ___m_inventory)
+        if (player == null || player.m_inventory != ___m_inventory || FavoritingMode.IsExternalFavoritingModLoaded())
         {
             return;
         }

@@ -13,7 +13,7 @@ public static class InventoryExtensions
 
         public List<ItemDrop.ItemData> GetEquippedItemsFiltered()
         {
-            List<ItemDrop.ItemData> equippedItems = new List<ItemDrop.ItemData>();
+            List<ItemDrop.ItemData> equippedItems = [];
             foreach (ItemDrop.ItemData itemData in inv.m_inventory)
             {
                 if (itemData.m_equipped &&

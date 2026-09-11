@@ -335,15 +335,15 @@ public static class StatsPanelController
         }
 
         if (generalStats.Count > 0)
-            CreateSection(Localization.instance.Localize("$azu_epi_stat_section_general"), generalStats.ToArray());
+            CreateSection(Localization.instance.Localize("$azu_epi_stat_section_general"), [.. generalStats]);
         if (combatStats.Count > 0)
-            CreateSection(Localization.instance.Localize("$azu_epi_stat_section_combat"), combatStats.ToArray());
+            CreateSection(Localization.instance.Localize("$azu_epi_stat_section_combat"), [.. combatStats]);
         if (explorationStats.Count > 0)
-            CreateSection(Localization.instance.Localize("$azu_epi_stat_section_exploration"), explorationStats.ToArray());
+            CreateSection(Localization.instance.Localize("$azu_epi_stat_section_exploration"), [.. explorationStats]);
         if (activityStats.Count > 0)
-            CreateSection(Localization.instance.Localize("$azu_epi_stat_section_activity"), activityStats.ToArray());
+            CreateSection(Localization.instance.Localize("$azu_epi_stat_section_activity"), [.. activityStats]);
         if (otherStats.Count > 0)
-            CreateSection(Localization.instance.Localize("$azu_epi_stat_section_other"), otherStats.ToArray());
+            CreateSection(Localization.instance.Localize("$azu_epi_stat_section_other"), [.. otherStats]);
     }
 
     private static bool IsLiveStatEnabled(LiveStatType stat)
@@ -812,7 +812,7 @@ public static class StatsPanelController
 
     private static List<PlayerStatType> GetDefaultStats()
     {
-        return Enum.GetValues(typeof(PlayerStatType)).Cast<PlayerStatType>().Where(stat => stat != PlayerStatType.Count).ToList();
+        return [.. Enum.GetValues(typeof(PlayerStatType)).Cast<PlayerStatType>().Where(stat => stat != PlayerStatType.Count)];
     }
 
     private static void CreateStatRow(GameObject parent, string statName, PlayerStatType statType)
@@ -1307,11 +1307,13 @@ public static class StatsPanelController
             System.Text.StringBuilder sb = new();
             List<Skills.Skill> skillList = player.m_skills.GetSkillList();
 
-            List<Skills.Skill> topSkills = skillList
-                .Where(s => s is { m_level: > 0 })
-                .OrderByDescending(s => s.m_level)
-                .Take(5)
-                .ToList();
+            List<Skills.Skill> topSkills =
+			[
+				.. skillList
+					.Where(s => s is { m_level: > 0 })
+					.OrderByDescending(s => s.m_level)
+					.Take(5),
+			];
 
             if (topSkills.Count == 0)
                 return Localization.instance.Localize("$azu_epi_stat_none");
@@ -1942,10 +1944,10 @@ public static class StatsPanelController
         if (ZNet.instance != null)
             _playerList.AddRange(ZNet.instance.GetPlayerList());
 
-        List<TMP_Dropdown.OptionData> options = new()
-        {
-            new TMP_Dropdown.OptionData(Localization.instance.Localize("$azu_epi_stat_self")),
-		};
+        List<TMP_Dropdown.OptionData> options =
+		[
+			new TMP_Dropdown.OptionData(Localization.instance.Localize("$azu_epi_stat_self")),
+		];
 
         long myUid = ZNet.instance != null ? ZNet.GetUID() : 0;
         foreach (ZNet.PlayerInfo playerInfo in _playerList)

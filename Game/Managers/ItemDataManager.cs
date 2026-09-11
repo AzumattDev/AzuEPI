@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Reflection.Emit;
 using System.Runtime.Serialization;
 using System.Text;
@@ -12,6 +12,7 @@ public abstract class ItemData
 
 	protected virtual bool AllowStackingIdenticalValues { get; set; } = false;
 
+	// Value is the raw data stored on the Item. An ItemData implementing class may either use it directly, or attach a [SerializeField] attribute to at least one field, in which case Value will be maintained by the default Load() and Save() implementations.
 	public string Value
 	{
 		get => Item.m_customData.TryGetValue(CustomDataKey, out string data) ? data : "";
@@ -84,6 +85,10 @@ public abstract class ItemData
 	public virtual void Unload() { }
 	public virtual void Upgraded() { }
 
+	// data arg is ItemData this ItemData is stacked with (identical Key) - if the other item has no such ItemData, null is passed
+	// If null, stacking disallowed.
+	// If non-null, the new item will have ItemData with this new string-value
+	// By default stacking is disallowed. Set AllowStackingIdenticalValues property to true for trivial by Value comparisons.
 	public virtual string? TryStack(ItemData? data) => AllowStackingIdenticalValues && data?.Value == Value ? Value : null;
 
 	private static readonly FieldInfo parameterInfoClassImpl = AccessTools.DeclaredField(typeof(ParameterInfo), "ClassImpl");
@@ -117,7 +122,7 @@ public class ItemInfo : IEnumerable<ItemData>
 		IEnumerable<TypeInfo> types;
 		try
 		{
-			types = Assembly.GetExecutingAssembly().DefinedTypes.ToList();
+			types = [.. Assembly.GetExecutingAssembly().DefinedTypes];
 		}
 		catch (ReflectionTypeLoadException e)
 		{
@@ -208,7 +213,7 @@ public class ItemInfo : IEnumerable<ItemData>
 		ItemData = itemData;
 
 		string prefix = dataKey("");
-		List<string> keys = ItemData.m_customData.Keys.ToList();
+		List<string> keys = [.. ItemData.m_customData.Keys];
 		foreach (string key in keys)
 		{
 			if (key.StartsWith(prefix))
@@ -243,7 +248,7 @@ public class ItemInfo : IEnumerable<ItemData>
 		ItemDataManager.ItemData.constructingInfo = selfReference ??= new WeakReference<ItemInfo>(this);
 		T obj = new() { info = selfReference, Key = key, CustomDataKey = fullKey };
 		data[compoundKey] = obj;
-		obj.Value = "";
+		obj.Value = ""; // initial Store
 		obj.FirstLoad();
 		return obj;
 	}
@@ -353,7 +358,7 @@ public class ItemInfo : IEnumerable<ItemData>
 		}
 
 		string prefix = dataKey("");
-		List<string> keys = ItemData.m_customData.Keys.ToList();
+		List<string> keys = [.. ItemData.m_customData.Keys];
 		foreach (string key in keys)
 		{
 			if (key.StartsWith(prefix))
@@ -404,7 +409,7 @@ public class ItemInfo : IEnumerable<ItemData>
 		{
 			info.LoadAll();
 
-			HashSet<string> sharedKeys = new(info.data.Keys.Intersect(data.Keys));
+			HashSet<string> sharedKeys = [.. info.data.Keys.Intersect(data.Keys)];
 			foreach (string key in sharedKeys)
 			{
 				if (data[key].TryStack(info.data[key]) is not { } newData)
@@ -475,7 +480,7 @@ public class ItemInfo : IEnumerable<ItemData>
 	{
 		if (__instance.m_itemData.m_dropPrefab is { } prefab && ItemExtensions.itemInfo.TryGetValue(prefab.GetComponent<ItemDrop>().m_itemData, out ItemInfo info))
 		{
-			__instance.m_itemData.Data().isCloned = [..info.data.Values.Select(i => i.CustomDataKey)];
+			__instance.m_itemData.Data().isCloned = [.. info.data.Values.Select(i => i.CustomDataKey)];
 		}
 	}
 
@@ -493,7 +498,7 @@ public class ItemInfo : IEnumerable<ItemData>
 	{
 		if (ItemExtensions.itemInfo.TryGetValue(__instance, out ItemInfo info))
 		{
-			__result.Data().isCloned = [..info.data.Values.Select(i => i.CustomDataKey)];
+			__result.Data().isCloned = [.. info.data.Values.Select(i => i.CustomDataKey)];
 		}
 	}
 
@@ -533,7 +538,7 @@ public class ItemInfo : IEnumerable<ItemData>
 
 	private static IEnumerable<CodeInstruction> CheckStackableInFindFreeStackMethods(IEnumerable<CodeInstruction> instructionsEnumerable)
 	{
-		CodeInstruction[] instructions = instructionsEnumerable.ToArray();
+		CodeInstruction[] instructions = [.. instructionsEnumerable];
 		Label target = (Label)instructions.First(i => i.opcode == OpCodes.Br || i.opcode == OpCodes.Br_S).operand;
 		CodeInstruction targetedInstr = instructions.First(i => i.labels.Contains(target));
 		CodeInstruction lastBranch = instructions.Reverse().First(i => i.Branches(out Label? label) && targetedInstr.labels.Contains(label!.Value));
@@ -542,6 +547,7 @@ public class ItemInfo : IEnumerable<ItemData>
 		for (int i = 0; i < instructions.Length; ++i)
 		{
 			yield return instructions[i];
+			// get hold of the loop variable store (the itemdata we want to compare against)
 			if (loadingInstruction == null && instructions[i].opcode == OpCodes.Call && ((MethodInfo)instructions[i].operand).Name == "get_Current")
 			{
 				loadingInstruction = instructions[i + 1].Clone();
@@ -644,10 +650,12 @@ public class ItemInfo : IEnumerable<ItemData>
 
 	private static IEnumerable<CodeInstruction> HandleAutostackableItems(IEnumerable<CodeInstruction> instructionList, ILGenerator ilg)
 	{
+		// Turn:
 		// if (component.m_itemData.m_stack <= num) { ... }
+		// into:
 		// if (component.m_itemData.m_stack <= num && (dict = IsStackable(this, component)) is not null) { ... ApplyCustomItemDataStackableAutoStack(this, dict); }
 
-		List<CodeInstruction> instructions = instructionList.ToList();
+		List<CodeInstruction> instructions = [.. instructionList];
 		FieldInfo stack = AccessTools.DeclaredField(typeof(ItemDrop.ItemData), nameof(ItemDrop.ItemData.m_stack));
 		FieldInfo itemData = AccessTools.DeclaredField(typeof(ItemDrop), nameof(ItemDrop.m_itemData));
 		for (int i = 0; i < instructions.Count; ++i)
@@ -741,7 +749,7 @@ public class ItemInfo : IEnumerable<ItemData>
 					foreach (KeyValuePair<string, string> keyValuePair in item.m_itemData.m_customData)
 					{
 						zdo.Set($"data_{num}", keyValuePair.Key);
-						zdo.Set($"data__{++num}", keyValuePair.Value);
+						zdo.Set($"data__{num++}", keyValuePair.Value);
 					}
 				}
 			}
@@ -750,7 +758,7 @@ public class ItemInfo : IEnumerable<ItemData>
 
 	private static IEnumerable<CodeInstruction> ImportCustomDataOnUpgrade(IEnumerable<CodeInstruction> instructionList)
 	{
-		List<CodeInstruction> instructions = instructionList.ToList();
+		List<CodeInstruction> instructions = [.. instructionList];
 		foreach (CodeInstruction instruction in instructions)
 		{
 			yield return instruction;
@@ -792,6 +800,7 @@ public class ItemInfo : IEnumerable<ItemData>
 
 		harmony.Patch(AccessTools.DeclaredMethod(typeof(InventoryGui), nameof(InventoryGui.DoCrafting)), transpiler: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(TransferCustomItemDataOnUpgrade))), finalizer: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(ResetCurrentlyUpgradingItem))));
 
+		// Force loads
 		foreach (MethodInfo method in typeof(ItemDrop.ItemData).GetMethods(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic).Where(m => m.Name == nameof(ItemDrop.LoadFromZDO)))
 		{
 			harmony.Patch(method, postfix: new HarmonyMethod(AccessTools.DeclaredMethod(typeof(ItemInfo), nameof(RegisterForceLoadedTypes))));

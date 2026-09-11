@@ -3,8 +3,6 @@
 [HarmonyPatch(typeof(InventoryGrid))]
 internal class InventoryGridButtonHandlingPatches
 {
-    private static bool Prepare() => !FavoritingMode.IsExternalFavoritingModLoaded();
-
     [HarmonyPatch(nameof(InventoryGrid.OnRightDown)), HarmonyPrefix]
     internal static bool OnRightClick(InventoryGrid __instance, UIInputHandler element)
     {
@@ -69,6 +67,7 @@ internal class InventoryGridButtonHandlingPatches
 
         if (!FavoritingMode.IsInFavoritingMode())
         {
+            FavoritingMode.TryShowExternalFavoritingHint();
             return true;
         }
 

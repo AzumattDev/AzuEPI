@@ -1,5 +1,4 @@
-﻿using AzuEPI.EPI;
-using AzuEPI.Game.PlayerPreview;
+﻿using AzuEPI.Game.PlayerPreview;
 
 namespace AzuEPI.Core.InventoryHandlers;
 

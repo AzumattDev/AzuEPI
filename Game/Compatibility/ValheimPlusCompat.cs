@@ -1,5 +1,3 @@
-using System.Reflection;
-
 namespace AzuEPI.Game.Compatibility;
 
 public static class ValheimPlusCompat
@@ -164,7 +162,7 @@ public static class ValheimPlusCompat
             int fullHeight = API.GetFullHeight(Layout.BaseInventoryWidth);
             MethodInfo setter = rowsProp.GetSetMethod(true);
             if (setter != null)
-                setter.Invoke(inventorySection, new object[] { fullHeight });
+                setter.Invoke(inventorySection, [fullHeight]);
             else if (rowsProp.CanWrite)
                 rowsProp.SetValue(inventorySection, fullHeight);
 

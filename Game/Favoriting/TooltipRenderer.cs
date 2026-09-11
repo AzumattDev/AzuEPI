@@ -5,8 +5,6 @@ namespace AzuEPI.Game.Favoriting;
 [HarmonyPatch(typeof(ItemDrop.ItemData))]
 internal static class TooltipRenderer
 {
-    private static bool Prepare() => !FavoritingMode.IsExternalFavoritingModLoaded();
-
     [HarmonyPatch(nameof(ItemDrop.ItemData.GetTooltip), [
         typeof(ItemDrop.ItemData),
         typeof(int),
@@ -18,7 +16,7 @@ internal static class TooltipRenderer
     [HarmonyPostfix]
     public static void GetTooltip(ItemDrop.ItemData item, bool crafting, ref string __result)
     {
-        if (crafting || !DisplayTooltipHint.Value || !Player.m_localPlayer)
+        if (crafting || !DisplayTooltipHint.Value || !Player.m_localPlayer || FavoritingMode.IsExternalFavoritingModLoaded())
         {
             return;
         }

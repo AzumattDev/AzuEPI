@@ -1,5 +1,4 @@
 ﻿using AzuEPI.Core.Text;
-using AzuEPI.EPI;
 
 namespace AzuEPI.Game.Slots.QAB;
 
@@ -239,7 +238,7 @@ public static class HotkeyBarController
             if (HotkeyBars == null)
                 try
                 {
-                    HotkeyBars = __instance.transform.parent.GetComponentsInChildren<HotkeyBar>().ToList();
+                    HotkeyBars = [.. __instance.transform.parent.GetComponentsInChildren<HotkeyBar>()];
                 }
                 catch
                 {

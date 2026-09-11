@@ -15,7 +15,7 @@ public class Hunter_LegacyCompat
         if (hunterLegacyInfo?.Instance == null)
             return;
 
-        API.AddSlot("$bbh_slot_quiver", new List<string>(Quivers).ToArray());
+        API.AddSlot("$bbh_slot_quiver", [.. Quivers]);
         context._harmony.PatchAll(typeof(Hunter_LegacyCompat));
     }
 }

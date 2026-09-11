@@ -99,7 +99,7 @@ internal static class BoneReorder
             List<string> stringList = [];
             foreach (Transform bone in skinnedMeshRenderer.bones)
                 stringList.Add(bone.name);
-            return stringList.ToArray();
+            return [.. stringList];
         }
     }
 

@@ -1,6 +1,4 @@
-﻿using AzuEPI.EPI;
-
-namespace AzuEPI.Game.Slots.QAB;
+﻿namespace AzuEPI.Game.Slots.QAB;
 
 public class HudPatches
 {

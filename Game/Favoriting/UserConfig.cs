@@ -1,4 +1,4 @@
-﻿using System.Runtime.Serialization;
+using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 
 namespace AzuEPI.Game.Favoriting;
@@ -19,6 +19,9 @@ public class UserConfig
     private UserConfig(long uid)
     {
         _configPath = Path.Combine(Paths.ConfigPath, $"{ModName}_player_{uid}.dat");
+
+        _mirrorPaths = [Path.Combine(Paths.ConfigPath, $"AzuAutoStore_player_{uid}.dat")];
+
         Load();
     }
 
@@ -34,8 +37,25 @@ public class UserConfig
 
     private void Save()
     {
-        using Stream stream = File.Open(_configPath, FileMode.Create);
-        List<Tuple<int, int>> tupledSlots = _favoritedSlots.Select(item => Tuple.Create(item.x, item.y)).ToList();
+        WriteFile(_configPath);
+
+        foreach (string mirrorPath in _mirrorPaths.Where(File.Exists))
+        {
+            try
+            {
+                WriteFile(mirrorPath);
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                AzuExtendedPlayerInventoryLogger.LogWarning($"Couldn't sync favorites to {mirrorPath}: {exception.Message}");
+            }
+        }
+    }
+
+    private void WriteFile(string path)
+    {
+        using Stream stream = File.Open(path, FileMode.Create);
+        List<Tuple<int, int>> tupledSlots = [.. _favoritedSlots.Select(item => Tuple.Create(item.x, item.y))];
 
         Bf.Serialize(stream, tupledSlots);
         Bf.Serialize(stream, _favoritedItems.ToList());
@@ -72,11 +92,26 @@ public class UserConfig
 
     private void Load()
     {
-        using Stream stream = File.Open(_configPath, FileMode.OpenOrCreate);
-        stream.Seek(0L, SeekOrigin.Begin);
-
         _favoritedSlots = [];
         _favoritedItems = [];
+
+        // Merge, don't pick one. A lost favorite gets your shit stored away, an extra one doesn't hurt
+        foreach (string path in _mirrorPaths.Prepend(_configPath).Where(File.Exists))
+        {
+            try
+            {
+                ReadFileInto(path);
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                AzuExtendedPlayerInventoryLogger.LogWarning($"Couldn't read favorites from {path}: {exception.Message}");
+            }
+        }
+    }
+
+    private void ReadFileInto(string path)
+    {
+        using Stream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
 
         List<Tuple<int, int>>? deserializedFavoritedSlots = [];
         LoadProperty(stream, out deserializedFavoritedSlots);
@@ -126,6 +161,7 @@ public class UserConfig
     }
 
     private readonly string _configPath;
+    private readonly string[] _mirrorPaths;
     private HashSet<Vector2i> _favoritedSlots = null!;
     private HashSet<string> _favoritedItems = null!;
     private static readonly BinaryFormatter Bf = new BinaryFormatter();

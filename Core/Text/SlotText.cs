@@ -1,6 +1,4 @@
-﻿using AzuEPI.EPI;
-
-namespace AzuEPI.Core.Text;
+﻿namespace AzuEPI.Core.Text;
 
 public class SlotText
 {

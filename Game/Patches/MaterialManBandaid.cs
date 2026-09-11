@@ -1,6 +1,4 @@
-﻿using Splatform;
-
-namespace AzuEPI.Game.Patches;
+﻿namespace AzuEPI.Game.Patches;
 
 [HarmonyPatch(typeof(MaterialMan), nameof(MaterialMan.Update))]
 static class MaterialManUpdatePatch

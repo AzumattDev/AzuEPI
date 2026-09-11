@@ -10,7 +10,7 @@ public class RustyBagsCompat
     {
         if (!Chainloader.PluginInfos.TryGetValue("RustyMods.RustyBags", out PluginInfo rustyBagInfo)) return;
         if (rustyBagInfo == null || rustyBagInfo.Instance == null) return;
-        API.AddSlot("$bp_backpack_slot_name", Backpacks.ToArray().Concat(Quivers.ToArray()));
+        API.AddSlot("$bp_backpack_slot_name", Backpacks.ToArray().Concat([.. Quivers]));
         context._harmony.PatchAll(typeof(RustyBagsCompat));
     }
 

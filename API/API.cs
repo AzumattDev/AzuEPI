@@ -136,7 +136,7 @@ public class API
             ?.FirstOrDefault(i => i != null && i.m_dropPrefab && set.Contains(i.m_dropPrefab.name));
 
         bool ok = AddSlot(slotName, Get, IsValid, index);
-        if (ok) RegisterVisualsForSlot(slotName, set.ToArray());
+        if (ok) RegisterVisualsForSlot(slotName, [.. set]);
         return ok;
 #else
         return false;
@@ -152,7 +152,7 @@ public class API
             ?.FirstOrDefault(i => i != null && isValid(i));
 
         bool ok = AddSlot(slotName, AutoGet, isValid, index);
-        if (ok && prefabNamesForVisuals != null) RegisterVisualsForSlot(slotName, prefabNamesForVisuals.ToArray());
+        if (ok && prefabNamesForVisuals != null) RegisterVisualsForSlot(slotName, [.. prefabNamesForVisuals]);
         return ok;
 #else
         return false;
@@ -244,15 +244,15 @@ public class API
     {
         {
 #if !API
-            Model.Slot?[] slots = EPI.ExtendedPlayerInventory.slots.Where(s => s != null && filter(s!)).ToArray();
+            Model.Slot?[] slots = [.. EPI.ExtendedPlayerInventory.slots.Where(s => s != null && filter(s!))];
 
             return new SlotInfo
             {
-                SlotNames = slots.Select(s => s!.Name).ToArray(),
-                OriginalSlotNames = slots.Select(s => s!.OriginalName).ToArray(),
-                SlotPositions = slots.Select(s => s!.Position).ToArray(),
-                GetItemFuncs = slots.Select(s => s!.EquipmentSlot?.Get).ToArray(),
-                IsValidFuncs = slots.Select(s => s!.EquipmentSlot?.Valid).ToArray(),
+                SlotNames = [.. slots.Select(s => s!.Name)],
+                OriginalSlotNames = [.. slots.Select(s => s!.OriginalName)],
+                SlotPositions = [.. slots.Select(s => s!.Position)],
+                GetItemFuncs = [.. slots.Select(s => s!.EquipmentSlot?.Get)],
+                IsValidFuncs = [.. slots.Select(s => s!.EquipmentSlot?.Valid)],
 			};
 #else
             return new SlotInfo();
@@ -850,7 +850,7 @@ public class API
 #if API
     return Array.Empty<Model.Slot?>();
 #else
-        return slots.ToArray();
+        return [.. slots];
 #endif
     }
 

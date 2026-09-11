@@ -106,7 +106,7 @@ public static class Patcher
 
 			__0 = dumpedAssemblyPath;
 		}
-        
+
         modifyNextLoad = false;
 		return true;
 	}
@@ -628,7 +628,7 @@ public static class Patcher
 		IEnumerable<TypeInfo> types;
 		try
 		{
-			types = patchingAssembly.DefinedTypes.ToList();
+			types = [.. patchingAssembly.DefinedTypes];
 		}
 		catch (ReflectionTypeLoadException e)
 		{

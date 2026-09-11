@@ -1,5 +1,4 @@
 ﻿using System.Reflection.Emit;
-using AzuEPI.Game.Compatibility;
 using AzuEPI.Game.Compatibility.AdvBackpacks;
 using AzuEPI.Game.Slots;
 
@@ -422,7 +421,7 @@ public class CustomEquipVisuals
 
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instrs)
         {
-            List<CodeInstruction> list = instrs.ToList();
+            List<CodeInstruction> list = [.. instrs];
 
             list.InsertRange(2, [
                 new CodeInstruction(OpCodes.Ldarg_0), // this (Humanoid)
@@ -597,7 +596,7 @@ public class CustomEquipVisuals
 
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructionsEnumerable)
         {
-            List<CodeInstruction> instructions = instructionsEnumerable.ToList();
+            List<CodeInstruction> instructions = [.. instructionsEnumerable];
             MethodInfo? isItemEquiped = AccessTools.DeclaredMethod(typeof(Humanoid), nameof(Humanoid.IsItemEquiped));
 
             int idx = instructions.FindLastIndex(ci => ci.Calls(isItemEquiped));
@@ -663,7 +662,7 @@ public class CustomEquipVisuals
 
         private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructionEnumerable)
         {
-            List<CodeInstruction> list = instructionEnumerable.ToList();
+            List<CodeInstruction> list = [.. instructionEnumerable];
             MethodInfo? setupEquipment = AccessTools.DeclaredMethod(typeof(Humanoid), nameof(Humanoid.SetupEquipment));
 
             int idx = list.FindIndex(ci => ci.Calls(setupEquipment));
